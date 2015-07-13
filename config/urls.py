@@ -12,6 +12,7 @@ urlpatterns = patterns('',
     (r'^(\d{4})/(\w{3})/(\d{1,2})/$', blog_views.archive_day),
     (r'^(\d{4})/(\w{3})/(\d{1,2})/(\w+)/$', blog_views.archive_item),
 
+    (r'^write/$', blog_views.write),
     #(r'^about/$', blog_views.about),
     (r'^tags/$', blog_views.tag_index),
     (r'^tags/(.*?)/$', blog_views.archive_tag),

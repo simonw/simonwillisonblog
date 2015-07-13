@@ -330,3 +330,5 @@ def archive_tag(request, tags):
         'tag': tags[0],
     })
 
+def write(request):
+    return render(request, 'write.html')
