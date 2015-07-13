@@ -29,7 +29,7 @@ class Command(BaseCommand):
             dest='xmldir',
             type='str',
             help='Directory where the XML files live',
-            default='/Users/simonw/Dropbox/simon-willison-blog-as-xml/'
+            default=os.path.join(settings.BASE_DIR, '../old-import-xml')
         ),
     )
 
