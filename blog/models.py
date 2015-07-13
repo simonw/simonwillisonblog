@@ -56,15 +56,13 @@ class Tag(models.Model):
         return self._related_tags
 
 
-class Entry(models.Model):
-    title = models.CharField(max_length=255)
-    slug = models.SlugField(max_length=64)
-    body = models.TextField()
+class BaseModel(models.Model):
     created = models.DateTimeField()
     tags = models.ManyToManyField(Tag, blank=True)
+    slug = models.SlugField(max_length=64)
 
-    class Meta:
-        ordering = ('-created',)
+    def tag_summary(self):
+        return u' '.join(t.tag for t in self.tags.all())
 
     def get_absolute_url(self):
         return '/%d/%s/%d/%s/' % (
@@ -73,8 +71,19 @@ class Entry(models.Model):
         )
 
     def edit_url(self):
-        return "/admin/blog/entry/%d/" % self.id
-    
+        return "/admin/blog/%s/%d/" % (
+            self.__class__.__name__.lower(), self.id
+        )
+
+    class Meta:
+        abstract = True
+        ordering = ('-created',)
+
+
+class Entry(BaseModel):
+    title = models.CharField(max_length=255)
+    body = models.TextField()
+
     def images(self):
         "Extracts images from entry.body"
         et = ET.fromstring('<entry>%s</entry>' % self.body)
@@ -84,47 +93,25 @@ class Entry(models.Model):
         return self.title
     
 
-class Quotation(models.Model):
-    slug = models.SlugField(max_length=64)
+class Quotation(BaseModel):
     quotation = models.TextField()
     source = models.CharField(max_length=255)
     source_url = models.URLField(blank=True, null=True, )
-    created = models.DateTimeField()
-    tags = models.ManyToManyField(Tag, blank=True)
-
-    class Meta:
-        ordering = ('-created',)
-
+    
     def title(self):
         "Mainly a convenence for the comments RSS feed"
         return u"A quote from %s" % escape(self.source)
-    
-    
-    def get_absolute_url(self):
-        return '/%d/%s/%d/%s/' % (
-            self.created.year, MONTHS_3[self.created.month].title(),
-            self.created.day, self.slug
-        )
-
-    def edit_url(self):
-        return "/admin/blog/quotation/%d/" % self.id
 
     def __unicode__(self):
         return self.quotation
 
 
-class Blogmark(models.Model):
-    slug = models.SlugField(max_length=64)
+class Blogmark(BaseModel):
     link_url = models.URLField()
     link_title = models.CharField(max_length=255)
     via_url = models.URLField(blank=True, null=True, )
     via_title = models.CharField(max_length=255, blank=True, null=True)
     commentary = models.TextField()
-    created = models.DateTimeField()
-    tags = models.ManyToManyField(Tag, blank=True)
-
-    class Meta:
-        ordering = ('-created',)
 
     def __unicode__(self):
         return self.link_title
@@ -138,15 +125,6 @@ class Blogmark(models.Model):
             return '1 word'
         else:
             return '%d words' % count
-
-    def get_absolute_url(self):
-        return u'/%d/%s/%d/%s/' % (
-            self.created.year, MONTHS_3[self.created.month].title(),
-            self.created.day, self.slug
-        )
-
-    def edit_url(self):
-        return "/admin/blog/blogmark/%d/" % self.id
 
 
 class Photo(models.Model):
