@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block toolbar_class %}smallhead-toolbar{% endblock %}
+
+{% block body_class %} class="smallhead"{% endblock %}
+{% block body %}
+<div id="smallhead">
+  <h1><a href="/">Simon Willison’s Weblog</a></h1>
+</div><!-- #smallhead -->
+
+<div id="wrapper">
+<div id="primary">
+{% block primary %}{% endblock %}
+</div> <!-- #primary -->
+
+<div id="secondary">
+{% block secondary %}{% endblock %}
+</div> <!-- #secondary -->
+</div> <!-- #wrapper -->
+
+{% block thirdsection %}{% endblock %}
+
+{% endblock %}

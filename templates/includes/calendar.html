@@ -1,0 +1,17 @@
+<table class="monthcalendar">
+{% spaceless %}
+<tr>
+  <th>M</th><th>T</th><th>W</th><th>T</th><th>F</th><th>S</th><th>S</th>
+</tr>
+{% for week in weeks %}
+<tr>
+  {% for day in week %}
+  {% if not day.display %}<td>&nbsp;</td>{% else %}
+  <td style="background-color: {{ day.colour }}"{% if day.is_this_day and not month_only %} class="today"{% endif %}>{% if day.populated %}{% if day.entries %}<strong>{% endif %}<a href="{{ day.day|date:"/Y/M/j/" }}" title="{{ day.description }}">{{ day.day|date:"j" }}</a>{% if day.entries %}</strong>{% endif %}
+    {% else %}{{ day.day|date:"j" }}{% endif %}</td>
+  {% endif %}
+  {% endfor %}
+</tr>
+{% endfor %}
+</table>
+{% endspaceless %}

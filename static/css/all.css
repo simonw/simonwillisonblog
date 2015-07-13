@@ -1,0 +1,716 @@
+body, div, dl, dt, dd, ul, ol, li, h1, h2, h3, h4, h5, h6, pre, form, fieldset, input, p, blockquote, th, td {
+    margin: 0;
+    padding: 0
+}
+table {
+    border-collapse: collapse;
+    border-spacing: 0
+}
+fieldset, img {
+    border: 0
+}
+address, caption, cite, code, dfn, em, strong, th, var {
+    font-style: normal;
+    font-weight: normal
+}
+ol, ul {
+    list-style: none
+}
+caption, th {
+    text-align: left
+}
+h1, h2, h3, h4, h5, h6 {
+    font-size: 100%
+}
+q:before, q:after {
+    content: ''
+}
+*:link {
+    color: rgb(0, 0, 238)
+}
+*:visited {
+    color: #636
+}
+body {
+    font-family: "Helvetica Neue", helvetica, sans-serif;
+    line-height: 1.4em;
+    color: #000;
+    background-color: #fdfdfd
+}
+strong {
+    font-weight: bold
+}
+em {
+    font-style: italic
+}
+dl {
+    margin-bottom: 1em
+}
+dt {
+    font-weight: bold
+}
+dd {
+    padding-left: 1.5em
+}
+p.bighead-toolbar, p.smallhead-toolbar {
+    font-size: 0.85em;
+    padding-left: 35px;
+    margin-top: 3px
+}
+p.bighead-toolbar {
+    border-bottom: 1px solid #ccc
+}
+p.smallhead-toolbar {
+    margin-bottom: 3px
+}
+a#atomfeedlink {
+    position: absolute;
+    left: 780px;
+    top: 3px
+}
+p.bighead-toolbar img, p.smallhead-toolbar img {
+    vertical-align: top;
+    padding-top: 2px
+}
+p.bighead-toolbar a.signin, p.smallhead-toolbar a.signin {
+    text-decoration: none
+}
+img.bubble {
+    vertical-align: top
+}
+div#sidead {
+    margin-top: 2em
+}
+div#ft {
+    background-image: url(/static/css/img/purple-gradient.png);
+    padding-left: 35px;
+    margin-top: 15px;
+    margin-bottom: 0.4em;
+    padding-top: 3px;
+    clear: both;
+    font-size: 0.85em
+}
+div#ft ul, div#ft li {
+    display: inline;
+    padding-right: 1em;
+    color: #fff
+}
+div#ft a {
+    color: #fff;
+    text-decoration: none
+}
+div#ft a#djangosite img {
+    vertical-align: top;
+    position: relative;
+    top: 2px
+}
+p#previouslyhosted {
+    clear: both;
+    padding: 0.5em 0 0.5em 35px;
+    font-size: 0.8em;
+    color: #666
+}
+div#wrapper {
+    width: 800px;
+    margin-left: 35px;
+    overflow: hidden
+}
+div#primary {
+    width: 450px;
+    margin-right: 35px;
+    float: left
+}
+div#primary blockquote {
+    margin: 1em 1.5em
+}
+div#secondary {
+    width: 280px;
+    float: left
+}
+div#secondary img.bubble {
+    vertical-align: top;
+    padding-top: 1px
+}
+div#secondary h3 {
+    font-family: georgia, serif;
+    margin: 0.5em 0
+}
+div#secondary ul li {
+    margin-bottom: 0.56em;
+    font-size: 0.9em
+}
+div#secondary div.photos {
+    clear: both
+}
+div#secondary a.photolink {
+    position: relative;
+    display: block;
+    float: left;
+    margin: 0 10px 10px 0;
+    width: 40px;
+    height: 40px
+}
+div#secondary div.photos img {
+    width: 40px;
+    height: 40px;
+    border: 1px solid black;
+    position: absolute;
+    top: 0px;
+    left: 0px
+}
+div#secondary ul {
+    clear: both;
+    margin-top: 0.5em
+}
+div#secondary blockquote {
+    clear: both;
+    margin-top: 0.5em;
+    margin-bottom: 0.2em;
+    text-indent: 23px;
+    background-image: url(/static/css/img/lquote.png);
+    background-repeat: no-repeat;
+    background-position: 0px 2px
+}
+div#secondary blockquote p {
+    background-image: url(/static/css/img/rquote.png);
+    background-repeat: no-repeat;
+    background-position: bottom right;
+    padding-right: 23px;
+    font-size: 1.2em;
+    font-family: serif;
+    font-style: italic;
+    display: inline
+}
+p.cite {
+    text-indent: 16px
+}
+div.metabox {
+    font-size: 0.9em
+}
+div.metabox p {
+    margin-bottom: 0.8em
+}
+div.entryPage {
+    border-bottom: none
+}
+div.entry {
+    font-size:
+}
+div.entry table {
+    margin: 1em 0
+}
+div.entry table th, div.entry table td {
+    font-size: 0.9em
+}
+div.entry table th {
+    padding: 0 1em 0 0;
+    font-weight: bold;
+    border-bottom: 1px solid #666
+}
+div.entry span.textago {
+    font-family: helvetica, sans-serif;
+    color: #666;
+    font-size: 0.75em;
+    font-weight: normal;
+    white-space: nowrap
+}
+div.entry h2 {
+    font-size: 1.4em;
+    font-family: georgia, serif;
+    margin: 0 0 0.8em 0
+}
+div.entry h2 a {
+    margin-left: -27px;
+    padding-left: 27px;
+    text-decoration: none
+}
+div.entry h2 a:hover {
+    background: url(/static/css/img/arrow.png);
+    background-repeat: no-repeat;
+    background-position: 0 3px
+}
+div.entry h3, div.entry h4 {
+    font-family: georgia, serif;
+    font-size: 1.1em;
+    margin: 0.5em 0
+}
+div.entry p {
+    margin: 0 0 0.8em 0
+}
+div.entry li {
+    margin-left: 1em;
+    margin-bottom: 0.6em;
+    list-style-type: square
+}
+div.entry ol li {
+    list-style-type: decimal;
+    margin-left: 2em
+}
+div.entry ol li ul li {
+    list-style-type: square
+}
+div.entry pre {
+    overflow: auto;
+    width: 98%;
+    margin-bottom: 1.6em
+}
+div.entry div.entryFooter {
+    font-size: 0.9em
+}
+div#bighead {
+    padding: 25px 0 15px 35px
+}
+div#bighead h1 {
+    font-size: 1.6em;
+    margin-bottom: 0.4em;
+    font-size: 2em;
+    line-height: 1;
+    font-family: georgia, serif
+}
+div#bigheadcontainer {
+    position: relative
+}
+p#currenttags {
+    width: 450px
+}
+div#band {
+    background-image: url(/static/css/img/purple-gradient.png);
+    color: white;
+    margin-bottom: -1.55em;
+    line-height: 1em;
+    height: 1.55em
+}
+div#secondary div.day {
+    border-bottom: 1px solid #ccc;
+    clear: both
+}
+div#searchbox {
+    width: 280px;
+    position: absolute;
+    top: 0px;
+    left: 485px
+}
+div#searchbox input.text {
+    border: 1px solid purple;
+    vertical-align: middle;
+    width: 150px;
+    padding: 1px 1px 2px 1px
+}
+div#searchbox input.image {
+    vertical-align: middle
+}
+h2.overband, div#primary h2.overband {
+    color: white;
+    padding: 4px 0px 3px 0;
+    margin: 0;
+    line-height: 1em;
+    margin-bottom: 0.98em;
+    font-weight: normal;
+    vertical-align: middle
+}
+h2.overband img.feedicon {
+    vertical-align: middle;
+    position: relative;
+    top: -2px
+}
+h2.overband span {
+    font-size: 0.8em;
+    vertical-align: middle
+}
+h2.overband a {
+    color: #fff
+}
+div#smallhead {
+    margin-bottom: 15px;
+    text-align: left;
+    background-image: url(/static/css/img/purple-gradient.png);
+    color: white
+}
+div#smallhead h1 {
+    padding: 4px 0px 4px 35px;
+    color: #fff;
+    font-weight: normal
+}
+div#smallhead a {
+    color: #fff;
+    text-decoration: none
+}
+div#smallhead span {
+    float: right;
+    padding: 2px 5px 1px 0px;
+    font-size: 0.9em;
+    vertical-align: middle
+}
+div#smallhead span u {
+    font-family: "courier"
+}
+div#smallhead span input {
+    padding: 0 0 0 5px;
+    vertical-align: middle
+}
+div#smallhead span form {
+    display: inline;
+    margin: 0;
+    padding: 0
+}
+body.smallhead div#wrapper {
+    background-image: url(/static/css/img/stripe-492.gif);
+    background-repeat: repeat-y
+}
+body.smallhead div#smallhead {
+    margin-bottom: 0px
+}
+body.smallhead div#ft {
+    margin-top: 0px
+}
+body.smallhead h2.band {
+    margin-top: 0px
+}
+body.smallhead div#wrapper {
+    padding: 15px 0
+}
+h2.band {
+    padding-left: 35px;
+    margin-top: 0.5em;
+    margin-bottom: 0.6em;
+    padding: 3px 0 2px 35px;
+    clear: both;
+    background-image: url(/static/css/img/purple-gradient.png);
+    color: white;
+    font-weight: normal
+}
+p#commentwarning {
+    padding: 0.4em;
+    border: 1px dotted rgb(129, 72, 163);
+    background-color: rgb(221, 163, 255)
+}
+div#comment-wrapper {
+    width: 800px;
+    margin-left: 35px
+}
+div#comments {
+    float: left;
+    width: 450px;
+    padding-right: 35px;
+    padding-top: 1em
+}
+div#comments p {
+    overflow: auto;
+    margin-bottom: 0.6em
+}
+div#comments ol {
+    list-style-type: none;
+    margin: 0;
+    padding: 0
+}
+div#comments li {
+    margin: 0 0 1em 0;
+    font-size: 0.9em
+}
+div#comments li li {
+    font-size: 1em
+}
+div#comments li ul {
+    list-style-type: square;
+    padding-left: 1em
+}
+div#comments li ol {
+    padding-left: 1em;
+    list-style-type: decimal
+}
+div#comments blockquote {
+    margin: 1em 1.5em
+}
+div#comments em {
+    font-style: italic
+}
+div#comments q {
+    font-style: italic
+}
+div#comments p.commentFooter {
+    font-size: 0.85em;
+    position: relative;
+    top: 5px;
+    margin: 10px 0 0 45px;
+    color: #666
+}
+div#comments ol li {
+    background-image: url(/static/css/img/comment-top-grey.gif);
+    background-repeat: no-repeat;
+    background-position: top left;
+    margin: 0 0 2em 0
+}
+div#comments ol li li {
+    background: none;
+    margin: 0 0 1em 0
+}
+div#comments div.comment {
+    padding: 1em 1em 0 1em;
+    background-image: url(/static/css/img/comment-bottom-grey.gif);
+    background-repeat: no-repeat;
+    background-position: bottom
+}
+div#comments ol li.openid {
+    background-image: url(/static/css/img/comment-top-orange.gif)
+}
+div#comments ol li.openid div.comment {
+    background-image: url(/static/css/img/comment-bottom-orange.gif)
+}
+div#comments ol li.simon {
+    background-image: url(/static/css/img/comment-top-purple.gif)
+}
+div#comments ol li.simon div.comment {
+    background-image: url(/static/css/img/comment-bottom-purple.gif)
+}
+div#comments p.commentFooter a:link, div#comments p.commentFooter a:visited {
+    color: black
+}
+div#comments p.commentFooter a:hover, div#comments p.commentFooter a:active {
+    color: #666
+}
+div.commentpreview {
+    font-size: 0.9em;
+    padding: 0.5em;
+    border: 2px solid #ccc;
+    margin-bottom: 1em
+}
+div#addcomment {
+    float: left;
+    padding: 1em 0;
+    width: 280px
+}
+div#addcomment p {
+    font-size: 0.9em
+}
+div#addcomment p.formrow {
+    clear: both
+}
+div#addcomment p.formrow label {
+    float: left;
+    width: 70px
+}
+div#addcomment input.text {
+    border: 1px solid purple;
+    font-size: 1.05em;
+    float: left;
+    width: 206px
+}
+div#addcomment textarea {
+    border: 1px solid purple;
+    padding: 3px;
+    width: 270px
+}
+body form.commentpreview ul.errorlist li {
+    list-style-type: none;
+    margin: 0;
+    background-color: rgb(129, 72, 163);
+    color: white;
+    padding: 3px 3px 1px 3px
+}
+form.commentpreview p.formrow {
+    margin-top: 5px;
+    clear: both
+}
+form.commentpreview p.formrow label {
+    width: 4em;
+    display: block;
+    float: left
+}
+form.commentpreview ul li {
+    list-style-type: none;
+    margin: 0 0 0 4em
+}
+table.monthcalendar {
+    border: 1px solid #ccc;
+    width: 241px;
+    margin-left: 1px;
+    margin-bottom: 25px
+}
+table.monthcalendar caption {
+    text-align: center;
+    font-weight: bold;
+    margin: 0 auto;
+    padding-bottom: 4px
+}
+table.monthcalendar caption a.nextprev {
+    text-decoration: none;
+    padding: 0 7px
+}
+table.monthcalendar td, table.monthcalendar th {
+    font-size: 0.9em;
+    border: 1px solid #ccc;
+    text-align: center;
+    width: 14.28%
+}
+table.monthcalendar td strong {
+    font-size: 1.1em
+}
+table.monthcalendar td.today {
+    border: 2px solid #888
+}
+table.monthcalendar td a {
+    display: block;
+    padding: 1px 4px 0px 4px;
+    text-decoration: none
+}
+table.monthcalendar th {
+    font-weight: bold;
+    border-bottom: 2px solid #ccc
+}
+div#primary h2 {
+    margin-bottom: 0.5em;
+    line-height: 1.25em
+}
+div#primary div.photoset {
+    font-size: 0.9em;
+    position: relative
+}
+div#primary div.photoset p.meta {
+    font-size: 0.9em
+}
+div#primary div.segment {
+    clear: both;
+    padding: 0 0 0.5em 0;
+    border-bottom: 1px solid #ccc;
+    margin-bottom: 0.5em
+}
+div#primary div.blogmark {
+    font-size: 0.9em
+}
+div#primary div.photoset img.primary {
+    background-image: url(/static/css/img/set_case.png);
+    padding: 8px 8px 12px 8px;
+    background-repeat: no-repeat;
+    margin-right: 8px
+}
+div#primary div.photoset a.primary:link, div#primary div.photoset a.primary:visited, div#primary div.photoset a.primary:hover, div#primary div.photoset a.primary:active {
+    float: left
+}
+div#primary div.quote blockquote {
+    clear: both;
+    margin-top: 0.5em;
+    margin-bottom: 0.2em;
+    text-indent: 23px;
+    background-image: url(/static/css/img/lquote.png);
+    background-repeat: no-repeat;
+    background-position: 0px 2px
+}
+div#primary div.quote blockquote p {
+    background-image: url(/static/css/img/rquote.png);
+    background-repeat: no-repeat;
+    background-position: bottom right;
+    padding-right: 23px;
+    font-size: 1.1em;
+    font-family: serif;
+    font-style: italic;
+    display: inline
+}
+div#primary div.quote p.cite {
+    font-size: 0.9em;
+    text-indent: 16px
+}
+ul#searchorder {
+    border-bottom: 1px solid black;
+    margin: 0 0 0.5em 0;
+    padding: 0;
+    height: 1em
+}
+ul#searchorder li {
+    display: block;
+    float: left;
+    border: 1px solid black;
+    margin: 0 0 0 1em;
+    line-height: 1em;
+    position: relative;
+    top: -2px;
+    padding-top: 1px
+}
+ul#searchorder li.selected {
+    border-bottom: 1px solid white
+}
+ul#searchorder a {
+    line-height: 1em;
+    padding: 0.2em 1em;
+    text-decoration: none;
+    font-size: 0.8em
+}
+div.paginator {
+    clear: both;
+    padding: 0.5em 0;
+    font-size: 0.9em
+}
+.paginator a {
+    text-decoration: none
+}
+.paginate-pages {
+    padding: 2px 3px;
+    border: 1px solid #ddd
+}
+.paginate-first, .paginate-last {
+    padding: 2px 6px;
+    border: 1px solid #ddd;
+    font-weight: bold
+}
+.paginate-previous, .paginate-next {
+    padding: 2px 3px;
+    border: 1px solid #ddd
+}
+.paginate-link {
+    padding: 2px 4px;
+    border: 1px solid #ddd
+}
+.paginate-current {
+    padding: 2px 4px;
+    border: 1px solid #ddd;
+    font-weight: bold;
+    background-color: rgb(129, 72, 163);
+    color: white
+}
+p#tagcloud {
+    font-size: 1.2em;
+    line-height: 1.9em;
+    text-align: center
+}
+p#tagcloud a {
+    text-decoration: none;
+    vertical-align: middle
+}
+p#tagcloud .not-popular-at-all {
+    font-size: 0.70em
+}
+p#tagcloud .not-very-popular {
+    font-size: 0.89em
+}
+p#tagcloud .somewhat-popular {
+    font-size: 1.07em
+}
+p#tagcloud .somewhat-more-popular {
+    font-size: 1.26em
+}
+p#tagcloud .popular {
+    font-size: 1.44em
+}
+p#tagcloud .more-than-just-popular {
+    font-size: 1.63em
+}
+p#tagcloud .very-popular {
+    font-size: 1.81em
+}
+p#tagcloud .ultra-popular {
+    font-size: 2.00em
+}
+div#wrapper div.wide {
+    width: 640px
+}
+div.help {
+    font-size: 0.9em;
+    border: 1px solid green;
+    background-color: rgb(190, 255, 190);
+    padding: 0.5em 45px 0 0.8em;
+    background-image: url(/static/css/img/questionmark.png);
+    background-repeat: no-repeat;
+    background-position: top right
+}
+div.help p {
+    margin: 0 0 1em 0
+}

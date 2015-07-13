@@ -1,0 +1,21 @@
+{% extends "item_base.html" %}
+
+{% block title %}A quote from {{ quotation.source|escape }}{% endblock %}
+{% load entry_tags %}
+{% block item_content %}
+<div class="quote">
+<blockquote{% if quotation.source_url %} cite="{{ quotation.source_url|escape }}"{% endif %}><p>{{ quotation.quotation|typography|escape }}</p></blockquote><p class="cite">&mdash; {% if quotation.source_url %}<a href="{{ quotation.source_url|escape }}">{{ quotation.source|escape }}</a>{% else %}{{ quotation.source|escape }}{% endif %}</p>
+</div>
+
+<div class="entryFooter">Posted <a href="/{{ quotation.created|date:"Y/M/j/" }}">{{ quotation.created|date:"jS F Y" }}</a> at {{ quotation.created|date:"f A"|lower }}</div>
+{% endblock %}
+
+{% block secondary %}
+<div class="metabox">
+
+{% if quotation.tags.count %}
+<p>Tagged {% for tag in quotation.tags.all %}{{ tag.get_reltag }}{% if not forloop.last %}, {% endif %}{% endfor %}</p>
+{% endif %}
+
+</div> <!-- .metabox -->
+{% endblock %}

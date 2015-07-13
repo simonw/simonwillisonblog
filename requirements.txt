@@ -1,0 +1,9 @@
+dj-database-url==0.3.0
+Django==1.8.3
+django-postgrespool==0.3.0
+gunicorn==19.3.0
+psycopg2==2.6
+SQLAlchemy==1.0.4
+whitenoise==1.0.6
+model-mommy==1.2.4
+django-test-plus==1.0.6

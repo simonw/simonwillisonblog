@@ -1,0 +1,22 @@
+{% extends "smallhead.html" %}
+
+{% block title %}Items tagged “{{ tags|join:"” and “"|escape }}”{% endblock %}
+
+{% block primary %}
+<h2>{{ items|length }} item{{ items|length|pluralize }} tagged “{{ tags|join:"” and “"|escape }}”</h2>
+{% load blog_tags %}
+{% blog_mixed_list_with_dates items %}
+
+{% endblock %}
+
+{% block secondary %}
+<div class="metabox">
+{% if only_one_tag %}
+{% if tag.get_related_tags %}
+<p>Related: {% for t in tag.get_related_tags %}<a href="/tags/{{ t }}/">{{ t }}</a>{% if not forloop.last %}, {% endif %}{% endfor %}</p>
+{% endif %}
+
+{% endif %}
+<!-- <p><a href="/search/?q={{ tags|join:"+"|escape }}">Search this site for "{{ tags|join:" "|escape }}"</a></p> -->
+</div>
+{% endblock %}

@@ -1,0 +1,19 @@
+{% extends "item_base.html" %}
+
+{% block title %}{{ blogmark.link_title|escape }}{% endblock %}
+{% load entry_tags %}
+{% block item_content %}
+<p><a href="{{ blogmark.link_url|escape }}">{{ blogmark.link_title|escape }}</a>{% if blogmark.via_url %} (<a href="{{ blogmark.via_url|escape }}" title="{{ blogmark.via_title|escape }}">via</a>){% endif %}{% if not blogmark.via_url and not blogmark.link_title|ends_with_punctuation %}.{% endif %} {{ blogmark.commentary|escape|typography }} </p>
+
+<div class="entryFooter">Posted <a href="/{{ blogmark.created|date:"Y/M/j/" }}">{{ blogmark.created|date:"jS F Y" }}</a> at {{ blogmark.created|date:"f A"|lower }}</div>
+{% endblock %}
+
+{% block secondary %}
+<div class="metabox">
+
+{% if blogmark.tags.count %}
+  <p>Tagged {% for tag in blogmark.tags.all %}{{ tag.get_reltag }}{% if not forloop.last %}, {% endif %}{% endfor %}</p>
+{% endif %}
+
+</div> <!-- .metabox -->
+{% endblock %}

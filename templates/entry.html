@@ -1,0 +1,34 @@
+{% extends "item_base.html" %}
+{% load entry_tags %}
+{% block title %}{{ entry.title|escape|typography }}{% endblock %}
+
+{% block item_content %}
+<h2>{{ entry.title|escape|typography }}</h2>
+{{ entry.body|resize_images_to_fit_width:"450"|typography|xhtml2html|safe }}
+
+<div class="entryFooter">Posted <a href="/{{ entry.created|date:"Y/M/j/" }}">{{ entry.created|date:"jS F Y" }}</a> at {{ entry.created|date:"f A"|lower }}</div>
+
+{% endblock %}
+
+{% block secondary %}
+<div class="metabox">
+<p class="this-is">This is <strong>{{ entry.title|escape|typography }}</strong> by Simon Willison, posted on <a href="/{{ entry.created|date:"Y/M/j/" }}">{{ entry.created|date:"jS F Y" }}</a>.</p>
+{% if entry.tags.count %}
+<p>Tagged {% for tag in entry.tags.all %}{{ tag.get_reltag|safe }}{% if not forloop.last %}, {% endif %}{% endfor %}</p>
+{% endif %}
+
+{% if entry.get_next_by_created %}
+<p><strong>Next:</strong> <a href="{{ entry.get_next_by_created.get_absolute_url }}">{{ entry.get_next_by_created.title|escape }}</a></p>
+{% endif %}
+{% if entry.get_previous_by_created %}
+<p><strong>Previous:</strong> <a href="{{ entry.get_previous_by_created.get_absolute_url }}">{{ entry.get_previous_by_created.title|escape }}</a></p>
+{% endif %}
+
+
+</div>
+{% endblock %}
+
+{% block footer %}
+{% if previously_hosted %}<p id="previouslyhosted">Previously hosted at {{ previously_hosted }}</p>{% endif %}
+{{ block.super }}
+{% endblock %}

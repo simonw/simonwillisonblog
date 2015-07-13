@@ -1,0 +1,34 @@
+{% extends "smallhead.html" %}
+
+{% block title %}Archive for {{ date|date:"F Y" }}{% endblock %}
+
+{% block primary %}
+<div class="entry">
+<h2>{{ date|date:"F Y"}}</h2>
+
+{% if entries %}
+<h3>Blog entries</h3>
+<ul>
+{% for entry in entries %}
+<li>{{ entry.created|date:"jS"}}: <strong><a href="{{ entry.get_absolute_url }}">{{ entry.title|escape }}</a></strong></li>
+{% endfor %}
+</ul>
+{% endif %}
+
+{% if tags %}
+<h3>Tags</h3>
+<p id="tagcloud">
+{% load tag_cloud %}
+{% tag_cloud_for_tags tags %}
+</p>
+{% endif %}
+</div>
+{% endblock %}
+
+{% block secondary %}
+<div class="metabox">
+<p><a href="/{{ date|date:"Y" }}/">{{ date|date:"Y" }}</a> &raquo; {{ date|date:"F" }}</p>
+{% load blog_calendar %}
+{% render_calendar_month_only date %}
+</div>
+{% endblock %}

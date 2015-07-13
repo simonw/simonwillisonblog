@@ -1,0 +1,15 @@
+{% extends "smallhead.html" %}
+{% block title %}Tags{% endblock %}
+{% block primary %}
+
+{% load tag_cloud %}
+<p id="tagcloud">{% tag_cloud %}</p>
+
+{% endblock %}
+
+{% block secondary %}
+<div class="metabox">
+You can view the intersection of up to three tags by navigating to <samp>/tags/tag1+tag2/</samp>.
+</div>
+{% endblock %}
+
