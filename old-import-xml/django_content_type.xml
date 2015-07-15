@@ -1,0 +1,216 @@
+<?xml version="1.0"?>
+
+<!--
+-
+- Sequel Pro XML dump
+- Version 4096
+-
+- http://www.sequelpro.com/
+- http://code.google.com/p/sequel-pro/
+-
+- Host: localhost (MySQL 5.6.16)
+- Database: simonwillison
+- Generation Time Time: 2015-07-12 18:32:18 +0000
+-
+-->
+
+<mysqldump xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<database name="simonwillison">
+
+	<table_structure name="django_content_type">
+		<field field="id" type="int(11)" null="NO" key="PRI" default="&lt;null&gt;" extra="auto_increment" />
+		<field field="name" type="varchar(100)" null="NO" key="" default="" extra="" />
+		<field field="app_label" type="varchar(100)" null="NO" key="MUL" default="" extra="" />
+		<field field="model" type="varchar(100)" null="NO" key="" default="" extra="" />
+
+		<options name="django_content_type" engine="MyISAM" version="10" row_format="Dynamic" rows="26" avg_row_length="33" data_length="876" max_data_length="281474976710655" index_length="8192" data_free="0" create_time="2015-07-12 13:28:18" update_time="2015-07-12 13:28:34" collation="utf8_general_ci" create_options="" comment="" />
+	</table_structure>
+
+	<table_data name="django_content_type">
+
+	<row>
+		<field name="id">1</field>
+		<field name="name">message</field>
+		<field name="app_label">auth</field>
+		<field name="model">message</field>
+	</row>
+
+	<row>
+		<field name="id">2</field>
+		<field name="name">group</field>
+		<field name="app_label">auth</field>
+		<field name="model">group</field>
+	</row>
+
+	<row>
+		<field name="id">3</field>
+		<field name="name">user</field>
+		<field name="app_label">auth</field>
+		<field name="model">user</field>
+	</row>
+
+	<row>
+		<field name="id">4</field>
+		<field name="name">permission</field>
+		<field name="app_label">auth</field>
+		<field name="model">permission</field>
+	</row>
+
+	<row>
+		<field name="id">5</field>
+		<field name="name">content type</field>
+		<field name="app_label">contenttypes</field>
+		<field name="model">contenttype</field>
+	</row>
+
+	<row>
+		<field name="id">6</field>
+		<field name="name">session</field>
+		<field name="app_label">sessions</field>
+		<field name="model">session</field>
+	</row>
+
+	<row>
+		<field name="id">7</field>
+		<field name="name">site</field>
+		<field name="app_label">sites</field>
+		<field name="model">site</field>
+	</row>
+
+	<row>
+		<field name="id">8</field>
+		<field name="name">log entry</field>
+		<field name="app_label">admin</field>
+		<field name="model">logentry</field>
+	</row>
+
+	<row>
+		<field name="id">9</field>
+		<field name="name">topic</field>
+		<field name="app_label">speaking</field>
+		<field name="model">topic</field>
+	</row>
+
+	<row>
+		<field name="id">10</field>
+		<field name="name">material</field>
+		<field name="app_label">speaking</field>
+		<field name="model">material</field>
+	</row>
+
+	<row>
+		<field name="id">11</field>
+		<field name="name">event</field>
+		<field name="app_label">speaking</field>
+		<field name="model">event</field>
+	</row>
+
+	<row>
+		<field name="id">12</field>
+		<field name="name">talk</field>
+		<field name="app_label">speaking</field>
+		<field name="model">talk</field>
+	</row>
+
+	<row>
+		<field name="id">13</field>
+		<field name="name">comment</field>
+		<field name="app_label">blog</field>
+		<field name="model">comment</field>
+	</row>
+
+	<row>
+		<field name="id">14</field>
+		<field name="name">previous revision</field>
+		<field name="app_label">blog</field>
+		<field name="model">previousrevision</field>
+	</row>
+
+	<row>
+		<field name="id">15</field>
+		<field name="name">photo</field>
+		<field name="app_label">blog</field>
+		<field name="model">photo</field>
+	</row>
+
+	<row>
+		<field name="id">16</field>
+		<field name="name">blacklisted domain</field>
+		<field name="app_label">blog</field>
+		<field name="model">blacklisteddomain</field>
+	</row>
+
+	<row>
+		<field name="id">17</field>
+		<field name="name">blogmark</field>
+		<field name="app_label">blog</field>
+		<field name="model">blogmark</field>
+	</row>
+
+	<row>
+		<field name="id">18</field>
+		<field name="name">tag</field>
+		<field name="app_label">blog</field>
+		<field name="model">tag</field>
+	</row>
+
+	<row>
+		<field name="id">19</field>
+		<field name="name">entry</field>
+		<field name="app_label">blog</field>
+		<field name="model">entry</field>
+	</row>
+
+	<row>
+		<field name="id">20</field>
+		<field name="name">photoset</field>
+		<field name="app_label">blog</field>
+		<field name="model">photoset</field>
+	</row>
+
+	<row>
+		<field name="id">21</field>
+		<field name="name">quotation</field>
+		<field name="app_label">blog</field>
+		<field name="model">quotation</field>
+	</row>
+
+	<row>
+		<field name="id">22</field>
+		<field name="name">nonce</field>
+		<field name="app_label">openidconsumer</field>
+		<field name="model">nonce</field>
+	</row>
+
+	<row>
+		<field name="id">23</field>
+		<field name="name">association</field>
+		<field name="app_label">openidconsumer</field>
+		<field name="model">association</field>
+	</row>
+
+	<row>
+		<field name="id">24</field>
+		<field name="name">watch</field>
+		<field name="app_label">blog</field>
+		<field name="model">watch</field>
+	</row>
+
+	<row>
+		<field name="id">25</field>
+		<field name="name">whitelist</field>
+		<field name="app_label">blog</field>
+		<field name="model">whitelist</field>
+	</row>
+
+	<row>
+		<field name="id">26</field>
+		<field name="name">url</field>
+		<field name="app_label">shorter</field>
+		<field name="model">url</field>
+	</row>
+
+	</table_data>
+
+</database>
+</mysqldump>

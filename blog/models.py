@@ -175,3 +175,96 @@ class Photoset(models.Model):
 
     def has_map(self):
         return self.photos.filter(longitude__isnull=False).count() > 0
+
+
+
+
+BAD_WORDS = (
+    'viagra', 'cialis', 'poker', 'levitra', 'casino', 'ifrance.com',
+    'phentermine', 'plasmatics.com', 'xenical', 'sohbet', 'oyuna', 'oyunlar',
+)
+
+SPAM_STATUS_OPTIONS = (
+    ('normal', 'Not suspected'),
+    ('approved', 'Approved'),
+    ('suspected', 'Suspected'),
+    ('spam', 'SPAM')
+)
+
+COMMENTS_ALLOWED_ON = ('entry', 'blogmark', 'quotation')
+
+from django.contrib.contenttypes.models import ContentType
+from django.contrib.contenttypes.fields import GenericForeignKey
+
+from django.utils.html import escape
+
+class Comment(models.Model):
+    content_type = models.ForeignKey(ContentType)
+    object_id = models.PositiveIntegerField(db_index=True)
+    item = GenericForeignKey()
+    # The comment
+    body = models.TextField()
+    created = models.DateTimeField()
+    # Author information
+    name = models.CharField(max_length=50)
+    url = models.URLField(max_length=255,
+        blank=True, null=True)
+    email = models.CharField(max_length=50, blank=True, null=True)
+    openid = models.CharField(max_length=255, blank=True, null=True)
+    ip = models.GenericIPAddressField()
+    # Spam filtering
+    spam_status = models.CharField(max_length=16, choices=SPAM_STATUS_OPTIONS)
+    visible_on_site = models.BooleanField(default=True, db_index=True)
+    spam_reason = models.TextField()
+
+    def get_absolute_url(self):
+        return '/%d/%s/%d/%s/#c%d' % (
+            self.item.created.year,
+            MONTHS_3[self.item.created.month].title(),
+            self.item.created.day, self.item.slug, self.id
+        )
+
+    def edit_url(self):
+        return "/admin/blog/comment/%d/" % self.id
+
+    def __unicode__(self):
+        return '%s on "%s"' % (self.name, self.item)
+
+    def admin_summary(self):
+        return '<b>%s</b><br><span style="color: black;">%s</span>' % (
+            escape(str(self)), escape(self.body[:200]))
+    admin_summary.allow_tags = True
+    admin_summary.short_description = 'Comment'
+
+    def on_link(self):
+        return '<a href="%s">%s</a>(<a href="%s">#</a>)' % (
+            self.item.get_absolute_url(), self.content_type.name.title(),
+            self.get_absolute_url())
+    on_link.allow_tags = True
+    on_link.short_description = "On"
+
+    def ip_link(self):
+        return '<a href="/admin/blog/comment/?ip__exact=%s">%s</a>' % (
+            self.ip, self.ip)
+    ip_link.allow_tags = True
+    ip_link.short_description = 'IP'
+
+    def spam_status_options(self):
+        bits = []
+        bits.append(self.get_spam_status_display())
+        bits.append('<br>')
+        bits.append('<form class="flagspam" action="/admin/flagspam/" ' +
+            ' method="post">')
+        bits.append('<input type="hidden" name="id" value="%s">' % self.id)
+        bits.append('<input type="submit" class="submit" ' +
+            'name="flag_as_spam" value="SPAM"> ')
+        bits.append('<input type="submit" class="submit" ' +
+            'name="flag_as_approved" value="OK">')
+        bits.append('</form>')
+        return ''.join(bits)
+    spam_status_options.allow_tags = True
+    spam_status_options.short_description = 'Spam status'
+
+    class Meta:
+        ordering = ('-created')
+        get_latest_by = 'created'
