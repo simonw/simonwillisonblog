@@ -266,5 +266,5 @@ class Comment(models.Model):
     spam_status_options.short_description = 'Spam status'
 
     class Meta:
-        ordering = ('-created')
+        ordering = ('-created',)
         get_latest_by = 'created'
