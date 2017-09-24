@@ -1,5 +1,5 @@
 from django import template
-from django.utils.timezone import UTC
+from django.utils.timezone import utc
 register = template.Library()
 
 try:
@@ -167,7 +167,7 @@ chunks = (
 @register.filter
 def text_ago(d):
     "Returns 'One day' or 'Three minutes' etc - similar to time_since"
-    delta = datetime.datetime.utcnow().replace(tzinfo=UTC()) - d
+    delta = datetime.datetime.utcnow().replace(tzinfo=utc) - d
     since_seconds = (24 * 60 * 60 * delta.days) + delta.seconds
     for i, (seconds, name) in enumerate(chunks):
         count = since_seconds / seconds

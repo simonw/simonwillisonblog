@@ -1,9 +1,8 @@
 from django.shortcuts import render, get_object_or_404
 from django.utils.dates import MONTHS_3_REV
-from django.utils.timezone import UTC
+from django.utils.timezone import utc
 from django.http import (
     Http404,
-    HttpResponse,
     HttpResponseRedirect as Redirect
 )
 from models import (
@@ -16,6 +15,7 @@ from models import (
 )
 import datetime
 import itertools
+
 
 def archive_item(request, year, month, day, slug):
     if day.startswith('0'):
@@ -40,7 +40,7 @@ def archive_item(request, year, month, day, slug):
 
         # If item is entry posted before Dec 1 2006, add "previously hosted"
         if content_type == 'entry' and obj.created < datetime.datetime(
-                2006, 12, 1, 1, 1, 1, tzinfo=UTC()
+                2006, 12, 1, 1, 1, 1, tzinfo=utc
             ):
             previously_hosted = 'http://simon.incutio.com/archive/' + \
                 obj.created.strftime("%Y/%m/%d/") + obj.slug
