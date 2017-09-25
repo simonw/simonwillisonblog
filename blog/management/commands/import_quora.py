@@ -1,4 +1,5 @@
 from django.core.management.base import BaseCommand
+from django.db import transaction
 from blog.models import (
     Entry,
     Tag,
@@ -18,6 +19,7 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument('json_url', type=str)
 
+    @transaction.atomic
     def handle(self, *args, **kwargs):
         data_url = kwargs['json_url']
         posts = requests.get(data_url).json()
