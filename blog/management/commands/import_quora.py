@@ -42,7 +42,8 @@ class Command(BaseCommand):
                 url, escape(question)
             )
             body += u'\n\n' + answer
-            slug = slugify(' '.join(truncated_question.split()[:3]))
+            body = body.replace('&nbsp;', ' ')
+            slug = slugify(' '.join(truncated_question.split()[:4]))
             with transaction.atomic():
                 entry = Entry.objects.create(
                     slug=slug,
