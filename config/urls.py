@@ -10,7 +10,7 @@ urlpatterns = [
     url(r'^(\d{4})/$', blog_views.archive_year),
     url(r'^(\d{4})/(\w{3})/$', blog_views.archive_month),
     url(r'^(\d{4})/(\w{3})/(\d{1,2})/$', blog_views.archive_day),
-    url(r'^(\d{4})/(\w{3})/(\d{1,2})/(\w+)/$', blog_views.archive_item),
+    url(r'^(\d{4})/(\w{3})/(\d{1,2})/([\-\w]+)/$', blog_views.archive_item),
 
     url(r'^write/$', blog_views.write),
     #  (r'^about/$', blog_views.about),
