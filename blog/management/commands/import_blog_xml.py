@@ -1,4 +1,3 @@
-from optparse import make_option
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.contrib.contenttypes.models import ContentType
@@ -10,7 +9,8 @@ from blog.models import (
     Comment,
 )
 from xml.etree import ElementTree as ET
-import os, sys
+import os
+import sys
 
 
 def iter_rows(filepath):
@@ -25,16 +25,17 @@ def iter_rows(filepath):
 
 class Command(BaseCommand):
     help = """
-        ./manage.py import_blog_xml 
+        ./manage.py import_blog_xml
     """
-    option_list = BaseCommand.option_list + (
-        make_option('--xmldir',
+
+    def add_arguments(self, parser):
+        parser.add_argument(
+            '--xmldir',
+            action='store',
             dest='xmldir',
-            type='str',
+            default=os.path.join(settings.BASE_DIR, 'old-import-xml'),
             help='Directory where the XML files live',
-            default=os.path.join(settings.BASE_DIR, '../old-import-xml')
-        ),
-    )
+        )
 
     def handle(self, *args, **kwargs):
         xmldir = kwargs['xmldir']
