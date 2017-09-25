@@ -51,6 +51,7 @@ class Command(BaseCommand):
             )
             entry.tags.add(quora)
             print entry
+        transaction.commit()
 
 
 def clean_answer(html):
