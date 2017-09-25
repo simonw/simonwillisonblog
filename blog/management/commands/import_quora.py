@@ -1,4 +1,5 @@
 from django.core.management.base import BaseCommand
+from django.utils.timezone import utc
 from django.db import transaction
 from blog.models import (
     Entry,
@@ -33,7 +34,7 @@ class Command(BaseCommand):
             date = datetime.datetime.combine(
                 parser.parse(post['meta'].replace('Added ', '')).date(),
                 datetime.time(random.randint(9, 18), random.randint(0, 59))
-            )
+            ).replace(tzinfo=utc)
             truncated_question = question
             if len(truncated_question) > 250:
                 truncated_question = truncated_question[:250] + u'...'
