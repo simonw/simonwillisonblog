@@ -20,11 +20,11 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument('json_url', type=str)
 
-    @transaction.atomic
     def handle(self, *args, **kwargs):
         data_url = kwargs['json_url']
         posts = requests.get(data_url).json()
-        quora = Tag.objects.get_or_create(tag='quora')[0]
+        with transaction.atomic():
+            quora = Tag.objects.get_or_create(tag='quora')[0]
         for post in posts:
             question = post['originalQuestion'] or post['question']
             url = 'https://www.quora.com' + (post['originalQuestionUrl'] or post['href'])
@@ -43,15 +43,15 @@ class Command(BaseCommand):
             )
             body += u'\n\n' + answer
             slug = slugify(' '.join(truncated_question.split()[:3]))
-            entry = Entry.objects.create(
-                slug=slug,
-                created=date,
-                title=truncated_question,
-                body=body
-            )
-            entry.tags.add(quora)
+            with transaction.atomic():
+                entry = Entry.objects.create(
+                    slug=slug,
+                    created=date,
+                    title=truncated_question,
+                    body=body
+                )
+                entry.tags.add(quora)
             print entry
-        transaction.commit()
 
 
 def clean_answer(html):
