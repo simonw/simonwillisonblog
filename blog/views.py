@@ -1,6 +1,11 @@
 from django.shortcuts import render, get_object_or_404
 from django.utils.dates import MONTHS_3_REV
 from django.utils.timezone import utc
+from django.core.paginator import (
+    Paginator,
+    EmptyPage,
+    PageNotAnInteger,
+)
 from django.http import (
     Http404,
     HttpResponseRedirect as Redirect
@@ -323,11 +328,23 @@ def archive_tag(request, tags):
     if not items:
         raise Http404
     items.sort(lambda x, y: cmp(y['obj'].created, x['obj'].created))
+    # Paginate it
+    paginator = Paginator(items, 40)
+    page_number = request.GET.get('page') or '1'
+    try:
+        page = paginator.page(page_number)
+    except PageNotAnInteger:
+        raise Http404
+    except EmptyPage:
+        raise Http404
+
     return render(request, 'archive_tag.html', {
         'tags': tags,
-        'items': items,
+        'items': page.object_list,
+        'total': paginator.count,
+        'page': page,
         'only_one_tag': len(tags) == 1,
-        'tag': tags[0],
+        'tag': Tag.objects.get(tag=tags[0]),
     })
 
 def write(request):

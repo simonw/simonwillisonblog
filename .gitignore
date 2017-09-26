@@ -1,3 +1,5 @@
 venv
 *.pyc
 staticfiles
+old-import-xml/blog_comment.xml
+static

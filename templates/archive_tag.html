@@ -3,20 +3,37 @@
 {% block title %}Items tagged “{{ tags|join:"” and “"|escape }}”{% endblock %}
 
 {% block primary %}
-<h2>{{ items|length }} item{{ items|length|pluralize }} tagged “{{ tags|join:"” and “"|escape }}”</h2>
+<h2>{{ total }} item{{ total|pluralize }} tagged “{{ tags|join:"” and “"|escape }}”</h2>
 {% load blog_tags %}
+
 {% blog_mixed_list_with_dates items %}
+
+{% if page.paginator.num_pages > 1 %}
+<div class="pagination">
+    <span class="step-links">
+        {% if page.has_previous %}
+            <a href="?page={{ page.previous_page_number }}">&laquo; previous</a>
+        {% endif %}
+        <span class="current">
+            Page {{ page.number }} / {{ page.paginator.num_pages }}
+        </span>
+        {% if page.has_next %}
+            <a href="?page={{ page.next_page_number }}">next &raquo;</a>
+        {% endif %}
+    </span>
+</div>
+{% endif %}
 
 {% endblock %}
 
 {% block secondary %}
 <div class="metabox">
-{% if only_one_tag %}
-{% if tag.get_related_tags %}
-<p>Related: {% for t in tag.get_related_tags %}<a href="/tags/{{ t }}/">{{ t }}</a>{% if not forloop.last %}, {% endif %}{% endfor %}</p>
+{% if only_one_tag and tag.get_related_tags %}
+    <p>Related:
+        {% for t in tag.get_related_tags %}
+            <a href="/tags/{{ t }}/">{{ t }}</a>{% if not forloop.last %}, {% endif %}
+        {% endfor %}
+    </p>
 {% endif %}
-
-{% endif %}
-<!-- <p><a href="/search/?q={{ tags|join:"+"|escape }}">Search this site for "{{ tags|join:" "|escape }}"</a></p> -->
 </div>
 {% endblock %}
