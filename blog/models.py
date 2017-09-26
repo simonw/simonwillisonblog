@@ -1,14 +1,18 @@
 from django.db import models
 from django.utils.dates import MONTHS_3
 from django.utils.safestring import mark_safe
+from django.contrib.contenttypes.models import ContentType
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.utils.html import escape
 import re
-from xml.etree import ElementTree as ET
+from xml.etree import ElementTree
 
 tag_re = re.compile('^[a-z0-9]+$')
 
+
 class Tag(models.Model):
     tag = models.SlugField(
-        unique = True
+        unique=True
     )
 
     def __unicode__(self):
@@ -21,24 +25,24 @@ class Tag(models.Model):
         return mark_safe('<a href="%s"%s>%s</a>' % (
             self.get_absolute_url(), (reltag and ' rel="tag"' or ''), self
         ))
-    
+
     def get_reltag(self):
         return self.get_link(reltag=True)
-    
+
     def entry_count(self):
         return self.entry_set.count()
-    
+
     def link_count(self):
         return self.blogmark_set.count()
-    
+
     def quote_count(self):
         return self.quotation_set.count()
-    
+
     def total_count(self):
         return self.entry_count() + self.link_count() + self.quote_count()
-    
+
     def get_related_tags(self, limit=5):
-        "Get all items tagged with this, look at /their/ tags, order by count"
+        """Get all items tagged with this, look at /their/ tags, order by count"""
         if not hasattr(self, '_related_tags'):
             other_tags = {} # tag: count
             for collection in ('entry_set', 'blogmark_set', 'quotation_set'):
@@ -85,21 +89,21 @@ class Entry(BaseModel):
     body = models.TextField()
 
     def images(self):
-        "Extracts images from entry.body"
-        et = ET.fromstring('<entry>%s</entry>' % self.body)
+        """Extracts images from entry.body"""
+        et = ElementTree.fromstring('<entry>%s</entry>' % self.body)
         return [i.attrib for i in et.findall('.//img')]
 
     def __unicode__(self):
         return self.title
-    
+
 
 class Quotation(BaseModel):
     quotation = models.TextField()
     source = models.CharField(max_length=255)
     source_url = models.URLField(blank=True, null=True, )
-    
+
     def title(self):
-        "Mainly a convenence for the comments RSS feed"
+        """Mainly a convenence for the comments RSS feed"""
         return u"A quote from %s" % escape(self.source)
 
     def __unicode__(self):
@@ -115,10 +119,10 @@ class Blogmark(BaseModel):
 
     def __unicode__(self):
         return self.link_title
-    
+
     def link_domain(self):
         return self.link_url.split('/')[2]
-    
+
     def word_count(self):
         count = len(self.commentary.split())
         if count == 1:
@@ -135,7 +139,7 @@ class Photo(models.Model):
     longitude = models.CharField(max_length=32, blank=True, null=True)
     latitude = models.CharField(max_length=32, blank=True, null=True)
     created = models.DateTimeField()
-    
+
     def __unicode__(self):
         return self.title
 
@@ -177,8 +181,6 @@ class Photoset(models.Model):
         return self.photos.filter(longitude__isnull=False).count() > 0
 
 
-
-
 BAD_WORDS = (
     'viagra', 'cialis', 'poker', 'levitra', 'casino', 'ifrance.com',
     'phentermine', 'plasmatics.com', 'xenical', 'sohbet', 'oyuna', 'oyunlar',
@@ -193,10 +195,6 @@ SPAM_STATUS_OPTIONS = (
 
 COMMENTS_ALLOWED_ON = ('entry', 'blogmark', 'quotation')
 
-from django.contrib.contenttypes.models import ContentType
-from django.contrib.contenttypes.fields import GenericForeignKey
-
-from django.utils.html import escape
 
 class Comment(models.Model):
     content_type = models.ForeignKey(ContentType)
