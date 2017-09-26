@@ -41,6 +41,18 @@ class Tag(models.Model):
     def total_count(self):
         return self.entry_count() + self.link_count() + self.quote_count()
 
+    def all_types_queryset(self):
+        entries = self.entry_set.all().annotate(
+            type=models.Value('entry', output_field=models.CharField())
+        ).values('pk', 'created', 'type')
+        blogmarks = self.blogmark_set.all().annotate(
+            type=models.Value('blogmark', output_field=models.CharField())
+        ).values('pk', 'created', 'type')
+        quotations = self.quotation_set.all().annotate(
+            type=models.Value('quotation', output_field=models.CharField())
+        ).values('pk', 'created', 'type')
+        return entries.union(blogmarks, quotations).order_by('-created')
+
     def get_related_tags(self, limit=5):
         """Get all items tagged with this, look at /their/ tags, order by count"""
         if not hasattr(self, '_related_tags'):
