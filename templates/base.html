@@ -9,58 +9,6 @@
 <link rel="stylesheet" type="text/css" href="/static/css/all.css?r{{ revno }}">
 {% block extrahead %}{% endblock %}
 
-<style>
-@media (max-width: 600px) {
-  div#secondary {
-    float: none;
-    width: auto;
-    padding-top: 15px;
-    clear: both;
-  }
-  div#primary {
-    width: auto;
-    margin-right: 15px;
-  }
-  div#wrapper {
-    width: auto;
-    margin-left: 15px;
-  }
-  div#bighead {
-    padding-left: 15px;
-  }
-  div#bighead h1 {
-    font-size: 1.5em;
-  }
-  div#smallhead h1 {
-    padding-left: 15px;
-  }
-  div#searchbox {
-    display: none;
-  }
-  body.smallhead div#wrapper {
-    background-image: none;
-  }
-  p.this-is {
-    display: none;
-  }
-  object, img {
-    max-width: 100%;
-  }
-  p#currenttags {
-    width: auto;
-  }
-  p#currenttags .more {
-    display: none;
-  }
-  #secondary h2.overband {
-    /* No longer on purple background */
-    color: black;
-    font-weight: bold;
-    font-size: 1.2em;
-  }
-}
-</style>
-
 </head>
 <body{% block body_class %}{% endblock %}>
 {% block toolbar %}

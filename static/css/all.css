@@ -113,7 +113,8 @@ p#previouslyhosted {
 div#wrapper {
     width: 800px;
     margin-left: 35px;
-    overflow: hidden
+    overflow: hidden;
+    box-sizing: border-box;
 }
 div#primary {
     width: 450px;
@@ -719,4 +720,56 @@ div.help {
 }
 div.help p {
     margin: 0 0 1em 0
+}
+
+@media (max-width: 600px) {
+  div#secondary {
+    float: none;
+    width: auto;
+    padding-top: 15px;
+    clear: both;
+  }
+  div#primary {
+    width: 100%;
+    margin-right: 15px;
+  }
+  body.smallhead div#wrapper {
+    width: auto;
+    margin: 0;
+    padding-left: 15px;
+    padding-right: 15px;
+  }
+  div#bighead {
+    padding-left: 15px;
+  }
+  div#bighead h1 {
+    font-size: 1.5em;
+  }
+  div#smallhead h1 {
+    padding-left: 15px;
+  }
+  div#searchbox {
+    display: none;
+  }
+  body.smallhead div#wrapper {
+    background-image: none;
+  }
+  p.this-is {
+    display: none;
+  }
+  object, img {
+    max-width: 100%;
+  }
+  p#currenttags {
+    width: auto;
+  }
+  p#currenttags .more {
+    display: none;
+  }
+  #secondary h2.overband {
+    /* No longer on purple background */
+    color: black;
+    font-weight: bold;
+    font-size: 1.2em;
+  }
 }
