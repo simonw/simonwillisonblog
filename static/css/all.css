@@ -255,7 +255,10 @@ div.entry pre {
     margin-bottom: 1.6em
 }
 div.entry div.entryFooter {
-    font-size: 0.9em
+    font-size: 0.9em;
+    margin-top: 1em;
+    border-top: 1px solid #8a55a8;
+    padding-top: 0.5em;
 }
 div#bighead {
     padding: 25px 0 15px 35px
