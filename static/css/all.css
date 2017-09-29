@@ -254,6 +254,9 @@ div.entry pre {
     width: 98%;
     margin-bottom: 1.6em
 }
+div.entry iframe {
+    width: 100%;
+}
 div.entry div.entryFooter {
     font-size: 0.9em;
     margin-top: 1em;
