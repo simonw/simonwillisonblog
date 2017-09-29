@@ -3,6 +3,7 @@ from django.utils.dates import MONTHS_3
 from django.utils.safestring import mark_safe
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.postgres.fields import JSONField
 from django.utils.html import escape
 import re
 from xml.etree import ElementTree
@@ -76,6 +77,7 @@ class BaseModel(models.Model):
     created = models.DateTimeField()
     tags = models.ManyToManyField(Tag, blank=True)
     slug = models.SlugField(max_length=64)
+    metadata = JSONField()
 
     def tag_summary(self):
         return u' '.join(t.tag for t in self.tags.all())
