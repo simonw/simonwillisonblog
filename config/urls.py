@@ -1,9 +1,13 @@
 from django.conf.urls import include, url
-from django.conf import settings
 from django.contrib import admin
-from django.conf.urls.static import static
-
+from django.http import HttpResponseRedirect
 from blog import views as blog_views
+
+
+def static_redirect(request):
+    return HttpResponseRedirect(
+        'http://static.simonwillison.net%s' % request.get_full_path()
+    )
 
 urlpatterns = [
     url(r'^$', blog_views.index),
@@ -18,4 +22,5 @@ urlpatterns = [
     url(r'^tags/(.*?)/$', blog_views.archive_tag),
 
     url(r'^admin/', include(admin.site.urls)),
-] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+    url(r'^static/', static_redirect),
+]
