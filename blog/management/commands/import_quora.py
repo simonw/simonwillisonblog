@@ -96,7 +96,7 @@ def clean_answer(html):
     # Cleanup YouTube videos
     for div in soup.findAll('div', {'data-video-provider': 'youtube'}):
         iframe = Soup(div['data-embed']).find('iframe')
-        src = 'https%s' % iframe['src'].split('?')[0]
+        src = 'https:%s' % iframe['src'].split('?')[0]
         div.replaceWith(Soup('''
             <iframe width="560" height="315"
                 src="%s" frameborder="0" allowfullscreen>
