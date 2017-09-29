@@ -104,6 +104,7 @@ def clean_answer(html):
         ''' % src))
 
     html = unicode(soup)
+    html = html.replace(u'<a href="/', u'<a href="https://www.quora.com/')
     # Replace <br /><br /> with paragraphs
     chunks = html.split(u'<br /><br />')
     new_chunks = []
