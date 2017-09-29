@@ -53,7 +53,8 @@ class Command(BaseCommand):
                     slug=slug,
                     created=date,
                     title=truncated_question,
-                    body=body
+                    body=body,
+                    metadata=post,
                 )
                 entry.tags.add(quora)
                 for topic in post['topics']:
