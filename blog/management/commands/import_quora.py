@@ -15,13 +15,17 @@ import random
 
 
 class Command(BaseCommand):
-    help = "./manage.py import_quora http://URL-to-JSON.json"
+    help = "./manage.py import_quora http://URL-to-JSON.json http://URL-to-topic-CSV"
 
     def add_arguments(self, parser):
         parser.add_argument('json_url', type=str)
+        parser.add_argument('topic_csv_url', type=str)
 
     def handle(self, *args, **kwargs):
         data_url = kwargs['json_url']
+        topic_csv_url = kwargs['topic_csv_url']
+        lines = requests.get(topic_csv_url).content.split('\n')
+        quora_to_tag = {line.split('\t')[0]: line.split('\t')[-1].strip() for line in lines if line.strip()}
         posts = requests.get(data_url).json()
         with transaction.atomic():
             quora = Tag.objects.get_or_create(tag='quora')[0]
@@ -52,6 +56,10 @@ class Command(BaseCommand):
                     body=body
                 )
                 entry.tags.add(quora)
+                for topic in post['topics']:
+                    tag = quora_to_tag.get(topic)
+                    if tag:
+                        entry.tags.add(Tag.objects.get_or_create(tag=tag)[0])
             print entry
 
 
@@ -84,4 +92,23 @@ def clean_answer(html):
         img['width'] = w
         img['height'] = h
         img['style'] = 'max-width: 100%'
-    return unicode(soup)
+
+    # Cleanup YouTube videos
+    for div in soup.findAll('div', {'data-video-provider': 'youtube'}):
+        iframe = Soup(div['data-embed']).find('iframe')
+        src = 'https%s' % iframe['src'].split('?')[0]
+        div.replaceWith(Soup('''
+            <iframe width="560" height="315"
+                src="%s" frameborder="0" allowfullscreen>
+            </iframe>
+        ''' % src))
+
+    html = unicode(soup)
+    # Replace <br /><br /> with paragraphs
+    chunks = html.split(u'<br /><br />')
+    new_chunks = []
+    for chunk in chunks:
+        if not chunk.startswith('<'):
+            chunk = u'<p>%s</p>' % chunk
+        new_chunks.append(chunk)
+    return u'\n\n'.join(new_chunks)
