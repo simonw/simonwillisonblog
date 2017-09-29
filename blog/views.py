@@ -21,6 +21,8 @@ from models import (
 import datetime
 import itertools
 
+BLACKLISTED_TAGS = ('quora', 'flash')
+
 
 def archive_item(request, year, month, day, slug):
     if day.startswith('0'):
@@ -122,12 +124,11 @@ def index(request):
     })
 
 
-
 def find_current_tags(num=5):
-    "Returns 5 most popular tags from the last 30 of each item"
-    links = Blogmark.objects.all()[:30]
-    entries = Entry.objects.all()[:30]
-    quotes = Quotation.objects.all()[:30]
+    "Returns 5 most popular tags from the last 40 of each item"
+    links = Blogmark.objects.all()[:40]
+    entries = Entry.objects.all()[:40]
+    quotes = Quotation.objects.all()[:40]
     tag_counts = {}
     for obj in itertools.chain(links, entries, quotes):
         for tag in obj.tags.all():
@@ -139,8 +140,8 @@ def find_current_tags(num=5):
     # Order and return
     pairs = tag_counts.items()
     pairs.sort(lambda x, y: cmp(y[1], x[1]))
-    # Filter out Google
-    pairs = [pair for pair in pairs if pair[0] not in ('google', 'funny')]
+    # Filter out blacklisted
+    pairs = [pair for pair in pairs if pair[0] not in BLACKLISTED_TAGS]
     return [pair[0] for pair in pairs[:num]]
 
 
