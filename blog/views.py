@@ -116,12 +116,14 @@ def index(request):
         elif day == datetime.date.today() - datetime.timedelta(days=1):
             days[-1]['special'] = 'Yesterday'
 
-    return render(request, 'homepage.html', {
+    response = render(request, 'homepage.html', {
         'days': days,
         'entries': Entry.objects.all()[0:3],
         'current_tags': find_current_tags(5),
         'years_with_content': years_with_content(),
     })
+    response['Cache-Control'] = 's-maxage=200'
+    return response
 
 
 def find_current_tags(num=5):
