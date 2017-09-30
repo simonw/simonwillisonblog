@@ -2,7 +2,9 @@ from django.shortcuts import render, get_object_or_404
 from django.utils.dates import MONTHS_3_REV
 from django.utils.timezone import utc
 from django.contrib.admin.views.decorators import staff_member_required
+from django.contrib.postgres.search import SearchQuery, SearchRank
 from django.views.decorators.cache import never_cache
+from django.db import models
 from django.conf import settings
 from django.core.paginator import (
     Paginator,
@@ -19,8 +21,10 @@ from models import (
     Quotation,
     Photo,
     Photoset,
-    Tag
+    Tag,
+    load_mixed_objects,
 )
+import time
 import datetime
 import itertools
 import CloudFlare
@@ -380,4 +384,56 @@ def tools(request):
         return Redirect(request.path + '?msg=Cache+purged')
     return render(request, 'tools.html', {
         'msg': request.GET.get('msg')
+    })
+
+
+def search(request):
+    q = request.GET.get('q')
+    if q:
+        return search_results(request, q)
+    else:
+        return render(request, 'search.html')
+
+
+def search_results(request, q):
+    start = time.time()
+    query = SearchQuery(q)
+    rank_annotation = SearchRank(models.F('search_document'), query)
+    qs = Entry.objects.annotate(
+        rank=rank_annotation,
+        type=models.Value('entry', output_field=models.CharField())
+    ).filter(search_document=query).values('pk', 'type', 'created', 'rank').union(
+        Blogmark.objects.annotate(
+            rank=rank_annotation,
+            type=models.Value('blogmark', output_field=models.CharField())
+        ).filter(search_document=query).values('pk', 'type', 'created', 'rank'),
+        Quotation.objects.annotate(
+            rank=rank_annotation,
+            type=models.Value('quotation', output_field=models.CharField())
+        ).filter(search_document=query).values('pk', 'type', 'created', 'rank'),
+    )
+
+    paginator = Paginator(qs, 40)
+    page_number = request.GET.get('page') or '1'
+    try:
+        page = paginator.page(page_number)
+    except PageNotAnInteger:
+        raise Http404
+    except EmptyPage:
+        raise Http404
+
+    results = []
+    for obj in load_mixed_objects(page.object_list):
+        results.append({
+            'type': obj.original_dict['type'],
+            'rank': obj.original_dict['rank'],
+            'obj': obj,
+        })
+    end = time.time()
+    return render(request, 'search.html', {
+        'q': q,
+        'results': results,
+        'total': paginator.count,
+        'page': page,
+        'duration': end - start,
     })

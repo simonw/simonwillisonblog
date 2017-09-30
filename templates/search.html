@@ -1,0 +1,35 @@
+{% extends "item_base.html" %}
+
+{% block title %}Search{% if q %} for “{{ q }}”{% endif %}{% endblock %}
+
+{% block item_content %}
+{% load blog_tags %}
+<h2>Search{% if q %} for “{{ q }}”{% endif %}</h2>
+
+<form action="{{ request.path }}" method="GET">
+    <input type="search" name="q" value="{{ q }}" style="width: 80%">
+    <input type="submit" value="Search">
+</form>
+<br>
+
+{% if total %}
+    <p><strong>{{ total }} result{{ total|pluralize }}</strong></p>
+    {% blog_mixed_list_with_dates results %}
+    {% if page.paginator.num_pages > 1 %}
+    <div class="pagination">
+        <span class="step-links">
+            {% if page.has_previous %}
+                <a href="?q={{ q|urlencode }}&amp;page={{ page.previous_page_number }}">&laquo; previous</a>
+            {% endif %}
+            <span class="current">
+                Page {{ page.number }} / {{ page.paginator.num_pages }}
+            </span>
+            {% if page.has_next %}
+                <a href="?q={{ q|urlencode }}&amp;page={{ page.next_page_number }}">next &raquo;</a>
+            {% endif %}
+        </span>
+    </div>
+    {% endif %}
+{% endif %}
+
+{% endblock %}

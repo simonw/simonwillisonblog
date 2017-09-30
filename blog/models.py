@@ -4,6 +4,7 @@ from django.utils.safestring import mark_safe
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.postgres.fields import JSONField
+from django.contrib.postgres.search import SearchVectorField
 from django.utils.html import escape
 import re
 from xml.etree import ElementTree
@@ -78,6 +79,7 @@ class BaseModel(models.Model):
     tags = models.ManyToManyField(Tag, blank=True)
     slug = models.SlugField(max_length=64)
     metadata = JSONField()
+    search_document = SearchVectorField(null=True)
 
     def tag_summary(self):
         return u' '.join(t.tag for t in self.tags.all())
@@ -280,3 +282,33 @@ class Comment(models.Model):
     class Meta:
         ordering = ('-created',)
         get_latest_by = 'created'
+
+
+def load_mixed_objects(dicts):
+    """
+    Takes a list of dictionaries, each of which must at least have a 'type'
+    and a 'pk' key. Returns a list of ORM objects of those various types.
+
+    Each returned ORM object has a .original_dict attribute populated.
+    """
+    to_fetch = {}
+    for d in dicts:
+        to_fetch.setdefault(d['type'], set()).add(d['pk'])
+    fetched = {}
+    for key, model in (
+        ('blogmark', Blogmark),
+        ('entry', Entry),
+        ('quotation', Quotation),
+    ):
+        ids = to_fetch.get(key) or []
+        objects = model.objects.filter(pk__in=ids)
+        for obj in objects:
+            fetched[(key, obj.pk)] = obj
+    # Build list in same order as dicts argument
+    to_return = []
+    for d in dicts:
+        item = fetched.get((d['type'], d['pk'])) or None
+        if item:
+            item.original_dict = d
+        to_return.append(item)
+    return to_return
