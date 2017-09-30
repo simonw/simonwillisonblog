@@ -345,7 +345,7 @@ def archive_tag(request, tags):
         raise Http404
     items.sort(lambda x, y: cmp(y['obj'].created, x['obj'].created))
     # Paginate it
-    paginator = Paginator(items, 40)
+    paginator = Paginator(items, 30)
     page_number = request.GET.get('page') or '1'
     try:
         page = paginator.page(page_number)
@@ -413,7 +413,7 @@ def search_results(request, q):
         ).filter(search_document=query).values('pk', 'type', 'created', 'rank'),
     ).order_by('-rank')
 
-    paginator = Paginator(qs, 40)
+    paginator = Paginator(qs, 30)
     page_number = request.GET.get('page') or '1'
     try:
         page = paginator.page(page_number)
