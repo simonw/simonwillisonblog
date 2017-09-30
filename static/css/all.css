@@ -733,11 +733,17 @@ div.help p {
     width: 100%;
     margin-right: 15px;
   }
+  div#wrapper {
+    width: 100%;
+    margin: 0;
+    padding: 0 10px;
+  }
   body.smallhead div#wrapper {
     width: auto;
     margin: 0;
     padding-left: 15px;
     padding-right: 15px;
+    background-image: none;
   }
   div#bighead {
     padding-left: 15px;
@@ -750,9 +756,6 @@ div.help p {
   }
   div#searchbox {
     display: none;
-  }
-  body.smallhead div#wrapper {
-    background-image: none;
   }
   p.this-is {
     display: none;
