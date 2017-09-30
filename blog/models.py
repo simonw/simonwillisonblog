@@ -151,7 +151,7 @@ class Blogmark(BaseModel):
         return {
             'A': self.link_title,
             'B': ' '.join(self.tags.values_list('tag', flat=True)),
-            'C': self.commentary + ' ' + self.link_domain + ' ' + (self.via_title or ''),
+            'C': self.commentary + ' ' + self.link_domain() + ' ' + (self.via_title or ''),
         }
 
     def __unicode__(self):
