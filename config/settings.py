@@ -31,7 +31,7 @@ CLOUDFLARE_TOKEN = os.environ.get('CLOUDFLARE_TOKEN', '')
 CLOUDFLARE_ZONE_ID = os.environ.get('CLOUDFLARE_ZONE_ID', '')
 
 # Google Analytics
-GOOGLE_ANALYTICS_ID = bool(os.environ.get('GOOGLE_ANALYTICS_ID'))
+GOOGLE_ANALYTICS_ID = os.environ.get('GOOGLE_ANALYTICS_ID')
 
 # Application definition
 
