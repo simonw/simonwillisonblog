@@ -36,24 +36,24 @@ def archive_item(request, year, month, day, slug):
 
     # This could be a quote OR link OR entry
     for content_type, model in (
-            ('blogmark', Blogmark),
-            ('entry', Entry),
-            ('quotation', Quotation)
-        ):
+        ('blogmark', Blogmark),
+        ('entry', Entry),
+        ('quotation', Quotation)
+    ):
         try:
             obj = get_object_or_404(model,
-                created__year = int(year),
-                created__month = MONTHS_3_REV[month.lower()],
-                created__day = int(day),
-                slug = slug
+                created__year=int(year),
+                created__month=MONTHS_3_REV[month.lower()],
+                created__day=int(day),
+                slug=slug
             )
         except Http404:
             continue
 
         # If item is entry posted before Dec 1 2006, add "previously hosted"
         if content_type == 'entry' and obj.created < datetime.datetime(
-                2006, 12, 1, 1, 1, 1, tzinfo=utc
-            ):
+            2006, 12, 1, 1, 1, 1, tzinfo=utc
+        ):
             previously_hosted = 'http://simon.incutio.com/archive/' + \
                 obj.created.strftime("%Y/%m/%d/") + obj.slug
         else:
@@ -72,9 +72,11 @@ def archive_item(request, year, month, day, slug):
 
 
 def find_last_5_days():
-    "Returns 5 date objects representing most recent days that have either"
-    "photos, blogmarks or quotes available. Looks at most recent 50 of each."
-    #photos = list(Photo.objects.values('created')[0:50])
+    """
+    Returns 5 date objects representing most recent days that have either
+    photos, blogmarks or quotes available. Looks at most recent 50 of each.
+    """
+    # photos = list(Photo.objects.values('created')[0:50])
     blogmarks = list(Blogmark.objects.values('created')[0:50])
     quotes = list(Quotation.objects.values('created')[0:50])
     dates = set([o['created'] for o in blogmarks + quotes])
@@ -86,17 +88,17 @@ def find_last_5_days():
 
 def index(request):
     last_5_days = find_last_5_days()
-    
+
     if not last_5_days:
-        raise Http404, "No links to display"
-    blogmarks = Blogmark.objects.filter(created__gte = last_5_days[-1])
-    quotations = Quotation.objects.filter(created__gte = last_5_days[-1])
+        raise Http404("No links to display")
+    blogmarks = Blogmark.objects.filter(created__gte=last_5_days[-1])
+    quotations = Quotation.objects.filter(created__gte=last_5_days[-1])
     days = []
     for daystamp in last_5_days:
         day = daystamp.date()
         links = [
             {'type': 'link', 'obj': link, 'date': link.created}
-            for link in blogmarks 
+            for link in blogmarks
             if link.created.date() == day
         ]
         quotes = [
@@ -109,11 +111,12 @@ def index(request):
         days.append({
             'date': day,
             'items': items,
-            'photos': []#Photo.objects.filter(
-                #created__year = day.year,
-                #created__month = day.month,
-                #created__day = day.day
-            #)
+            'photos': []
+            # Photo.objects.filter(
+            #   created__year = day.year,
+            #   created__month = day.month,
+            #   created__day = day.day
+            # )
         })
         # If day is today or yesterday, flag it as special
         if day == datetime.date.today():
@@ -132,7 +135,7 @@ def index(request):
 
 
 def find_current_tags(num=5):
-    "Returns 5 most popular tags from the last 40 of each item"
+    """Returns 5 most popular tags from the last 40 of each item"""
     links = Blogmark.objects.all()[:40]
     entries = Entry.objects.all()[:40]
     quotes = Quotation.objects.all()[:40]
@@ -162,20 +165,20 @@ def archive_year(request, year):
     for month in range(1, 12 + 1):
         date = datetime.date(year=year, month=month, day=1)
         entry_count = Entry.objects.filter(
-            created__year = year,
-            created__month = month
+            created__year=year,
+            created__month=month
         ).count()
         link_count = Blogmark.objects.filter(
-            created__year = year,
-            created__month = month
+            created__year=year,
+            created__month=month
         ).count()
         quote_count = Quotation.objects.filter(
-            created__year = year,
-            created__month = month
+            created__year=year,
+            created__month=month
         ).count()
         photo_count = Photo.objects.filter(
-            created__year = year,
-            created__month = month
+            created__year=year,
+            created__month=month
         ).count()
         month_count = entry_count + link_count + quote_count + photo_count
         if month_count:
@@ -204,16 +207,18 @@ def archive_year(request, year):
 
 def years_with_content():
     years = list(set(
-        list(Entry.objects.datetimes('created', 'year')) + 
-        list(Blogmark.objects.datetimes('created', 'year')) + 
+        list(Entry.objects.datetimes('created', 'year')) +
+        list(Blogmark.objects.datetimes('created', 'year')) +
         list(Quotation.objects.datetimes('created', 'year'))
     ))
     years.sort()
     return years
 
+
 def archive_month(request, year, month):
     year = int(year)
     month = MONTHS_3_REV[month.lower()]
+
     def by_date(objs):
         lookup = {}
         for obj in objs:
@@ -228,9 +233,9 @@ def archive_month(request, year, month):
     quotations = list(Quotation.objects.filter(
         created__year=year, created__month=month
     ))
-    photos = list(Photo.objects.filter(
-        created__year=year, created__month=month
-    ))
+    # photos = list(Photo.objects.filter(
+    #     created__year=year, created__month=month
+    # ))
     # Extract non-de-duped list of ALL tags, for tag cloud
     tags = []
     for obj in entries + blogmarks + quotations:
@@ -255,11 +260,11 @@ def archive_day(request, year, month, day):
     for name, model in (
         ('blogmark', Blogmark), ('entry', Entry),
         ('quotation', Quotation), ('photo', Photo)
-        ):
+    ):
         filt = model.objects.filter(
-            created__year = int(year),
-            created__month = MONTHS_3_REV[month.lower()],
-            created__day = int(day)
+            created__year=int(year),
+            created__month=MONTHS_3_REV[month.lower()],
+            created__day=int(day)
         ).order_by('created')
         if (name == 'photo'):
             filt = filt[:25]
@@ -268,9 +273,9 @@ def archive_day(request, year, month, day):
         items.extend([{'type': name, 'obj': obj} for obj in context[name]])
     # Now do photosets separately because they have no created field
     context['photoset'] = list(Photoset.objects.filter(
-        primary__created__year = int(year),
-        primary__created__month = MONTHS_3_REV[month.lower()],
-        primary__created__day = int(day)
+        primary__created__year=int(year),
+        primary__created__month=MONTHS_3_REV[month.lower()],
+        primary__created__day=int(day)
     ))
     for photoset in context['photoset']:
         photoset.created = photoset.primary.created
@@ -278,13 +283,13 @@ def archive_day(request, year, month, day):
     items.extend([{'type': 'photoset', 'obj': ps}
         for ps in context['photoset']])
     if count == 0:
-        raise Http404, "No photosets/photos/entries/quotes/links for that day"
+        raise Http404("No photosets/photos/entries/quotes/links for that day")
     items.sort(lambda x, y: cmp(x['obj'].created, y['obj'].created))
     context['items'] = items
     photos = Photo.objects.filter(
-        created__year = context['date'].year,
-        created__month = context['date'].month,
-        created__day = context['date'].day
+        created__year=context['date'].year,
+        created__month=context['date'].month,
+        created__day=context['date'].day
     )
     context['photos'] = photos[:25]
     # Should we show more_photos ?
@@ -293,26 +298,25 @@ def archive_day(request, year, month, day):
     return render(request, 'archive_day.html', context)
 
 
-
-
-
 def tag_index(request):
     return render(request, 'tags.html')
 
 # This query gets the IDs of things that match all of the tags
 INTERSECTION_SQL = """
-    SELECT %(content_table)s.id 
+    SELECT %(content_table)s.id
         FROM %(content_table)s, %(tag_table)s
     WHERE %(tag_table)s.tag_id IN (
             SELECT id FROM blog_tag WHERE tag IN (%(joined_tags)s)
         )
-        AND %(tag_table)s.%(tag_table_content_key)s = %(content_table)s.id 
+        AND %(tag_table)s.%(tag_table_content_key)s = %(content_table)s.id
     GROUP BY %(content_table)s.id
         HAVING COUNT(%(content_table)s.id) = %(tag_count)d
 """
+
+
 def archive_tag(request, tags):
     tags = Tag.objects.filter(
-        tag__in = tags.split('+')
+        tag__in=tags.split('+')
     ).values_list('tag', flat=True)[:3]
     if not tags:
         raise Http404
