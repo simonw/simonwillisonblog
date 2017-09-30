@@ -38,6 +38,14 @@ def xhtml2html(xhtml):
     return xhtml_endtag_fragment.sub('>', s)
 
 @register.filter
+def remove_quora_paragraph(xhtml):
+    et = ET.fromstring(('<entry>%s</entry>' % xhtml).encode('utf8'))
+    p = et.find('p')
+    if ET.tostring(p, 'utf-8').startswith('<p><em>My answer to'):
+        et.remove(p)
+    return _back_to_xhtml(et)
+
+@register.filter
 def first_paragraph(xhtml):
     et = ET.fromstring(('<entry>%s</entry>' % xhtml).encode('utf8'))
     p = et.find('p')
@@ -196,5 +204,3 @@ def entry_footer_no_date(context, entry):
         'showdate': False
     })
     return context
-
-
