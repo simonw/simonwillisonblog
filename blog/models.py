@@ -5,7 +5,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.postgres.fields import JSONField
 from django.contrib.postgres.search import SearchVectorField
-from django.utils.html import escape
+from django.utils.html import escape, strip_tags
 import re
 from xml.etree import ElementTree
 
@@ -109,6 +109,13 @@ class Entry(BaseModel):
         et = ElementTree.fromstring('<entry>%s</entry>' % self.body)
         return [i.attrib for i in et.findall('.//img')]
 
+    def index_components(self):
+        return {
+            'A': self.title,
+            'C': strip_tags(self.body),
+            'B': ' '.join(self.tags.values_list('tag', flat=True)),
+        }
+
     def __unicode__(self):
         return self.title
 
@@ -122,6 +129,13 @@ class Quotation(BaseModel):
         """Mainly a convenence for the comments RSS feed"""
         return u"A quote from %s" % escape(self.source)
 
+    def index_components(self):
+        return {
+            'A': self.quotation,
+            'B': ' '.join(self.tags.values_list('tag', flat=True)),
+            'C': self.source,
+        }
+
     def __unicode__(self):
         return self.quotation
 
@@ -129,9 +143,16 @@ class Quotation(BaseModel):
 class Blogmark(BaseModel):
     link_url = models.URLField()
     link_title = models.CharField(max_length=255)
-    via_url = models.URLField(blank=True, null=True, )
+    via_url = models.URLField(blank=True, null=True)
     via_title = models.CharField(max_length=255, blank=True, null=True)
     commentary = models.TextField()
+
+    def index_components(self):
+        return {
+            'A': self.link_title,
+            'B': ' '.join(self.tags.values_list('tag', flat=True)),
+            'C': self.commentary + ' ' + self.link_domain + ' ' + (self.via_title or ''),
+        }
 
     def __unicode__(self):
         return self.link_title
