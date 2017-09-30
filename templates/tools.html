@@ -1,0 +1,15 @@
+{% extends "item_base.html" %}
+
+{% block title %}Tools{% endblock %}
+
+{% block item_content %}
+<h2>Tools</h2>
+
+{% if msg %}<p><strong>{{ msg }}</strong></p>{% endif %}
+
+<form action="{{ request.path }}" method="POST">
+    <input type="submit" name="purge_all" value="Purge all cache">
+    {% csrf_token %}
+</form>
+
+{% endblock %}

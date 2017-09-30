@@ -25,6 +25,11 @@ SECRET_KEY = os.environ.get('DJANGO_SECRET') or "dev-secret-s(p7%ue-l6r^&@y63p*i
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = bool(os.environ.get('DJANGO_DEBUG'))
 
+# Cloudflare details
+CLOUDFLARE_EMAIL = os.environ.get('CLOUDFLARE_EMAIL', '')
+CLOUDFLARE_TOKEN = os.environ.get('CLOUDFLARE_TOKEN', '')
+CLOUDFLARE_ZONE_ID = os.environ.get('CLOUDFLARE_ZONE_ID', '')
+
 # Application definition
 
 INSTALLED_APPS = (

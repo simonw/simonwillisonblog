@@ -1,6 +1,9 @@
 from django.shortcuts import render, get_object_or_404
 from django.utils.dates import MONTHS_3_REV
 from django.utils.timezone import utc
+from django.contrib.admin.views.decorators import staff_member_required
+from django.views.decorators.cache import never_cache
+from django.conf import settings
 from django.core.paginator import (
     Paginator,
     EmptyPage,
@@ -20,6 +23,8 @@ from models import (
 )
 import datetime
 import itertools
+import CloudFlare
+
 
 BLACKLISTED_TAGS = ('quora', 'flash')
 
@@ -350,5 +355,25 @@ def archive_tag(request, tags):
         'tag': Tag.objects.get(tag=tags[0]),
     })
 
+
+@never_cache
+@staff_member_required
 def write(request):
     return render(request, 'write.html')
+
+
+@never_cache
+@staff_member_required
+def tools(request):
+    if request.POST.get('purge_all'):
+        cf = CloudFlare.CloudFlare(
+            email=settings.CLOUDFLARE_EMAIL,
+            token=settings.CLOUDFLARE_TOKEN
+        )
+        cf.zones.purge_cache.delete(settings.CLOUDFLARE_ZONE_ID, data={
+            'purge_everything': True
+        })
+        return Redirect(request.path + '?msg=Cache+purged')
+    return render(request, 'tools.html', {
+        'msg': request.GET.get('msg')
+    })
