@@ -1,4 +1,6 @@
 from django.contrib import admin
+from django import forms
+from xml.etree import ElementTree
 from .models import (
     Entry,
     Tag,
@@ -14,9 +16,23 @@ class BaseAdmin(admin.ModelAdmin):
     list_display = ('__unicode__', 'slug', 'created', 'tag_summary')
 
 
+class MyEntryForm(forms.ModelForm):
+    def clean_body(self):
+        # Ensure this is valid XML
+        body = self.cleaned_data['body']
+        try:
+            ElementTree.fromstring(
+                '<entry>%s</entry>' % body.encode('utf8')
+            )
+        except Exception, e:
+            raise forms.ValidationError(str(e))
+        return body
+
+
 @admin.register(Entry)
 class EntryAdmin(BaseAdmin):
     search_fields = ('tags__tag', 'title', 'body')
+    form = MyEntryForm
 
 
 @admin.register(Quotation)
