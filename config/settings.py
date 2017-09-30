@@ -30,6 +30,9 @@ CLOUDFLARE_EMAIL = os.environ.get('CLOUDFLARE_EMAIL', '')
 CLOUDFLARE_TOKEN = os.environ.get('CLOUDFLARE_TOKEN', '')
 CLOUDFLARE_ZONE_ID = os.environ.get('CLOUDFLARE_ZONE_ID', '')
 
+# Google Analytics
+GOOGLE_ANALYTICS_ID = bool(os.environ.get('GOOGLE_ANALYTICS_ID'))
+
 # Application definition
 
 INSTALLED_APPS = (
@@ -70,6 +73,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'blog.context_processors.all',
             ],
         },
     },
