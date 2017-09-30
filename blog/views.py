@@ -411,7 +411,7 @@ def search_results(request, q):
             rank=rank_annotation,
             type=models.Value('quotation', output_field=models.CharField())
         ).filter(search_document=query).values('pk', 'type', 'created', 'rank'),
-    )
+    ).order_by('-rank')
 
     paginator = Paginator(qs, 40)
     page_number = request.GET.get('page') or '1'
