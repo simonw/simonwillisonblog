@@ -132,7 +132,6 @@ def index(request):
         'days': days,
         'entries': Entry.objects.all()[0:3],
         'current_tags': find_current_tags(5),
-        'years_with_content': years_with_content(),
     })
     response['Cache-Control'] = 's-maxage=200'
     return response
@@ -205,18 +204,7 @@ def archive_year(request, year):
         'months': months,
         'year': year,
         'max_count': max_count,
-        'years': years_with_content(),
     })
-
-
-def years_with_content():
-    years = list(set(
-        list(Entry.objects.datetimes('created', 'year')) +
-        list(Blogmark.objects.datetimes('created', 'year')) +
-        list(Quotation.objects.datetimes('created', 'year'))
-    ))
-    years.sort()
-    return years
 
 
 def archive_month(request, year, month):

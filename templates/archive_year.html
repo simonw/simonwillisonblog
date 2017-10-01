@@ -16,6 +16,6 @@
 
 {% block secondary %}
 <div class="metabox">
-<p>{% for year in years %}<a href="/{{ year|date:"Y" }}/">{{ year|date:"Y" }}</a>{% if not forloop.last %} / {% endif %}{% endfor %}</p>
+<p>{% for year in years_with_content %}<a href="/{{ year|date:"Y" }}/">{{ year|date:"Y" }}</a>{% if not forloop.last %} / {% endif %}{% endfor %}</p>
 </div>
 {% endblock %}
