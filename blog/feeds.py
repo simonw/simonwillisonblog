@@ -7,6 +7,12 @@ class Base(Feed):
     feed_type = Atom1Feed
     link = "/"
 
+    def __call__(self, request, *args, **kwargs):
+        response = super(Base, self).__call__(request, *args, **kwargs)
+        # Tell CloudFlare to cache my feeds for 15 minutes
+        response['Cache-Control'] = 's-maxage=%d' % (15 * 60)
+        return response
+
     def item_link(self, item):
         return item.get_absolute_url() + '#atom-%s' % self.ga_source
 
