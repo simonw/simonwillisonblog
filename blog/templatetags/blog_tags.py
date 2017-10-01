@@ -40,3 +40,12 @@ def comments_list_with_headers(context, comments):
         'show_headers': True,
     })
     return context
+
+
+@register.simple_tag(takes_context=True)
+def page_href(context, page):
+    query_dict = context['request'].GET.copy()
+    if page == 1 and 'page' in query_dict:
+        del query_dict['page']
+    query_dict['page'] = page
+    return '?' + query_dict.urlencode()
