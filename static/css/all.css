@@ -641,6 +641,9 @@ div.paginator {
     padding: 0.5em 0;
     font-size: 0.9em
 }
+.pagination {
+    margin-bottom: 1em;
+}
 .paginator a {
     text-decoration: none
 }
