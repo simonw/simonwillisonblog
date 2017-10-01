@@ -339,7 +339,7 @@ def archive_tag(request, tags):
         ids = [r[0] for r in cursor.fetchall()]
         items.extend([
             {'type': content_type, 'obj': obj}
-            for obj in model.objects.in_bulk(ids).values()
+            for obj in model.objects.prefetch_related('tags').in_bulk(ids).values()
         ])
     if not items:
         raise Http404

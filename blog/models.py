@@ -322,7 +322,7 @@ def load_mixed_objects(dicts):
         ('quotation', Quotation),
     ):
         ids = to_fetch.get(key) or []
-        objects = model.objects.filter(pk__in=ids)
+        objects = model.objects.prefetch_related('tags').filter(pk__in=ids)
         for obj in objects:
             fetched[(key, obj.pk)] = obj
     # Build list in same order as dicts argument
