@@ -7,6 +7,7 @@ from django.contrib.postgres.fields import JSONField
 from django.contrib.postgres.search import SearchVectorField
 from django.contrib.postgres.indexes import GinIndex
 from django.utils.html import escape, strip_tags
+from collections import Counter
 import re
 from xml.etree import ElementTree
 
@@ -56,22 +57,20 @@ class Tag(models.Model):
         ).values('pk', 'created', 'type')
         return entries.union(blogmarks, quotations).order_by('-created')
 
-    def get_related_tags(self, limit=5):
+    def get_related_tags(self, limit=10):
         """Get all items tagged with this, look at /their/ tags, order by count"""
         if not hasattr(self, '_related_tags'):
-            other_tags = {} # tag: count
-            for collection in ('entry_set', 'blogmark_set', 'quotation_set'):
-                for item in getattr(self, collection).all():
-                    for tag in item.tags.all():
-                        if tag.tag == self.tag:
-                            continue
-                        try:
-                            other_tags[tag.tag] += 1
-                        except KeyError:
-                            other_tags[tag.tag] = 1
-            pairs = other_tags.items()
-            pairs.sort(lambda x, y: cmp(y[1], x[1]))
-            self._related_tags = [pair[0] for pair in pairs[:limit]]
+            counts = Counter()
+            for klass, collection in (
+                (Entry, 'entry_set'),
+                (Blogmark, 'blogmark_set'),
+                (Quotation, 'quotation_set')
+            ):
+                qs = klass.objects.filter(
+                    pk__in=getattr(self, collection).all()
+                ).values_list('tags__tag', flat=True)
+                counts.update(t for t in qs if t != self.tag)
+            self._related_tags = [p[0] for p in counts.most_common(limit)]
         return self._related_tags
 
 
