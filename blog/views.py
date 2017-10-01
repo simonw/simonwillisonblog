@@ -389,19 +389,42 @@ def search_results(request, q):
     start = time.time()
     query = SearchQuery(q)
     rank_annotation = SearchRank(models.F('search_document'), query)
+    filter_kwargs = {
+        'search_document': query
+    }
+    tags = request.GET.getlist('tag')
+    if tags:
+        filter_kwargs['tags__tag__in'] = tags
+    exclude_kwargs = {}
+    exclude_tags = request.GET.getlist('exclude.tag')
+    if exclude_tags:
+        exclude_kwargs['tags__tag__in'] = exclude_tags
+
+    values = ('pk', 'type', 'created', 'rank')
+
+    def make_queryset(klass, type_name):
+        return klass.objects.annotate(
+            rank=rank_annotation,
+            type=models.Value(type_name, output_field=models.CharField())
+        ).filter(
+            **filter_kwargs
+        ).exclude(
+            **exclude_kwargs
+        ).values(*values).order_by()
+
+    # Start with a .none() queryset just so we can union stuff onto it
     qs = Entry.objects.annotate(
         rank=rank_annotation,
-        type=models.Value('entry', output_field=models.CharField())
-    ).filter(search_document=query).values('pk', 'type', 'created', 'rank').union(
-        Blogmark.objects.annotate(
-            rank=rank_annotation,
-            type=models.Value('blogmark', output_field=models.CharField())
-        ).filter(search_document=query).values('pk', 'type', 'created', 'rank'),
-        Quotation.objects.annotate(
-            rank=rank_annotation,
-            type=models.Value('quotation', output_field=models.CharField())
-        ).filter(search_document=query).values('pk', 'type', 'created', 'rank'),
-    ).order_by('-rank')
+        type=models.Value('empty', output_field=models.CharField())
+    ).values(*values).none()
+
+    for klass, type_name in (
+        (Entry, 'entry'),
+        (Blogmark, 'blogmark'),
+        (Quotation, 'quotation'),
+    ):
+        qs = qs.union(make_queryset(klass, type_name))
+    qs = qs.order_by('-rank')
 
     paginator = Paginator(qs, 30)
     page_number = request.GET.get('page') or '1'
