@@ -1,6 +1,7 @@
 from django import template
 register = template.Library()
 
+
 @register.inclusion_tag('includes/blog_mixed_list.html',
     takes_context=True)
 def blog_mixed_list(context, items):
@@ -9,6 +10,7 @@ def blog_mixed_list(context, items):
         'showdate': False
     })
     return context
+
 
 @register.inclusion_tag('includes/blog_mixed_list.html',
     takes_context=True)
@@ -19,6 +21,7 @@ def blog_mixed_list_with_dates(context, items):
     })
     return context
 
+
 @register.inclusion_tag('includes/comments_list.html',
     takes_context=True)
 def comments_list(context, comments):
@@ -28,6 +31,7 @@ def comments_list(context, comments):
     })
     return context
 
+
 @register.inclusion_tag('includes/comments_list.html',
     takes_context=True)
 def comments_list_with_headers(context, comments):
@@ -36,4 +40,3 @@ def comments_list_with_headers(context, comments):
         'show_headers': True,
     })
     return context
-    
