@@ -43,6 +43,8 @@ def xhtml2html(xhtml):
 def remove_quora_paragraph(xhtml):
     et = ElementTree.fromstring(('<entry>%s</entry>' % xhtml).encode('utf8'))
     p = et.find('p')
+    if p is None:
+        return _back_to_xhtml(et)
     if ElementTree.tostring(p, 'utf-8').startswith('<p><em>My answer to'):
         et.remove(p)
     return _back_to_xhtml(et)
