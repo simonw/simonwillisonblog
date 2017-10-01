@@ -5,6 +5,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.postgres.fields import JSONField
 from django.contrib.postgres.search import SearchVectorField
+from django.contrib.postgres.indexes import GinIndex
 from django.utils.html import escape, strip_tags
 import re
 from xml.etree import ElementTree
@@ -98,6 +99,9 @@ class BaseModel(models.Model):
     class Meta:
         abstract = True
         ordering = ('-created',)
+        indexes = [
+            GinIndex(fields=['search_document'])
+        ]
 
 
 class Entry(BaseModel):
