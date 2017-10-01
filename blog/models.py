@@ -78,7 +78,7 @@ class BaseModel(models.Model):
     created = models.DateTimeField()
     tags = models.ManyToManyField(Tag, blank=True)
     slug = models.SlugField(max_length=64)
-    metadata = JSONField()
+    metadata = JSONField(blank=True)
     search_document = SearchVectorField(null=True)
 
     def tag_summary(self):
