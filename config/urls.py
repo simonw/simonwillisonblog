@@ -4,6 +4,9 @@ from django.http import HttpResponseRedirect, HttpResponse
 from django.conf import settings
 from blog import views as blog_views
 from blog import feeds
+import os
+
+FAVICON = open(os.path.join(settings.BASE_DIR, 'static/favicon.ico')).read()
 
 
 def static_redirect(request):
@@ -20,6 +23,10 @@ def robots_txt(request):
     return HttpResponse(txt, content_type='text/plain')
 
 
+def favicon_ico(request):
+    return HttpResponse(FAVICON, content_type='image/x-icon')
+
+
 urlpatterns = [
     url(r'^$', blog_views.index),
     url(r'^(\d{4})/$', blog_views.archive_year),
@@ -28,6 +35,7 @@ urlpatterns = [
     url(r'^(\d{4})/(\w{3})/(\d{1,2})/([\-\w]+)/$', blog_views.archive_item),
 
     url(r'^robots\.txt$', robots_txt),
+    url(r'^favicon\.ico$', favicon_ico),
 
     url(r'^search/$', blog_views.search),
     url(r'^tags/$', blog_views.tag_index),
