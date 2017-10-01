@@ -1,8 +1,10 @@
 from django.contrib.syndication.views import Feed
+from django.utils.feedgenerator import Atom1Feed
 from blog.models import Entry, Blogmark
 
 
 class Base(Feed):
+    feed_type = Atom1Feed
     link = "/"
 
     def item_link(self, item):
