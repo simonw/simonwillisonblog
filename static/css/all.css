@@ -99,11 +99,6 @@ div#ft a {
     color: #fff;
     text-decoration: none
 }
-div#ft a#djangosite img {
-    vertical-align: top;
-    position: relative;
-    top: 2px
-}
 p#previouslyhosted {
     clear: both;
     padding: 0.5em 0 0.5em 35px;
