@@ -720,6 +720,20 @@ div.help p {
     margin: 0 0 1em 0
 }
 
+.search-input,
+.search-submit {
+    border: 1px solid #733b96;
+    padding: 4px;
+    box-sizing: border-box;
+}
+.search-input {
+    width: 80%;
+}
+.search-submit {
+    background-color: #733b96;
+    color: white;
+}
+
 @media (max-width: 600px) {
   div#secondary {
     float: none;

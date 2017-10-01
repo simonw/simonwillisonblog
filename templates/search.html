@@ -7,8 +7,8 @@
 <h2>Search{% if q %} for “{{ q }}”{% endif %}</h2>
 
 <form action="{{ request.path }}" method="GET">
-    <input type="search" name="q" value="{{ q }}" style="width: 80%">
-    <input type="submit" value="Search">
+    <input type="search" class="search-input" name="q" value="{{ q }}" style="width: 80%">
+    <input type="submit" class="search-submit" value="Search">
 </form>
 <br>
 
