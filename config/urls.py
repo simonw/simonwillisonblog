@@ -1,6 +1,7 @@
 from django.conf.urls import include, url
 from django.contrib import admin
 from django.http import HttpResponseRedirect
+from django.conf import settings
 from blog import views as blog_views
 
 
@@ -27,3 +28,9 @@ urlpatterns = [
     url(r'^admin/', include(admin.site.urls)),
     url(r'^static/', static_redirect),
 ]
+
+if settings.DEBUG:
+    import debug_toolbar
+    urlpatterns = [
+        url(r'^__debug__/', include(debug_toolbar.urls)),
+    ] + urlpatterns

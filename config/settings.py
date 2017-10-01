@@ -24,6 +24,7 @@ SECRET_KEY = os.environ.get('DJANGO_SECRET') or "dev-secret-s(p7%ue-l6r^&@y63p*i
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = bool(os.environ.get('DJANGO_DEBUG'))
+INTERNAL_IPS = ('127.0.0.1',)
 
 # Cloudflare details
 CLOUDFLARE_EMAIL = os.environ.get('CLOUDFLARE_EMAIL', '')
@@ -57,6 +58,12 @@ MIDDLEWARE_CLASSES = (
 )
 if not DEBUG:
     MIDDLEWARE_CLASSES += ('whitenoise.middleware.WhiteNoiseMiddleware',)
+
+if DEBUG:
+    INSTALLED_APPS += ('debug_toolbar',)
+    MIDDLEWARE_CLASSES = (
+        'debug_toolbar.middleware.DebugToolbarMiddleware',
+    ) + MIDDLEWARE_CLASSES
 
 # Sentry
 SENTRY_DSN = os.environ.get('SENTRY_DSN')
