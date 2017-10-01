@@ -3,6 +3,7 @@ from django.contrib import admin
 from django.http import HttpResponseRedirect, HttpResponse
 from django.conf import settings
 from blog import views as blog_views
+from blog import feeds
 
 
 def static_redirect(request):
@@ -31,6 +32,10 @@ urlpatterns = [
     url(r'^search/$', blog_views.search),
     url(r'^tags/$', blog_views.tag_index),
     url(r'^tags/(.*?)/$', blog_views.archive_tag),
+
+    url(r'^atom/entries/$', feeds.Entries()),
+    url(r'^atom/links/$', feeds.Blogmarks()),
+    url(r'^atom/everything/$', feeds.Everything()),
 
     url(r'^tools/$', blog_views.tools),
     url(r'^write/$', blog_views.write),

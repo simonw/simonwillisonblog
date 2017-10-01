@@ -20,7 +20,7 @@ window.dataLayer = window.dataLayer || [];function gtag(){dataLayer.push(argumen
 })();
 </script>
 {% endif %}
-{% comment %}<link rel="alternate" type="application/atom+xml" title="Atom" href="http://feeds.simonwillison.net/swn-everything">{% endcomment %}
+<link rel="alternate" type="application/atom+xml" title="Atom" href="/atom/everything/">
 <link rel="stylesheet" type="text/css" href="/static/css/all.css?r{{ revno }}">
 {% block extrahead %}{% endblock %}
 
@@ -28,7 +28,7 @@ window.dataLayer = window.dataLayer || [];function gtag(){dataLayer.push(argumen
 <body{% block body_class %}{% endblock %}>
 {% block toolbar %}
 <p class="{% block toolbar_class %}bighead-toolbar{% endblock %}">
-    <a id="atomfeedlink" style="display:none" href="http://feeds.simonwillison.net/swn-everything" title="My Atom feed"><img class="feedicon" src="/static/css/img/feed-icon-14x14.png" width="14" height="14" alt="Feed"></a>
+    <a id="atomfeedlink" href="/atom/everything/" title="My Atom feed"><img class="feedicon" src="/static/css/img/feed-icon-28x28.png" width="14" height="14" alt="Feed"></a>
 </p>
 {% endblock %}
 

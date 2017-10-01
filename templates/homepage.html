@@ -6,7 +6,7 @@
 {% endblock %}
 
 {% block primary %}
-<h2 class="overband">Recent entries <a href="http://feeds.simonwillison.net/swn-entries" title="Atom feed of new entries"><img class="feedicon" src="/static/css/img/feed-icon-28x28.png" width="14" height="14" alt="Feed"></a></h2>
+<h2 class="overband">Recent entries <a href="/atom/entries/" title="Atom feed of new entries"><img class="feedicon" src="/static/css/img/feed-icon-28x28.png" width="14" height="14" alt="Feed"></a></h2>
 {% load entry_tags %}
 {% for entry in entries %}
 <div class="entry segment">
@@ -20,7 +20,7 @@
 {% endblock %}
 
 {% block secondary %}
-<h2 class="overband">Elsewhere <a href="http://feeds.simonwillison.net/swn-links" title="Atom feed of new links"><img class="feedicon" src="/static/css/img/feed-icon-28x28.png" width="14" height="14" alt="Feed"></a></h2>
+<h2 class="overband">Elsewhere <a href="/atom/links/" title="Atom feed of new links"><img class="feedicon" src="/static/css/img/feed-icon-28x28.png" width="14" height="14" alt="Feed"></a></h2>
 {% for day in days %}
 <div class="day">
 <h3><a href="{{ day.date|date:"/Y/M/j/" }}">{% if day.special %}{{ day.special|escape }}{% else %}{{ day.date|date:"jS F Y" }}{% endif %}</a></h3>

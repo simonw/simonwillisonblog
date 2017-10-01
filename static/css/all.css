@@ -52,21 +52,13 @@ dt {
 dd {
     padding-left: 1.5em
 }
-p.bighead-toolbar, p.smallhead-toolbar {
-    font-size: 0.85em;
-    padding-left: 35px;
-    margin-top: 3px
-}
-p.bighead-toolbar {
-    border-bottom: 1px solid #ccc
-}
 p.smallhead-toolbar {
     margin-bottom: 3px
 }
 a#atomfeedlink {
     position: absolute;
-    left: 780px;
-    top: 3px
+    right: 5px;
+    top: 7px
 }
 p.bighead-toolbar img, p.smallhead-toolbar img {
     vertical-align: top;

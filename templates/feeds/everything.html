@@ -1,0 +1,5 @@
+{% if obj.is_entry %}
+    {{ obj.body|safe }}
+{% else %}
+    {% include "feeds/blogmark.html" %}
+{% endif %}

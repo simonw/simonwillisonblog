@@ -107,6 +107,8 @@ class Entry(BaseModel):
     title = models.CharField(max_length=255)
     body = models.TextField()
 
+    is_entry = True
+
     def images(self):
         """Extracts images from entry.body"""
         et = ElementTree.fromstring('<entry>%s</entry>' % self.body)
