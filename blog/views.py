@@ -1,6 +1,7 @@
 from django.shortcuts import render, get_object_or_404
 from django.utils.dates import MONTHS_3_REV
 from django.utils.timezone import utc
+from django.http import HttpResponse
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.postgres.search import SearchQuery, SearchRank
 from django.views.decorators.cache import never_cache
@@ -25,6 +26,7 @@ from models import (
     load_mixed_objects,
 )
 import time
+import json
 import datetime
 from collections import Counter
 import CloudFlare
@@ -450,3 +452,16 @@ def search_results(request, q):
         'page': page,
         'duration': end - start,
     })
+
+
+def tools_search_tags(request):
+    q = request.GET.get('q', '').strip()
+    results = []
+    if q:
+        results = list(
+            Tag.objects.filter(tag__icontains=q).values_list('tag', flat=True)
+        )
+        results.sort(key=lambda t: len(t))
+    return HttpResponse(json.dumps({
+        'tags': results
+    }), content_type='application/json')

@@ -46,6 +46,8 @@ urlpatterns = [
     url(r'^atom/everything/$', feeds.Everything()),
 
     url(r'^tools/$', blog_views.tools),
+    url(r'^tools/search-tags/$', blog_views.tools_search_tags),
+
     url(r'^write/$', blog_views.write),
     #  (r'^about/$', blog_views.about),
 
