@@ -14,12 +14,25 @@ def static_redirect(request):
         'http://static.simonwillison.net%s' % request.get_full_path()
     )
 
+STAGING_ROBOTS_TXT = '''
+User-agent: Twitterbot
+Disallow:
+
+User-agent: *
+Disallow: /
+'''
+
+PRODUCTION_ROBOTS_TXT = '''
+User-agent: *
+Disallow: /admin/
+'''
+
 
 def robots_txt(request):
     if settings.STAGING:
-        txt = 'User-agent: *\nDisallow: /'
+        txt = STAGING_ROBOTS_TXT
     else:
-        txt = 'User-agent: *\nDisallow: /admin/'
+        txt = PRODUCTION_ROBOTS_TXT
     return HttpResponse(txt, content_type='text/plain')
 
 
