@@ -2,6 +2,8 @@
 {% load entry_tags %}
 {% block title %}{{ entry.title|escape|typography }}{% endblock %}
 
+{% block card_title %}{{ entry.title|typography }}{% endblock %}
+
 {% block item_content %}
 <h2>{{ entry.title|escape|typography }}</h2>
 {{ entry.body|resize_images_to_fit_width:"450"|typography|xhtml2html|safe }}
