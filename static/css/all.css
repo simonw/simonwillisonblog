@@ -272,9 +272,6 @@ div#bighead h1 {
 div#bigheadcontainer {
     position: relative
 }
-p#currenttags {
-    width: 450px
-}
 div#band {
     background-image: url(/static/css/img/purple-gradient.png);
     color: white;

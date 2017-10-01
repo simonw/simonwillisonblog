@@ -4,12 +4,6 @@
 <div id="bighead">
   <h1>Simon Willison’s Weblog</h1>
   <div id="bigheadcontainer">
-  <div id="searchbox" style="display:none">
-  <form action="/search/" method="get">
-  <p><input class="text" type="text" name="q">
-  <input type="image" class="image" src="/static/css/img/search.gif" alt="Search"></p>
-  </form>
-  </div>
   {% if current_tags %}<p id="currenttags">On {% for tag in current_tags %}<a href="/tags/{{ tag }}/">{{ tag }}</a>{% if forloop.last %}<span class="more">, </span>{% else %}, {% endif %}{% endfor %}<a href="/tags/" class="more">...</a></p>{% else %}<a href="/tags/">Tags...</a>{% endif %}
   </div><!-- #bigheadcontainer -->
 </div><!-- #bighead -->
