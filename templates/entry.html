@@ -17,13 +17,12 @@
 <p>Tagged {% for tag in entry.tags.all %}{{ tag.get_reltag|safe }}{% if not forloop.last %}, {% endif %}{% endfor %}</p>
 {% endif %}
 
-{% if entry.get_next_by_created %}
-<p><strong>Next:</strong> <a href="{{ entry.get_next_by_created.get_absolute_url }}">{{ entry.get_next_by_created.title|escape }}</a></p>
-{% endif %}
-{% if entry.get_previous_by_created %}
-<p><strong>Previous:</strong> <a href="{{ entry.get_previous_by_created.get_absolute_url }}">{{ entry.get_previous_by_created.title|escape }}</a></p>
-{% endif %}
-
+{% with entry.get_next_by_created as next_entry %}{% if next_entry %}
+<p><strong>Next:</strong> <a href="{{ next_entry.get_absolute_url }}">{{ next_entry.title|escape }}</a></p>
+{% endif %}{% endwith %}
+{% with entry.get_previous_by_created as previous_entry %}{% if previous_entry %}
+<p><strong>Previous:</strong> <a href="{{ previous_entry.get_absolute_url }}">{{ previous_entry.title|escape }}</a></p>
+{% endif %}{% endwith %}
 
 </div>
 {% endblock %}
