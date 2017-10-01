@@ -8,7 +8,16 @@
 {% if GOOGLE_ANALYTICS_ID %}
 <script async src="https://www.googletagmanager.com/gtag/js?id={{ GOOGLE_ANALYTICS_ID }}"></script>
 <script>
-window.dataLayer = window.dataLayer || [];function gtag(){dataLayer.push(arguments)}; gtag('js', new Date());gtag('config', '{{ GOOGLE_ANALYTICS_ID }}');
+window.dataLayer = window.dataLayer || [];function gtag(){dataLayer.push(arguments)}; gtag('js', new Date());gtag('config', '{{ GOOGLE_ANALYTICS_ID }}', {send_page_view: false });
+(function() {
+    var m = /#atom\-(\w+)/.exec(location.hash);
+    if (m) {
+        gtag('event', 'pageview', {dimension1: m[1]});
+        history.replaceState && history.replaceState(null, '', location.href.split('#')[0]);
+    } else {
+        gtag('event', 'pageview');
+    }
+})();
 </script>
 {% endif %}
 {% comment %}<link rel="alternate" type="application/atom+xml" title="Atom" href="http://feeds.simonwillison.net/swn-everything">{% endcomment %}
