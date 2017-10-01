@@ -26,7 +26,7 @@ from models import (
 )
 import time
 import datetime
-import itertools
+from collections import Counter
 import CloudFlare
 
 
@@ -95,8 +95,12 @@ def index(request):
 
     if not last_5_days:
         raise Http404("No links to display")
-    blogmarks = Blogmark.objects.filter(created__gte=last_5_days[-1])
-    quotations = Quotation.objects.filter(created__gte=last_5_days[-1])
+    blogmarks = Blogmark.objects.filter(
+        created__gte=last_5_days[-1]
+    ).prefetch_related('tags')
+    quotations = Quotation.objects.filter(
+        created__gte=last_5_days[-1]
+    ).prefetch_related('tags')
     days = []
     for daystamp in last_5_days:
         day = daystamp.date()
@@ -130,7 +134,7 @@ def index(request):
 
     response = render(request, 'homepage.html', {
         'days': days,
-        'entries': Entry.objects.all()[0:3],
+        'entries': Entry.objects.prefetch_related('tags')[0:4],
         'current_tags': find_current_tags(5),
     })
     response['Cache-Control'] = 's-maxage=200'
@@ -138,24 +142,22 @@ def index(request):
 
 
 def find_current_tags(num=5):
-    """Returns 5 most popular tags from the last 40 of each item"""
-    links = Blogmark.objects.all()[:40]
-    entries = Entry.objects.all()[:40]
-    quotes = Quotation.objects.all()[:40]
-    tag_counts = {}
-    for obj in itertools.chain(links, entries, quotes):
-        for tag in obj.tags.all():
-            tag = tag.tag
-            if tag in tag_counts:
-                tag_counts[tag] += 1
-            else:
-                tag_counts[tag] = 1
-    # Order and return
-    pairs = tag_counts.items()
-    pairs.sort(lambda x, y: cmp(y[1], x[1]))
-    # Filter out blacklisted
-    pairs = [pair for pair in pairs if pair[0] not in BLACKLISTED_TAGS]
-    return [pair[0] for pair in pairs[:num]]
+    """Returns num most popular tags from most recent 400 taggings"""
+    last_400_tags = list(Tag.quotation_set.through.objects.annotate(
+        created=models.F('quotation__created')
+    ).values('tag__tag', 'created').union(
+        Tag.entry_set.through.objects.annotate(
+            created=models.F('entry__created')
+        ).values('tag__tag', 'created'),
+        Tag.blogmark_set.through.objects.annotate(
+            created=models.F('blogmark__created')
+        ).values('tag__tag', 'created'),
+    ).order_by('-created')[:400])
+    counter = Counter(
+        t['tag__tag'] for t in last_400_tags
+        if t['tag__tag'] not in BLACKLISTED_TAGS
+    )
+    return [p[0] for p in counter.most_common(num)]
 
 
 def archive_year(request, year):
