@@ -46,9 +46,11 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'blog',
+    'redirects',
 )
 
-MIDDLEWARE_CLASSES = (
+MIDDLEWARE = (
+    'redirects.middleware.redirect_middleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -59,13 +61,13 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 )
 if not DEBUG:
-    MIDDLEWARE_CLASSES += ('whitenoise.middleware.WhiteNoiseMiddleware',)
+    MIDDLEWARE += ('whitenoise.middleware.WhiteNoiseMiddleware',)
 
 if DEBUG:
     INSTALLED_APPS += ('debug_toolbar',)
-    MIDDLEWARE_CLASSES = (
+    MIDDLEWARE = (
         'debug_toolbar.middleware.DebugToolbarMiddleware',
-    ) + MIDDLEWARE_CLASSES
+    ) + MIDDLEWARE
 
 # Sentry
 SENTRY_DSN = os.environ.get('SENTRY_DSN')
