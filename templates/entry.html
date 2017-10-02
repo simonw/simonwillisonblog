@@ -3,7 +3,7 @@
 {% block title %}{{ entry.title|escape|typography }}{% endblock %}
 
 {% block card_title %}{{ entry.title|typography }}{% endblock %}
-{% block card_description %}{{ entry.body|remove_quora_paragraph|typography|xhtml2html|striptags|truncatewords:20 }}{% endblock %}
+{% block card_description %}{{ entry.body|remove_quora_paragraph|typography|xhtml2html|striptags|truncatewords:30 }}{% endblock %}
 
 {% block item_content %}
 <h2>{{ entry.title|escape|typography }}</h2>
