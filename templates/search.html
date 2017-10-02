@@ -12,6 +12,19 @@
     <input type="search" class="search-input" name="q" value="{{ q }}" style="width: 80%">
     <input type="submit" class="search-submit" value="Search">
 </form>
+
+{% if selected_tags or selected_type %}
+<p class="search-selections">
+    Filters:
+    {% if selected_type %}
+        <a class="selected-tag" href="{% remove_qsarg "type" selected_type %}">Type: {{ selected_type }} <strong>&#x00D7;</strong></a>
+    {% endif %}
+    {% for selected_tag in selected_tags %}
+        <a class="selected-tag" href="{% remove_qsarg "tag" selected_tag %}">{{ selected_tag }} <strong>&#x00D7;</strong></a>
+    {% endfor %}
+</p>
+{% endif %}
+
 <br>
 
 {% if total %}
@@ -20,4 +33,25 @@
     {% include "_pagination.html" %}
 {% endif %}
 
+{% endblock %}
+
+{% block secondary %}
+<div class="metabox">
+    {% if type_counts %}
+        <h3>Types</h3>
+        <ul>
+            {% for t in type_counts %}
+                <li><a href="{% add_qsarg "type" t.type %}">{{ t.type }}</a> {{ t.n }}</a></li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+    {% if tag_counts %}
+        <h3>Tags</h3>
+        <ul>
+            {% for t in tag_counts %}
+                <li><a href="{% add_qsarg "tag" t.tag %}">{{ t.tag }}</a> {{ t.n }}</a></li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+</div>
 {% endblock %}

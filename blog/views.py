@@ -394,13 +394,13 @@ def search(request):
 
 def search_results(request, q):
     start = time.time()
+
     query = SearchQuery(q)
     rank_annotation = SearchRank(models.F('search_document'), query)
-    filter_kwargs = {
-        'search_document': query
-    }
-    tags = request.GET.getlist('tag')
-    exclude_tags = request.GET.getlist('exclude.tag')
+
+    selected_tags = request.GET.getlist('tag')
+    excluded_tags = request.GET.getlist('exclude.tag')
+    selected_type = request.GET.get('type', '')
 
     values = ('pk', 'type', 'created', 'rank')
 
@@ -411,11 +411,11 @@ def search_results(request, q):
         )
         if q:
             qs = qs.filter(search_document=query)
-        for tag in tags:
+        for tag in selected_tags:
             qs = qs.filter(tags__tag=tag)
-        for exclude_tag in exclude_tags:
+        for exclude_tag in excluded_tags:
             qs = qs.exclude(tags__tag=exclude_tag)
-        return qs.values(*values).order_by()
+        return qs.order_by()
 
     # Start with a .none() queryset just so we can union stuff onto it
     qs = Entry.objects.annotate(
@@ -423,13 +423,43 @@ def search_results(request, q):
         type=models.Value('empty', output_field=models.CharField())
     ).values(*values).none()
 
+    type_counts_raw = {}
+    tag_counts_raw = {}
+
     for klass, type_name in (
         (Entry, 'entry'),
         (Blogmark, 'blogmark'),
         (Quotation, 'quotation'),
     ):
-        qs = qs.union(make_queryset(klass, type_name))
+        if selected_type and selected_type != type_name:
+            continue
+        klass_qs = make_queryset(klass, type_name)
+        type_count = klass_qs.count()
+        if type_count:
+            type_counts_raw[type_name] = type_count
+        for tag, count in Tag.objects.filter(**{
+            '%s__in' % type_name: klass_qs
+        }).annotate(
+            n=models.Count('tag')
+        ).values_list('tag', 'n'):
+            tag_counts_raw[tag] = tag_counts_raw.get(tag, 0) + count
+        qs = qs.union(klass_qs.values(*values))
     qs = qs.order_by('-rank')
+
+    type_counts = sorted(
+        [
+            {'type': type_name, 'n': value}
+            for type_name, value in type_counts_raw.items()
+        ],
+        key=lambda t: t['n'], reverse=True
+    )
+    tag_counts = sorted(
+        [
+            {'tag': tag, 'n': value}
+            for tag, value in tag_counts_raw.items()
+        ],
+        key=lambda t: t['n'], reverse=True
+    )[:40]
 
     paginator = Paginator(qs, 30)
     page_number = request.GET.get('page') or '1'
@@ -454,6 +484,11 @@ def search_results(request, q):
         'total': paginator.count,
         'page': page,
         'duration': end - start,
+        'type_counts': type_counts,
+        'tag_counts': tag_counts,
+        'selected_tags': selected_tags,
+        'excluded_tags': excluded_tags,
+        'selected_type': selected_type,
     })
 
 

@@ -49,3 +49,19 @@ def page_href(context, page):
         del query_dict['page']
     query_dict['page'] = page
     return '?' + query_dict.urlencode()
+
+
+@register.simple_tag(takes_context=True)
+def add_qsarg(context, name, value):
+    query_dict = context['request'].GET.copy()
+    query_dict.appendlist(name, value)
+    return '?' + query_dict.urlencode()
+
+
+@register.simple_tag(takes_context=True)
+def remove_qsarg(context, name, value):
+    query_dict = context['request'].GET.copy()
+    query_dict.setlist(name, [
+        v for v in query_dict.getlist(name) if v != value
+    ])
+    return '?' + query_dict.urlencode()

@@ -722,6 +722,17 @@ div.help p {
     background-color: #733b96;
     color: white;
 }
+div p.search-selections {
+    margin-top: 0.5em;
+    font-size: 0.8em;
+}
+a.selected-tag {
+    border: 1px solid #666;
+    text-decoration: none;
+    padding: 2px 5px;
+    background-color: rgba(115, 60, 150, 0.28);
+    color: black;
+}
 
 @media (max-width: 600px) {
   div#secondary {
