@@ -32,6 +32,8 @@ from collections import Counter
 import CloudFlare
 
 
+# We're not using MONTHS_3 here because it's _(localized)
+MONTHS_3_REV_REV = {value: key for key, value in MONTHS_3_REV.items()}
 BLACKLISTED_TAGS = ('quora', 'flash')
 
 
@@ -465,3 +467,18 @@ def tools_search_tags(request):
     return HttpResponse(json.dumps({
         'tags': results
     }), content_type='application/json')
+
+
+# Redirects for ancient patterns
+# /archive/2002/10/24/
+def archive_day_redirect(request, yyyy, mm, dd):
+    return Redirect('/%s/%s/%d/' % (
+        yyyy, MONTHS_3_REV_REV[int(mm)].title(), int(dd)
+    ))
+
+
+# /archive/2003/09/05/listamatic
+def archive_item_redirect(request, yyyy, mm, dd, slug):
+    return Redirect('/%s/%s/%d/%s' % (
+        yyyy, MONTHS_3_REV_REV[int(mm)].title(), int(dd), slug
+    ))

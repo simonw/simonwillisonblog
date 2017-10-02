@@ -47,6 +47,10 @@ urlpatterns = [
     url(r'^(\d{4})/(\w{3})/(\d{1,2})/$', blog_views.archive_day),
     url(r'^(\d{4})/(\w{3})/(\d{1,2})/([\-\w]+)/$', blog_views.archive_item),
 
+    # Ancient URL pattern still getting hits
+    url(r'^/?archive/(\d{4})/(\d{2})/(\d{2})/$', blog_views.archive_day_redirect),
+    url(r'^/?archive/(\d{4})/(\d{2})/(\d{2})/([\-\w]+)/?$', blog_views.archive_item_redirect),
+
     url(r'^robots\.txt$', robots_txt),
     url(r'^favicon\.ico$', favicon_ico),
 
