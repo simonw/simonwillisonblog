@@ -2,6 +2,8 @@
 
 {% block title %}Search{% if q %} for “{{ q }}”{% endif %}{% endblock %}
 
+{% block rel_canonical %}{% endblock %}
+
 {% block item_content %}
 {% load blog_tags %}
 <h2>Search{% if q %} for “{{ q }}”{% endif %}</h2>
