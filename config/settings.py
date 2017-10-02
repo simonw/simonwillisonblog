@@ -155,3 +155,12 @@ STATICFILES_DIRS = (
 # Simplified static file serving.
 # https://warehouse.python.org/project/whitenoise/
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+
+# urls.W002
+# Your URL pattern '^/?archive/(\d{4})/(\d{2})/(\d{2})/$' has a regex beginning
+# with a '/'. Remove this slash as it is unnecessary. If this pattern is
+# targeted in an include(), ensure the include() pattern has a trailing '/'.
+# This is deliberate (we get hits to //archive/ for some reason) so I'm
+# silencing the warning:
+SILENCED_SYSTEM_CHECKS = ('urls.W002',)
