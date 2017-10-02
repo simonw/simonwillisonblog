@@ -45,7 +45,7 @@ class BlogmarkAdmin(BaseAdmin):
     search_fields = ('tags__tag', 'commentary')
 
 
-admin.site.register(Tag)
+admin.site.register(Tag, search_fields=('tag',))
 
 admin.site.register(Comment,
     list_filter=(
