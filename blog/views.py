@@ -28,6 +28,7 @@ from models import (
 import time
 import json
 import datetime
+import random
 from collections import Counter
 import CloudFlare
 
@@ -146,7 +147,7 @@ def index(request):
 
 
 def find_current_tags(num=5):
-    """Returns num most popular tags from most recent 400 taggings"""
+    """Returns num random tags from top 30 in recent 400 taggings"""
     last_400_tags = list(Tag.quotation_set.through.objects.annotate(
         created=models.F('quotation__created')
     ).values('tag__tag', 'created').union(
@@ -161,7 +162,9 @@ def find_current_tags(num=5):
         t['tag__tag'] for t in last_400_tags
         if t['tag__tag'] not in BLACKLISTED_TAGS
     )
-    return [p[0] for p in counter.most_common(num)]
+    candidates = [p[0] for p in counter.most_common(30)]
+    random.shuffle(candidates)
+    return candidates[:num]
 
 
 def archive_year(request, year):
