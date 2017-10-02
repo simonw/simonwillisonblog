@@ -1,1 +1,1 @@
-web: gunicorn config.wsgi --log-file -
+web: bin/start-nginx gunicorn -c gunicorn.conf config.wsgi --enable-stdio-inheritance --log-file -
