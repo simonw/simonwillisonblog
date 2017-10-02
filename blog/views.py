@@ -400,24 +400,22 @@ def search_results(request, q):
         'search_document': query
     }
     tags = request.GET.getlist('tag')
-    if tags:
-        filter_kwargs['tags__tag__in'] = tags
-    exclude_kwargs = {}
     exclude_tags = request.GET.getlist('exclude.tag')
-    if exclude_tags:
-        exclude_kwargs['tags__tag__in'] = exclude_tags
 
     values = ('pk', 'type', 'created', 'rank')
 
     def make_queryset(klass, type_name):
-        return klass.objects.annotate(
+        qs = klass.objects.annotate(
             rank=rank_annotation,
             type=models.Value(type_name, output_field=models.CharField())
-        ).filter(
-            **filter_kwargs
-        ).exclude(
-            **exclude_kwargs
-        ).values(*values).order_by()
+        )
+        if q:
+            qs = qs.filter(search_document=query)
+        for tag in tags:
+            qs = qs.filter(tags__tag=tag)
+        for exclude_tag in exclude_tags:
+            qs = qs.exclude(tags__tag=exclude_tag)
+        return qs.values(*values).order_by()
 
     # Start with a .none() queryset just so we can union stuff onto it
     qs = Entry.objects.annotate(
