@@ -3,9 +3,11 @@
 {% block title %}{{ entry.title|escape|typography }}{% endblock %}
 
 {% block card_title %}{{ entry.title|typography }}{% endblock %}
+{% block card_description %}{{ entry.body|remove_quora_paragraph|typography|xhtml2html|striptags|truncatewords:20 }}{% endblock %}
 
 {% block item_content %}
 <h2>{{ entry.title|escape|typography }}</h2>
+
 {{ entry.body|resize_images_to_fit_width:"450"|typography|xhtml2html|safe }}
 
 <div class="entryFooter">Posted <a href="/{{ entry.created|date:"Y/M/j/" }}">{{ entry.created|date:"jS F Y" }}</a> at {{ entry.created|date:"f A"|lower }}</div>

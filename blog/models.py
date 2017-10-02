@@ -9,6 +9,7 @@ from django.contrib.postgres.indexes import GinIndex
 from django.utils.html import escape, strip_tags
 from collections import Counter
 import re
+import arrow
 from xml.etree import ElementTree
 
 tag_re = re.compile('^[a-z0-9]+$')
@@ -80,6 +81,9 @@ class BaseModel(models.Model):
     slug = models.SlugField(max_length=64)
     metadata = JSONField(blank=True)
     search_document = SearchVectorField(null=True)
+
+    def created_unixtimestamp(self):
+        return arrow.get(self.created).timestamp
 
     def tag_summary(self):
         return u' '.join(t.tag for t in self.tags.all())
