@@ -1,5 +1,5 @@
 from .models import Redirect
-from django.http import HttpResponseRedirect
+from django.http import HttpResponsePermanentRedirect
 
 
 def redirect_middleware(get_response):
@@ -9,7 +9,7 @@ def redirect_middleware(get_response):
                 domain=request.get_host(),
                 path=request.path.lstrip('/')
             )
-            return HttpResponseRedirect(redirect.target)
+            return HttpResponsePermanentRedirect(redirect.target)
         except Redirect.DoesNotExist:
             pass
         return get_response(request)

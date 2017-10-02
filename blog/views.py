@@ -14,7 +14,7 @@ from django.core.paginator import (
 )
 from django.http import (
     Http404,
-    HttpResponseRedirect as Redirect
+    HttpResponsePermanentRedirect as Redirect
 )
 from models import (
     Blogmark,

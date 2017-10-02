@@ -1,6 +1,6 @@
 from django.conf.urls import include, url
 from django.contrib import admin
-from django.http import HttpResponseRedirect, HttpResponse
+from django.http import HttpResponsePermanentRedirect, HttpResponse
 from django.conf import settings
 from blog import views as blog_views
 from blog import feeds
@@ -10,7 +10,7 @@ FAVICON = open(os.path.join(settings.BASE_DIR, 'static/favicon.ico')).read()
 
 
 def static_redirect(request):
-    return HttpResponseRedirect(
+    return HttpResponsePermanentRedirect(
         'http://static.simonwillison.net%s' % request.get_full_path()
     )
 
