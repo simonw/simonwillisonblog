@@ -54,7 +54,8 @@ def page_href(context, page):
 @register.simple_tag(takes_context=True)
 def add_qsarg(context, name, value):
     query_dict = context['request'].GET.copy()
-    query_dict.appendlist(name, value)
+    if value not in query_dict.getlist(name):
+        query_dict.appendlist(name, value)
     return '?' + query_dict.urlencode()
 
 
