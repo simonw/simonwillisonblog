@@ -6,6 +6,7 @@ from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.postgres.search import SearchQuery, SearchRank
 from django.views.decorators.cache import never_cache
 from django.db import models
+from django.db.models.functions import TruncYear
 from django.conf import settings
 from django.core.paginator import (
     Paginator,
@@ -401,6 +402,7 @@ def search_results(request, q):
     selected_tags = request.GET.getlist('tag')
     excluded_tags = request.GET.getlist('exclude.tag')
     selected_type = request.GET.get('type', '')
+    selected_year = request.GET.get('year', '')
 
     values = ('pk', 'type', 'created', 'rank')
 
@@ -409,6 +411,8 @@ def search_results(request, q):
             rank=rank_annotation,
             type=models.Value(type_name, output_field=models.CharField())
         )
+        if selected_year:
+            qs = qs.filter(created__year=int(selected_year))
         if q:
             qs = qs.filter(search_document=query)
         for tag in selected_tags:
@@ -425,6 +429,7 @@ def search_results(request, q):
 
     type_counts_raw = {}
     tag_counts_raw = {}
+    year_counts_raw = {}
 
     for klass, type_name in (
         (Entry, 'entry'),
@@ -443,6 +448,12 @@ def search_results(request, q):
             n=models.Count('tag')
         ).values_list('tag', 'n'):
             tag_counts_raw[tag] = tag_counts_raw.get(tag, 0) + count
+        for row in klass_qs.order_by().annotate(
+            year=TruncYear('created')
+        ).values('year').annotate(n=models.Count('pk')):
+            year_counts_raw[row['year']] = year_counts_raw.get(
+                row['year'], 0
+            ) + row['n']
         qs = qs.union(klass_qs.values(*values))
     qs = qs.order_by('-rank')
 
@@ -460,6 +471,14 @@ def search_results(request, q):
         ],
         key=lambda t: t['n'], reverse=True
     )[:40]
+
+    year_counts = sorted(
+        [
+            {'year': year, 'n': value}
+            for year, value in year_counts_raw.items()
+        ],
+        key=lambda t: t['year']
+    )
 
     paginator = Paginator(qs, 30)
     page_number = request.GET.get('page') or '1'
@@ -486,9 +505,11 @@ def search_results(request, q):
         'duration': end - start,
         'type_counts': type_counts,
         'tag_counts': tag_counts,
+        'year_counts': year_counts,
         'selected_tags': selected_tags,
         'excluded_tags': excluded_tags,
         'selected_type': selected_type,
+        'selected_year': selected_year,
     })
 
 

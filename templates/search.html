@@ -13,11 +13,14 @@
     <input type="submit" class="search-submit" value="Search">
 </form>
 
-{% if selected_tags or selected_type %}
+{% if selected_tags or selected_type or selected_year %}
 <p class="search-selections">
     Filters:
     {% if selected_type %}
         <a class="selected-tag" href="{% remove_qsarg "type" selected_type %}">Type: {{ selected_type }} <strong>&#x00D7;</strong></a>
+    {% endif %}
+    {% if selected_year %}
+        <a class="selected-tag" href="{% remove_qsarg "year" selected_year %}">Year: {{ selected_year }} <strong>&#x00D7;</strong></a>
     {% endif %}
     {% for selected_tag in selected_tags %}
         <a class="selected-tag" href="{% remove_qsarg "tag" selected_tag %}">{{ selected_tag }} <strong>&#x00D7;</strong></a>
@@ -42,6 +45,14 @@
         <ul>
             {% for t in type_counts %}
                 <li><a href="{% add_qsarg "type" t.type %}">{{ t.type }}</a> {{ t.n }}</a></li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+    {% if year_counts %}
+        <h3>Years</h3>
+        <ul>
+            {% for t in year_counts %}
+                <li><a href="{% add_qsarg "year" t.year|date:"Y" %}">{{ t.year|date:"Y" }}</a> {{ t.n }}</a></li>
             {% endfor %}
         </ul>
     {% endif %}
