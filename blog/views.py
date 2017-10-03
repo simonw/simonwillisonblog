@@ -6,7 +6,7 @@ from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.postgres.search import SearchQuery, SearchRank
 from django.views.decorators.cache import never_cache
 from django.db import models
-from django.db.models.functions import TruncYear
+from django.db.models.functions import TruncYear, TruncMonth
 from django.conf import settings
 from django.core.paginator import (
     Paginator,
@@ -403,6 +403,7 @@ def search_results(request, q):
     excluded_tags = request.GET.getlist('exclude.tag')
     selected_type = request.GET.get('type', '')
     selected_year = request.GET.get('year', '')
+    selected_month = request.GET.get('month', '')
 
     values = ('pk', 'type', 'created', 'rank')
 
@@ -413,6 +414,8 @@ def search_results(request, q):
         )
         if selected_year:
             qs = qs.filter(created__year=int(selected_year))
+        if selected_month:
+            qs = qs.filter(created__month=int(selected_month))
         if q:
             qs = qs.filter(search_document=query)
         for tag in selected_tags:
@@ -430,6 +433,7 @@ def search_results(request, q):
     type_counts_raw = {}
     tag_counts_raw = {}
     year_counts_raw = {}
+    month_counts_raw = {}
 
     for klass, type_name in (
         (Entry, 'entry'),
@@ -454,6 +458,14 @@ def search_results(request, q):
             year_counts_raw[row['year']] = year_counts_raw.get(
                 row['year'], 0
             ) + row['n']
+        # Only do month counts if a year is selected
+        if selected_year:
+            for row in klass_qs.order_by().annotate(
+                month=TruncMonth('created')
+            ).values('month').annotate(n=models.Count('pk')):
+                month_counts_raw[row['month']] = month_counts_raw.get(
+                    row['month'], 0
+                ) + row['n']
         qs = qs.union(klass_qs.values(*values))
     qs = qs.order_by('-rank')
 
@@ -478,6 +490,14 @@ def search_results(request, q):
             for year, value in year_counts_raw.items()
         ],
         key=lambda t: t['year']
+    )
+
+    month_counts = sorted(
+        [
+            {'month': month, 'n': value}
+            for month, value in month_counts_raw.items()
+        ],
+        key=lambda t: t['month']
     )
 
     paginator = Paginator(qs, 30)
@@ -506,10 +526,13 @@ def search_results(request, q):
         'type_counts': type_counts,
         'tag_counts': tag_counts,
         'year_counts': year_counts,
+        'month_counts': month_counts,
         'selected_tags': selected_tags,
         'excluded_tags': excluded_tags,
         'selected_type': selected_type,
         'selected_year': selected_year,
+        'selected_month': selected_month,
+        'selected_month_name': MONTHS_3_REV_REV.get(selected_month and int(selected_month) or '', '').title(),
     })
 
 

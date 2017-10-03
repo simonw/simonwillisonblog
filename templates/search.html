@@ -22,6 +22,9 @@
     {% if selected_year %}
         <a class="selected-tag" href="{% remove_qsarg "year" selected_year %}">Year: {{ selected_year }} <strong>&#x00D7;</strong></a>
     {% endif %}
+    {% if selected_month %}
+        <a class="selected-tag" href="{% remove_qsarg "month" selected_month %}">Month: {{ selected_month_name }} <strong>&#x00D7;</strong></a>
+    {% endif %}
     {% for selected_tag in selected_tags %}
         <a class="selected-tag" href="{% remove_qsarg "tag" selected_tag %}">{{ selected_tag }} <strong>&#x00D7;</strong></a>
     {% endfor %}
@@ -53,6 +56,14 @@
         <ul>
             {% for t in year_counts %}
                 <li><a href="{% add_qsarg "year" t.year|date:"Y" %}">{{ t.year|date:"Y" }}</a> {{ t.n }}</a></li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+    {% if month_counts %}
+        <h3>Months</h3>
+        <ul>
+            {% for t in month_counts %}
+                <li><a href="{% add_qsarg "month" t.month|date:"n" %}">{{ t.month|date:"F" }}</a> {{ t.n }}</a></li>
             {% endfor %}
         </ul>
     {% endif %}
