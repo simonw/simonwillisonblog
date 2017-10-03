@@ -517,6 +517,21 @@ def search_results(request, q):
             'obj': obj,
         })
     end = time.time()
+
+    selected = {
+        'tags': selected_tags,
+        'year': selected_year,
+        'month': selected_month,
+        'type': selected_type,
+        'month_name': MONTHS_3_REV_REV.get(selected_month and int(selected_month) or '', '').title(),
+    }
+    # Remove empty keys
+    selected = {
+        key: value
+        for key, value in selected.items()
+        if value
+    }
+
     return render(request, 'search.html', {
         'q': q,
         'results': results,
@@ -529,10 +544,7 @@ def search_results(request, q):
         'month_counts': month_counts,
         'selected_tags': selected_tags,
         'excluded_tags': excluded_tags,
-        'selected_type': selected_type,
-        'selected_year': selected_year,
-        'selected_month': selected_month,
-        'selected_month_name': MONTHS_3_REV_REV.get(selected_month and int(selected_month) or '', '').title(),
+        'selected': selected,
     })
 
 
