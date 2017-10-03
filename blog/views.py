@@ -386,18 +386,14 @@ def tools(request):
 
 
 def search(request):
-    q = request.GET.get('q')
-    if q:
-        return search_results(request, q)
-    else:
-        return render(request, 'search.html')
-
-
-def search_results(request, q):
+    q = request.GET.get('q', '').strip()
     start = time.time()
 
-    query = SearchQuery(q)
-    rank_annotation = SearchRank(models.F('search_document'), query)
+    query = None
+    rank_annotation = None
+    if q:
+        query = SearchQuery(q)
+        rank_annotation = SearchRank(models.F('search_document'), query)
 
     selected_tags = request.GET.getlist('tag')
     excluded_tags = request.GET.getlist('exclude.tag')
@@ -405,11 +401,12 @@ def search_results(request, q):
     selected_year = request.GET.get('year', '')
     selected_month = request.GET.get('month', '')
 
-    values = ('pk', 'type', 'created', 'rank')
+    values = ['pk', 'type', 'created']
+    if q:
+        values.append('rank')
 
     def make_queryset(klass, type_name):
         qs = klass.objects.annotate(
-            rank=rank_annotation,
             type=models.Value(type_name, output_field=models.CharField())
         )
         if selected_year:
@@ -418,6 +415,7 @@ def search_results(request, q):
             qs = qs.filter(created__month=int(selected_month))
         if q:
             qs = qs.filter(search_document=query)
+            qs = qs.annotate(rank=rank_annotation)
         for tag in selected_tags:
             qs = qs.filter(tags__tag=tag)
         for exclude_tag in excluded_tags:
@@ -426,9 +424,11 @@ def search_results(request, q):
 
     # Start with a .none() queryset just so we can union stuff onto it
     qs = Entry.objects.annotate(
-        rank=rank_annotation,
         type=models.Value('empty', output_field=models.CharField())
-    ).values(*values).none()
+    )
+    if q:
+        qs = qs.annotate(rank=rank_annotation)
+    qs = qs.values(*values).none()
 
     type_counts_raw = {}
     tag_counts_raw = {}
@@ -467,7 +467,11 @@ def search_results(request, q):
                     row['month'], 0
                 ) + row['n']
         qs = qs.union(klass_qs.values(*values))
-    qs = qs.order_by('-rank')
+
+    if q:
+        qs = qs.order_by('-rank')
+    else:
+        qs = qs.order_by('-created')
 
     type_counts = sorted(
         [
@@ -513,7 +517,7 @@ def search_results(request, q):
     for obj in load_mixed_objects(page.object_list):
         results.append({
             'type': obj.original_dict['type'],
-            'rank': obj.original_dict['rank'],
+            'rank': obj.original_dict.get('rank'),
             'obj': obj,
         })
     end = time.time()

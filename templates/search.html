@@ -11,6 +11,17 @@
 <form action="{{ request.path }}" method="GET">
     <input type="search" class="search-input" name="q" value="{{ q }}" style="width: 80%">
     <input type="submit" class="search-submit" value="Search">
+    {% if selected %}
+        {% for pair in selected.items %}
+            {% if pair.0 == 'tags' %}
+                {% for tag in pair.1 %}
+                    <input type="hidden" name="tag" value="{{ tag }}">
+                {% endfor %}
+            {% else %}
+                <input type="hidden" name="{{ pair.0 }}" value="{{ pair.1 }}">
+            {% endif %}
+        {% endfor %}
+    {% endif %}
 </form>
 
 {% if selected %}
@@ -34,9 +45,11 @@
 <br>
 
 {% if total %}
-    {% include "_pagination.html" with page_total=total %}
-    {% blog_mixed_list_with_dates results %}
-    {% include "_pagination.html" %}
+    {% if selected or q %}
+        {% include "_pagination.html" with page_total=total %}
+        {% blog_mixed_list_with_dates results %}
+        {% include "_pagination.html" %}
+    {% endif %}
 {% endif %}
 
 {% endblock %}
