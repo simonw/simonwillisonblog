@@ -11,7 +11,7 @@ entry_stripper = re.compile('^<entry>(.*?)</entry>$', re.DOTALL)
 def _back_to_xhtml(et):
     m = entry_stripper.match(ElementTree.tostring(et, 'utf-8'))
     if m:
-        return m.group(1)
+        return m.group(1).decode('utf-8')
     else:
         return '' # If we end up with <entry />
 
@@ -44,7 +44,7 @@ def remove_quora_paragraph(xhtml):
     et = ElementTree.fromstring(('<entry>%s</entry>' % xhtml).encode('utf8'))
     p = et.find('p')
     if p is None:
-        return _back_to_xhtml(et)
+        return _back_to_xhtml(et).decode('utf-8')
     if ElementTree.tostring(p, 'utf-8').startswith('<p><em>My answer to'):
         et.remove(p)
     return _back_to_xhtml(et)
@@ -55,9 +55,9 @@ def first_paragraph(xhtml):
     et = ElementTree.fromstring(('<entry>%s</entry>' % xhtml).encode('utf8'))
     p = et.find('p')
     if p is not None:
-        return ElementTree.tostring(p, 'utf-8')
+        return ElementTree.tostring(p, 'utf-8').decode('utf-8')
     else:
-        return '<p>%s</p>' % xhtml
+        return ('<p>%s</p>' % xhtml).decode('utf-8')
 
 
 @register.filter
@@ -78,7 +78,7 @@ def ends_with_punctuation(value):
 
 @register.filter
 def strip_p_ids(xhtml):
-    et = ElementTree.fromstring('<entry>%s</entry>' % xhtml)
+    et = ElementTree.fromstring('<entry>%s</entry>' % xhtml.encode('utf-8'))
     for p in et.findall('.//p'):
         if 'id' in p.attrib:
             del p.attrib['id']
@@ -89,7 +89,7 @@ def strip_p_ids(xhtml):
 def break_up_long_words(xhtml, length):
     """Breaks up words that are longer than the argument."""
     length = int(length)
-    et = ElementTree.fromstring('<entry>%s</entry>' % xhtml)
+    et = ElementTree.fromstring('<entry>%s</entry>' % xhtml.encode('utf-8'))
     do_break_long_words(et, length)
     return _back_to_xhtml(et)
 
