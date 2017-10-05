@@ -19,7 +19,7 @@ def _back_to_xhtml(et):
 @register.filter
 def resize_images_to_fit_width(value, arg):
     max_width = int(arg)
-    et = ElementTree.fromstring('<entry>%s</entry>' % value.encode('utf8'))
+    et = ElementTree.fromstring(u'<entry>%s</entry>' % value).encode('utf8')
     for img in et.findall('.//img'):
         width = int(img.get('width', 0))
         height = int(img.get('height', 0))
@@ -41,7 +41,7 @@ def xhtml2html(xhtml):
 
 @register.filter
 def remove_quora_paragraph(xhtml):
-    et = ElementTree.fromstring(('<entry>%s</entry>' % xhtml).encode('utf8'))
+    et = ElementTree.fromstring((u'<entry>%s</entry>' % xhtml).encode('utf8'))
     p = et.find('p')
     if p is None:
         return _back_to_xhtml(et).decode('utf-8')
@@ -52,12 +52,12 @@ def remove_quora_paragraph(xhtml):
 
 @register.filter
 def first_paragraph(xhtml):
-    et = ElementTree.fromstring(('<entry>%s</entry>' % xhtml).encode('utf8'))
+    et = ElementTree.fromstring((u'<entry>%s</entry>' % xhtml).encode('utf8'))
     p = et.find('p')
     if p is not None:
         return ElementTree.tostring(p, 'utf-8').decode('utf-8')
     else:
-        return ('<p>%s</p>' % xhtml).decode('utf-8')
+        return u'<p>%s</p>' % xhtml
 
 
 @register.filter
