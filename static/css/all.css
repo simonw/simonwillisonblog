@@ -98,13 +98,13 @@ p#previouslyhosted {
     color: #666
 }
 div#wrapper {
-    width: 800px;
+    width: 1000px;
     margin-left: 35px;
     overflow: hidden;
     box-sizing: border-box;
 }
 div#primary {
-    width: 450px;
+    width: 620px;
     margin-right: 35px;
     float: left
 }
@@ -346,7 +346,8 @@ div#smallhead span form {
 }
 body.smallhead div#wrapper {
     background-image: url(/static/css/img/stripe-492.gif);
-    background-repeat: repeat-y
+    background-repeat: repeat-y;
+    background-position: 170px 0;
 }
 body.smallhead div#smallhead {
     margin-bottom: 0px
@@ -376,12 +377,12 @@ p#commentwarning {
     background-color: rgb(221, 163, 255)
 }
 div#comment-wrapper {
-    width: 800px;
+    width: 1000px;
     margin-left: 35px
 }
 div#comments {
     float: left;
-    width: 450px;
+    width: 620px;
     padding-right: 35px;
     padding-top: 1em
 }
@@ -734,7 +735,7 @@ a.selected-tag {
     color: black;
 }
 
-@media (max-width: 600px) {
+@media (max-width: 800px) {
   div#secondary {
     float: none;
     width: auto;
