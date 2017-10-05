@@ -81,7 +81,7 @@ def archive_item(request, year, month, day, slug):
     raise Http404
 
 
-def find_last_5_days():
+def find_last_x_days(x=10):
     """
     Returns 5 date objects representing most recent days that have either
     photos, blogmarks or quotes available. Looks at most recent 50 of each.
@@ -89,27 +89,26 @@ def find_last_5_days():
     # photos = list(Photo.objects.values('created')[0:50])
     blogmarks = list(Blogmark.objects.values('created')[0:50])
     quotes = list(Quotation.objects.values('created')[0:50])
-    dates = set([o['created'] for o in blogmarks + quotes])
+    dates = set([o['created'].date() for o in blogmarks + quotes])
     dates = list(dates)
     dates.sort()
     dates.reverse()
-    return dates[0:5]
+    return dates[0:x]
 
 
 def index(request):
-    last_5_days = find_last_5_days()
+    last_x_days = find_last_x_days()
 
-    if not last_5_days:
+    if not last_x_days:
         raise Http404("No links to display")
     blogmarks = Blogmark.objects.filter(
-        created__gte=last_5_days[-1]
+        created__gte=last_x_days[-1]
     ).prefetch_related('tags')
     quotations = Quotation.objects.filter(
-        created__gte=last_5_days[-1]
+        created__gte=last_x_days[-1]
     ).prefetch_related('tags')
     days = []
-    for daystamp in last_5_days:
-        day = daystamp.date()
+    for day in last_x_days:
         links = [
             {'type': 'link', 'obj': link, 'date': link.created}
             for link in blogmarks
