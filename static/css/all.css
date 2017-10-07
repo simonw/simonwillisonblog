@@ -74,7 +74,7 @@ div#sidead {
     margin-top: 2em
 }
 div#ft {
-    background-image: url(/static/css/img/purple-gradient.png);
+    background: linear-gradient(to bottom, rgb(154, 103, 175) 0%, rgb(96, 72, 129) 49%, rgb(100, 67, 130) 100%);
     padding-left: 35px;
     margin-top: 15px;
     margin-bottom: 0.4em;
@@ -265,7 +265,7 @@ div#bigheadcontainer {
     position: relative
 }
 div#band {
-    background-image: url(/static/css/img/purple-gradient.png);
+    background: linear-gradient(to bottom, rgb(154, 103, 175) 0%, rgb(96, 72, 129) 49%, rgb(100, 67, 130) 100%);
     color: white;
     margin-bottom: -1.55em;
     line-height: 1em;
@@ -314,7 +314,7 @@ h2.overband a {
 div#smallhead {
     margin-bottom: 15px;
     text-align: left;
-    background-image: url(/static/css/img/purple-gradient.png);
+    background: linear-gradient(to bottom, rgb(154, 103, 175) 0%, rgb(96, 72, 129) 49%, rgb(100, 67, 130) 100%);
     color: white
 }
 div#smallhead h1 {
