@@ -19,6 +19,8 @@ def redirect_middleware(get_response):
         star = [r for r in redirects if r.path == '*']
         if star:
             new_url = star[0].target + path
+            if request.META['QUERY_STRING']:
+                new_url += '?' + request.META['QUERY_STRING']
             return HttpResponsePermanentRedirect(new_url)
         # Default: no redirects, just get on with it:
         return get_response(request)
