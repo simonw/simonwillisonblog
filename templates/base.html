@@ -13,10 +13,10 @@ window.dataLayer = window.dataLayer || [];function gtag(){dataLayer.push(argumen
 (function() {
     var m = /#atom\-(\w+)/.exec(location.hash);
     if (m) {
-        gtag('event', 'pageview', {dimension1: m[1]});
+        gtag('event', 'page_view', {dimension1: m[1]});
         history.replaceState && history.replaceState(null, '', location.href.split('#')[0]);
     } else {
-        gtag('event', 'pageview');
+        gtag('event', 'page_view');
     }
 })();
 </script>
