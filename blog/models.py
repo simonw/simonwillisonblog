@@ -79,7 +79,7 @@ class BaseModel(models.Model):
     created = models.DateTimeField()
     tags = models.ManyToManyField(Tag, blank=True)
     slug = models.SlugField(max_length=64)
-    metadata = JSONField(blank=True)
+    metadata = JSONField(blank=True, default={})
     search_document = SearchVectorField(null=True)
 
     def created_unixtimestamp(self):
