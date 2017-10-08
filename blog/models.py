@@ -110,6 +110,10 @@ class BaseModel(models.Model):
 class Entry(BaseModel):
     title = models.CharField(max_length=255)
     body = models.TextField()
+    tweet_html = models.TextField(blank=True, null=True, help_text='''
+        Paste in the embed tweet HTML, minus the script tag,
+        to display a tweet in the sidebar next to this entry.
+    '''.strip())
 
     is_entry = True
 

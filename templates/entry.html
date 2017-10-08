@@ -27,11 +27,13 @@
 {% with entry.get_previous_by_created as previous_entry %}{% if previous_entry %}
 <p><strong>Previous:</strong> <a href="{{ previous_entry.get_absolute_url }}">{{ previous_entry.title|escape }}</a></p>
 {% endif %}{% endwith %}
-
 </div>
+
+{{ entry.tweet_html|safe }}
 {% endblock %}
 
 {% block footer %}
 {% if previously_hosted %}<p id="previouslyhosted">Previously hosted at {{ previously_hosted }}</p>{% endif %}
 {{ block.super }}
+{% if entry.tweet_html %}<script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>{% endif %}
 {% endblock %}
