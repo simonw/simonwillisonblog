@@ -29,7 +29,7 @@
 {% endif %}{% endwith %}
 </div>
 
-{{ entry.tweet_html|safe }}
+{% if entry.tweet_html %}{{ entry.tweet_html|safe }}{% endif %}
 {% endblock %}
 
 {% block footer %}
