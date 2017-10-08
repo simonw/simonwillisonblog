@@ -1,3 +1,4 @@
+# coding=utf8
 from django.shortcuts import render, get_object_or_404
 from django.utils.dates import MONTHS_3_REV
 from django.utils.timezone import utc
@@ -535,8 +536,34 @@ def search(request):
         if value
     }
 
+    # Dynamic title
+    noun = {
+        'quotation': u'Quotations',
+        'blogmark': u'Blogmarks',
+        'entry': u'Entries',
+    }.get(selected.get('type')) or u'Items'
+    title = noun
+
+    if q:
+        title = u'“%s” in %s' % (q, title.lower())
+
+    if selected.get('tags'):
+        title += u' tagged %s' % (u', '.join(selected['tags']))
+
+    datebits = []
+    if selected.get('month_name'):
+        datebits.append(selected['month_name'])
+    if selected.get('year'):
+        datebits.append(selected['year'])
+    if datebits:
+        title += u' in %s' % (u', '.join(datebits))
+
+    if not q and not selected:
+        title = u'Search'
+
     return render(request, 'search.html', {
         'q': q,
+        'title': title,
         'results': results,
         'total': paginator.count,
         'page': page,

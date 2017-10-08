@@ -1,12 +1,12 @@
 {% extends "item_base.html" %}
 
-{% block title %}Search{% if q %} for “{{ q }}”{% endif %}{% endblock %}
+{% block title %}{{ title }}{% endblock %}
 
 {% block rel_canonical %}{% endblock %}
 
 {% block item_content %}
 {% load blog_tags %}
-<h2>Search{% if q %} for “{{ q }}”{% endif %}</h2>
+<h2>{{ title }}</h2>
 
 <form action="{{ request.path }}" method="GET">
     <input type="search" class="search-input" name="q" value="{{ q }}" style="width: 80%">
