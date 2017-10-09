@@ -16,6 +16,7 @@ install:
 
 before_script:
   - psql -c "CREATE DATABASE travisci;" -U postgres
+  - python manage.py migrate --noinput
 
 script:
-  - python manage.py migrate --noinput
+  - python manage.py test
