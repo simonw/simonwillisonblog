@@ -5,6 +5,9 @@ python:
 
 services: postgresql
 
+addons:
+  postgresql: "9.6"
+
 env:
   - DATABASE_URL=postgres://postgres:@localhost/travisci
 
