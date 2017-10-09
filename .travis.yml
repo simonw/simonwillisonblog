@@ -1,0 +1,18 @@
+language: python
+
+python:
+  - 2.7
+
+services: postgresql
+
+env:
+  - DATABASE_URL=postgres://postgres:@localhost/travisci
+
+install:
+  - pip install -r requirements.txt
+
+before_script:
+  - psql -c "CREATE DATABASE travisci;" -U postgres
+
+script:
+  - python manage.py migrate --noinput
