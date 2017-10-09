@@ -14,3 +14,4 @@ cloudflare==1.8.0
 raven>=3
 arrow==0.10.0
 django-redis-cache==1.7.1
+factory-boy==2.9.2
