@@ -81,7 +81,6 @@ class BaseModel(models.Model):
     slug = models.SlugField(max_length=64)
     metadata = JSONField(blank=True, default={})
     search_document = SearchVectorField(null=True)
-    private = models.BooleanField(default=False)
 
     def created_unixtimestamp(self):
         return arrow.get(self.created).timestamp
