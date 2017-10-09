@@ -24,7 +24,7 @@ class MyEntryForm(forms.ModelForm):
             ElementTree.fromstring(
                 '<entry>%s</entry>' % body.encode('utf8')
             )
-        except Exception, e:
+        except Exception as e:
             raise forms.ValidationError(str(e))
         return body
 

@@ -15,14 +15,14 @@ class Migration(migrations.Migration):
     operations = [
         migrations.AddIndex(
             model_name='blogmark',
-            index=django.contrib.postgres.indexes.GinIndex(fields=[b'search_document'], name='blog_blogma_search__45eeb9_gin'),
+            index=django.contrib.postgres.indexes.GinIndex(fields=['search_document'], name='blog_blogma_search__45eeb9_gin'),
         ),
         migrations.AddIndex(
             model_name='quotation',
-            index=django.contrib.postgres.indexes.GinIndex(fields=[b'search_document'], name='blog_quotat_search__aa2d47_gin'),
+            index=django.contrib.postgres.indexes.GinIndex(fields=['search_document'], name='blog_quotat_search__aa2d47_gin'),
         ),
         migrations.AddIndex(
             model_name='entry',
-            index=django.contrib.postgres.indexes.GinIndex(fields=[b'search_document'], name='blog_entry_search__d62c3b_gin'),
+            index=django.contrib.postgres.indexes.GinIndex(fields=['search_document'], name='blog_entry_search__d62c3b_gin'),
         ),
     ]

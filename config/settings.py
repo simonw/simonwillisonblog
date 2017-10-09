@@ -1,17 +1,8 @@
-"""
-Django settings for simonwillisonblog project on Heroku. Fore more info, see:
-https://github.com/heroku/heroku-django-template
-
-For more information on this file, see
-https://docs.djangoproject.com/en/1.8/topics/settings/
-
-For the full list of settings and their values, see
-https://docs.djangoproject.com/en/1.8/ref/settings/
-"""
-
+from future.standard_library import install_aliases
+install_aliases()
 import os
 import dj_database_url
-import urlparse
+from urllib.parse import urlparse
 
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)

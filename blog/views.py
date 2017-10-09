@@ -18,7 +18,7 @@ from django.http import (
     Http404,
     HttpResponsePermanentRedirect as Redirect
 )
-from models import (
+from .models import (
     Blogmark,
     Entry,
     Quotation,
@@ -121,7 +121,7 @@ def index(request):
             if q.created.date() == day
         ]
         items = links + quotes
-        items.sort(lambda x, y: cmp(y['date'], x['date']))
+        items.sort(key=lambda x: x['date'])
         days.append({
             'date': day,
             'items': items,
@@ -286,7 +286,7 @@ def archive_day(request, year, month, day):
         for ps in context['photoset']])
     if count == 0:
         raise Http404("No photosets/photos/entries/quotes/links for that day")
-    items.sort(lambda x, y: cmp(x['obj'].created, y['obj'].created))
+    items.sort(key=lambda x, y: cmp(x['obj'].created, y['obj'].created))
     context['items'] = items
     photos = Photo.objects.filter(
         created__year=context['date'].year,
@@ -341,7 +341,7 @@ def archive_tag(request, tags):
         ])
     if not items:
         raise Http404
-    items.sort(lambda x, y: cmp(y['obj'].created, x['obj'].created))
+    items.sort(key=lambda x, y: cmp(y['obj'].created, x['obj'].created))
     # Paginate it
     paginator = Paginator(items, 30)
     page_number = request.GET.get('page') or '1'

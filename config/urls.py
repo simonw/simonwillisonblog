@@ -6,7 +6,7 @@ from blog import views as blog_views
 from blog import feeds
 import os
 
-FAVICON = open(os.path.join(settings.BASE_DIR, 'static/favicon.ico')).read()
+FAVICON = open(os.path.join(settings.BASE_DIR, 'static/favicon.ico'), 'rb').read()
 
 
 def static_redirect(request):
