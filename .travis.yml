@@ -8,6 +8,9 @@ services: postgresql
 addons:
   postgresql: "9.6"
 
+notifications:
+  slack: simonwillison:mg14rFXxnoHzbdysvy2hVJLd
+
 env:
   - DATABASE_URL=postgres://postgres:@localhost/travisci
 
