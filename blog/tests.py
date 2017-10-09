@@ -31,6 +31,15 @@ class BlogTests(TestCase):
         self.assertTemplateUsed(response, 'entry.html')
         self.assertEqual(response.context['entry'].pk, entry.pk)
 
+    def test_private_items_404(self):
+        for obj in (
+            EntryFactory(private=True),
+            BlogmarkFactory(private=True),
+            QuotationFactory(private=True),
+        ):
+            response = self.client.get(obj.get_absolute_url())
+            self.assertEqual(response.status_code, 404)
+
     def test_blogmark(self):
         blogmark = BlogmarkFactory()
         response = self.client.get(blogmark.get_absolute_url())

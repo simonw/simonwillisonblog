@@ -56,7 +56,8 @@ def archive_item(request, year, month, day, slug):
                 created__year=int(year),
                 created__month=MONTHS_3_REV[month.lower()],
                 created__day=int(day),
-                slug=slug
+                slug=slug,
+                private=False,
             )
         except Http404:
             continue
