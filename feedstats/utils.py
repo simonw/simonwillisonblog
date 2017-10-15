@@ -2,6 +2,7 @@ from functools import wraps
 from .models import SubscriberCount
 import datetime
 import re
+from datadog import statsd
 
 subscribers_re = re.compile('(\d+) subscribers')
 
@@ -9,6 +10,7 @@ subscribers_re = re.compile('(\d+) subscribers')
 def count_subscribers(view_fn):
     @wraps(view_fn)
     def inner_fn(request, *args, **kwargs):
+        statsd.increment('page.views')
         user_agent = request.META.get('HTTP_USER_AGENT', '')
         match = subscribers_re.search(user_agent)
         if match:
