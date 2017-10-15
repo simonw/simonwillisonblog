@@ -138,6 +138,8 @@ class Quotation(BaseModel):
     source = models.CharField(max_length=255)
     source_url = models.URLField(blank=True, null=True, )
 
+    is_quotation = True
+
     def title(self):
         """Mainly a convenence for the comments RSS feed"""
         return u"A quote from %s" % escape(self.source)
@@ -159,6 +161,8 @@ class Blogmark(BaseModel):
     via_url = models.URLField(blank=True, null=True)
     via_title = models.CharField(max_length=255, blank=True, null=True)
     commentary = models.TextField()
+
+    is_blogmark = True
 
     def index_components(self):
         return {

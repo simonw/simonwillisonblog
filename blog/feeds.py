@@ -1,6 +1,6 @@
 from django.contrib.syndication.views import Feed
 from django.utils.feedgenerator import Atom1Feed
-from blog.models import Entry, Blogmark
+from blog.models import Entry, Blogmark, Quotation
 
 
 class Base(Feed):
@@ -59,21 +59,25 @@ class Everything(Base):
     ga_source = 'everything'
 
     def items(self):
-        # Pretty dumb implementation: pull top 30 of entries and blogmarks
+        # Pretty dumb implementation: pull top 30 of entries/blogmarks/quotations
         # then sort them together and return most recent 30 combined
-        # Ignores existence of quotations for the moment.
         last_30_entries = list(Entry.objects.prefetch_related(
             'tags'
         ).order_by('-created')[:30])
         last_30_blogmarks = list(Blogmark.objects.prefetch_related(
             'tags'
         ).order_by('-created')[:30])
-        combined = last_30_blogmarks + last_30_entries
+        last_30_quotations = list(Quotation.objects.prefetch_related(
+            'tags'
+        ).order_by('-created')[:30])
+        combined = last_30_blogmarks + last_30_entries + last_30_quotations
         combined.sort(key=lambda e: e.created, reverse=True)
         return combined[:30]
 
     def item_title(self, item):
         if isinstance(item, Entry):
             return item.title
-        else:
+        elif isinstance(item, Blogmark):
             return item.link_title
+        else:
+            return u'Quoting %s' % item.source
