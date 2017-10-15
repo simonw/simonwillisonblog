@@ -4,6 +4,7 @@ from django.http import HttpResponsePermanentRedirect, HttpResponse
 from django.conf import settings
 from blog import views as blog_views
 from blog import feeds
+from feedstats.utils import count_subscribers
 import os
 
 FAVICON = open(os.path.join(settings.BASE_DIR, 'static/favicon.ico'), 'rb').read()
@@ -60,9 +61,9 @@ urlpatterns = [
     url(r'^tags/$', blog_views.tag_index),
     url(r'^tags/(.*?)/$', blog_views.archive_tag),
 
-    url(r'^atom/entries/$', feeds.Entries()),
-    url(r'^atom/links/$', feeds.Blogmarks()),
-    url(r'^atom/everything/$', feeds.Everything()),
+    url(r'^atom/entries/$', count_subscribers(feeds.Entries().__call__)),
+    url(r'^atom/links/$', count_subscribers(feeds.Blogmarks().__call__)),
+    url(r'^atom/everything/$', count_subscribers(feeds.Everything().__call__)),
 
     url(r'^sitemap\.xml$', feeds.sitemap),
 
