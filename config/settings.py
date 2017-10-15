@@ -50,6 +50,7 @@ INSTALLED_APPS = (
     'blog',
     'redirects',
     'feedstats',
+    'cloudflareips',
 )
 
 MIDDLEWARE = (
