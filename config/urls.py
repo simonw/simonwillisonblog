@@ -25,6 +25,8 @@ Disallow: /
 PRODUCTION_ROBOTS_TXT = '''
 User-agent: *
 Disallow: /admin/
+
+Sitemap: https://simonwillison.net/sitemap.xml
 '''
 
 
@@ -61,6 +63,8 @@ urlpatterns = [
     url(r'^atom/entries/$', feeds.Entries()),
     url(r'^atom/links/$', feeds.Blogmarks()),
     url(r'^atom/everything/$', feeds.Everything()),
+
+    url(r'^sitemap\.xml$', feeds.sitemap),
 
     url(r'^tools/$', blog_views.tools),
     url(r'^tools/search-tags/$', blog_views.tools_search_tags),
