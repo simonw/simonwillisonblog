@@ -10,8 +10,8 @@ class Base(Feed):
 
     def __call__(self, request, *args, **kwargs):
         response = super(Base, self).__call__(request, *args, **kwargs)
-        # Tell CloudFlare to cache my feeds for 15 minutes
-        response['Cache-Control'] = 's-maxage=%d' % (15 * 60)
+        # Tell CloudFlare to cache my feeds for 2 minutes
+        response['Cache-Control'] = 's-maxage=%d' % (2 * 60)
         return response
 
     def item_link(self, item):
