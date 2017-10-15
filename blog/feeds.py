@@ -1,5 +1,6 @@
 from django.contrib.syndication.views import Feed
 from django.utils.feedgenerator import Atom1Feed
+from django.http import HttpResponse
 from blog.models import Entry, Blogmark, Quotation
 
 
@@ -81,3 +82,15 @@ class Everything(Base):
             return item.link_title
         else:
             return u'Quoting %s' % item.source
+
+
+def sitemap(request):
+    xml = [
+        '<?xml version="1.0" encoding="UTF-8"?>'
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+    ]
+    for klass in (Entry, Blogmark, Quotation):
+        for obj in klass.objects.only('slug', 'created'):
+            xml.append('<url><loc>https://simonwillison.net%s</loc></url>' % obj.get_absolute_url())
+    xml.append('</urlset>')
+    return HttpResponse('\n'.join(xml), content_type='application/xml')
