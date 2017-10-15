@@ -1,0 +1,1 @@
+<blockquote{% if obj.source_url %} cite="{{ obj.source_url|escape }}"{% endif %}><p>{{ obj.quotation|escape }}</p></blockquote><p class="cite">&mdash; {% if obj.source_url %}<a href="{{ obj.source_url|escape }}">{{ obj.source|escape }}</a>{% else %}{{ obj.source|escape }}{% endif %}
