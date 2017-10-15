@@ -54,6 +54,7 @@ INSTALLED_APPS = (
 )
 
 MIDDLEWARE = (
+    'cloudflareips.middleware.cloudflare_ip_middleware',
     'redirects.middleware.redirect_middleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',

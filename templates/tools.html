@@ -10,6 +10,7 @@
 <form action="{{ request.path }}" method="POST">
     <input type="submit" name="purge_all" value="Purge all cache">
     {% csrf_token %}
+    <pre>{{ request_headers }}</pre>
 </form>
 
 {% endblock %}
