@@ -381,7 +381,16 @@ def tools(request):
         })
         return Redirect(request.path + '?msg=Cache+purged')
     return render(request, 'tools.html', {
-        'msg': request.GET.get('msg')
+        'msg': request.GET.get('msg'),
+        'request_headers': json.dumps(
+            dict(
+                p for p in request.META.items()
+                if p[0].startswith('HTTP_')
+                or p[0].startswith('REMOTE_')
+            ),
+            default=repr,
+            indent=2
+        ),
     })
 
 
