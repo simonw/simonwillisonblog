@@ -121,7 +121,7 @@ def index(request):
             if q.created.date() == day
         ]
         items = links + quotes
-        items.sort(key=lambda x: x['date'])
+        items.sort(key=lambda x: x['date'], reverse=True)
         days.append({
             'date': day,
             'items': items,
@@ -286,7 +286,7 @@ def archive_day(request, year, month, day):
         for ps in context['photoset']])
     if count == 0:
         raise Http404("No photosets/photos/entries/quotes/links for that day")
-    items.sort(key=lambda x: x['obj'].created)
+    items.sort(key=lambda x: x['obj'].created, reverse=True)
     context['items'] = items
     photos = Photo.objects.filter(
         created__year=context['date'].year,
@@ -341,7 +341,7 @@ def archive_tag(request, tags):
         ])
     if not items:
         raise Http404
-    items.sort(key=lambda x: x['obj'].created)
+    items.sort(key=lambda x: x['obj'].created, reverse=True)
     # Paginate it
     paginator = Paginator(items, 30)
     page_number = request.GET.get('page') or '1'
