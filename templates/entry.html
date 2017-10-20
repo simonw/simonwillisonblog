@@ -1,12 +1,12 @@
 {% extends "item_base.html" %}
 {% load entry_tags %}
-{% block title %}{{ entry.title|escape|typography }}{% endblock %}
+{% block title %}{{ entry.title|force_escape|typography }}{% endblock %}
 
 {% block card_title %}{{ entry.title|typography }}{% endblock %}
 {% block card_description %}{{ entry.body|remove_quora_paragraph|typography|xhtml2html|striptags|truncatewords:30 }}{% endblock %}
 
 {% block item_content %}
-<h2>{{ entry.title|escape|typography }}</h2>
+<h2>{{ entry.title|force_escape|typography }}</h2>
 
 {{ entry.body|resize_images_to_fit_width:"450"|typography|xhtml2html|safe }}
 
@@ -16,7 +16,7 @@
 
 {% block secondary %}
 <div class="metabox">
-<p class="this-is">This is <strong>{{ entry.title|escape|typography }}</strong> by Simon Willison, posted on <a href="/{{ entry.created|date:"Y/M/j/" }}">{{ entry.created|date:"jS F Y" }}</a>.</p>
+<p class="this-is">This is <strong>{{ entry.title|force_escape|typography }}</strong> by Simon Willison, posted on <a href="/{{ entry.created|date:"Y/M/j/" }}">{{ entry.created|date:"jS F Y" }}</a>.</p>
 {% if entry.tags.count %}
 <p>Tagged {% for tag in entry.tags.all %}{{ tag.get_reltag|safe }}{% if not forloop.last %}, {% endif %}{% endfor %}</p>
 {% endif %}

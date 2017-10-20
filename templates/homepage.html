@@ -10,7 +10,7 @@
 {% load entry_tags %}
 {% for entry in entries %}
 <div class="entry segment">
-<h3><a href="{{ entry.get_absolute_url }}" rel="bookmark">{{ entry.title|escape|typography|safe }}</a> <span class="textago">{% if entry.is_today %}today{% else %}{{ entry.created|text_ago }}{% endif %}</span></h3>
+<h3><a href="{{ entry.get_absolute_url }}" rel="bookmark">{{ entry.title|force_escape|typography|safe }}</a> <span class="textago">{% if entry.is_today %}today{% else %}{{ entry.created|text_ago }}{% endif %}</span></h3>
 {{ entry.body|resize_images_to_fit_width:"450"|typography|strip_p_ids|xhtml2html|safe }}
 <div class="entryFooter">
 {% entry_footer entry %}
@@ -29,7 +29,7 @@
 {% if day.items %}
 <ul>{% for item in day.items %}
   <li>{% ifequal item.type "link" %}
-      <a href="{{ item.obj.link_url|escape }}">{{ item.obj.link_title|escape }}</a>{% if item.obj.via_url %} (<a href="{{ item.obj.via_url|escape }}" title="{{ item.obj.via_title|escape }}">via</a>){% endif %}{% if not item.obj.via_url and not item.obj.link_title|ends_with_punctuation %}.{% endif %} {{ item.obj.commentary|escape|typography }} <a href="{{ item.obj.get_absolute_url }}" rel="bookmark">#</a>
+      <a href="{{ item.obj.link_url|escape }}">{{ item.obj.link_title|escape }}</a>{% if item.obj.via_url %} (<a href="{{ item.obj.via_url|escape }}" title="{{ item.obj.via_title|escape }}">via</a>){% endif %}{% if not item.obj.via_url and not item.obj.link_title|ends_with_punctuation %}.{% endif %} {{ item.obj.commentary|force_escape|typography }} <a href="{{ item.obj.get_absolute_url }}" rel="bookmark">#</a>
       {% else %}
       <blockquote><p>{{ item.obj.quotation|typography|escape }}</p></blockquote><p class="cite">&mdash; {% if item.obj.source_url %}<a href="{{ item.obj.source_url|escape }}">{{ item.obj.source|escape }}</a>{% else %}{{ item.obj.source|escape }}{% endif %} <a href="{{ item.obj.get_absolute_url }}#comments" rel="bookmark">#</a></p>
       {% endifequal %}
