@@ -286,7 +286,7 @@ def archive_day(request, year, month, day):
         for ps in context['photoset']])
     if count == 0:
         raise Http404("No photosets/photos/entries/quotes/links for that day")
-    items.sort(key=lambda x, y: cmp(x['obj'].created, y['obj'].created))
+    items.sort(key=lambda x: x['obj'].created)
     context['items'] = items
     photos = Photo.objects.filter(
         created__year=context['date'].year,
@@ -341,7 +341,7 @@ def archive_tag(request, tags):
         ])
     if not items:
         raise Http404
-    items.sort(key=lambda x, y: cmp(y['obj'].created, x['obj'].created))
+    items.sort(key=lambda x: x['obj'].created)
     # Paginate it
     paginator = Paginator(items, 30)
     page_number = request.GET.get('page') or '1'

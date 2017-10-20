@@ -94,7 +94,7 @@ def calendar_context(date):
             day['populated'] = True
     # Now that we've gathered the data we can render the calendar
     days = list(day_things.values())
-    days.sort(lambda x, y: cmp(x['day'], y['day']))
+    days.sort(key=lambda x: x['day'])
     # But first, swoop through and add a description to every day
     for day in days:
         day['score'] = score_for_day(day)
