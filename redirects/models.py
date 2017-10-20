@@ -11,4 +11,4 @@ class Redirect(models.Model):
         unique_together = (('domain', 'path'),)
 
     def __unicode__(self):
-        return u'%s/%s => %s' % (self.domain, self.path, self.target)
+        return '%s/%s => %s' % (self.domain, self.path, self.target)

@@ -12,4 +12,4 @@ class Command(BaseCommand):
                 obj.save()
                 i += 1
                 if i % 100 == 0:
-                    print klass, i
+                    print(klass, i)

@@ -87,7 +87,7 @@ class BaseModel(models.Model):
         return arrow.get(self.created).timestamp
 
     def tag_summary(self):
-        return u' '.join(t.tag for t in self.tags.all())
+        return ' '.join(t.tag for t in self.tags.all())
 
     def get_absolute_url(self):
         return '/%d/%s/%d/%s/' % (
@@ -143,7 +143,7 @@ class Quotation(BaseModel):
 
     def title(self):
         """Mainly a convenence for the comments RSS feed"""
-        return u"A quote from %s" % escape(self.source)
+        return "A quote from %s" % escape(self.source)
 
     def index_components(self):
         return {

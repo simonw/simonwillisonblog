@@ -36,7 +36,7 @@ import CloudFlare
 
 
 # We're not using MONTHS_3 here because it's _(localized)
-MONTHS_3_REV_REV = {value: key for key, value in MONTHS_3_REV.items()}
+MONTHS_3_REV_REV = {value: key for key, value in list(MONTHS_3_REV.items())}
 BLACKLISTED_TAGS = ('quora', 'flash')
 
 
@@ -337,7 +337,7 @@ def archive_tag(request, tags):
         ids = [r[0] for r in cursor.fetchall()]
         items.extend([
             {'type': content_type, 'obj': obj}
-            for obj in model.objects.prefetch_related('tags').in_bulk(ids).values()
+            for obj in list(model.objects.prefetch_related('tags').in_bulk(ids).values())
         ])
     if not items:
         raise Http404
@@ -476,14 +476,14 @@ def search(request):
     type_counts = sorted(
         [
             {'type': type_name, 'n': value}
-            for type_name, value in type_counts_raw.items()
+            for type_name, value in list(type_counts_raw.items())
         ],
         key=lambda t: t['n'], reverse=True
     )
     tag_counts = sorted(
         [
             {'tag': tag, 'n': value}
-            for tag, value in tag_counts_raw.items()
+            for tag, value in list(tag_counts_raw.items())
         ],
         key=lambda t: t['n'], reverse=True
     )[:40]
@@ -491,7 +491,7 @@ def search(request):
     year_counts = sorted(
         [
             {'year': year, 'n': value}
-            for year, value in year_counts_raw.items()
+            for year, value in list(year_counts_raw.items())
         ],
         key=lambda t: t['year']
     )
@@ -499,7 +499,7 @@ def search(request):
     month_counts = sorted(
         [
             {'month': month, 'n': value}
-            for month, value in month_counts_raw.items()
+            for month, value in list(month_counts_raw.items())
         ],
         key=lambda t: t['month']
     )
@@ -532,23 +532,23 @@ def search(request):
     # Remove empty keys
     selected = {
         key: value
-        for key, value in selected.items()
+        for key, value in list(selected.items())
         if value
     }
 
     # Dynamic title
     noun = {
-        'quotation': u'Quotations',
-        'blogmark': u'Blogmarks',
-        'entry': u'Entries',
-    }.get(selected.get('type')) or u'Items'
+        'quotation': 'Quotations',
+        'blogmark': 'Blogmarks',
+        'entry': 'Entries',
+    }.get(selected.get('type')) or 'Items'
     title = noun
 
     if q:
-        title = u'“%s” in %s' % (q, title.lower())
+        title = '“%s” in %s' % (q, title.lower())
 
     if selected.get('tags'):
-        title += u' tagged %s' % (u', '.join(selected['tags']))
+        title += ' tagged %s' % (', '.join(selected['tags']))
 
     datebits = []
     if selected.get('month_name'):
@@ -556,10 +556,10 @@ def search(request):
     if selected.get('year'):
         datebits.append(selected['year'])
     if datebits:
-        title += u' in %s' % (u', '.join(datebits))
+        title += ' in %s' % (', '.join(datebits))
 
     if not q and not selected:
-        title = u'Search'
+        title = 'Search'
 
     return render(request, 'search.html', {
         'q': q,

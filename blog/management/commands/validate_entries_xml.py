@@ -12,8 +12,8 @@ class Command(BaseCommand):
                 ElementTree.fromstring(
                     '<entry>%s</entry>' % entry.body.encode('utf8')
                 )
-            except Exception, e:
-                print e
-                print entry.title
-                print 'https://simonwillison.com/admin/blog/entry/%d/' % entry.pk
-                print
+            except Exception as e:
+                print(e)
+                print(entry.title)
+                print('https://simonwillison.com/admin/blog/entry/%d/' % entry.pk)
+                print()

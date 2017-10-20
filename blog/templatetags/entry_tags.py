@@ -5,7 +5,7 @@ import re
 import datetime
 
 register = template.Library()
-entry_stripper = re.compile('^<entry>(.*?)</entry>$', re.DOTALL)
+entry_stripper = re.compile(b'^<entry>(.*?)</entry>$', re.DOTALL)
 
 
 def _back_to_xhtml(et):
@@ -44,7 +44,7 @@ def remove_quora_paragraph(xhtml):
     et = ElementTree.fromstring(('<entry>%s</entry>' % xhtml).encode('utf8'))
     p = et.find('p')
     if p is None:
-        return _back_to_xhtml(et).decode('utf-8')
+        return _back_to_xhtml(et)
     if ElementTree.tostring(p, 'utf-8').startswith('<p><em>My answer to'):
         et.remove(p)
     return _back_to_xhtml(et)
@@ -127,7 +127,7 @@ def typography(xhtml):
     if not xhtml:
         return xhtml
     "Handles curly quotes and em dashes. Must be fed valid XHTML!"
-    et = ElementTree.fromstring(u'<entry>%s</entry>' % xhtml.encode('utf8'))
+    et = ElementTree.fromstring('<entry>%s</entry>' % xhtml.encode('utf8'))
     do_typography(et)
     return _back_to_xhtml(et)
 
@@ -143,11 +143,11 @@ def do_typography(et):
     if et.tail:
         et.tail = do_typography_string(et.tail)
 
-LEFT_DOUBLE_QUOTATION_MARK = u'\u201c'
-RIGHT_DOUBLE_QUOTATION_MARK = u'\u201d'
-RIGHT_SINGLE_QUOTATION_MARK = u'\u2019'
+LEFT_DOUBLE_QUOTATION_MARK = '\u201c'
+RIGHT_DOUBLE_QUOTATION_MARK = '\u201d'
+RIGHT_SINGLE_QUOTATION_MARK = '\u2019'
 QUOTATION_PAIR = (LEFT_DOUBLE_QUOTATION_MARK, RIGHT_DOUBLE_QUOTATION_MARK)
-EM_DASH = u'\u2014'
+EM_DASH = '\u2014'
 
 
 def quote_alternator():
@@ -160,16 +160,16 @@ double_re = re.compile('"')
 
 
 def do_typography_string(s):
-    if not isinstance(s, unicode):
+    if not isinstance(s, str):
         s = s.decode('utf-8')
     # Do single quotes
-    s = s.replace(u"'", RIGHT_SINGLE_QUOTATION_MARK)
+    s = s.replace("'", RIGHT_SINGLE_QUOTATION_MARK)
     # Now do double quotes, but only if an even number of them
     if s.count('"') % 2 == 0:
         alternator = quote_alternator()
-        s = double_re.sub(lambda m: alternator.next(), s)
+        s = double_re.sub(lambda m: next(alternator), s)
     # Finally, do em dashes
-    s = s.replace(' - ', u'\u2014')
+    s = s.replace(' - ', '\u2014')
     return s
 
 

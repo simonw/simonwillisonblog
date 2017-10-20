@@ -52,7 +52,7 @@ def _tag_cloud_helper(tags):
             tag_counts[tag] = 1
     min_count = min(tag_counts.values())
     max_count = max(tag_counts.values())
-    tags = tag_counts.keys()
+    tags = list(tag_counts.keys())
     tags.sort()
     html_tags = []
     intervals = 10.0

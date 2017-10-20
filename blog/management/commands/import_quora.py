@@ -41,11 +41,11 @@ class Command(BaseCommand):
             ).replace(tzinfo=utc)
             truncated_question = question
             if len(truncated_question) > 250:
-                truncated_question = truncated_question[:250] + u'...'
-            body = u'<p><em>My answer to <a href="%s">%s</a> on Quora</em></p>' % (
+                truncated_question = truncated_question[:250] + '...'
+            body = '<p><em>My answer to <a href="%s">%s</a> on Quora</em></p>' % (
                 url, escape(question)
             )
-            body += u'\n\n' + answer
+            body += '\n\n' + answer
             body = body.replace('&nbsp;', ' ')
             slug = slugify(' '.join(truncated_question.split()[:4]))
             with transaction.atomic():
@@ -61,7 +61,7 @@ class Command(BaseCommand):
                     tag = quora_to_tag.get(topic)
                     if tag:
                         entry.tags.add(Tag.objects.get_or_create(tag=tag)[0])
-            print entry
+            print(entry)
 
 
 def clean_answer(html):
@@ -104,13 +104,13 @@ def clean_answer(html):
             </iframe>
         ''' % src))
 
-    html = unicode(soup)
-    html = html.replace(u'<a href="/', u'<a href="https://www.quora.com/')
+    html = str(soup)
+    html = html.replace('<a href="/', '<a href="https://www.quora.com/')
     # Replace <br /><br /> with paragraphs
-    chunks = html.split(u'<br /><br />')
+    chunks = html.split('<br /><br />')
     new_chunks = []
     for chunk in chunks:
         if not chunk.startswith('<'):
-            chunk = u'<p>%s</p>' % chunk
+            chunk = '<p>%s</p>' % chunk
         new_chunks.append(chunk)
-    return u'\n\n'.join(new_chunks)
+    return '\n\n'.join(new_chunks)

@@ -2,7 +2,7 @@ from future.standard_library import install_aliases
 install_aliases()
 import os
 import dj_database_url
-from urllib.parse import urlparse
+import urllib.parse
 
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
@@ -169,7 +169,7 @@ CACHES = {
 
 REDIS_URL = os.environ.get('REDIS_URL')
 if REDIS_URL:
-    redis_url = urlparse.urlparse(REDIS_URL)
+    redis_url = urllib.parse.urlparse(REDIS_URL)
     CACHES['default'] = {
         'BACKEND': 'redis_cache.RedisCache',
         'LOCATION': '{0}:{1}'.format(redis_url.hostname, redis_url.port),
