@@ -7,7 +7,7 @@ from blog import feeds
 from feedstats.utils import count_subscribers
 import os
 
-FAVICON = open(os.path.join(settings.BASE_DIR, 'static/favicon.ico')).read()
+FAVICON = open(os.path.join(settings.BASE_DIR, 'static/favicon.ico'), 'rb').read()
 
 
 def static_redirect(request):

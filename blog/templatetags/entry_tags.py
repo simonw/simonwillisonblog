@@ -9,9 +9,9 @@ entry_stripper = re.compile('^<entry>(.*?)</entry>$', re.DOTALL)
 
 
 def _back_to_xhtml(et):
-    m = entry_stripper.match(ElementTree.tostring(et, 'utf-8'))
+    m = entry_stripper.match(ElementTree.tostring(et, 'unicode'))
     if m:
-        return m.group(1).decode('utf-8')
+        return m.group(1)
     else:
         return '' # If we end up with <entry />
 
@@ -19,7 +19,7 @@ def _back_to_xhtml(et):
 @register.filter
 def resize_images_to_fit_width(value, arg):
     max_width = int(arg)
-    et = ElementTree.fromstring('<entry>%s</entry>' % value.encode('utf8'))
+    et = ElementTree.fromstring('<entry>%s</entry>' % value)
     for img in et.findall('.//img'):
         width = int(img.get('width', 0))
         height = int(img.get('height', 0))
@@ -41,23 +41,23 @@ def xhtml2html(xhtml):
 
 @register.filter
 def remove_quora_paragraph(xhtml):
-    et = ElementTree.fromstring(('<entry>%s</entry>' % xhtml).encode('utf8'))
+    et = ElementTree.fromstring('<entry>%s</entry>' % xhtml)
     p = et.find('p')
     if p is None:
-        return _back_to_xhtml(et).decode('utf-8')
-    if ElementTree.tostring(p, 'utf-8').startswith('<p><em>My answer to'):
+        return _back_to_xhtml(et)
+    if ElementTree.tostring(p, 'unicode').startswith('<p><em>My answer to'):
         et.remove(p)
     return _back_to_xhtml(et)
 
 
 @register.filter
 def first_paragraph(xhtml):
-    et = ElementTree.fromstring(('<entry>%s</entry>' % xhtml).encode('utf8'))
+    et = ElementTree.fromstring(('<entry>%s</entry>' % xhtml))
     p = et.find('p')
     if p is not None:
-        return ElementTree.tostring(p, 'utf-8').decode('utf-8')
+        return ElementTree.tostring(p, 'unicode')
     else:
-        return ('<p>%s</p>' % xhtml).decode('utf-8')
+        return ('<p>%s</p>' % xhtml)
 
 
 @register.filter
@@ -78,7 +78,7 @@ def ends_with_punctuation(value):
 
 @register.filter
 def strip_p_ids(xhtml):
-    et = ElementTree.fromstring('<entry>%s</entry>' % xhtml.encode('utf-8'))
+    et = ElementTree.fromstring('<entry>%s</entry>' % xhtml)
     for p in et.findall('.//p'):
         if 'id' in p.attrib:
             del p.attrib['id']
@@ -89,7 +89,7 @@ def strip_p_ids(xhtml):
 def break_up_long_words(xhtml, length):
     """Breaks up words that are longer than the argument."""
     length = int(length)
-    et = ElementTree.fromstring('<entry>%s</entry>' % xhtml.encode('utf-8'))
+    et = ElementTree.fromstring('<entry>%s</entry>' % xhtml)
     do_break_long_words(et, length)
     return _back_to_xhtml(et)
 
@@ -123,11 +123,10 @@ def do_break_long_words_string(s, length):
 
 @register.filter
 def typography(xhtml):
-    return xhtml
     if not xhtml:
         return xhtml
     "Handles curly quotes and em dashes. Must be fed valid XHTML!"
-    et = ElementTree.fromstring(u'<entry>%s</entry>' % xhtml.encode('utf8'))
+    et = ElementTree.fromstring('<entry>%s</entry>' % xhtml)
     do_typography(et)
     return _back_to_xhtml(et)
 
@@ -143,11 +142,11 @@ def do_typography(et):
     if et.tail:
         et.tail = do_typography_string(et.tail)
 
-LEFT_DOUBLE_QUOTATION_MARK = u'\u201c'
-RIGHT_DOUBLE_QUOTATION_MARK = u'\u201d'
-RIGHT_SINGLE_QUOTATION_MARK = u'\u2019'
+LEFT_DOUBLE_QUOTATION_MARK = '\u201c'
+RIGHT_DOUBLE_QUOTATION_MARK = '\u201d'
+RIGHT_SINGLE_QUOTATION_MARK = '\u2019'
 QUOTATION_PAIR = (LEFT_DOUBLE_QUOTATION_MARK, RIGHT_DOUBLE_QUOTATION_MARK)
-EM_DASH = u'\u2014'
+EM_DASH = '\u2014'
 
 
 def quote_alternator():
@@ -160,16 +159,14 @@ double_re = re.compile('"')
 
 
 def do_typography_string(s):
-    if not isinstance(s, unicode):
-        s = s.decode('utf-8')
     # Do single quotes
-    s = s.replace(u"'", RIGHT_SINGLE_QUOTATION_MARK)
+    s = s.replace("'", RIGHT_SINGLE_QUOTATION_MARK)
     # Now do double quotes, but only if an even number of them
     if s.count('"') % 2 == 0:
         alternator = quote_alternator()
-        s = double_re.sub(lambda m: alternator.next(), s)
+        s = double_re.sub(lambda m: next(alternator), s)
     # Finally, do em dashes
-    s = s.replace(' - ', u'\u2014')
+    s = s.replace(' - ', '\u2014')
     return s
 
 

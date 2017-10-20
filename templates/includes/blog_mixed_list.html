@@ -11,7 +11,7 @@
 {% endifequal %}
 {% ifequal item.type "entry" %}
 <div class="entry segment">
-  <h3><a href="{{ item.obj.get_absolute_url }}" rel="bookmark">{{ item.obj.title|escape|typography }}</a></h3>
+  <h3><a href="{{ item.obj.get_absolute_url }}" rel="bookmark">{{ item.obj.title|force_escape|typography }}</a></h3>
   <p>
     {{ item.obj.body|remove_quora_paragraph|first_paragraph|typography|xhtml2html|safe }} <span style="font-size: 0.9em">[... <a href="{{ item.obj.get_absolute_url }}">{{ item.obj.body|wordcount }} word{{ item.obj.body|wordcount|pluralize }}</a>]</span></p>
   <div class="entryFooter">
@@ -20,7 +20,7 @@
 </div> <!-- end div.entry -->
 {% endifequal %}
 {% ifequal item.type "blogmark" %}
-<div class="blogmark segment"><p><a href="{{ item.obj.link_url|escape }}">{{ item.obj.link_title|escape|typography }}</a>{% if item.obj.via_url %} (<a href="{{ item.obj.via_url|escape }}" title="{{ item.obj.via_title|escape|typography }}">via</a>){% endif %}{% if not item.obj.via_url and not item.obj.link_title|ends_with_punctuation %}.{% endif %} {{ item.obj.commentary|escape|typography }} <a href="{{ item.obj.get_absolute_url }}" rel="bookmark">#</a> {% if showdate %}<a href="/{{ item.obj.created|date:"Y/M/j/" }}">{{ item.obj.created|date:"jS F Y" }}</a>, {% endif %}{{ item.obj.created|date:"f A"|lower }}</p>
+<div class="blogmark segment"><p><a href="{{ item.obj.link_url|escape }}">{{ item.obj.link_title|force_escape|typography }}</a>{% if item.obj.via_url %} (<a href="{{ item.obj.via_url|escape }}" title="{{ item.obj.via_title|force_escape|typography }}">via</a>){% endif %}{% if not item.obj.via_url and not item.obj.link_title|ends_with_punctuation %}.{% endif %} {{ item.obj.commentary|force_escape|typography }} <a href="{{ item.obj.get_absolute_url }}" rel="bookmark">#</a> {% if showdate %}<a href="/{{ item.obj.created|date:"Y/M/j/" }}">{{ item.obj.created|date:"jS F Y" }}</a>, {% endif %}{{ item.obj.created|date:"f A"|lower }}</p>
 </div>
 {% endifequal %}
 {% ifequal item.type "quotation" %}

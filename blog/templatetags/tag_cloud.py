@@ -23,9 +23,9 @@ def make_css_rules(
     num_classes = len(CLASSES)
     diff_each_time = (max_size - min_size) / (num_classes - 1)
     for i, klass in enumerate(CLASSES):
-        print "%s%s { font-size: %.2f%s; }" % (
+        print("%s%s { font-size: %.2f%s; }" % (
             selector_prefix, klass, min_size + (i * diff_each_time), units
-        )
+        ))
 
 import math
 def log(f):
@@ -52,7 +52,7 @@ def _tag_cloud_helper(tags):
             tag_counts[tag] = 1
     min_count = min(tag_counts.values())
     max_count = max(tag_counts.values())
-    tags = tag_counts.keys()
+    tags = list(tag_counts.keys())
     tags.sort()
     html_tags = []
     intervals = 10.0

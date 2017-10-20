@@ -61,7 +61,7 @@ def import_entries(xmldir):
             title = row['title'],
             slug = row['slug'],
         ))
-        print entry, created
+        print(entry, created)
 
     # Now associate entries with tags
     for row in iter_rows(os.path.join(xmldir, 'blog_entry_tags.xml')):
@@ -165,5 +165,5 @@ def import_comments(xmldir):
         ))
         i += 1
         if i % 100 == 0:
-            print i
+            print(i)
             sys.stdout.flush()

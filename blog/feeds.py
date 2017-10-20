@@ -81,7 +81,7 @@ class Everything(Base):
         elif isinstance(item, Blogmark):
             return item.link_title
         else:
-            return u'Quoting %s' % item.source
+            return 'Quoting %s' % item.source
 
 
 def sitemap(request):

@@ -80,7 +80,7 @@ def calendar_context(date):
         for d in itermonthdates(date.year, date.month)
     ])
     # Flag all days NOT in year/month as display: False
-    for day in day_things.keys():
+    for day in list(day_things.keys()):
         if day.month != date.month:
             day_things[day]['display'] = False
     for name, model, score, created_lookup in MODELS_TO_CHECK:
@@ -93,8 +93,8 @@ def calendar_context(date):
             day[name].append(item)
             day['populated'] = True
     # Now that we've gathered the data we can render the calendar
-    days = day_things.values()
-    days.sort(lambda x, y: cmp(x['day'], y['day']))
+    days = list(day_things.values())
+    days.sort(key=lambda x: x['day'])
     # But first, swoop through and add a description to every day
     for day in days:
         day['score'] = score_for_day(day)
@@ -142,10 +142,10 @@ class ColourGradient(object):
         assert 0.0 <= f <= 1.0, 'argument must be between 0 and 1, inclusive'
         def calc(pair):
             return (pair[0] - pair[1]) * f + pair[1]
-        return tuple(map(calc, zip(self.max_col, self.min_col)))
+        return tuple(map(calc, list(zip(self.max_col, self.min_col))))
     def pick_css(self, f):
         "Returns e.g. rgb(0, 0, 0)"
-        return 'rgb(%s)' % ', '.join(map(str, map(int, self.pick(f))))
+        return 'rgb(%s)' % ', '.join(map(str, list(map(int, self.pick(f)))))
 
 def description_for_day(day):
     bits = []

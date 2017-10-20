@@ -1,17 +1,8 @@
-"""
-Django settings for simonwillisonblog project on Heroku. Fore more info, see:
-https://github.com/heroku/heroku-django-template
-
-For more information on this file, see
-https://docs.djangoproject.com/en/1.8/topics/settings/
-
-For the full list of settings and their values, see
-https://docs.djangoproject.com/en/1.8/ref/settings/
-"""
-
+from future.standard_library import install_aliases
+install_aliases()
 import os
 import dj_database_url
-import urlparse
+import urllib.parse
 
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
@@ -178,12 +169,13 @@ CACHES = {
 
 REDIS_URL = os.environ.get('REDIS_URL')
 if REDIS_URL:
-    redis_url = urlparse.urlparse(REDIS_URL)
+    redis_url = urllib.parse.urlparse(REDIS_URL)
     CACHES['default'] = {
         'BACKEND': 'redis_cache.RedisCache',
         'LOCATION': '{0}:{1}'.format(redis_url.hostname, redis_url.port),
         'OPTIONS': {
             'PASSWORD': redis_url.password,
             'DB': 0,
-        }
+        },
+        'VERSION': 2,
     }

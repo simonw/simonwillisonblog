@@ -13,7 +13,7 @@ from .models import (
 class BaseAdmin(admin.ModelAdmin):
     date_hierarchy = 'created'
     raw_id_fields = ('tags',)
-    list_display = ('__unicode__', 'slug', 'created', 'tag_summary')
+    list_display = ('__str__', 'slug', 'created', 'tag_summary')
 
 
 class MyEntryForm(forms.ModelForm):
@@ -22,9 +22,9 @@ class MyEntryForm(forms.ModelForm):
         body = self.cleaned_data['body']
         try:
             ElementTree.fromstring(
-                '<entry>%s</entry>' % body.encode('utf8')
+                '<entry>%s</entry>' % body
             )
-        except Exception, e:
+        except Exception as e:
             raise forms.ValidationError(str(e))
         return body
 

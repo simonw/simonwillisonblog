@@ -5,6 +5,7 @@ from django.contrib.postgres.search import SearchVector
 from django.db import transaction
 from blog.models import BaseModel, Tag
 import operator
+from functools import reduce
 
 
 @receiver(post_save)
@@ -31,7 +32,7 @@ def make_updater(instance):
 
     def on_commit():
         search_vectors = []
-        for weight, text in components.items():
+        for weight, text in list(components.items()):
             search_vectors.append(
                 SearchVector(Value(text), weight=weight)
             )

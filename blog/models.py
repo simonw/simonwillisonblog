@@ -20,7 +20,7 @@ class Tag(models.Model):
         unique=True
     )
 
-    def __unicode__(self):
+    def __str__(self):
         return self.tag
 
     def get_absolute_url(self):
@@ -86,7 +86,7 @@ class BaseModel(models.Model):
         return arrow.get(self.created).timestamp
 
     def tag_summary(self):
-        return u' '.join(t.tag for t in self.tags.all())
+        return ' '.join(t.tag for t in self.tags.all())
 
     def get_absolute_url(self):
         return '/%d/%s/%d/%s/' % (
@@ -129,7 +129,7 @@ class Entry(BaseModel):
             'B': ' '.join(self.tags.values_list('tag', flat=True)),
         }
 
-    def __unicode__(self):
+    def __str__(self):
         return self.title
 
 
@@ -142,7 +142,7 @@ class Quotation(BaseModel):
 
     def title(self):
         """Mainly a convenence for the comments RSS feed"""
-        return u"A quote from %s" % escape(self.source)
+        return "A quote from %s" % escape(self.source)
 
     def index_components(self):
         return {
@@ -151,7 +151,7 @@ class Quotation(BaseModel):
             'C': self.source,
         }
 
-    def __unicode__(self):
+    def __str__(self):
         return self.quotation
 
 
@@ -171,7 +171,7 @@ class Blogmark(BaseModel):
             'C': self.commentary + ' ' + self.link_domain() + ' ' + (self.via_title or ''),
         }
 
-    def __unicode__(self):
+    def __str__(self):
         return self.link_title
 
     def link_domain(self):
@@ -194,7 +194,7 @@ class Photo(models.Model):
     latitude = models.CharField(max_length=32, blank=True, null=True)
     created = models.DateTimeField()
 
-    def __unicode__(self):
+    def __str__(self):
         return self.title
 
     def photopage(self):
@@ -279,7 +279,7 @@ class Comment(models.Model):
     def edit_url(self):
         return "/admin/blog/comment/%d/" % self.id
 
-    def __unicode__(self):
+    def __str__(self):
         return '%s on "%s"' % (self.name, self.item)
 
     def admin_summary(self):

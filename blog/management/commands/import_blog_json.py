@@ -48,9 +48,9 @@ class Command(BaseCommand):
                     slug__iexact=slug,
                 ))
                 if matches:
-                    print 'Found match for %s: %s / %s : %s' % (
+                    print('Found match for %s: %s / %s : %s' % (
                         klass, created, slug, matches
-                    )
+                    ))
                     skipit = True
                     break
             if skipit:
@@ -90,4 +90,4 @@ class Command(BaseCommand):
                 t = Tag.objects.get_or_create(tag=tag)[0]
                 obj.tags.add(t)
             obj.tags.add(tag_with_tag)
-            print obj, obj.get_absolute_url()
+            print(obj, obj.get_absolute_url())
