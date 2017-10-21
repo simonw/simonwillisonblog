@@ -33,6 +33,7 @@ import datetime
 import random
 from collections import Counter
 import CloudFlare
+import os
 
 
 # We're not using MONTHS_3 here because it's _(localized)
@@ -381,7 +382,8 @@ def tools(request):
         })
         return Redirect(request.path + '?msg=Cache+purged')
     return render(request, 'tools.html', {
-        'msg': request.GET.get('msg')
+        'msg': request.GET.get('msg'),
+        'deployed_hash': os.environ.get('HEROKU_SLUG_COMMIT'),
     })
 
 
