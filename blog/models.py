@@ -10,6 +10,7 @@ from django.utils.html import escape, strip_tags
 from collections import Counter
 import re
 import arrow
+import datetime
 from xml.etree import ElementTree
 
 tag_re = re.compile('^[a-z0-9]+$')
@@ -76,7 +77,7 @@ class Tag(models.Model):
 
 
 class BaseModel(models.Model):
-    created = models.DateTimeField()
+    created = models.DateTimeField(default=datetime.datetime.utcnow)
     tags = models.ManyToManyField(Tag, blank=True)
     slug = models.SlugField(max_length=64)
     metadata = JSONField(blank=True, default={})
@@ -131,6 +132,9 @@ class Entry(BaseModel):
 
     def __str__(self):
         return self.title
+
+    class Meta(BaseModel.Meta):
+        verbose_name_plural = 'Entries'
 
 
 class Quotation(BaseModel):
@@ -218,7 +222,7 @@ class Photoset(models.Model):
     photos = models.ManyToManyField(
         Photo, related_name="in_photoset",
     )
-    primary = models.ForeignKey(Photo)
+    primary = models.ForeignKey(Photo, on_delete=models.CASCADE)
 
     def __str__(self):
         return self.title
@@ -251,7 +255,7 @@ COMMENTS_ALLOWED_ON = ('entry', 'blogmark', 'quotation')
 
 
 class Comment(models.Model):
-    content_type = models.ForeignKey(ContentType)
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     object_id = models.PositiveIntegerField(db_index=True)
     item = GenericForeignKey()
     # The comment

@@ -54,7 +54,7 @@ class Migration(migrations.Migration):
                 ('title', models.CharField(max_length=255, null=True, blank=True)),
                 ('description', models.TextField()),
                 ('photos', models.ManyToManyField(related_name='in_photoset', to='blog.Photo')),
-                ('primary', models.ForeignKey(to='blog.Photo')),
+                ('primary', models.ForeignKey(to='blog.Photo', on_delete=models.CASCADE)),
             ],
         ),
         migrations.CreateModel(
