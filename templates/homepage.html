@@ -10,8 +10,8 @@
 {% load entry_tags %}
 {% for entry in entries %}
 <div class="entry segment">
-<h3><a href="{{ entry.get_absolute_url }}" rel="bookmark">{{ entry.title|force_escape|typography|safe }}</a> <span class="textago">{% if entry.is_today %}today{% else %}{{ entry.created|text_ago }}{% endif %}</span></h3>
-{{ entry.body|resize_images_to_fit_width:"450"|typography|strip_p_ids|xhtml2html|safe }}
+<h3><a href="{{ entry.get_absolute_url }}" rel="bookmark">{{ entry.title|typography }}</a> <span class="textago">{% if entry.is_today %}today{% else %}{{ entry.created|text_ago }}{% endif %}</span></h3>
+{{ entry.body|xhtml|resize_images_to_fit_width:"450"|typography|strip_p_ids|xhtml2html }}
 <div class="entryFooter">
 {% entry_footer entry %}
 </div>
@@ -23,15 +23,15 @@
 <h2 class="overband">Elsewhere <a href="/atom/links/" title="Atom feed of new links"><svg xmlns="http://www.w3.org/2000/svg"  width="14px" height="14px" viewBox="0 0 256 256"><circle cx="68" cy="189" r="24" fill="#FFF"/><path fill="#FFF" d="M160 213h-34a82 82 0 0 0-82-82V97a116 116 0 0 1 116 116z"/><path fill="#FFF" d="M184 213A140 140 0 0 0 44 73V38a175 175 0 0 1 175 175z"/></svg></a></h2>
 {% for day in days %}
 <div class="day">
-<h3><a href="{{ day.date|date:"/Y/M/j/" }}">{% if day.special %}{{ day.special|escape }}{% else %}{{ day.date|date:"jS F Y" }}{% endif %}</a></h3>
-{% if day.photos %}<div class="photos">{% for photo in day.photos %}<a href="{{ photo.photopage }}" class="photolink"><img src="{{ photo.url_s }}" alt="{{ photo.title|escape }}" title="{{ photo.title|escape }}"></a>{% endfor %}</div>
+<h3><a href="{{ day.date|date:"/Y/M/j/" }}">{% if day.special %}{{ day.special }}{% else %}{{ day.date|date:"jS F Y" }}{% endif %}</a></h3>
+{% if day.photos %}<div class="photos">{% for photo in day.photos %}<a href="{{ photo.photopage }}" class="photolink"><img src="{{ photo.url_s }}" alt="{{ photo.title }}" title="{{ photo.title }}"></a>{% endfor %}</div>
 <br style="clear: both">{% endif %}
 {% if day.items %}
 <ul>{% for item in day.items %}
   <li>{% ifequal item.type "link" %}
-      <a href="{{ item.obj.link_url|escape }}">{{ item.obj.link_title|escape }}</a>{% if item.obj.via_url %} (<a href="{{ item.obj.via_url|escape }}" title="{{ item.obj.via_title|escape }}">via</a>){% endif %}{% if not item.obj.via_url and not item.obj.link_title|ends_with_punctuation %}.{% endif %} {{ item.obj.commentary|force_escape|typography }} <a href="{{ item.obj.get_absolute_url }}" rel="bookmark">#</a>
+      <a href="{{ item.obj.link_url }}">{{ item.obj.link_title }}</a>{% if item.obj.via_url %} (<a href="{{ item.obj.via_url }}" title="{{ item.obj.via_title }}">via</a>){% endif %}{% if not item.obj.via_url and not item.obj.link_title|ends_with_punctuation %}.{% endif %} {{ item.obj.commentary|typography }} <a href="{{ item.obj.get_absolute_url }}" rel="bookmark">#</a>
       {% else %}
-      <blockquote><p>{{ item.obj.quotation|force_escape|typography|escape }}</p></blockquote><p class="cite">&mdash; {% if item.obj.source_url %}<a href="{{ item.obj.source_url|escape }}">{{ item.obj.source|escape }}</a>{% else %}{{ item.obj.source|escape }}{% endif %} <a href="{{ item.obj.get_absolute_url }}#comments" rel="bookmark">#</a></p>
+      <blockquote><p>{{ item.obj.quotation|typography }}</p></blockquote><p class="cite">&mdash; {% if item.obj.source_url %}<a href="{{ item.obj.source_url }}">{{ item.obj.source }}</a>{% else %}{{ item.obj.source }}{% endif %} <a href="{{ item.obj.get_absolute_url }}#comments" rel="bookmark">#</a></p>
       {% endifequal %}
   </li>
   {% endfor %}

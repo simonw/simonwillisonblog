@@ -1,5 +1,7 @@
 from django import template
 from django.utils.timezone import utc
+from django.utils.html import conditional_escape
+from django.utils.safestring import mark_safe
 from xml.etree import ElementTree
 import re
 import datetime
@@ -8,26 +10,43 @@ register = template.Library()
 entry_stripper = re.compile('^<entry>(.*?)</entry>$', re.DOTALL)
 
 
-def _back_to_xhtml(et):
-    m = entry_stripper.match(ElementTree.tostring(et, 'unicode'))
-    if m:
-        return m.group(1)
-    else:
-        return '' # If we end up with <entry />
+@register.filter
+def xhtml(xhtml):
+    return XhtmlString(xhtml, contains_markup=True)
+
+
+class XhtmlString(object):
+    def __init__(self, value, contains_markup=False):
+        if isinstance(value, XhtmlString):
+            self.et = value.et
+        else:
+            if not contains_markup:
+                # Handle strings like "this & that"
+                value = conditional_escape(value)
+            self.et = ElementTree.fromstring(
+                '<entry>%s</entry>' % value
+            )
+
+    def __str__(self):
+        m = entry_stripper.match(ElementTree.tostring(self.et, 'unicode'))
+        if m:
+            return mark_safe(m.group(1))
+        else:
+            return '' # If we end up with <entry />
 
 
 @register.filter
 def resize_images_to_fit_width(value, arg):
     max_width = int(arg)
-    et = ElementTree.fromstring('<entry>%s</entry>' % value)
-    for img in et.findall('.//img'):
+    x = XhtmlString(value)
+    for img in x.et.findall('.//img'):
         width = int(img.get('width', 0))
         height = int(img.get('height', 0))
         if width > max_width:
             # Scale down
             img.set('width', str(max_width))
             img.set('height', str(int(float(max_width) / width * height)))
-    return _back_to_xhtml(et)
+    return x
 
 xhtml_endtag_fragment = re.compile('\s*/>')
 
@@ -35,29 +54,29 @@ xhtml_endtag_fragment = re.compile('\s*/>')
 @register.filter
 def xhtml2html(xhtml):
     # &apos; is valid in XML/XHTML but not in regular HTML
-    s = xhtml.replace('&apos;', '&#39;')
-    return xhtml_endtag_fragment.sub('>', s)
+    s = str(xhtml).replace('&apos;', '&#39;')
+    return mark_safe(xhtml_endtag_fragment.sub('>', s))
 
 
 @register.filter
 def remove_quora_paragraph(xhtml):
-    et = ElementTree.fromstring('<entry>%s</entry>' % xhtml)
-    p = et.find('p')
+    x = XhtmlString(xhtml)
+    p = x.et.find('p')
     if p is None:
-        return _back_to_xhtml(et)
+        return x
     if ElementTree.tostring(p, 'unicode').startswith('<p><em>My answer to'):
-        et.remove(p)
-    return _back_to_xhtml(et)
+        x.et.remove(p)
+    return x
 
 
 @register.filter
 def first_paragraph(xhtml):
-    et = ElementTree.fromstring(('<entry>%s</entry>' % xhtml))
-    p = et.find('p')
+    x = XhtmlString(xhtml)
+    p = x.et.find('p')
     if p is not None:
-        return ElementTree.tostring(p, 'unicode')
+        return mark_safe(ElementTree.tostring(p, 'unicode'))
     else:
-        return ('<p>%s</p>' % xhtml)
+        return mark_safe('<p>%s</p>' % xhtml)
 
 
 @register.filter
@@ -78,20 +97,20 @@ def ends_with_punctuation(value):
 
 @register.filter
 def strip_p_ids(xhtml):
-    et = ElementTree.fromstring('<entry>%s</entry>' % xhtml)
-    for p in et.findall('.//p'):
+    x = XhtmlString(xhtml)
+    for p in x.et.findall('.//p'):
         if 'id' in p.attrib:
             del p.attrib['id']
-    return _back_to_xhtml(et)
+    return x
 
 
 @register.filter
 def break_up_long_words(xhtml, length):
     """Breaks up words that are longer than the argument."""
     length = int(length)
-    et = ElementTree.fromstring('<entry>%s</entry>' % xhtml)
-    do_break_long_words(et, length)
-    return _back_to_xhtml(et)
+    x = XhtmlString(xhtml)
+    do_break_long_words(x.et, length)
+    return x
 
 
 def do_break_long_words(et, length):
@@ -126,9 +145,9 @@ def typography(xhtml):
     if not xhtml:
         return xhtml
     "Handles curly quotes and em dashes. Must be fed valid XHTML!"
-    et = ElementTree.fromstring('<entry>%s</entry>' % xhtml)
-    do_typography(et)
-    return _back_to_xhtml(et)
+    x = XhtmlString(xhtml)
+    do_typography(x.et)
+    return x
 
 
 def do_typography(et):

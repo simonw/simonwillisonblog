@@ -1,6 +1,6 @@
 {% extends "item_base.html" %}
 
-{% block title %}A quote from {{ quotation.source|escape }}{% endblock %}
+{% block title %}A quote from {{ quotation.source }}{% endblock %}
 
 {% block card_title %}A quote from {{ quotation.source }}{% endblock %}
 {% block card_description %}{{ quotation.quotation|truncatewords:30 }}{% endblock %}
@@ -8,7 +8,7 @@
 {% load entry_tags %}
 {% block item_content %}
 <div class="quote">
-<blockquote{% if quotation.source_url %} cite="{{ quotation.source_url|escape }}"{% endif %}><p>{{ quotation.quotation|force_escape|typography }}</p></blockquote><p class="cite">&mdash; {% if quotation.source_url %}<a href="{{ quotation.source_url|escape }}">{{ quotation.source|escape }}</a>{% else %}{{ quotation.source|escape }}{% endif %}</p>
+<blockquote{% if quotation.source_url %} cite="{{ quotation.source_url }}"{% endif %}><p>{{ quotation.quotation|typography }}</p></blockquote><p class="cite">&mdash; {% if quotation.source_url %}<a href="{{ quotation.source_url }}">{{ quotation.source }}</a>{% else %}{{ quotation.source }}{% endif %}</p>
 </div>
 
 <div class="entryFooter">Posted <a href="/{{ quotation.created|date:"Y/M/j/" }}">{{ quotation.created|date:"jS F Y" }}</a> at {{ quotation.created|date:"f A"|lower }}</div>

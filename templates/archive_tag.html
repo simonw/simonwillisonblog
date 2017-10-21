@@ -1,9 +1,9 @@
 {% extends "smallhead.html" %}
 
-{% block title %}Items tagged “{{ tags|join:"” and “"|escape }}”{% endblock %}
+{% block title %}Items tagged “{{ tags|join:"” and “" }}”{% endblock %}
 
 {% block primary %}
-<h2>{{ total }} item{{ total|pluralize }} tagged “{{ tags|join:"” and “"|escape }}”</h2>
+<h2>{{ total }} item{{ total|pluralize }} tagged “{{ tags|join:"” and “" }}”</h2>
 {% load blog_tags %}
 
 {% blog_mixed_list_with_dates items %}

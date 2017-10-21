@@ -1,14 +1,14 @@
 {% extends "item_base.html" %}
 {% load entry_tags %}
-{% block title %}{{ entry.title|force_escape|typography }}{% endblock %}
+{% block title %}{{ entry.title|typography }}{% endblock %}
 
-{% block card_title %}{{ entry.title|force_escape|typography }}{% endblock %}
-{% block card_description %}{{ entry.body|remove_quora_paragraph|typography|xhtml2html|striptags|truncatewords:30 }}{% endblock %}
+{% block card_title %}{{ entry.title|typography }}{% endblock %}
+{% block card_description %}{{ entry.body|xhtml|remove_quora_paragraph|typography|xhtml2html|striptags|truncatewords:30 }}{% endblock %}
 
 {% block item_content %}
-<h2>{{ entry.title|force_escape|typography }}</h2>
+<h2>{{ entry.title|typography }}</h2>
 
-{{ entry.body|resize_images_to_fit_width:"450"|typography|xhtml2html|safe }}
+{{ entry.body|xhtml|resize_images_to_fit_width:"450"|typography|xhtml2html }}
 
 <div class="entryFooter">Posted <a href="/{{ entry.created|date:"Y/M/j/" }}">{{ entry.created|date:"jS F Y" }}</a> at {{ entry.created|date:"f A"|lower }} &middot; Follow <a href="https://twitter.com/">@simonw</a> on Twitter</div>
 
@@ -16,16 +16,16 @@
 
 {% block secondary %}
 <div class="metabox">
-<p class="this-is">This is <strong>{{ entry.title|force_escape|typography }}</strong> by Simon Willison, posted on <a href="/{{ entry.created|date:"Y/M/j/" }}">{{ entry.created|date:"jS F Y" }}</a>.</p>
+<p class="this-is">This is <strong>{{ entry.title|typography }}</strong> by Simon Willison, posted on <a href="/{{ entry.created|date:"Y/M/j/" }}">{{ entry.created|date:"jS F Y" }}</a>.</p>
 {% if entry.tags.count %}
-<p>Tagged {% for tag in entry.tags.all %}{{ tag.get_reltag|safe }}{% if not forloop.last %}, {% endif %}{% endfor %}</p>
+<p>Tagged {% for tag in entry.tags.all %}{{ tag.get_reltag }}{% if not forloop.last %}, {% endif %}{% endfor %}</p>
 {% endif %}
 
 {% with entry.get_next_by_created as next_entry %}{% if next_entry %}
-<p><strong>Next:</strong> <a href="{{ next_entry.get_absolute_url }}">{{ next_entry.title|escape }}</a></p>
+<p><strong>Next:</strong> <a href="{{ next_entry.get_absolute_url }}">{{ next_entry.title }}</a></p>
 {% endif %}{% endwith %}
 {% with entry.get_previous_by_created as previous_entry %}{% if previous_entry %}
-<p><strong>Previous:</strong> <a href="{{ previous_entry.get_absolute_url }}">{{ previous_entry.title|escape }}</a></p>
+<p><strong>Previous:</strong> <a href="{{ previous_entry.get_absolute_url }}">{{ previous_entry.title }}</a></p>
 {% endif %}{% endwith %}
 </div>
 

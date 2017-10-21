@@ -10,7 +10,7 @@
 <h3>Blog entries</h3>
 <ul>
 {% for entry in entries %}
-<li>{{ entry.created|date:"jS"}}: <strong><a href="{{ entry.get_absolute_url }}">{{ entry.title|escape }}</a></strong></li>
+<li>{{ entry.created|date:"jS"}}: <strong><a href="{{ entry.get_absolute_url }}">{{ entry.title }}</a></strong></li>
 {% endfor %}
 </ul>
 {% endif %}

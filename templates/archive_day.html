@@ -15,7 +15,7 @@
 {% load blog_calendar %}
 {% render_calendar date %}
 {% if photo %}
-<div class="photos">{% for p in photo %}<a class="photolink" href="{{ p.photopage }}"><img src="{{ p.url_s }}" alt="{{ p.title|escape }}" title="{{ p.title|escape }}"></a>{% endfor %}</div><br style="clear: both">
+<div class="photos">{% for p in photo %}<a class="photolink" href="{{ p.photopage }}"><img src="{{ p.url_s }}" alt="{{ p.title }}" title="{{ p.title }}"></a>{% endfor %}</div><br style="clear: both">
 {% if more_photos %}<a href="http://www.flickr.com/photos/simon/archives/date-posted/{{ date|date:"Y/m/d/"}}">... {{ more_photos }} photo{{ more_photos|pluralize }}</a>{% endif %}
 {% endif %}
 </div>

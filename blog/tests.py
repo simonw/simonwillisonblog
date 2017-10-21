@@ -42,3 +42,16 @@ class BlogTests(TestCase):
         response = self.client.get(quotation.get_absolute_url())
         self.assertTemplateUsed(response, 'quotation.html')
         self.assertEqual(response.context['quotation'].pk, quotation.pk)
+
+    def test_markup(self):
+        entry = EntryFactory(
+            title='Hello & goodbye',
+            body='<p>First paragraph</p><p>Second paragraph</p>',
+        )
+        response = self.client.get(entry.get_absolute_url())
+        self.assertContains(response, '''
+            <h2>Hello &amp; goodbye</h2>
+        ''', html=True)
+        self.assertContains(response, '''
+            <p>First paragraph</p><p>Second paragraph</p>
+        '''.strip())

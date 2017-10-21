@@ -31,12 +31,12 @@
   {% if comments_open %}
   <form action="/addcomment/" method="post">
   <p class="formrow"><label for="yourname">Name:</label>
-    <input type="text" class="text" id="yourname" name="name" value="{{ name|escape }}"></p>
+    <input type="text" class="text" id="yourname" name="name" value="{{ name }}"></p>
   {% if not openid %}<p class="formrow"><label for="yoururl">URL:</label>
     <input type="text" class="text" id="yoururl" name="url"></p>
     <p><img alt="" src="/static/css/img/openid-14x14.png" style="vertical-align: top; padding-top: 3px"> <a href="/openid/">Sign in with OpenID</a></p>
   {% else %}
-    <p  style="clear: both;"><strong><img alt="" src="/static/css/img/openid-14x14.png" style="vertical-align: top; padding-top: 3px"> {{ openid|escape }}</strong></p>
+    <p  style="clear: both;"><strong><img alt="" src="/static/css/img/openid-14x14.png" style="vertical-align: top; padding-top: 3px"> {{ openid }}</strong></p>
   {% endif %}
   <p class="formrow"><textarea rows="10" cols="35" name="body"></textarea></p>
   <p><input type="radio" name="html_mode" value="simple" id="html_simple"
