@@ -2,7 +2,7 @@
 {% load entry_tags %}
 {% block title %}{{ entry.title|force_escape|typography }}{% endblock %}
 
-{% block card_title %}{{ entry.title|typography }}{% endblock %}
+{% block card_title %}{{ entry.title|force_escape|typography }}{% endblock %}
 {% block card_description %}{{ entry.body|remove_quora_paragraph|typography|xhtml2html|striptags|truncatewords:30 }}{% endblock %}
 
 {% block item_content %}

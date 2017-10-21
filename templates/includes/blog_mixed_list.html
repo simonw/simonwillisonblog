@@ -24,7 +24,7 @@
 </div>
 {% endifequal %}
 {% ifequal item.type "quotation" %}
-<div class="quote segment"><blockquote{% if item.obj.source_url %} cite="{{ item.obj.source_url|escape }}"{% endif %}><p>{{ item.obj.quotation|typography|escape }}</p></blockquote><p class="cite">&mdash; {% if item.obj.source_url %}<a href="{{ item.obj.source_url|escape }}">{{ item.obj.source|escape }}</a>{% else %}{{ item.obj.source|escape }}{% endif %} <a href="{{ item.obj.get_absolute_url }}#comments" rel="bookmark">#</a> {% if showdate %}<a href="/{{ item.obj.created|date:"Y/M/j/" }}">{{ item.obj.created|date:"jS F Y" }}</a>, {% endif %}{{ item.obj.created|date:"f A"|lower }}</p>
+<div class="quote segment"><blockquote{% if item.obj.source_url %} cite="{{ item.obj.source_url|escape }}"{% endif %}><p>{{ item.obj.quotation|force_escape|typography }}</p></blockquote><p class="cite">&mdash; {% if item.obj.source_url %}<a href="{{ item.obj.source_url|escape }}">{{ item.obj.source|escape }}</a>{% else %}{{ item.obj.source|escape }}{% endif %} <a href="{{ item.obj.get_absolute_url }}#comments" rel="bookmark">#</a> {% if showdate %}<a href="/{{ item.obj.created|date:"Y/M/j/" }}">{{ item.obj.created|date:"jS F Y" }}</a>, {% endif %}{{ item.obj.created|date:"f A"|lower }}</p>
 </div>
 {% endifequal %}
 {% endfor %}

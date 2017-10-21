@@ -31,7 +31,7 @@
   <li>{% ifequal item.type "link" %}
       <a href="{{ item.obj.link_url|escape }}">{{ item.obj.link_title|escape }}</a>{% if item.obj.via_url %} (<a href="{{ item.obj.via_url|escape }}" title="{{ item.obj.via_title|escape }}">via</a>){% endif %}{% if not item.obj.via_url and not item.obj.link_title|ends_with_punctuation %}.{% endif %} {{ item.obj.commentary|force_escape|typography }} <a href="{{ item.obj.get_absolute_url }}" rel="bookmark">#</a>
       {% else %}
-      <blockquote><p>{{ item.obj.quotation|typography|escape }}</p></blockquote><p class="cite">&mdash; {% if item.obj.source_url %}<a href="{{ item.obj.source_url|escape }}">{{ item.obj.source|escape }}</a>{% else %}{{ item.obj.source|escape }}{% endif %} <a href="{{ item.obj.get_absolute_url }}#comments" rel="bookmark">#</a></p>
+      <blockquote><p>{{ item.obj.quotation|force_escape|typography|escape }}</p></blockquote><p class="cite">&mdash; {% if item.obj.source_url %}<a href="{{ item.obj.source_url|escape }}">{{ item.obj.source|escape }}</a>{% else %}{{ item.obj.source|escape }}{% endif %} <a href="{{ item.obj.get_absolute_url }}#comments" rel="bookmark">#</a></p>
       {% endifequal %}
   </li>
   {% endfor %}
