@@ -27,7 +27,7 @@ class Migration(migrations.Migration):
                 ('spam_status', models.CharField(max_length=16, choices=[(b'normal', b'Not suspected'), (b'approved', b'Approved'), (b'suspected', b'Suspected'), (b'spam', b'SPAM')])),
                 ('visible_on_site', models.BooleanField(default=True, db_index=True)),
                 ('spam_reason', models.TextField()),
-                ('content_type', models.ForeignKey(to='contenttypes.ContentType')),
+                ('content_type', models.ForeignKey(to='contenttypes.ContentType', on_delete=models.CASCADE)),
             ],
             options={
                 'ordering': ['-created'],

@@ -218,7 +218,7 @@ class Photoset(models.Model):
     photos = models.ManyToManyField(
         Photo, related_name="in_photoset",
     )
-    primary = models.ForeignKey(Photo)
+    primary = models.ForeignKey(Photo, on_delete=models.CASCADE)
 
     def __str__(self):
         return self.title
@@ -251,7 +251,7 @@ COMMENTS_ALLOWED_ON = ('entry', 'blogmark', 'quotation')
 
 
 class Comment(models.Model):
-    content_type = models.ForeignKey(ContentType)
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     object_id = models.PositiveIntegerField(db_index=True)
     item = GenericForeignKey()
     # The comment

@@ -1,5 +1,3 @@
-from future.standard_library import install_aliases
-install_aliases()
 import os
 import dj_database_url
 import urllib.parse
@@ -50,18 +48,11 @@ MIDDLEWARE = (
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 )
 if not DEBUG:
     MIDDLEWARE += ('whitenoise.middleware.WhiteNoiseMiddleware',)
-
-if DEBUG:
-    INSTALLED_APPS += ('debug_toolbar',)
-    MIDDLEWARE = (
-        'debug_toolbar.middleware.DebugToolbarMiddleware',
-    ) + MIDDLEWARE
 
 # Sentry
 SENTRY_DSN = os.environ.get('SENTRY_DSN')
