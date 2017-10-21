@@ -195,7 +195,7 @@ def text_ago(d):
     delta = datetime.datetime.utcnow().replace(tzinfo=utc) - d
     since_seconds = (24 * 60 * 60 * delta.days) + delta.seconds
     for i, (seconds, name) in enumerate(chunks):
-        count = since_seconds / seconds
+        count = since_seconds // seconds
         if count != 0:
             break
     text = "%d %s%s" % (count, name, ((count == 1) and [""] or ["s"])[0])
