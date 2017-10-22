@@ -2,7 +2,7 @@
 from django.shortcuts import render, get_object_or_404
 from django.utils.dates import MONTHS_3_REV
 from django.utils.timezone import utc
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.postgres.search import SearchQuery, SearchRank
 from django.views.decorators.cache import never_cache
@@ -27,6 +27,8 @@ from .models import (
     Tag,
     load_mixed_objects,
 )
+import requests
+from bs4 import BeautifulSoup as Soup
 import time
 import json
 import datetime
@@ -385,6 +387,19 @@ def tools(request):
         'msg': request.GET.get('msg'),
         'deployed_hash': os.environ.get('HEROKU_SLUG_COMMIT'),
     })
+
+
+@never_cache
+@staff_member_required
+def tools_extract_title(request):
+    url = request.GET.get('url', '')
+    if url:
+        soup = Soup(requests.get(url).content, 'html5lib')
+        title = soup.find('title').text
+        return JsonResponse({
+            'title': title,
+        })
+    return JsonResponse({})
 
 
 def search(request):
