@@ -1,0 +1,23 @@
+{% extends "admin/change_form.html" %}
+
+{% block extrahead %}
+{{ block.super }}
+<script>
+django.jQuery(function($) {
+    var via_url = $('#id_via_url');
+    console.log(via_url)
+    window.via_url = via_url;
+    if (via_url.length && via_url.val() && !$('#id_via_title').val()) {
+        console.log('ajaxng')
+        // Ajax-fetch the title of this page
+        $.get(
+            '/tools/extract-title/', {url: via_url.val()}
+        ).then(function(data) {
+            if (data.title) {
+                $('#id_via_title').val(data.title);
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

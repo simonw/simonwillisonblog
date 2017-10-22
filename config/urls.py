@@ -67,7 +67,8 @@ urlpatterns = [
 
     re_path(r'^sitemap\.xml$', feeds.sitemap),
 
-    re_path(r'^tools/$', blog_views.tools),
+    path('tools/', blog_views.tools),
+    path('tools/extract-title/', blog_views.tools_extract_title),
     re_path(r'^tools/search-tags/$', blog_views.tools_search_tags),
 
     re_path(r'^write/$', blog_views.write),
