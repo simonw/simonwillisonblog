@@ -17,65 +17,50 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            '--url_to_json',
-            action='store',
-            dest='url_to_json',
+            'url_to_json',
+            type=str,
             help='URL to JSON to import',
         )
         parser.add_argument(
             '--tag_with',
             action='store',
             dest='tag_with',
-            default='recovered',
+            default=False,
             help='Tag to apply to all imported items',
         )
 
     def handle(self, *args, **kwargs):
         url_to_json = kwargs['url_to_json']
         tag_with = kwargs['tag_with']
-        tag_with_tag = Tag.objects.get_or_create(tag=tag_with)[0]
+        tag_with_tag = None
+        if tag_with:
+            tag_with_tag = Tag.objects.get_or_create(tag=tag_with)[0]
         for item in requests.get(url_to_json).json():
             created = parser.parse(item['datetime']).replace(tzinfo=utc)
-            slug = item['slug']
-            # First sanity check this does not exist already with
-            # a slug that is in a different case
-            skipit = False
-            for klass in (Entry, Quotation, Blogmark):
-                matches = list(klass.objects.filter(
-                    created__year=created.year,
-                    created__month=created.month,
-                    created__day=created.day,
-                    slug__iexact=slug,
-                ))
-                if matches:
-                    print('Found match for %s: %s / %s : %s' % (
-                        klass, created, slug, matches
-                    ))
-                    skipit = True
-                    break
-            if skipit:
-                continue
-
+            was_created = False
             if item['type'] == 'entry':
-                obj = Entry.objects.create(
+                klass = Entry
+                kwargs = dict(
                     body=item['body'],
                     title=item['title'],
                     created=created,
-                    slug=slug,
+                    slug=item['slug'],
                     metadata=item,
                 )
             elif item['type'] == 'quotation':
-                obj = Quotation.objects.create(
+                klass = Quotation
+                kwargs = dict(
                     quotation=item['quotation'],
                     source=item['source'],
                     source_url=item['source_url'],
                     created=created,
-                    slug=slug,
+                    slug=item['slug'],
                     metadata=item,
                 )
             elif item['type'] == 'blogmark':
-                obj = Blogmark.objects.create(
-                    slug=slug,
+                klass = Blogmark
+                kwargs = dict(
+                    slug=item['slug'],
                     link_url=item['link_url'],
                     link_title=item['link_title'],
                     via_url=item['via_url'],
@@ -86,8 +71,18 @@ class Command(BaseCommand):
                 )
             else:
                 assert False, 'type should be known, %s' % item['type']
-            for tag in item['tags']:
-                t = Tag.objects.get_or_create(tag=tag)[0]
-                obj.tags.add(t)
-            obj.tags.add(tag_with_tag)
-            print(obj, obj.get_absolute_url())
+            if item.get('import_ref'):
+                obj, was_created = klass.objects.update_or_create(
+                    import_ref=item['import_ref'],
+                    defaults=kwargs
+                )
+            else:
+                obj = klass.objects.create(**kwargs)
+            tags = [
+                Tag.objects.get_or_create(tag=tag)[0]
+                for tag in item['tags']
+            ]
+            if tag_with_tag:
+                tags.append(tag_with_tag)
+            obj.tags.set(tags)
+            print(was_created, obj, obj.get_absolute_url())

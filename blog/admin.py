@@ -16,7 +16,7 @@ class BaseAdmin(admin.ModelAdmin):
     raw_id_fields = ('tags',)
     list_display = ('__str__', 'slug', 'created', 'tag_summary')
     autocomplete_fields = ('tags',)
-    readonly_fields = ('search_document',)
+    readonly_fields = ('search_document', 'import_ref')
 
 
 class MyEntryForm(forms.ModelForm):
