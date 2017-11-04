@@ -8,18 +8,19 @@ from blog.models import (
 )
 import requests
 from dateutil import parser
+import json
 
 
 class Command(BaseCommand):
     help = """
-        ./manage.py import_blog_json URL-to-JSON
+        ./manage.py import_blog_json URL-or-path-to-JSON
     """
 
     def add_arguments(self, parser):
         parser.add_argument(
-            'url_to_json',
+            'url_or_path_to_json',
             type=str,
-            help='URL to JSON to import',
+            help='URL or path to JSON to import',
         )
         parser.add_argument(
             '--tag_with',
@@ -30,12 +31,23 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **kwargs):
-        url_to_json = kwargs['url_to_json']
+        url_or_path_to_json = kwargs['url_or_path_to_json']
         tag_with = kwargs['tag_with']
         tag_with_tag = None
         if tag_with:
             tag_with_tag = Tag.objects.get_or_create(tag=tag_with)[0]
-        for item in requests.get(url_to_json).json():
+
+        is_url = (
+            url_or_path_to_json.startswith('http://')
+            or url_or_path_to_json.startswith('https://')
+        )
+
+        if is_url:
+            items = requests.get(url_or_path_to_json).json()
+        else:
+            items = json.load(open(url_or_path_to_json))
+
+        for item in items:
             created = parser.parse(item['datetime']).replace(tzinfo=utc)
             was_created = False
             if item['type'] == 'entry':
