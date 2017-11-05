@@ -95,7 +95,7 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'simonwillisonblog',
     }
 }
@@ -113,9 +113,6 @@ USE_TZ = True
 if 'DATABASE_URL' in os.environ:
     # Parse database configuration from $DATABASE_URL
     DATABASES['default'] = dj_database_url.config()
-
-    # Enable Connection Pooling (if desired)
-    DATABASES['default']['ENGINE'] = 'django_postgrespool'
 
 if 'DISABLE_AUTOCOMMIT' in os.environ:
     DATABASES['default']['AUTOCOMMIT'] = False
