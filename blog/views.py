@@ -40,7 +40,7 @@ import os
 
 # We're not using MONTHS_3 here because it's _(localized)
 MONTHS_3_REV_REV = {value: key for key, value in list(MONTHS_3_REV.items())}
-BLACKLISTED_TAGS = ('quora', 'flash')
+BLACKLISTED_TAGS = ('quora', 'flash', 'resolved', 'recovered')
 
 
 def archive_item(request, year, month, day, slug):
