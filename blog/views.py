@@ -395,7 +395,10 @@ def tools_extract_title(request):
     url = request.GET.get('url', '')
     if url:
         soup = Soup(requests.get(url).content, 'html5lib')
-        title = soup.find('title').text
+        title = ''
+        title_el = soup.find('title')
+        if title_el:
+            title = title_el.text
         return JsonResponse({
             'title': title,
         })
