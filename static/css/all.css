@@ -26,7 +26,7 @@ q:before, q:after {
     content: ''
 }
 *:link {
-    color: rgb(0, 0, 238)
+    color: #0303bb
 }
 *:visited {
     color: #636
