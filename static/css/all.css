@@ -25,12 +25,24 @@ h1, h2, h3, h4, h5, h6 {
 q:before, q:after {
     content: ''
 }
-*:link {
-    color: #0303bb
+
+a:link {
+    color: #0303bb;
+    text-decoration: none;
+    border: none;
+    border-bottom: 1px solid rgb(0, 0, 238);
 }
-*:visited {
-    color: #636
+
+a:visited {
+    color: #636;
+    border-color: #636;
 }
+
+a:focus, a:hover, a:active {
+    text-decoration: none;
+    border-bottom-style: dotted;
+}
+
 body {
     font-family: "Helvetica Neue", helvetica, sans-serif;
     line-height: 1.4em;
