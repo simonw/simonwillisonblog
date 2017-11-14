@@ -559,9 +559,10 @@ table.monthcalendar td a {
     text-decoration: none;
     border-bottom: none;
 }
-table.monthcalendar th {
-    font-weight: bold;
-    border-bottom: 2px solid #ccc
+table.monthcalendar td a:link:focus,
+table.monthcalendar td a:link:hover,
+table.monthcalendar td a:link:active {
+    border-bottom: none;
 }
 div#primary h2 {
     margin-bottom: 0.5em;
