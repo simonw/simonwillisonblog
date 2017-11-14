@@ -538,7 +538,8 @@ table.monthcalendar caption {
 }
 table.monthcalendar caption a.nextprev {
     text-decoration: none;
-    padding: 0 7px
+    padding: 0 7px;
+    border-bottom: none;
 }
 table.monthcalendar td, table.monthcalendar th {
     font-size: 0.9em;
@@ -555,7 +556,8 @@ table.monthcalendar td.today {
 table.monthcalendar td a {
     display: block;
     padding: 1px 4px 0px 4px;
-    text-decoration: none
+    text-decoration: none;
+    border-bottom: none;
 }
 table.monthcalendar th {
     font-weight: bold;
