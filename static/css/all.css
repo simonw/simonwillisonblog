@@ -43,6 +43,14 @@ a:link:focus, a:link:hover, a:link:active {
     border-bottom-style: dotted;
 }
 
+a.a-img:link,
+a.a-img:link:focus,
+a.a-img:link:hover,
+a.a-img:link:active {
+    /* No border on links that just contain an image */
+    border-bottom: none;
+}
+
 body {
     font-family: "Helvetica Neue", helvetica, sans-serif;
     line-height: 1.4em;
