@@ -23,6 +23,9 @@ class Base(Feed):
     def item_pubdate(self, item):
         return item.created
 
+    def item_updateddate(self, item):
+        return item.created
+
 
 class Entries(Base):
     title = "Simon Willison's Weblog: Entries"
