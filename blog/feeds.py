@@ -7,6 +7,7 @@ from blog.models import Entry, Blogmark, Quotation
 class Base(Feed):
     feed_type = Atom1Feed
     link = "/"
+    author_name = "Simon Willison"
 
     def __call__(self, request, *args, **kwargs):
         response = super(Base, self).__call__(request, *args, **kwargs)
