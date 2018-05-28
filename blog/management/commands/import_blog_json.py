@@ -50,13 +50,14 @@ class Command(BaseCommand):
         for item in items:
             created = parser.parse(item['datetime']).replace(tzinfo=utc)
             was_created = False
+            slug = item['slug'][:64].strip('-')
             if item['type'] == 'entry':
                 klass = Entry
                 kwargs = dict(
                     body=item['body'],
                     title=item['title'],
                     created=created,
-                    slug=item['slug'],
+                    slug=slug,
                     metadata=item,
                 )
             elif item['type'] == 'quotation':
@@ -66,17 +67,17 @@ class Command(BaseCommand):
                     source=item['source'],
                     source_url=item['source_url'],
                     created=created,
-                    slug=item['slug'],
+                    slug=slug,
                     metadata=item,
                 )
             elif item['type'] == 'blogmark':
                 klass = Blogmark
                 kwargs = dict(
-                    slug=item['slug'],
+                    slug=slug,
                     link_url=item['link_url'],
                     link_title=item['link_title'],
-                    via_url=item['via_url'],
-                    via_title=item['via_title'],
+                    via_url=item.get('via_url') or '',
+                    via_title=item.get('via_title') or '',
                     commentary=item['commentary'] or '',
                     created=created,
                     metadata=item,
