@@ -51,8 +51,16 @@ MIDDLEWARE = (
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 )
-if not DEBUG:
+if DEBUG:
+    MIDDLEWARE = (
+        "debug_toolbar.middleware.DebugToolbarMiddleware",
+    ) + MIDDLEWARE
+    INSTALLED_APPS += (
+        "debug_toolbar",
+    )
+else:
     MIDDLEWARE += ('whitenoise.middleware.WhiteNoiseMiddleware',)
+
 
 # Sentry
 SENTRY_DSN = os.environ.get('SENTRY_DSN')

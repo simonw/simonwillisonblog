@@ -1,4 +1,4 @@
-from django.urls import path, re_path
+from django.urls import path, re_path, include
 from django.contrib import admin
 from django.http import HttpResponsePermanentRedirect, HttpResponse
 from django.conf import settings
@@ -83,3 +83,8 @@ urlpatterns = [
     re_path(r'^admin/', admin.site.urls),
     re_path(r'^static/', static_redirect),
 ]
+if settings.DEBUG:
+    import debug_toolbar
+    urlpatterns = [
+        re_path(r'^__debug__/', include(debug_toolbar.urls)),
+    ] + urlpatterns
