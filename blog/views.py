@@ -1,6 +1,5 @@
 # coding=utf8
 from django.shortcuts import render, get_object_or_404
-from django.utils.dates import MONTHS_3_REV
 from django.utils.timezone import utc
 from django.http import HttpResponse, JsonResponse
 from django.contrib.admin.views.decorators import staff_member_required
@@ -37,8 +36,10 @@ from collections import Counter
 import CloudFlare
 import os
 
-
-# We're not using MONTHS_3 here because it's _(localized)
+MONTHS_3_REV = {
+    'jan': 1, 'feb': 2, 'mar': 3, 'apr': 4, 'may': 5, 'jun': 6, 'jul': 7, 'aug': 8,
+    'sep': 9, 'oct': 10, 'nov': 11, 'dec': 12
+}
 MONTHS_3_REV_REV = {value: key for key, value in list(MONTHS_3_REV.items())}
 BLACKLISTED_TAGS = ('quora', 'flash', 'resolved', 'recovered')
 

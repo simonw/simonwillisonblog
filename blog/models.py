@@ -80,7 +80,7 @@ class BaseModel(models.Model):
     created = models.DateTimeField(default=datetime.datetime.utcnow)
     tags = models.ManyToManyField(Tag, blank=True)
     slug = models.SlugField(max_length=64)
-    metadata = JSONField(blank=True, default={})
+    metadata = JSONField(blank=True, default=dict)
     search_document = SearchVectorField(null=True)
     import_ref = models.TextField(max_length=64, null=True, unique=True)
 
