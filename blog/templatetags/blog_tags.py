@@ -47,7 +47,7 @@ def page_href(context, page):
     query_dict = context['request'].GET.copy()
     if page == 1 and 'page' in query_dict:
         del query_dict['page']
-    query_dict['page'] = page
+    query_dict['page'] = str(page)
     return '?' + query_dict.urlencode()
 
 
