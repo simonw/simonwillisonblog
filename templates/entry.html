@@ -2,6 +2,11 @@
 {% load entry_tags %}
 {% block title %}{{ entry.title|typography }}{% endblock %}
 
+{% block extrahead %}
+{{ block.super }}
+{{ entry.extra_head_html|default:""|safe }}
+{% endblock %}
+
 {% block card_title %}{{ entry.title|typography }}{% endblock %}
 {% block card_description %}{{ entry.body|xhtml|remove_quora_paragraph|typography|xhtml2html|striptags|truncatewords:30 }}{% endblock %}
 

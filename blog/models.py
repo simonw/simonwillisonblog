@@ -116,6 +116,9 @@ class Entry(BaseModel):
         Paste in the embed tweet HTML, minus the script tag,
         to display a tweet in the sidebar next to this entry.
     '''.strip())
+    extra_head_html = models.TextField(blank=True, null=True, help_text='''
+        Extra HTML to be included in the &lt;head&gt; for this entry
+    '''.strip())
 
     is_entry = True
 
