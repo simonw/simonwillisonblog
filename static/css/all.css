@@ -240,7 +240,7 @@ div.entry h2 a:hover {
 div.entry h3, div.entry h4 {
     font-family: georgia, serif;
     font-size: 1.1em;
-    margin: 0.5em 0
+    margin: 0.8em 0 0.5em 0;
 }
 div.entry p {
     margin: 0 0 0.8em 0
