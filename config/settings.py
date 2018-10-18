@@ -60,6 +60,7 @@ TIKIBAR_SETTINGS = {
     "blacklist": [],
     # "enable_profiler": True,
 }
+ENABLE_TIKIBAR = True
 
 # Sentry
 SENTRY_DSN = os.environ.get('SENTRY_DSN')
