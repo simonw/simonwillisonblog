@@ -6,6 +6,8 @@ from blog import views as blog_views
 from blog import feeds
 from feedstats.utils import count_subscribers
 import os
+import tikibar.views
+
 
 FAVICON = open(os.path.join(settings.BASE_DIR, 'static/favicon.ico'), 'rb').read()
 
@@ -48,6 +50,15 @@ def favicon_ico(request):
     return HttpResponse(FAVICON, content_type='image/x-icon')
 
 
+tikibar_patterns = [
+    re_path(r'^$', tikibar.views.tikibar),
+    re_path(r'^settings/$', tikibar.views.tikibar_settings),
+    re_path(r'^on/$', tikibar.views.tikibar_on),
+    re_path(r'^set-for-api-domain/$', tikibar.views.tikibar_set_for_api_domain),
+    re_path(r'^off/$', tikibar.views.tikibar_off),
+]
+
+
 urlpatterns = [
     re_path(r'^$', blog_views.index),
     re_path(r'^(\d{4})/$', blog_views.archive_year),
@@ -66,7 +77,7 @@ urlpatterns = [
     re_path(r'^tags/$', blog_views.tag_index),
     re_path(r'^tags/(.*?)/$', blog_views.archive_tag),
     re_path(r'^tag/([a-zA-Z0-9_-]+)/$', tag_redirect),
-    
+
     re_path(r'^atom/entries/$', count_subscribers(feeds.Entries().__call__)),
     re_path(r'^atom/links/$', count_subscribers(feeds.Blogmarks().__call__)),
     re_path(r'^atom/everything/$', count_subscribers(feeds.Everything().__call__)),
@@ -82,9 +93,6 @@ urlpatterns = [
 
     re_path(r'^admin/', admin.site.urls),
     re_path(r'^static/', static_redirect),
+
+    re_path(r'^tikibar/', include(tikibar_patterns)),
 ]
-if settings.DEBUG:
-    import debug_toolbar
-    urlpatterns = [
-        re_path(r'^__debug__/', include(debug_toolbar.urls)),
-    ] + urlpatterns

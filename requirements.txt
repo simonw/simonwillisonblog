@@ -17,3 +17,4 @@ django-redis-cache==1.7.1
 factory-boy==2.9.2
 beautifulsoup4==4.6.0
 html5lib==0.999999999
+https://github.com/simonw/tikibar/archive/master.zip

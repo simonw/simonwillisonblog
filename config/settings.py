@@ -39,6 +39,7 @@ INSTALLED_APPS = (
     'blog',
     'redirects',
     'feedstats',
+    'tikibar',
 )
 
 MIDDLEWARE = (
@@ -50,17 +51,15 @@ MIDDLEWARE = (
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'tikibar.middleware.SetCorrelationIDMiddleware',
+    'tikibar.middleware.TikibarMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
 )
-if DEBUG:
-    MIDDLEWARE = (
-        "debug_toolbar.middleware.DebugToolbarMiddleware",
-    ) + MIDDLEWARE
-    INSTALLED_APPS += (
-        "debug_toolbar",
-    )
-else:
-    MIDDLEWARE += ('whitenoise.middleware.WhiteNoiseMiddleware',)
 
+TIKIBAR_SETTINGS = {
+    "blacklist": [],
+    # "enable_profiler": True,
+}
 
 # Sentry
 SENTRY_DSN = os.environ.get('SENTRY_DSN')
@@ -78,7 +77,7 @@ ROOT_URLCONF = 'config.urls'
 
 TEMPLATES = [
     {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'BACKEND': 'tikibar.template_backend.TikibarDjangoTemplates',
         'DIRS': [
             os.path.join(BASE_DIR, 'templates/'),
         ],
