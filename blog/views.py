@@ -144,7 +144,7 @@ def index(request):
 
     response = render(request, 'homepage.html', {
         'days': days,
-        'entries': Entry.objects.prefetch_related('tags')[0:4],
+        'entries': Entry.objects.prefetch_related('tags')[0:6],
         'current_tags': find_current_tags(5),
     })
     response['Cache-Control'] = 's-maxage=200'
