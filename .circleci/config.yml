@@ -44,6 +44,7 @@ jobs:
           name: run tests
           command: |
             . venv/bin/activate
+            export DATABASE_URL=postgres://circleci:@localhost/circle_test
             python manage.py test
 
       - store_artifacts:
