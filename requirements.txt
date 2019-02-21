@@ -1,5 +1,5 @@
 dj-database-url==0.4.2
-Django==2.1.2
+Django==2.1.5
 django-postgrespool==0.3.1
 gunicorn==19.7.1
 psycopg2==2.7.3
@@ -7,7 +7,7 @@ SQLAlchemy==1.1.14
 whitenoise==4.0b4
 model-mommy==1.4.0
 django-test-plus==1.0.18
-requests==2.18.4
+requests==2.20.0
 beautifulsoup4==4.6.0
 dateutils==0.6.6
 cloudflare==1.8.0
