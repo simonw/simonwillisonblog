@@ -83,6 +83,7 @@ class BaseModel(models.Model):
     metadata = JSONField(blank=True, default=dict)
     search_document = SearchVectorField(null=True)
     import_ref = models.TextField(max_length=64, null=True, unique=True)
+    card_image = models.CharField(max_length=128, null=True, blank=True)
 
     def created_unixtimestamp(self):
         return arrow.get(self.created).timestamp
