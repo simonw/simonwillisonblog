@@ -59,7 +59,7 @@ class TagAdmin(admin.ModelAdmin):
         search_term = search_term.strip()
         if search_term:
             return queryset.filter(
-                tag__icontains=search_term
+                tag__startswith=search_term
             ).annotate(
                 tag_length=Length('tag')
             ).order_by('tag_length'), False
