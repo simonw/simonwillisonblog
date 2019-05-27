@@ -1,6 +1,7 @@
 from django.urls import path, re_path, include
 from django.contrib import admin
 from django.http import HttpResponsePermanentRedirect, HttpResponse
+from django.views.decorators.cache import never_cache
 from django.conf import settings
 from blog import views as blog_views
 from blog import feeds
@@ -51,6 +52,7 @@ def favicon_ico(request):
     return HttpResponse(FAVICON, content_type="image/x-icon")
 
 
+@never_cache
 def versions(request):
     installed_packages = [
         (d.project_name, d.version) for d in pkg_resources.working_set
