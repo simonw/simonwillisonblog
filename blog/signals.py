@@ -33,7 +33,9 @@ def make_updater(instance):
     def on_commit():
         search_vectors = []
         for weight, text in list(components.items()):
-            search_vectors.append(SearchVector(Value(text), weight=weight))
+            search_vectors.append(
+                SearchVector(Value(text, output_field=TextField()), weight=weight)
+            )
         instance.__class__.objects.filter(pk=pk).update(
             search_document=reduce(operator.add, search_vectors)
         )
