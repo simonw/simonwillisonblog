@@ -16,4 +16,4 @@ redis==3.2.1
 django-redis-cache==2.0.0
 factory-boy==2.9.2
 beautifulsoup4==4.7.1
-html5lib==0.999999999
+html5lib==1.0.1
