@@ -14,7 +14,7 @@ cloudflare==2.3.0
 raven>=3
 arrow==0.10.0
 redis==2.10.6
-django-redis-cache==1.7.1
+django-redis-cache==2.0.0
 factory-boy==2.9.2
 beautifulsoup4==4.7.1
 html5lib==0.999999999
