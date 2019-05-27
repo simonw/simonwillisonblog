@@ -1,4 +1,4 @@
-from django.test import TestCase
+from django.test import TransactionTestCase
 from .factories import (
     EntryFactory,
     BlogmarkFactory,
@@ -6,7 +6,7 @@ from .factories import (
 )
 
 
-class BlogTests(TestCase):
+class BlogTests(TransactionTestCase):
     def test_homepage(self):
         db_entries = [
             EntryFactory(),
@@ -55,3 +55,10 @@ class BlogTests(TestCase):
         self.assertContains(response, '''
             <p>First paragraph</p><p>Second paragraph</p>
         '''.strip())
+
+    def test_update_blogmark_runs_commit_hooks(self):
+        # This was throwing errors on upgrade Django 2.2 to 2.2.1
+        blogmark = BlogmarkFactory()
+        assert blogmark.pk
+        blogmark.commentary = "hello there"
+        blogmark.save()
