@@ -6,7 +6,7 @@ psycopg2==2.8.2
 SQLAlchemy>=1.3.0
 whitenoise==4.0b4
 django-test-plus==1.2.0
-requests==2.20.0
+requests==2.22.0
 beautifulsoup4==4.7.1
 dateutils==0.6.6
 cloudflare==2.3.0
