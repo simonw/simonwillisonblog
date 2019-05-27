@@ -1,4 +1,4 @@
-dj-database-url==0.4.2
+dj-database-url==0.5.0
 Django==2.2
 django-postgrespool==0.3.1
 gunicorn==19.7.1
