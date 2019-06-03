@@ -55,7 +55,7 @@ def favicon_ico(request):
 @never_cache
 def versions(request):
     installed_packages = [
-        (d.project_name, d.version) for d in pkg_resources.working_set
+        (d.project_name, d.version) for d in sorted(pkg_resources.working_set, key=lambda d: d.project_name.lower())
     ]
     return HttpResponse(
         json.dumps(installed_packages, indent=4), content_type="text/plain"
