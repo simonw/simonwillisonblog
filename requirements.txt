@@ -11,7 +11,7 @@ beautifulsoup4==4.8.2
 dateutils==0.6.7
 cloudflare==2.6.3
 raven>=3
-arrow==0.15.4
+arrow==0.15.5
 redis==3.3.11
 django-redis-cache==2.1.0
 factory-boy==2.12.0
