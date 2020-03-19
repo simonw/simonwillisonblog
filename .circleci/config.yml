@@ -9,6 +9,7 @@ jobs:
         environment:
           POSTGRES_USER: circleci
           POSTGRES_DB: circle_test
+          POSTGRES_HOST_AUTH_METHOD: trust
 
     steps:
       - checkout
