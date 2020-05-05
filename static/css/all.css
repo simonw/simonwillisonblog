@@ -224,6 +224,7 @@ div.entry span.textago {
 }
 div.entry h2 {
     font-size: 1.4em;
+    line-height: 1.4;
     font-family: georgia, serif;
     margin: 0 0 0.8em 0
 }
@@ -238,6 +239,7 @@ div.entry h2 a:hover {
     background-position: 0 3px
 }
 div.entry h3, div.entry h4 {
+    line-height: 1.4;
     font-family: georgia, serif;
     font-size: 1.2em;
     margin: 0.8em 0 0.5em 0;
