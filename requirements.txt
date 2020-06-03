@@ -12,7 +12,7 @@ dateutils==0.6.8
 cloudflare==2.7.1
 raven>=3
 arrow==0.15.6
-redis==3.5.2
+redis==3.5.3
 pytest==5.4.3
 django-redis-cache==2.1.1
 factory-boy==2.12.0
