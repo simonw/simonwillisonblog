@@ -130,7 +130,13 @@ div#primary {
     float: left
 }
 div#primary blockquote {
-    margin: 1em 1.5em
+    margin: 1em 0;
+    border-left: 0.75em solid #9e6bb52e;
+    padding-left: 0.75em;
+}
+div#primary blockquote blockquote {
+    border-left: none;
+    padding-left: 1.5em;
 }
 div#secondary {
     width: 280px;
