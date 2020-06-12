@@ -78,7 +78,8 @@ p.smallhead-toolbar {
 a#atomfeedlink {
     position: absolute;
     right: 5px;
-    top: 7px
+    top: 7px;
+    border-bottom: none;
 }
 p.bighead-toolbar img, p.smallhead-toolbar img {
     vertical-align: top;
