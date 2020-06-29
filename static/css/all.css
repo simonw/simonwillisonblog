@@ -184,7 +184,7 @@ div#secondary blockquote {
     text-indent: 23px;
     background-image: url(/static/css/img/lquote.png);
     background-repeat: no-repeat;
-    background-position: 12px 2px
+    background-position: 0px 2px
 }
 div#secondary blockquote p {
     background-image: url(/static/css/img/rquote.png);
@@ -621,7 +621,7 @@ div#primary div.quote blockquote {
     text-indent: 23px;
     background-image: url(/static/css/img/lquote.png);
     background-repeat: no-repeat;
-    background-position: 0px 2px
+    background-position: 12px 2px
 }
 div#primary div.quote blockquote p {
     background-image: url(/static/css/img/rquote.png);
