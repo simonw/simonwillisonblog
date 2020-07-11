@@ -73,12 +73,24 @@ dd {
     padding-left: 1.5em
 }
 p.smallhead-toolbar {
-    margin-bottom: 3px
+    width: 100px;
+    margin: 0 auto 3px auto;
 }
 a#atomfeedlink {
-    position: absolute;
-    right: 5px;
-    top: 7px;
+    float: right;
+    border-bottom: none;
+}
+a#atomfeedlink svg {
+    height: 20px;
+    width: 20px;
+}
+.small-atom:link,
+.small-atom:visited,
+.small-atom:hover,
+.small-atom:focus,
+.small-atom:active {
+    position: relative;
+    top: 2px;
     border-bottom: none;
 }
 p.bighead-toolbar img, p.smallhead-toolbar img {
@@ -96,9 +108,8 @@ div#sidead {
 }
 div#ft {
     background: linear-gradient(to bottom, rgb(154, 103, 175) 0%, rgb(96, 72, 129) 49%, rgb(100, 67, 130) 100%);
-    padding-left: 35px;
-    margin-top: 15px;
-    margin-bottom: 0.4em;
+    text-align: center;
+    margin: 15px 0 0.4em 0;
     padding-top: 3px;
     clear: both;
     font-size: 0.85em
@@ -120,7 +131,7 @@ p#previouslyhosted {
 }
 div#wrapper {
     width: 1000px;
-    margin-left: 35px;
+    margin: 0 auto;
     overflow: hidden;
     box-sizing: border-box;
 }
@@ -285,7 +296,9 @@ div.entry div.entryFooter {
     padding-top: 0.5em;
 }
 div#bighead {
-    padding: 25px 0 15px 35px
+    width: 1000px;
+    margin: 0 auto;
+    padding: 25px 0 15px 0px;
 }
 div#bighead h1 {
     font-size: 1.6em;
@@ -351,7 +364,9 @@ div#smallhead {
     color: white
 }
 div#smallhead h1 {
-    padding: 4px 0px 4px 35px;
+    width: 1000px;
+    margin: 0 auto;
+    padding: 4px 0px 4px 0px;
     color: #fff;
     font-weight: normal
 }
@@ -386,7 +401,7 @@ body.smallhead div#smallhead {
     margin-bottom: 0px
 }
 body.smallhead div#ft {
-    margin-top: 0px
+    margin-top: 0px;
 }
 body.smallhead h2.band {
     margin-top: 0px

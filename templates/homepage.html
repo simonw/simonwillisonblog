@@ -10,7 +10,7 @@
 {% endblock %}
 
 {% block primary %}
-<h2 class="overband">Recent entries <a href="/atom/entries/" title="Atom feed of new entries"><svg width="14px" height="14px" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256"><circle cx="68" cy="189" r="24" fill="#FFF"/><path fill="#FFF" d="M160 213h-34a82 82 0 0 0-82-82V97a116 116 0 0 1 116 116z"/><path fill="#FFF" d="M184 213A140 140 0 0 0 44 73V38a175 175 0 0 1 175 175z"/></svg></a></h2>
+<h2 class="overband">Recent entries <a href="/atom/entries/" class="small-atom" title="Atom feed of new entries"><svg width="14px" height="14px" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256"><circle cx="68" cy="189" r="24" fill="#FFF"/><path fill="#FFF" d="M160 213h-34a82 82 0 0 0-82-82V97a116 116 0 0 1 116 116z"/><path fill="#FFF" d="M184 213A140 140 0 0 0 44 73V38a175 175 0 0 1 175 175z"/></svg></a></h2>
 {% load entry_tags %}
 {% for entry in entries %}
 <div class="entry segment">
@@ -24,7 +24,7 @@
 {% endblock %}
 
 {% block secondary %}
-<h2 class="overband">Elsewhere <a href="/atom/links/" title="Atom feed of new links"><svg xmlns="http://www.w3.org/2000/svg"  width="14px" height="14px" viewBox="0 0 256 256"><circle cx="68" cy="189" r="24" fill="#FFF"/><path fill="#FFF" d="M160 213h-34a82 82 0 0 0-82-82V97a116 116 0 0 1 116 116z"/><path fill="#FFF" d="M184 213A140 140 0 0 0 44 73V38a175 175 0 0 1 175 175z"/></svg></a></h2>
+<h2 class="overband">Elsewhere <a href="/atom/links/" class="small-atom" title="Atom feed of new links"><svg xmlns="http://www.w3.org/2000/svg"  width="14px" height="14px" viewBox="0 0 256 256"><circle cx="68" cy="189" r="24" fill="#FFF"/><path fill="#FFF" d="M160 213h-34a82 82 0 0 0-82-82V97a116 116 0 0 1 116 116z"/><path fill="#FFF" d="M184 213A140 140 0 0 0 44 73V38a175 175 0 0 1 175 175z"/></svg></a></h2>
 {% for day in days %}
 <div class="day">
 <h3><a href="{{ day.date|date:"/Y/M/j/" }}">{% if day.special %}{{ day.special }}{% else %}{{ day.date|date:"jS F Y" }}{% endif %}</a></h3>
