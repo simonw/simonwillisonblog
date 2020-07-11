@@ -73,7 +73,7 @@ dd {
     padding-left: 1.5em
 }
 p.smallhead-toolbar {
-    width: 100px;
+    width: 1000px;
     margin: 0 auto 3px auto;
 }
 a#atomfeedlink {
@@ -110,7 +110,7 @@ div#ft {
     background: linear-gradient(to bottom, rgb(154, 103, 175) 0%, rgb(96, 72, 129) 49%, rgb(100, 67, 130) 100%);
     text-align: center;
     margin: 15px 0 0.4em 0;
-    padding-top: 3px;
+    padding: 10px 0;
     clear: both;
     font-size: 0.85em
 }
@@ -121,7 +121,8 @@ div#ft ul, div#ft li {
 }
 div#ft a {
     color: #fff;
-    text-decoration: none
+    text-decoration: none;
+    border-bottom: none;
 }
 p#previouslyhosted {
     clear: both;
@@ -132,8 +133,8 @@ p#previouslyhosted {
 div#wrapper {
     width: 1000px;
     margin: 0 auto;
+    padding: 0 10px;
     overflow: hidden;
-    box-sizing: border-box;
 }
 div#primary {
     width: 620px;
@@ -219,9 +220,6 @@ div.metabox p {
 div.entryPage {
     border-bottom: none
 }
-div.entry {
-    font-size:
-}
 div.entry table {
     margin: 1em 0
 }
@@ -298,7 +296,7 @@ div.entry div.entryFooter {
 div#bighead {
     width: 1000px;
     margin: 0 auto;
-    padding: 25px 0 15px 0px;
+    padding: 25px 10px 15px 10px;
 }
 div#bighead h1 {
     font-size: 1.6em;
@@ -398,7 +396,8 @@ body.smallhead div#wrapper {
     background-position: 170px 0;
 }
 body.smallhead div#smallhead {
-    margin-bottom: 0px
+    margin-bottom: 0px;
+    padding: 2px 0;
 }
 body.smallhead div#ft {
     margin-top: 0px;
@@ -407,7 +406,7 @@ body.smallhead h2.band {
     margin-top: 0px
 }
 body.smallhead div#wrapper {
-    padding: 15px 0
+    padding: 15px 0;
 }
 h2.band {
     padding-left: 35px;
@@ -795,9 +794,9 @@ a.selected-tag {
   }
   div#primary {
     width: 100%;
-    margin-right: 15px;
   }
   div#wrapper {
+    box-sizing: border-box;
     width: 100%;
     margin: 0;
     padding: 0 10px;
@@ -810,13 +809,16 @@ a.selected-tag {
     background-image: none;
   }
   div#bighead {
-    padding-left: 15px;
+    width: 100%;
+    box-sizing: border-box;
   }
   div#bighead h1 {
     font-size: 1.5em;
   }
   div#smallhead h1 {
     padding-left: 15px;
+    width: 100%;
+    box-sizing: border-box;
   }
   div#searchbox {
     display: none;
