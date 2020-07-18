@@ -5,6 +5,7 @@
         {% endif %}
         <span class="step-links">
             {% if page.has_previous %}
+                <a href="{% page_href 1 %}">&laquo;&laquo; first</a>
                 <a href="{% page_href page.previous_page_number %}">&laquo; previous</a>
             {% endif %}
             <span class="current">
@@ -12,6 +13,9 @@
             </span>
             {% if page.has_next %}
                 <a href="{% page_href page.next_page_number %}">next &raquo;</a>
+            {% endif %}
+            {% if page.paginator.num_pages > 2 and page.number < page.paginator.num_pages %}
+                <a href="{% page_href page.paginator.num_pages %}">last &raquo;&raquo;</a>
             {% endif %}
         </span>
     </div>
