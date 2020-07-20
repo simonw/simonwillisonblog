@@ -449,7 +449,7 @@ def search(request):
     query = None
     rank_annotation = None
     if q:
-        query = SearchQuery(q)
+        query = SearchQuery(q, search_type="websearch")
         rank_annotation = SearchRank(models.F("search_document"), query)
 
     selected_tags = request.GET.getlist("tag")
