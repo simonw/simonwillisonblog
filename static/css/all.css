@@ -9,6 +9,9 @@ table {
 fieldset, img {
     border: 0
 }
+blockquote {
+    white-space: pre-wrap;
+}
 address, caption, cite, code, dfn, em, strong, th, var {
     font-style: normal;
     font-weight: normal
