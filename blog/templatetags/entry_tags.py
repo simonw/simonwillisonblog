@@ -7,7 +7,7 @@ import re
 import datetime
 
 register = template.Library()
-entry_stripper = re.compile('^<entry>(.*?)</entry>$', re.DOTALL)
+entry_stripper = re.compile("^<entry>(.*?)</entry>$", re.DOTALL)
 
 
 @register.filter
@@ -23,48 +23,47 @@ class XhtmlString(object):
             if not contains_markup:
                 # Handle strings like "this & that"
                 value = conditional_escape(value)
-            self.et = ElementTree.fromstring(
-                '<entry>%s</entry>' % value
-            )
+            self.et = ElementTree.fromstring("<entry>%s</entry>" % value)
 
     def __str__(self):
-        m = entry_stripper.match(ElementTree.tostring(self.et, 'unicode'))
+        m = entry_stripper.match(ElementTree.tostring(self.et, "unicode"))
         if m:
             return mark_safe(m.group(1))
         else:
-            return '' # If we end up with <entry />
+            return ""  # If we end up with <entry />
 
 
 @register.filter
 def resize_images_to_fit_width(value, arg):
     max_width = int(arg)
     x = XhtmlString(value)
-    for img in x.et.findall('.//img'):
-        width = int(img.get('width', 0))
-        height = int(img.get('height', 0))
+    for img in x.et.findall(".//img"):
+        width = int(img.get("width", 0))
+        height = int(img.get("height", 0))
         if width > max_width:
             # Scale down
-            img.set('width', str(max_width))
-            img.set('height', str(int(float(max_width) / width * height)))
+            img.set("width", str(max_width))
+            img.set("height", str(int(float(max_width) / width * height)))
     return x
 
-xhtml_endtag_fragment = re.compile('\s*/>')
+
+xhtml_endtag_fragment = re.compile("\s*/>")
 
 
 @register.filter
 def xhtml2html(xhtml):
     # &apos; is valid in XML/XHTML but not in regular HTML
-    s = str(xhtml).replace('&apos;', '&#39;')
-    return mark_safe(xhtml_endtag_fragment.sub('>', s))
+    s = str(xhtml).replace("&apos;", "&#39;")
+    return mark_safe(xhtml_endtag_fragment.sub(">", s))
 
 
 @register.filter
 def remove_quora_paragraph(xhtml):
     x = XhtmlString(xhtml)
-    p = x.et.find('p')
+    p = x.et.find("p")
     if p is None:
         return x
-    if ElementTree.tostring(p, 'unicode').startswith('<p><em>My answer to'):
+    if ElementTree.tostring(p, "unicode").startswith("<p><em>My answer to"):
         x.et.remove(p)
     return x
 
@@ -72,18 +71,18 @@ def remove_quora_paragraph(xhtml):
 @register.filter
 def first_paragraph(xhtml):
     x = XhtmlString(xhtml)
-    p = x.et.find('p')
+    p = x.et.find("p")
     if p is not None:
-        return mark_safe(ElementTree.tostring(p, 'unicode'))
+        return mark_safe(ElementTree.tostring(p, "unicode"))
     else:
-        return mark_safe('<p>%s</p>' % xhtml)
+        return mark_safe("<p>%s</p>" % xhtml)
 
 
 @register.filter
 def openid_to_url(openid):
     openid = openid.strip()
-    if openid[0] in ('=', '@'):
-        return 'http://xri.net/%s' % openid
+    if openid[0] in ("=", "@"):
+        return "http://xri.net/%s" % openid
     else:
         return openid
 
@@ -92,15 +91,15 @@ def openid_to_url(openid):
 def ends_with_punctuation(value):
     """Does this end in punctuation? Use to decide if more is needed."""
     last_char = value.strip()[-1]
-    return last_char in '?.!'
+    return last_char in "?.!"
 
 
 @register.filter
 def strip_p_ids(xhtml):
     x = XhtmlString(xhtml)
-    for p in x.et.findall('.//p'):
-        if 'id' in p.attrib:
-            del p.attrib['id']
+    for p in x.et.findall(".//p"):
+        if "id" in p.attrib:
+            del p.attrib["id"]
     return x
 
 
@@ -123,7 +122,7 @@ def do_break_long_words(et, length):
         et.tail = do_break_long_words_string(et.tail, length)
 
 
-whitespace_re = re.compile('(\s+)')
+whitespace_re = re.compile("(\s+)")
 
 
 def do_break_long_words_string(s, length):
@@ -132,12 +131,12 @@ def do_break_long_words_string(s, length):
         if whitespace_re.match(bit):
             continue
         if len(bit) > length:
-            s = ''
+            s = ""
             while bit:
-                s += bit[:length] + ' '
+                s += bit[:length] + " "
                 bit = bit[length:]
             bits[i] = s
-    return ''.join(bits)
+    return "".join(bits)
 
 
 @register.filter
@@ -152,7 +151,7 @@ def typography(xhtml):
 
 def do_typography(et):
     # Designed to be called recursively on ElementTree objects
-    if et.tag not in ('pre', 'code'):
+    if et.tag not in ("pre", "code"):
         # Don't do et.text or children for those tags; just do et.tail
         if et.text:
             et.text = do_typography_string(et.text)
@@ -161,11 +160,12 @@ def do_typography(et):
     if et.tail:
         et.tail = do_typography_string(et.tail)
 
-LEFT_DOUBLE_QUOTATION_MARK = '\u201c'
-RIGHT_DOUBLE_QUOTATION_MARK = '\u201d'
-RIGHT_SINGLE_QUOTATION_MARK = '\u2019'
+
+LEFT_DOUBLE_QUOTATION_MARK = "\u201c"
+RIGHT_DOUBLE_QUOTATION_MARK = "\u201d"
+RIGHT_SINGLE_QUOTATION_MARK = "\u2019"
 QUOTATION_PAIR = (LEFT_DOUBLE_QUOTATION_MARK, RIGHT_DOUBLE_QUOTATION_MARK)
-EM_DASH = '\u2014'
+EM_DASH = "\u2014"
 
 
 def quote_alternator():
@@ -173,6 +173,7 @@ def quote_alternator():
     while True:
         yield QUOTATION_PAIR[i % 2]
         i += 1
+
 
 double_re = re.compile('"')
 
@@ -185,12 +186,12 @@ def do_typography_string(s):
         alternator = quote_alternator()
         s = double_re.sub(lambda m: next(alternator), s)
     # Finally, do em dashes
-    s = s.replace(' - ', '\u2014')
+    s = s.replace(" - ", "\u2014")
     return s
 
 
-NUMBERS = 'zero one two three four five six seven eight nine'.split()
-number_re = re.compile('\d+')
+NUMBERS = "zero one two three four five six seven eight nine".split()
+number_re = re.compile("\d+")
 
 
 def num_to_string(s):
@@ -199,12 +200,13 @@ def num_to_string(s):
     except IndexError:
         return s
 
+
 chunks = (
-    (60 * 60 * 24 * 365, 'year'),
-    (60 * 60 * 24 * 30, 'month'),
-    (60 * 60 * 24, 'day'),
-    (60 * 60, 'hour'),
-    (60, 'minute')
+    (60 * 60 * 24 * 365, "year"),
+    (60 * 60 * 24 * 30, "month"),
+    (60 * 60 * 24, "day"),
+    (60 * 60, "hour"),
+    (60, "minute"),
 )
 
 
@@ -221,24 +223,18 @@ def text_ago(d):
     # Now convert the number at the start to a text equivalent
     text = number_re.sub(lambda m: num_to_string(m.group(0)), text)
     # Special case for zero minutes
-    if text == 'zero minutes' or text.startswith('-'):
-        text = 'moments'
-    return '%s ago' % text
+    if text == "zero minutes" or text.startswith("-"):
+        text = "moments"
+    return "%s ago" % text
 
 
-@register.inclusion_tag('includes/entry_footer.html', takes_context=True)
+@register.inclusion_tag("includes/entry_footer.html", takes_context=True)
 def entry_footer(context, entry):
-    context.update({
-        'entry': entry,
-        'showdate': True
-    })
+    context.update({"entry": entry, "showdate": True})
     return context
 
 
-@register.inclusion_tag('includes/entry_footer.html', takes_context=True)
+@register.inclusion_tag("includes/entry_footer.html", takes_context=True)
 def entry_footer_no_date(context, entry):
-    context.update({
-        'entry': entry,
-        'showdate': False
-    })
+    context.update({"entry": entry, "showdate": False})
     return context

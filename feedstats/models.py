@@ -9,5 +9,5 @@ class SubscriberCount(models.Model):
 
     class Meta:
         index_together = [
-            ['path', 'user_agent', 'count', 'created'],
+            ["path", "user_agent", "count", "created"],
         ]

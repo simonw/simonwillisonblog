@@ -3,7 +3,7 @@ from django.db.models import signals
 
 
 class BlogConfig(AppConfig):
-    name = 'blog'
+    name = "blog"
 
     def ready(self):
         # import signal handlers

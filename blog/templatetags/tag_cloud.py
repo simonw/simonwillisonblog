@@ -1,46 +1,54 @@
 from django import template
 from django.utils.safestring import mark_safe
+
 register = template.Library()
 
 from blog.models import Tag
 
 # Classes for different levels
 CLASSES = (
-    '--skip--', # We don't show the least popular tags
-    'not-popular-at-all',
-    'not-very-popular',
-    'somewhat-popular',
-    'somewhat-more-popular',
-    'popular',
-    'more-than-just-popular',
-    'very-popular',
-    'ultra-popular',
+    "--skip--",  # We don't show the least popular tags
+    "not-popular-at-all",
+    "not-very-popular",
+    "somewhat-popular",
+    "somewhat-more-popular",
+    "popular",
+    "more-than-just-popular",
+    "very-popular",
+    "ultra-popular",
 )
 
+
 def make_css_rules(
-        min_size=0.7, max_size=2.0,
-        units='em', selector_prefix='.tag-cloud .'):
+    min_size=0.7, max_size=2.0, units="em", selector_prefix=".tag-cloud ."
+):
     num_classes = len(CLASSES)
     diff_each_time = (max_size - min_size) / (num_classes - 1)
     for i, klass in enumerate(CLASSES):
-        print("%s%s { font-size: %.2f%s; }" % (
-            selector_prefix, klass, min_size + (i * diff_each_time), units
-        ))
+        print(
+            "%s%s { font-size: %.2f%s; }"
+            % (selector_prefix, klass, min_size + (i * diff_each_time), units)
+        )
+
 
 import math
+
+
 def log(f):
     try:
         return math.log(f)
     except OverflowError:
         return 0
 
-@register.inclusion_tag('includes/tag_cloud.html')
+
+@register.inclusion_tag("includes/tag_cloud.html")
 def tag_cloud_for_tags(tags):
     """
     Renders a tag cloud of tags. Input should be a non-de-duped list of tag
     strings.
     """
     return _tag_cloud_helper(tags)
+
 
 def _tag_cloud_helper(tags):
     # Count them all up
@@ -65,31 +73,37 @@ def _tag_cloud_helper(tags):
     for tag in tags:
         score = tag_counts[tag]
         index = int((len(CLASSES) - 1) * (log(score) - log_min) / diff)
-        if CLASSES[index] == '--skip--':
+        if CLASSES[index] == "--skip--":
             continue
-        html_tags.append(mark_safe(
-            '<a href="/tags/%s/" title="%d item%s" class="%s">%s</a>' % (
-            tag, score, (score != 1 and 's' or ''), CLASSES[index], tag)
-        ))
-    return {
-        'tags': html_tags
-    }
+        html_tags.append(
+            mark_safe(
+                '<a href="/tags/%s/" title="%d item%s" class="%s">%s</a>'
+                % (tag, score, (score != 1 and "s" or ""), CLASSES[index], tag)
+            )
+        )
+    return {"tags": html_tags}
 
-@register.inclusion_tag('includes/tag_cloud.html')
+
+@register.inclusion_tag("includes/tag_cloud.html")
 def tag_cloud():
     # We do this with raw SQL for efficiency
     from django.db import connection
+
     # Get tags for entries, blogmarks, quotations
     cursor = connection.cursor()
-    cursor.execute("select tag from blog_entry_tags, blog_tag where blog_entry_tags.tag_id = blog_tag.id")
+    cursor.execute(
+        "select tag from blog_entry_tags, blog_tag where blog_entry_tags.tag_id = blog_tag.id"
+    )
     entry_tags = [row[0] for row in cursor.fetchall()]
-    cursor.execute("select tag from blog_blogmark_tags, blog_tag where blog_blogmark_tags.tag_id = blog_tag.id")
+    cursor.execute(
+        "select tag from blog_blogmark_tags, blog_tag where blog_blogmark_tags.tag_id = blog_tag.id"
+    )
     blogmark_tags = [row[0] for row in cursor.fetchall()]
-    cursor.execute("select tag from blog_quotation_tags, blog_tag where blog_quotation_tags.tag_id = blog_tag.id")
+    cursor.execute(
+        "select tag from blog_quotation_tags, blog_tag where blog_quotation_tags.tag_id = blog_tag.id"
+    )
     quotation_tags = [row[0] for row in cursor.fetchall()]
     cursor.close()
     # Add them together
     tags = entry_tags + blogmark_tags + quotation_tags
     return _tag_cloud_helper(tags)
-
-

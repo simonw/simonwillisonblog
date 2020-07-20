@@ -6,13 +6,17 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('blog', '0010_auto_20180918_1646'),
+        ("blog", "0010_auto_20180918_1646"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='entry',
-            name='extra_head_html',
-            field=models.TextField(blank=True, help_text='Extra HTML to be included in the &lt;head&gt; for this entry', null=True),
+            model_name="entry",
+            name="extra_head_html",
+            field=models.TextField(
+                blank=True,
+                help_text="Extra HTML to be included in the &lt;head&gt; for this entry",
+                null=True,
+            ),
         ),
     ]

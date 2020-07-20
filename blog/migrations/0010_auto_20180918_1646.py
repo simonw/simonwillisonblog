@@ -7,52 +7,64 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('blog', '0009_import_ref'),
+        ("blog", "0009_import_ref"),
     ]
 
     operations = [
         migrations.AlterModelOptions(
-            name='entry',
-            options={'ordering': ('-created',), 'verbose_name_plural': 'Entries'},
+            name="entry",
+            options={"ordering": ("-created",), "verbose_name_plural": "Entries"},
         ),
         migrations.AlterField(
-            model_name='blogmark',
-            name='created',
+            model_name="blogmark",
+            name="created",
             field=models.DateTimeField(default=datetime.datetime.utcnow),
         ),
         migrations.AlterField(
-            model_name='blogmark',
-            name='metadata',
+            model_name="blogmark",
+            name="metadata",
             field=models.JSONField(blank=True, default=dict),
         ),
         migrations.AlterField(
-            model_name='comment',
-            name='spam_status',
-            field=models.CharField(choices=[('normal', 'Not suspected'), ('approved', 'Approved'), ('suspected', 'Suspected'), ('spam', 'SPAM')], max_length=16),
+            model_name="comment",
+            name="spam_status",
+            field=models.CharField(
+                choices=[
+                    ("normal", "Not suspected"),
+                    ("approved", "Approved"),
+                    ("suspected", "Suspected"),
+                    ("spam", "SPAM"),
+                ],
+                max_length=16,
+            ),
         ),
         migrations.AlterField(
-            model_name='entry',
-            name='created',
+            model_name="entry",
+            name="created",
             field=models.DateTimeField(default=datetime.datetime.utcnow),
         ),
         migrations.AlterField(
-            model_name='entry',
-            name='metadata',
+            model_name="entry",
+            name="metadata",
             field=models.JSONField(blank=True, default=dict),
         ),
         migrations.AlterField(
-            model_name='entry',
-            name='tweet_html',
-            field=models.TextField(blank=True, help_text='Paste in the embed tweet HTML, minus the script tag,\n        to display a tweet in the sidebar next to this entry.', null=True),
+            model_name="entry",
+            name="tweet_html",
+            field=models.TextField(
+                blank=True,
+                help_text="Paste in the embed tweet HTML, minus the script tag,\n        to display a tweet in the sidebar next to this entry.",
+                null=True,
+            ),
         ),
         migrations.AlterField(
-            model_name='quotation',
-            name='created',
+            model_name="quotation",
+            name="created",
             field=models.DateTimeField(default=datetime.datetime.utcnow),
         ),
         migrations.AlterField(
-            model_name='quotation',
-            name='metadata',
+            model_name="quotation",
+            name="metadata",
             field=models.JSONField(blank=True, default=dict),
         ),
     ]

@@ -6,23 +6,23 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('blog', '0011_entry_extra_head_html'),
+        ("blog", "0011_entry_extra_head_html"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='blogmark',
-            name='card_image',
+            model_name="blogmark",
+            name="card_image",
             field=models.CharField(blank=True, max_length=128, null=True),
         ),
         migrations.AddField(
-            model_name='entry',
-            name='card_image',
+            model_name="entry",
+            name="card_image",
             field=models.CharField(blank=True, max_length=128, null=True),
         ),
         migrations.AddField(
-            model_name='quotation',
-            name='card_image',
+            model_name="quotation",
+            name="card_image",
             field=models.CharField(blank=True, max_length=128, null=True),
         ),
     ]

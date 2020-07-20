@@ -8,26 +8,26 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('redirects', '0001_initial'),
+        ("redirects", "0001_initial"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='redirect',
-            name='domain',
-            field=models.CharField(blank=True, default='', max_length=128),
+            model_name="redirect",
+            name="domain",
+            field=models.CharField(blank=True, default="", max_length=128),
             preserve_default=False,
         ),
         migrations.AlterField(
-            model_name='redirect',
-            name='path',
-            field=models.CharField(blank=True, default='', max_length=128),
+            model_name="redirect",
+            name="path",
+            field=models.CharField(blank=True, default="", max_length=128),
             preserve_default=False,
         ),
         migrations.AlterField(
-            model_name='redirect',
-            name='target',
-            field=models.CharField(blank=True, default='', max_length=256),
+            model_name="redirect",
+            name="target",
+            field=models.CharField(blank=True, default="", max_length=256),
             preserve_default=False,
         ),
     ]

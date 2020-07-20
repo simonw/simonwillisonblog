@@ -8,7 +8,7 @@ class Command(BaseCommand):
     def handle(self, *args, **kwargs):
         for klass in (Entry, Blogmark, Quotation):
             i = 0
-            for obj in klass.objects.prefetch_related('tags').all():
+            for obj in klass.objects.prefetch_related("tags").all():
                 obj.save()
                 i += 1
                 if i % 100 == 0:

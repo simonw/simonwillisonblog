@@ -6,25 +6,25 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('blog', '0003_auto_20170926_0641'),
+        ("blog", "0003_auto_20170926_0641"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='blogmark',
-            name='metadata',
+            model_name="blogmark",
+            name="metadata",
             field=models.JSONField(default={}),
             preserve_default=False,
         ),
         migrations.AddField(
-            model_name='entry',
-            name='metadata',
+            model_name="entry",
+            name="metadata",
             field=models.JSONField(default={}),
             preserve_default=False,
         ),
         migrations.AddField(
-            model_name='quotation',
-            name='metadata',
+            model_name="quotation",
+            name="metadata",
             field=models.JSONField(default={}),
             preserve_default=False,
         ),

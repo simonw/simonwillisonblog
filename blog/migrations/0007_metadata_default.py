@@ -6,23 +6,23 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('blog', '0006_gin_indexes'),
+        ("blog", "0006_gin_indexes"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='blogmark',
-            name='metadata',
+            model_name="blogmark",
+            name="metadata",
             field=models.JSONField(blank=True, default={}),
         ),
         migrations.AlterField(
-            model_name='entry',
-            name='metadata',
+            model_name="entry",
+            name="metadata",
             field=models.JSONField(blank=True, default={}),
         ),
         migrations.AlterField(
-            model_name='quotation',
-            name='metadata',
+            model_name="quotation",
+            name="metadata",
             field=models.JSONField(blank=True, default={}),
         ),
     ]

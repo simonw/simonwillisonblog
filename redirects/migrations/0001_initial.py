@@ -9,22 +9,28 @@ class Migration(migrations.Migration):
 
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='Redirect',
+            name="Redirect",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('domain', models.CharField(blank=True, max_length=128, null=True)),
-                ('path', models.CharField(blank=True, max_length=128, null=True)),
-                ('target', models.CharField(blank=True, max_length=256, null=True)),
-                ('created', models.DateTimeField(auto_now_add=True)),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("domain", models.CharField(blank=True, max_length=128, null=True)),
+                ("path", models.CharField(blank=True, max_length=128, null=True)),
+                ("target", models.CharField(blank=True, max_length=256, null=True)),
+                ("created", models.DateTimeField(auto_now_add=True)),
             ],
         ),
         migrations.AlterUniqueTogether(
-            name='redirect',
-            unique_together=set([('domain', 'path')]),
+            name="redirect", unique_together=set([("domain", "path")]),
         ),
     ]

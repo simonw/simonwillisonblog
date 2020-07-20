@@ -8,7 +8,7 @@ class Redirect(models.Model):
     created = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        unique_together = (('domain', 'path'),)
+        unique_together = (("domain", "path"),)
 
     def __unicode__(self):
-        return '%s/%s => %s' % (self.domain, self.path, self.target)
+        return "%s/%s => %s" % (self.domain, self.path, self.target)

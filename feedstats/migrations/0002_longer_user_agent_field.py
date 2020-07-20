@@ -8,13 +8,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('feedstats', '0001_initial'),
+        ("feedstats", "0001_initial"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='subscribercount',
-            name='user_agent',
+            model_name="subscribercount",
+            name="user_agent",
             field=models.CharField(db_index=True, max_length=256),
         ),
     ]
