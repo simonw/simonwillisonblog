@@ -14,6 +14,24 @@ class BaseAdmin(admin.ModelAdmin):
     autocomplete_fields = ("tags",)
     readonly_fields = ("search_document", "import_ref")
 
+    def get_queryset(self, request):
+        return super().get_queryset(request).prefetch_related("tags")
+
+    def get_search_results(self, request, queryset, search_term):
+        if not search_term:
+            return super().get_search_results(
+                request, queryset, search_term
+            )
+        query = SearchQuery(search_term, search_type="websearch")
+        rank = SearchRank(F("search_document"), query)
+        queryset = (
+            queryset
+            .annotate(rank=rank)
+            .filter(search_document=query)
+            .order_by("-rank")
+        )
+        return queryset, False
+
 
 class MyEntryForm(forms.ModelForm):
     def clean_body(self):
@@ -31,26 +49,6 @@ class EntryAdmin(BaseAdmin):
     form = MyEntryForm
     prepopulated_fields = {"slug": ("title",)}
     search_fields = ("title", "body")
-
-    def get_queryset(self, request):
-        return Entry.objects.prefetch_related("tags")
-
-    def get_search_results(self, request, queryset, search_term):
-        if not search_term:
-            return super(EntryAdmin, self).get_search_results(
-                request, queryset, search_term
-            )
-
-        query = SearchQuery(search_term, search_type="websearch")
-        rank = SearchRank(F("search_document"), query)
-        queryset = (
-            Entry.objects.prefetch_related("tags")
-            .annotate(rank=rank)
-            .filter(search_document=query)
-            .order_by("-rank")
-        )
-
-        return queryset, False
 
 
 @admin.register(Quotation)
