@@ -19,16 +19,11 @@ class BaseAdmin(admin.ModelAdmin):
 
     def get_search_results(self, request, queryset, search_term):
         if not search_term:
-            return super().get_search_results(
-                request, queryset, search_term
-            )
+            return super().get_search_results(request, queryset, search_term)
         query = SearchQuery(search_term, search_type="websearch")
         rank = SearchRank(F("search_document"), query)
         queryset = (
-            queryset
-            .annotate(rank=rank)
-            .filter(search_document=query)
-            .order_by("-rank")
+            queryset.annotate(rank=rank).filter(search_document=query).order_by("-rank")
         )
         return queryset, False
 
