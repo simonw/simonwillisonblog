@@ -1,5 +1,7 @@
 from django.contrib import admin
+from django.contrib.postgres.search import SearchQuery, SearchRank
 from django.db.models.functions import Length
+from django.db.models import F
 from django import forms
 from xml.etree import ElementTree
 from .models import Entry, Tag, Quotation, Blogmark, Comment
@@ -26,9 +28,29 @@ class MyEntryForm(forms.ModelForm):
 
 @admin.register(Entry)
 class EntryAdmin(BaseAdmin):
-    search_fields = ("tags__tag", "title", "body")
     form = MyEntryForm
     prepopulated_fields = {"slug": ("title",)}
+    search_fields = ("title", "body")
+
+    def get_queryset(self, request):
+        return Entry.objects.prefetch_related("tags")
+
+    def get_search_results(self, request, queryset, search_term):
+        if not search_term:
+            return super(EntryAdmin, self).get_search_results(
+                request, queryset, search_term
+            )
+
+        query = SearchQuery(search_term, search_type="websearch")
+        rank = SearchRank(F("search_document"), query)
+        queryset = (
+            Entry.objects.prefetch_related("tags")
+            .annotate(rank=rank)
+            .filter(search_document=query)
+            .order_by("-rank")
+        )
+
+        return queryset, False
 
 
 @admin.register(Quotation)
