@@ -18,4 +18,4 @@ django-redis-cache==2.1.1
 factory-boy==2.12.0
 beautifulsoup4==4.9.1
 html5lib==1.1
-db-to-sqlite==1.2.1
+db-to-sqlite==1.3
