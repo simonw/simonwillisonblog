@@ -10,8 +10,8 @@ def blog_mixed_list(context, items):
 
 
 @register.inclusion_tag("includes/blog_mixed_list.html", takes_context=True)
-def blog_mixed_list_with_dates(context, items):
-    context.update({"items": items, "showdate": True})
+def blog_mixed_list_with_dates(context, items, year_headers=False):
+    context.update({"items": items, "showdate": True, "year_headers": year_headers})
     return context
 
 

@@ -788,6 +788,15 @@ a.selected-tag {
     color: black;
 }
 
+.archive-tag-h2 {
+    font-size: 1.4em;
+}
+h3.blog-mixed-list-year {
+    margin-top: 0.5em;
+    margin-bottom: 1em;
+    font-size: 1.2em;
+}
+
 @media (max-width: 800px) {
   div#secondary {
     float: none;

@@ -468,7 +468,11 @@ def search(request):
         )
         if selected_year and selected_year.isdigit() and 2000 <= int(selected_year):
             qs = qs.filter(created__year=int(selected_year))
-        if selected_month and selected_month.isdigit() and 1 <= int(selected_month) <= 12:
+        if (
+            selected_month
+            and selected_month.isdigit()
+            and 1 <= int(selected_month) <= 12
+        ):
             qs = qs.filter(created__month=int(selected_month))
         if q:
             qs = qs.filter(search_document=query)

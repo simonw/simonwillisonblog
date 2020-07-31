@@ -3,10 +3,10 @@
 {% block title %}Simon Willison on {{ tags|join:" and " }}{% endblock %}
 
 {% block primary %}
-<h2>{{ total }} item{{ total|pluralize }} tagged “{{ tags|join:"” and “" }}”</h2>
+<h2 class="archive-tag-h2">{{ total }} item{{ total|pluralize }} tagged “{{ tags|join:"” and “" }}”</h2>
 {% load blog_tags %}
 
-{% blog_mixed_list_with_dates items %}
+{% blog_mixed_list_with_dates items year_headers=1 %}
 
 {% include "_pagination.html" %}
 
