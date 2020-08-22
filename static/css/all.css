@@ -393,11 +393,6 @@ div#smallhead span form {
     margin: 0;
     padding: 0
 }
-body.smallhead div#wrapper {
-    background-image: url(/static/css/img/stripe-492.gif);
-    background-repeat: repeat-y;
-    background-position: 170px 0;
-}
 body.smallhead div#smallhead {
     margin-bottom: 0px;
     padding: 2px 0;
