@@ -34,7 +34,7 @@
   <li>{% ifequal item.type "link" %}
       <a href="{{ item.obj.link_url }}">{{ item.obj.link_title }}</a>{% if item.obj.via_url %} (<a href="{{ item.obj.via_url }}" title="{{ item.obj.via_title }}">via</a>){% endif %}{% if not item.obj.via_url and not item.obj.link_title|ends_with_punctuation %}.{% endif %} {{ item.obj.commentary|typography }} <a href="{{ item.obj.get_absolute_url }}" rel="bookmark">#</a>
       {% else %}
-      <blockquote><p>{{ item.obj.quotation|typography }}</p></blockquote><p class="cite">&mdash; {% if item.obj.source_url %}<a href="{{ item.obj.source_url }}">{{ item.obj.source }}</a>{% else %}{{ item.obj.source }}{% endif %} <a href="{{ item.obj.get_absolute_url }}#comments" rel="bookmark">#</a></p>
+      <blockquote><p>{{ item.obj.quotation|typography }}</p></blockquote><p class="cite">&mdash; {% if item.obj.source_url %}<a href="{{ item.obj.source_url }}">{{ item.obj.source }}</a>{% else %}{{ item.obj.source }}{% endif %} <a href="{{ item.obj.get_absolute_url }}" rel="bookmark">#</a></p>
       {% endifequal %}
   </li>
   {% endfor %}
