@@ -22,6 +22,22 @@ class BlogTests(TransactionTestCase):
             [e.pk for e in sorted(db_entries, key=lambda e: e.created, reverse=True)],
         )
 
+    def test_other_pages(self):
+        entry = EntryFactory()
+        blogmark = BlogmarkFactory()
+        quotation = QuotationFactory()
+        for path in (
+            "/",
+            "/{}/".format(entry.created.year),
+            entry.get_absolute_url(),
+            blogmark.get_absolute_url(),
+            quotation.get_absolute_url(),
+            "/{}/".format(entry.created.year),
+            "/atom/everything/"
+        ):
+            response = self.client.get("/")
+            assert response.status_code == 200
+
     def test_entry(self):
         entry = EntryFactory()
         response = self.client.get(entry.get_absolute_url())
