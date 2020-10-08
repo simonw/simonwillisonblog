@@ -10,7 +10,7 @@ beautifulsoup4==4.9.2
 dateutils==0.6.11
 cloudflare==2.8.13
 raven>=3
-arrow==0.16.0
+arrow==0.17.0
 redis==3.5.3
 pytest==6.1.0
 django-redis-cache==2.1.1
