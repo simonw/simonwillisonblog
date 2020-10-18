@@ -31,6 +31,7 @@ class Migration(migrations.Migration):
             ],
         ),
         migrations.AlterUniqueTogether(
-            name="redirect", unique_together=set([("domain", "path")]),
+            name="redirect",
+            unique_together=set([("domain", "path")]),
         ),
     ]

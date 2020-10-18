@@ -53,15 +53,21 @@ class Migration(migrations.Migration):
                     ),
                 ),
             ],
-            options={"ordering": ["-created"], "get_latest_by": "created",},
+            options={
+                "ordering": ["-created"],
+                "get_latest_by": "created",
+            },
         ),
         migrations.AlterModelOptions(
-            name="blogmark", options={"ordering": ("-created",)},
+            name="blogmark",
+            options={"ordering": ("-created",)},
         ),
         migrations.AlterModelOptions(
-            name="entry", options={"ordering": ("-created",)},
+            name="entry",
+            options={"ordering": ("-created",)},
         ),
         migrations.AlterModelOptions(
-            name="quotation", options={"ordering": ("-created",)},
+            name="quotation",
+            options={"ordering": ("-created",)},
         ),
     ]

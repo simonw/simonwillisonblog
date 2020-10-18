@@ -156,7 +156,10 @@ class Entry(BaseModel):
 class Quotation(BaseModel):
     quotation = models.TextField()
     source = models.CharField(max_length=255)
-    source_url = models.URLField(blank=True, null=True,)
+    source_url = models.URLField(
+        blank=True,
+        null=True,
+    )
 
     is_quotation = True
 
@@ -242,7 +245,10 @@ class Photoset(models.Model):
     flickr_id = models.CharField(max_length=32)
     title = models.CharField(max_length=255, blank=True, null=True)
     description = models.TextField()
-    photos = models.ManyToManyField(Photo, related_name="in_photoset",)
+    photos = models.ManyToManyField(
+        Photo,
+        related_name="in_photoset",
+    )
     primary = models.ForeignKey(Photo, on_delete=models.CASCADE)
 
     def __str__(self):

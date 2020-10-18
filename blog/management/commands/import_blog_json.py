@@ -18,7 +18,9 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            "url_or_path_to_json", type=str, help="URL or path to JSON to import",
+            "url_or_path_to_json",
+            type=str,
+            help="URL or path to JSON to import",
         )
         parser.add_argument(
             "--tag_with",

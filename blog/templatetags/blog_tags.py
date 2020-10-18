@@ -18,7 +18,10 @@ def blog_mixed_list_with_dates(context, items, year_headers=False):
 @register.inclusion_tag("includes/comments_list.html", takes_context=True)
 def comments_list(context, comments):
     context.update(
-        {"comments": comments, "show_headers": False,}
+        {
+            "comments": comments,
+            "show_headers": False,
+        }
     )
     return context
 
@@ -26,7 +29,10 @@ def comments_list(context, comments):
 @register.inclusion_tag("includes/comments_list.html", takes_context=True)
 def comments_list_with_headers(context, comments):
     context.update(
-        {"comments": comments, "show_headers": True,}
+        {
+            "comments": comments,
+            "show_headers": True,
+        }
     )
     return context
 

@@ -33,7 +33,7 @@ class BlogTests(TransactionTestCase):
             blogmark.get_absolute_url(),
             quotation.get_absolute_url(),
             "/{}/".format(entry.created.year),
-            "/atom/everything/"
+            "/atom/everything/",
         ):
             response = self.client.get("/")
             assert response.status_code == 200

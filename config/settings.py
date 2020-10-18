@@ -73,7 +73,9 @@ ROOT_URLCONF = "config.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [os.path.join(BASE_DIR, "templates/"),],
+        "DIRS": [
+            os.path.join(BASE_DIR, "templates/"),
+        ],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -94,7 +96,10 @@ WSGI_APPLICATION = "config.wsgi.application"
 # https://docs.djangoproject.com/en/1.8/ref/settings/#databases
 
 DATABASES = {
-    "default": {"ENGINE": "django.db.backends.postgresql", "NAME": "simonwillisonblog",}
+    "default": {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": "simonwillisonblog",
+    }
 }
 
 # Internationalization
@@ -144,7 +149,11 @@ SILENCED_SYSTEM_CHECKS = ("urls.W002",)
 
 
 # Caching
-CACHES = {"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache",}}
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+    }
+}
 
 REDIS_URL = os.environ.get("REDIS_URL")
 if REDIS_URL:
@@ -152,6 +161,9 @@ if REDIS_URL:
     CACHES["default"] = {
         "BACKEND": "redis_cache.RedisCache",
         "LOCATION": "{0}:{1}".format(redis_url.hostname, redis_url.port),
-        "OPTIONS": {"PASSWORD": redis_url.password, "DB": 0,},
+        "OPTIONS": {
+            "PASSWORD": redis_url.password,
+            "DB": 0,
+        },
         "VERSION": 2,
     }

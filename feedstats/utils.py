@@ -25,7 +25,9 @@ def count_subscribers(view_fn):
                 created__day=today.day,
             ).exists():
                 SubscriberCount.objects.create(
-                    path=request.path, count=count, user_agent=simplified_user_agent,
+                    path=request.path,
+                    count=count,
+                    user_agent=simplified_user_agent,
                 )
         return view_fn(request, *args, **kwargs)
 
