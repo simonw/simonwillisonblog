@@ -81,6 +81,7 @@ urlpatterns = [
     re_path(r"^search/$", blog_views.search),
     re_path(r"^tags/$", blog_views.tag_index),
     re_path(r"^tags/(.*?)/$", blog_views.archive_tag),
+    re_path(r"^tags/(.*?).atom$", blog_views.archive_tag_atom),
     re_path(r"^tag/([a-zA-Z0-9_-]+)/$", tag_redirect),
     re_path(r"^atom/entries/$", count_subscribers(feeds.Entries().__call__)),
     re_path(r"^atom/links/$", count_subscribers(feeds.Blogmarks().__call__)),

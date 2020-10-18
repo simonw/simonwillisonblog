@@ -84,6 +84,17 @@ class Everything(Base):
             return "Quoting %s" % item.source
 
 
+class EverythingTagged(Everything):
+    ga_source = "tag"
+
+    def __init__(self, title, items):
+        self.title = "Simon Willison's Weblog: {}".format(title)
+        self._items = items
+
+    def items(self):
+        return self._items
+
+
 def sitemap(request):
     xml = [
         '<?xml version="1.0" encoding="UTF-8"?>'

@@ -236,7 +236,11 @@ def archive_year(request, year):
     return render(
         request,
         "archive_year.html",
-        {"months": months, "year": year, "max_count": max_count,},
+        {
+            "months": months,
+            "year": year,
+            "max_count": max_count,
+        },
     )
 
 
@@ -342,7 +346,9 @@ INTERSECTION_SQL = """
 """
 
 
-def archive_tag(request, tags):
+def archive_tag(request, tags, atom=False):
+    from .feeds import EverythingTagged
+
     tags = Tag.objects.filter(tag__in=tags.split("+")).values_list("tag", flat=True)[:3]
     if not tags:
         raise Http404
@@ -378,7 +384,7 @@ def archive_tag(request, tags):
         raise Http404
     items.sort(key=lambda x: x["obj"].created, reverse=True)
     # Paginate it
-    paginator = Paginator(items, 30)
+    paginator = Paginator(items, min(1000, int(request.GET.get("size") or "30")))
     page_number = request.GET.get("page") or "1"
     try:
         page = paginator.page(page_number)
@@ -386,6 +392,18 @@ def archive_tag(request, tags):
         raise Http404
     except EmptyPage:
         raise Http404
+
+    if atom:
+        response = EverythingTagged(
+            ", ".join(tags), (item["obj"] for item in page.object_list)
+        )(request)
+        # Pagination in link: header
+        if page.has_next():
+            query_dict = request.GET.copy()
+            query_dict["page"] = str(page.next_page_number())
+            next_url = request.path + "?" + query_dict.urlencode()
+            response["link"] = '<{}>; rel="next"'.format(next_url)
+        return response
 
     return render(
         request,
@@ -399,6 +417,10 @@ def archive_tag(request, tags):
             "tag": Tag.objects.get(tag=tags[0]),
         },
     )
+
+
+def archive_tag_atom(request, tags):
+    return archive_tag(request, tags, atom=True)
 
 
 @never_cache
@@ -438,7 +460,11 @@ def tools_extract_title(request):
         title_el = soup.find("title")
         if title_el:
             title = title_el.text
-        return JsonResponse({"title": title,})
+        return JsonResponse(
+            {
+                "title": title,
+            }
+        )
     return JsonResponse({})
 
 
