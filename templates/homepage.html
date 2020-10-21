@@ -83,9 +83,7 @@ function conditionalRearrange(m) {
   }
 }
 var mediaMatcher = window.matchMedia('(max-width: 800px)');
-if (mediaMatcher.matches) {
-  rearrangeForMobile();
-}
+conditionalRearrange(mediaMatcher);
 mediaMatcher.addListener(conditionalRearrange);
 </script>
 {% endblock %}
