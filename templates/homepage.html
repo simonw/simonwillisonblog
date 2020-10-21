@@ -34,7 +34,7 @@
   <li data-date="{{ item.obj.created|date:"c" }}">{% ifequal item.type "link" %}
       <a href="{{ item.obj.link_url }}">{{ item.obj.link_title }}</a>{% if item.obj.via_url %} (<a href="{{ item.obj.via_url }}" title="{{ item.obj.via_title }}">via</a>){% endif %}{% if not item.obj.via_url and not item.obj.link_title|ends_with_punctuation %}.{% endif %} {{ item.obj.commentary|typography }} <a href="{{ item.obj.get_absolute_url }}" rel="bookmark">#</a><span class="elsewhere-date"> &mdash; <a href="/{{ item.obj.created|date:"Y/M/j/" }}">{{ item.obj.created|date:"jS F Y" }}</a>, {{ item.obj.created|date:"f A"|lower }}</span>
       {% else %}
-      <blockquote><p>{{ item.obj.quotation|typography }}</p></blockquote><p class="cite">&mdash; {% if item.obj.source_url %}<a href="{{ item.obj.source_url }}">{{ item.obj.source }}</a>{% else %}{{ item.obj.source }}{% endif %} <a href="{{ item.obj.get_absolute_url }}" rel="bookmark">#</a> <span class="">&mdash; <a href="/{{ item.obj.created|date:"Y/M/j/" }}">{{ item.obj.created|date:"jS F Y" }}</a>, {{ item.obj.created|date:"f A"|lower }}</span></p>
+      <blockquote><p>{{ item.obj.quotation|typography }}</p></blockquote><p class="cite">&mdash; {% if item.obj.source_url %}<a href="{{ item.obj.source_url }}">{{ item.obj.source }}</a>{% else %}{{ item.obj.source }}{% endif %} <a href="{{ item.obj.get_absolute_url }}" rel="bookmark">#</a> <span class="elsewhere-date">&mdash; <a href="/{{ item.obj.created|date:"Y/M/j/" }}">{{ item.obj.created|date:"jS F Y" }}</a>, {{ item.obj.created|date:"f A"|lower }}</span></p>
       {% endifequal %}
   </li>
   {% endfor %}
