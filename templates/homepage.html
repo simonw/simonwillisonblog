@@ -66,6 +66,9 @@ function rearrangeForMobile() {
       var div = document.createElement('div');
       div.classList.add('segment');
       div.classList.add('elsewhere-in-primary');
+      if (el.querySelector('blockquote')) {
+        div.classList.add('quote');
+      }
       div.innerHTML = el.innerHTML;
       primary.appendChild(div);
     } else {
