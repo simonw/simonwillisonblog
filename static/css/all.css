@@ -792,7 +792,24 @@ h3.blog-mixed-list-year {
     font-size: 1.2em;
 }
 
+.elsewhere-date {
+    display: none;
+}
+
+#primary .elsewhere-in-primary {
+    display: none;
+}
+
 @media (max-width: 800px) {
+  #primary .elsewhere-in-primary {
+    display: block;
+  }
+  .elsewhere-date {
+    display: inline;
+  }
+  .hide-secondary-on-mobile {
+    display: none;
+  }
   div#secondary {
     float: none;
     width: auto;
