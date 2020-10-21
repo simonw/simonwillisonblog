@@ -610,9 +610,9 @@ div#primary div.photoset p.meta {
 }
 div#primary div.segment {
     clear: both;
-    padding: 0 0 0.5em 0;
+    padding: 0 0 0.75em 0;
     border-bottom: 1px solid #ccc;
-    margin-bottom: 1.5em
+    margin-bottom: 0.75em
 }
 div#primary div.blogmark {
     font-size: 0.9em
