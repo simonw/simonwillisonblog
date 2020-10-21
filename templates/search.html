@@ -50,6 +50,10 @@
         {% blog_mixed_list_with_dates results %}
         {% include "_pagination.html" %}
     {% endif %}
+{% else %}
+    {% if selected or q %}
+        <p><em>No results found</em></p>
+    {% endif %}
 {% endif %}
 
 {% endblock %}
