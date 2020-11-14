@@ -85,9 +85,13 @@ def archive_item(request, year, month, day, slug):
         else:
             previously_hosted = None
 
+        template = getattr(obj, "custom_template", None) or "{}.html".format(
+            content_type
+        )
+
         return render(
             request,
-            "%s.html" % content_type,
+            template,
             {
                 content_type: obj,
                 "content_type": content_type,

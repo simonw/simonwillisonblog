@@ -998,3 +998,13 @@ h3.blog-mixed-list-year {
   color: #032f62;
 }
 
+/* Custom page templates */
+.entry-wide div#primary {
+    width: auto;
+    margin: 0 1em;
+    float: none;
+    max-width: 98%;
+}
+.entry-wide div#wrapper {
+    overflow: visible;
+}

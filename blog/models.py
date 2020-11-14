@@ -131,7 +131,7 @@ class Entry(BaseModel):
         Extra HTML to be included in the &lt;head&gt; for this entry
     """.strip(),
     )
-
+    custom_template = models.CharField(max_length=100, null=True, blank=True)
     is_entry = True
 
     def images(self):
