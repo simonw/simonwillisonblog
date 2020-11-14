@@ -58,6 +58,11 @@ def xhtml2html(xhtml):
 
 
 @register.filter
+def split_cutoff(xhtml):
+    return xhtml.split("<!-- cutoff -->")[0]
+
+
+@register.filter
 def remove_quora_paragraph(xhtml):
     x = XhtmlString(xhtml)
     p = x.et.find("p")

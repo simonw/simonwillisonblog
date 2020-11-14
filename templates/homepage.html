@@ -14,7 +14,7 @@
 {% for entry in entries %}
 <div class="entry segment" data-date="{{ entry.created|date:"c" }}">
 <h3><a href="{{ entry.get_absolute_url }}" rel="bookmark">{{ entry.title|typography }}</a> <span class="textago">{% if entry.is_today %}today{% else %}{{ entry.created|text_ago }}{% endif %}</span></h3>
-{{ entry.body|xhtml|resize_images_to_fit_width:"450"|typography|strip_p_ids|xhtml2html }}
+{{ entry.body|split_cutoff|xhtml|resize_images_to_fit_width:"450"|typography|strip_p_ids|xhtml2html }}
 <div class="entryFooter">
 {% entry_footer entry %}
 </div>
