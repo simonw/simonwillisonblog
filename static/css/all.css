@@ -1008,3 +1008,7 @@ h3.blog-mixed-list-year {
 .entry-wide div#wrapper {
     overflow: visible;
 }
+
+body.homepage .hide-on-homepage {
+    display: none;
+}
