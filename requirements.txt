@@ -8,7 +8,7 @@ django-test-plus==1.4.0
 requests==2.24.0
 beautifulsoup4==4.9.3
 dateutils==0.6.12
-cloudflare==2.8.13
+cloudflare==2.8.14
 raven>=3
 arrow==0.17.0
 redis==3.5.3
