@@ -7,7 +7,7 @@
 {% block card_description %}{{ blogmark.commentary|truncatewords:30 }}{% endblock %}
 
 {% block item_content %}
-<p><a href="{{ blogmark.link_url }}">{{ blogmark.link_title }}</a>{% if blogmark.via_url %} (<a href="{{ blogmark.via_url }}" title="{{ blogmark.via_title }}">via</a>){% endif %}{% if not blogmark.via_url and not blogmark.link_title|ends_with_punctuation %}.{% endif %} {{ blogmark.commentary|typography }} </p>
+<p><a href="{{ blogmark.link_url }}">{{ blogmark.link_title }}</a>{% if blogmark.via_url %} (<a href="{{ blogmark.via_url }}" title="{{ blogmark.via_title }}">via</a>){% endif %}{% if not blogmark.via_url and not blogmark.link_title|ends_with_punctuation %}.{% endif %} {{ blogmark.commentary|typography|linebreaksbr }} </p>
 
 <div class="entryFooter">Posted <a href="/{{ blogmark.created|date:"Y/M/j/" }}">{{ blogmark.created|date:"jS F Y" }}</a> at {{ blogmark.created|date:"f A"|lower }}</div>
 {% endblock %}

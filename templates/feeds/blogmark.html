@@ -1,5 +1,5 @@
 <p><a href="{{ obj.link_url }}">{{ obj.link_title }}</a></p>
-{% if obj.commentary %}<p>{{ obj.commentary }}</p>{% endif %}
+{% if obj.commentary %}<p>{{ obj.commentary|linebreaksbr }}</p>{% endif %}
 {% if obj.via_title %}
     <p>Via <a href="{{ obj.via_url }}">{{ obj.via_title }}</a></p>
 {% endif %}
