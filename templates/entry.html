@@ -22,10 +22,7 @@
 {% block secondary %}
 <div class="metabox">
 <p class="this-is">This is <strong>{{ entry.title|typography }}</strong> by Simon Willison, posted on <a href="/{{ entry.created|date:"Y/M/j/" }}">{{ entry.created|date:"jS F Y" }}</a>.</p>
-{% if entry.tags.count %}
-<p>Tagged {% for tag in entry.tags.all %}{{ tag.get_reltag }}{% if not forloop.last %}, {% endif %}{% endfor %}</p>
-{% endif %}
-
+{% include "_tags.html" with obj=entry %}
 {% with entry.get_next_by_created as next_entry %}{% if next_entry %}
 <p><strong>Next:</strong> <a href="{{ next_entry.get_absolute_url }}">{{ next_entry.title }}</a></p>
 {% endif %}{% endwith %}

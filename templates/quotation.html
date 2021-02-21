@@ -16,10 +16,6 @@
 
 {% block secondary %}
 <div class="metabox">
-
-{% if quotation.tags.count %}
-<p>Tagged {% for tag in quotation.tags.all %}{{ tag.get_reltag }}{% if not forloop.last %}, {% endif %}{% endfor %}</p>
-{% endif %}
-
+{% include "_tags.html" with obj=quotation %}
 </div> <!-- .metabox -->
 {% endblock %}
