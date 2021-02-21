@@ -28,6 +28,7 @@ jobs:
             export DATABASE_URL=postgres://circleci:@localhost/circle_test
             python3 -m venv venv
             . venv/bin/activate
+            pip install -U pip
             pip install -r requirements.txt
             python manage.py migrate --noinput
             python manage.py collectstatic
