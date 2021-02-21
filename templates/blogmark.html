@@ -15,9 +15,7 @@
 {% block secondary %}
 <div class="metabox">
 
-{% if blogmark.tags.count %}
-  <p>Tagged {% for tag in blogmark.tags.all %}{{ tag.get_reltag }}{% if not forloop.last %}, {% endif %}{% endfor %}</p>
-{% endif %}
+{% include "_tags.html" with obj=blogmark %}
 
 </div> <!-- .metabox -->
 {% endblock %}

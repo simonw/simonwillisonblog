@@ -1009,3 +1009,25 @@ h3.blog-mixed-list-year {
 body.homepage .hide-on-homepage {
     display: none;
 }
+
+/* Tag styles */
+a.item-tag {
+    display: inline-block;
+    background-color: #ede3f1;
+    padding: 0px 8px;
+    border-radius: 5px;
+    border: 1px solid #bbb;
+    border-bottom: 1px solid #bbb;
+    text-decoration: none;
+    color: black;
+    margin-right: 0.3em;
+    margin-bottom: 0.5em;
+}
+a.item-tag:hover {
+    background-color: #dabaea;
+}
+.item-tag span {
+    color: #666;
+    font-size: 0.6em;
+    vertical-align: middle;
+}

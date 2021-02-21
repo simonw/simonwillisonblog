@@ -15,10 +15,13 @@
 {% block secondary %}
 <div class="metabox">
 {% if only_one_tag and tag.get_related_tags %}
-    <p>Related:
-        {% for t in tag.get_related_tags %}
-            <a href="/tags/{{ t }}/">{{ t }}</a>{% if not forloop.last %}, {% endif %}
-        {% endfor %}
+    <p><strong>Related</strong></p>
+    {% for related_tag in tag.get_related_tags %}
+        <a class="item-tag" href="{{ related_tag.get_absolute_url }}" rel="tag">
+            {{ related_tag }}
+            <span>{{ related_tag.total_count }}</span>
+        </a>
+    {% endfor %}
     </p>
 {% endif %}
 </div>
