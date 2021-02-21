@@ -77,10 +77,7 @@ class Tag(models.Model):
                     pk__in=getattr(self, collection).all()
                 ).values_list("tags__tag", flat=True)
                 counts.update(t for t in qs if t != self.tag)
-            tag_names = [p[0] for p in counts.most_common(limit)]
-            tags_by_name = {t.tag: t for t in Tag.objects.filter(tag__in=tag_names)}
-            # Need a list in the correct order
-            self._related_tags = [tags_by_name[name] for name in tag_names]
+            self._related_tags = [p[0] for p in counts.most_common(limit)]
         return self._related_tags
 
 
