@@ -233,7 +233,14 @@ def archive_year(request, year):
             ]
             counts_not_0 = [p for p in counts if p[1]]
             months.append(
-                {"date": date, "counts": counts, "counts_not_0": counts_not_0}
+                {
+                    "date": date,
+                    "counts": counts,
+                    "counts_not_0": counts_not_0,
+                    "entries": list(
+                        Entry.objects.filter(created__year=year, created__month=month)
+                    ),
+                }
             )
             max_count = max(
                 max_count, entry_count, link_count, quote_count, photo_count

@@ -1032,3 +1032,15 @@ a.item-tag:hover {
     font-size: 0.6em;
     vertical-align: middle;
 }
+
+/* Nested lists - used on /2020/ page
+
+/* Inline #3 | http://0.0.0.0:8033/2019/ */
+
+div.entry li li {
+    margin-bottom: 0.2em;
+}
+
+div.entry li li:first-of-type {
+    margin-top: 0.3em;
+}

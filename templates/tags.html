@@ -15,6 +15,13 @@
 {% block secondary %}
 <div class="metabox">
 You can view the intersection of up to three tags by navigating to <samp>/tags/tag1+tag2/</samp>.
+
+<h3>Archive by year</h3>
+<p>
+    {% for year in years_with_content reversed %}
+        <a href="/{{ year|date:"Y" }}/">{{ year|date:"Y" }}</a>{% if not forloop.last %} / {% endif %}
+    {% endfor %}
+</p>
 </div>
 {% endblock %}
 
