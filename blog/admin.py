@@ -12,7 +12,8 @@ class BaseAdmin(admin.ModelAdmin):
     raw_id_fields = ("tags",)
     list_display = ("__str__", "slug", "created", "tag_summary")
     autocomplete_fields = ("tags",)
-    readonly_fields = ("search_document", "import_ref")
+    readonly_fields = ("import_ref",)
+    exclude = ("search_document",)
 
     def get_queryset(self, request):
         return super().get_queryset(request).prefetch_related("tags")
