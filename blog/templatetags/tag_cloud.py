@@ -77,8 +77,8 @@ def _tag_cloud_helper(tags):
             continue
         html_tags.append(
             mark_safe(
-                '<a href="/tags/%s/" title="%d item%s" class="%s">%s</a>'
-                % (tag, score, (score != 1 and "s" or ""), CLASSES[index], tag)
+                '<a href="/tags/%s/" title="%d item%s" class="item-tag %s">%s <span>%s</span></a>'
+                % (tag, score, (score != 1 and "s" or ""), CLASSES[index], tag, score)
             )
         )
     return {"tags": html_tags}

@@ -709,11 +709,8 @@ div.paginator {
 p#tagcloud {
     font-size: 1.2em;
     line-height: 1.9em;
-    text-align: center
-}
-p#tagcloud a {
-    text-decoration: none;
-    vertical-align: middle
+    text-align: center;
+    margin-top: 1.5em;
 }
 p#tagcloud .not-popular-at-all {
     font-size: 0.70em
