@@ -736,6 +736,10 @@ p#tagcloud .very-popular {
 p#tagcloud .ultra-popular {
     font-size: 2.00em
 }
+p#currenttags .more {
+    text-decoration: none;
+    border: none;
+}
 div#wrapper div.wide {
     width: 640px
 }
