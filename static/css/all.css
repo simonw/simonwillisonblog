@@ -220,6 +220,11 @@ div.metabox p {
 div.entryPage {
     border-bottom: none
 }
+/* Center embedded tweets in articles */
+div.entry div.twitter-tweet {
+    margin-left: auto;
+    margin-right: auto;
+}
 div.entry table {
     margin: 1em 0
 }
