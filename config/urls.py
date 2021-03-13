@@ -1,4 +1,5 @@
 from django.urls import path, re_path, include
+from django_sql_dashboard.views import dashboard, dashboard_index
 from django.contrib import admin
 from django.http import HttpResponsePermanentRedirect, HttpResponse
 from django.views.decorators.cache import never_cache
@@ -94,6 +95,8 @@ urlpatterns = [
     #  (r'^about/$', blog_views.about),
     re_path(r"^admin/", admin.site.urls),
     re_path(r"^static/", static_redirect),
+    path("dashboard/", dashboard_index, name="django_sql_dashboard-index"),
+    path("dashboard/<slug>/", dashboard),
 ]
 if settings.DEBUG:
     import debug_toolbar
