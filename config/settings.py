@@ -100,7 +100,14 @@ DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
         "NAME": "simonwillisonblog",
-    }
+    },
+    "dashboard": {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": "simonwillisonblog",
+        "OPTIONS": {
+            "options": "-c default_transaction_read_only=on -c statement_timeout=1000"
+        },
+    },
 }
 
 # Internationalization
@@ -119,7 +126,7 @@ if "DATABASE_URL" in os.environ:
     DATABASES["dashboard"] = dj_database_url.config()
     DATABASES["dashboard"]["OPTIONS"] = {
         "options": "-c default_transaction_read_only=on -c statement_timeout=1000"
-    },
+    }
 
 if "DISABLE_AUTOCOMMIT" in os.environ:
     DATABASES["default"]["AUTOCOMMIT"] = False
