@@ -4,6 +4,7 @@ from django.contrib import admin
 from django.http import HttpResponsePermanentRedirect, HttpResponse
 from django.views.decorators.cache import never_cache
 from django.conf import settings
+import django_sql_dashboard
 from blog import views as blog_views
 from blog import feeds
 from feedstats.utils import count_subscribers
@@ -95,8 +96,7 @@ urlpatterns = [
     #  (r'^about/$', blog_views.about),
     re_path(r"^admin/", admin.site.urls),
     re_path(r"^static/", static_redirect),
-    path("dashboard/", dashboard_index, name="django_sql_dashboard-index"),
-    path("dashboard/<slug>/", dashboard),
+    path("dashboard/", include(django_sql_dashboard.urls)),
 ]
 if settings.DEBUG:
     import debug_toolbar
