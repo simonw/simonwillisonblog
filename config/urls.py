@@ -97,6 +97,7 @@ urlpatterns = [
     re_path(r"^admin/", admin.site.urls),
     re_path(r"^static/", static_redirect),
     path("dashboard/", include(django_sql_dashboard.urls)),
+    path("user-from-cookies/", blog_views.user_from_cookies),
 ]
 if settings.DEBUG:
     import debug_toolbar

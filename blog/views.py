@@ -705,3 +705,18 @@ def archive_item_redirect(request, yyyy, mm, dd, slug):
     return Redirect(
         "/%s/%s/%d/%s" % (yyyy, MONTHS_3_REV_REV[int(mm)].title(), int(dd), slug)
     )
+
+
+# For use with datasette-auth-existing-cookies
+def user_from_cookies(request):
+    if not request.user.is_authenticated:
+        return JsonResponse({})
+    return JsonResponse(
+        {
+            "id": request.user.id,
+            "username": request.user.username,
+            "name": request.user.get_full_name(),
+            "is_staff": request.user.is_staff,
+            "is_superuser": request.user.is_superuser,
+        }
+    )
