@@ -30,6 +30,8 @@ GOOGLE_ANALYTICS_ID = os.environ.get("GOOGLE_ANALYTICS_ID")
 # SESSION_COOKIE_DOMAIN
 if os.environ.get("SESSION_COOKIE_DOMAIN"):
     SESSION_COOKIE_DOMAIN = os.environ["SESSION_COOKIE_DOMAIN"]
+if os.environ.get("SESSION_COOKIE_SECURE"):
+    SESSION_COOKIE_SECURE = True
 
 # Application definition
 
