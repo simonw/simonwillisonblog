@@ -708,6 +708,7 @@ def archive_item_redirect(request, yyyy, mm, dd, slug):
 
 
 # For use with datasette-auth-existing-cookies
+@never_cache
 def user_from_cookies(request):
     if not request.user.is_authenticated:
         return JsonResponse({})
