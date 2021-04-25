@@ -125,6 +125,7 @@ USE_I18N = True
 USE_L10N = True
 USE_TZ = True
 
+DASHBOARD_ENABLE_FULL_EXPORT = True
 
 if "DATABASE_URL" in os.environ:
     # Parse database configuration from $DATABASE_URL
