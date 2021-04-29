@@ -1,0 +1,24 @@
+version: 2
+updates:
+- package-ecosystem: pip
+  directory: "/"
+  schedule:
+    interval: daily
+    time: "13:00"
+  open-pull-requests-limit: 10
+  ignore:
+  - dependency-name: arrow
+    versions:
+    - 1.0.3
+  - dependency-name: django-sql-dashboard
+    versions:
+    - 0.3a1
+    - 0.4a2
+    - 0.8a2
+  - dependency-name: django
+    versions:
+    - 3.1.6
+    - 3.1.7
+  - dependency-name: pytest
+    versions:
+    - 6.2.2
