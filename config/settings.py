@@ -132,7 +132,7 @@ if "DATABASE_URL" in os.environ:
     DATABASES["default"] = dj_database_url.config()
     DATABASES["dashboard"] = dj_database_url.config()
     DATABASES["dashboard"]["OPTIONS"] = {
-        "options": "-c default_transaction_read_only=on -c statement_timeout=1000"
+        "options": "-c default_transaction_read_only=on -c statement_timeout=3000"
     }
 
 if "DISABLE_AUTOCOMMIT" in os.environ:
