@@ -18,4 +18,4 @@ factory-boy==3.2.0
 beautifulsoup4==4.9.3
 html5lib==1.1
 db-to-sqlite==1.3
-https://github.com/simonw/django-sql-dashboard/archive/f024e33ebf461df52569169b8e87b083ebc099d1.zip
+https://github.com/simonw/django-sql-dashboard/archive/f3eabeb721b6e406832d8e73ef40d0f568c1734e.zip
