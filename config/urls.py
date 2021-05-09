@@ -71,6 +71,10 @@ urlpatterns = [
     re_path(r"^(\d{4})/(\w{3})/$", blog_views.archive_month),
     re_path(r"^(\d{4})/(\w{3})/(\d{1,2})/$", blog_views.archive_day),
     re_path(r"^(\d{4})/(\w{3})/(\d{1,2})/([\-\w]+)/$", blog_views.archive_item),
+    # Redirects for entries, blogmarks, quotations by ID
+    re_path(r"^e/(\d+)/?$", blog_views.redirect_entry),
+    re_path(r"^b/(\d+)/?$", blog_views.redirect_blogmark),
+    re_path(r"^q/(\d+)/?$", blog_views.redirect_quotation),
     # Ancient URL pattern still getting hits
     re_path(r"^/?archive/(\d{4})/(\d{2})/(\d{2})/$", blog_views.archive_day_redirect),
     re_path(

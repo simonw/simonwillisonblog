@@ -1,4 +1,5 @@
 # coding=utf8
+from django.http.response import HttpResponseRedirect
 from django.shortcuts import render, get_object_or_404
 from django.utils.timezone import utc
 from django.http import HttpResponse, JsonResponse
@@ -721,3 +722,15 @@ def user_from_cookies(request):
             "is_superuser": request.user.is_superuser,
         }
     )
+
+
+def redirect_entry(request, pk):
+    return HttpResponseRedirect(get_object_or_404(Entry, pk=pk).get_absolute_url())
+
+
+def redirect_blogmark(request, pk):
+    return HttpResponseRedirect(get_object_or_404(Blogmark, pk=pk).get_absolute_url())
+
+
+def redirect_quotation(request, pk):
+    return HttpResponseRedirect(get_object_or_404(Quotation, pk=pk).get_absolute_url())
