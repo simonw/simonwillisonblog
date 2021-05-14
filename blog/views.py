@@ -239,7 +239,9 @@ def archive_year(request, year):
                     "counts": counts,
                     "counts_not_0": counts_not_0,
                     "entries": list(
-                        Entry.objects.filter(created__year=year, created__month=month)
+                        Entry.objects.filter(
+                            created__year=year, created__month=month
+                        ).order_by("created")
                     ),
                 }
             )
