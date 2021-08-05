@@ -37,6 +37,7 @@ Disallow: /
 PRODUCTION_ROBOTS_TXT = """
 User-agent: *
 Disallow: /admin/
+Disallow: /search/
 
 Sitemap: https://simonwillison.net/sitemap.xml
 """
