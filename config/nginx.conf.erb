@@ -20,7 +20,11 @@ http {
         'remote_addr="$remote_addr" forwarded_for="$http_x_forwarded_for" '
         'forwarded_proto="$http_x_forwarded_proto" via="$http_via" '
         'body_bytes_sent=$body_bytes_sent referer="$http_referer" '
-        'user_agent="$http_user_agent"';
+        'user_agent="$http_user_agent" '
+        'request_time="$request_time" '
+        'upstream_response_time="$upstream_response_time" '
+        'upstream_connect_time="$upstream_connect_time" '
+        'upstream_header_time="$upstream_header_time";';
     access_log logs/nginx/access.log custom;
     error_log logs/nginx/error.log;
 
