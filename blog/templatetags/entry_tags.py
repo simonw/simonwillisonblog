@@ -63,12 +63,15 @@ def split_cutoff(xhtml):
 
 
 @register.filter
-def remove_quora_paragraph(xhtml):
+def remove_context_paragraph(xhtml):
     x = XhtmlString(xhtml)
     p = x.et.find("p")
     if p is None:
         return x
-    if ElementTree.tostring(p, "unicode").startswith("<p><em>My answer to"):
+    xhtml = ElementTree.tostring(p, "unicode")
+    if xhtml.startswith("<p><em>My answer to") or xhtml.startswith(
+        '<p class="context">'
+    ):
         x.et.remove(p)
     return x
 
