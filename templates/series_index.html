@@ -7,11 +7,11 @@
 {% for series in all_series %}
 <h3><a href="/series/{{ series.slug }}/">{{ series.title }}</a></h3>
 <p style="margin: 0.5em 0">{{ series.summary }}</p>
-<ul>
+<ol>
   {% for entry in series.entries_ordest_first %}
-    <li style="margin-left: 1.5em; list-style-type: square"><a href="{{ entry.get_absolute_url }}">{{ entry }}</a> - {{ entry.created }} </li>
+    <li style="margin-left: 1.5em; list-style-type: decimal"><a href="{{ entry.get_absolute_url }}">{{ entry }}</a> - {{ entry.created }} </li>
   {% endfor %}
-</ul>
+</ol>
 {% endfor %}
 
 {% endblock %}
