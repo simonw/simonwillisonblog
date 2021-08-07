@@ -90,6 +90,9 @@ class Series(models.Model):
     title = models.CharField(max_length=255)
     summary = models.TextField()
 
+    def entries_ordest_first(self):
+        return self.entry_set.order_by("created")
+
     def __str__(self):
         return self.title
 

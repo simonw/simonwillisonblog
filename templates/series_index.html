@@ -1,0 +1,17 @@
+{% extends "smallhead.html" %}
+{% block title %}Series{% endblock %}
+{% block primary %}
+
+<h2 class="archive-tag-h2">Series</h2>
+
+{% for series in all_series %}
+<h3>{{ series.title }}</h3>
+<p style="margin: 0.5em 0">{{ series.summary }}</p>
+<ul>
+  {% for entry in series.entries_ordest_first %}
+    <li><a href="{{ entry.get_absolute_url }}">{{ entry }}</a> - {{ entry.created }} </li>
+  {% endfor %}
+</ul>
+{% endfor %}
+
+{% endblock %}

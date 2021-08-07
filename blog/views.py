@@ -439,6 +439,18 @@ def archive_tag_atom(request, tags):
     return archive_tag(request, tags, atom=True)
 
 
+def series_index(request):
+    return render(
+        request,
+        "series_index.html",
+        {
+            "all_series": Series.objects.all().annotate(
+                num_entries=models.Count("entry")
+            ),
+        },
+    )
+
+
 def archive_series(request, slug):
     series = get_object_or_404(Series, slug=slug)
     return render(
@@ -446,10 +458,10 @@ def archive_series(request, slug):
         "archive_series.html",
         {
             "series": series,
-            "items": [{
-                "type": "entry",
-                "obj": obj
-            } for obj in series.entry_set.order_by("created")]
+            "items": [
+                {"type": "entry", "obj": obj}
+                for obj in series.entry_set.order_by("created")
+            ],
         },
     )
 
