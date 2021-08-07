@@ -21,6 +21,7 @@ from .models import (
     Quotation,
     Photo,
     Photoset,
+    Series,
     Tag,
     load_mixed_objects,
 )
@@ -436,6 +437,28 @@ def archive_tag(request, tags, atom=False):
 
 def archive_tag_atom(request, tags):
     return archive_tag(request, tags, atom=True)
+
+
+def archive_series(request, slug):
+    series = get_object_or_404(Series, slug=slug)
+    return render(
+        request,
+        "archive_series.html",
+        {
+            "series": series,
+            "items": [{
+                "type": "entry",
+                "obj": obj
+            } for obj in series.entry_set.order_by("created")]
+        },
+    )
+
+
+def archive_series_atom(request, slug):
+    from .feeds import SeriesFeed
+
+    series = get_object_or_404(Series, slug=slug)
+    return SeriesFeed(series)(request)
 
 
 @never_cache

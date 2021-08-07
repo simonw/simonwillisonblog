@@ -1,0 +1,14 @@
+{% extends "smallhead.html" %}
+
+{% block title %}Simon Willison: {{ series }}{% endblock %}
+
+{% block primary %}
+<h2 class="archive-tag-h2">Series: {{ series }}</h2>
+
+<p>{{ series.summary }}</p>
+
+{% load blog_tags %}
+
+{% blog_mixed_list_with_dates items %}
+
+{% endblock %}

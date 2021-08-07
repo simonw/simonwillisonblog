@@ -84,6 +84,17 @@ class Everything(Base):
             return "Quoting %s" % item.source
 
 
+class SeriesFeed(Everything):
+    ga_source = "series"
+
+    def __init__(self, series):
+        self.title = "Simon Willison's Weblog: {}".format(series.title)
+        self.series = series
+
+    def items(self):
+        return list(self.series.entry_set.all().order_by("-created"))
+
+
 class EverythingTagged(Everything):
     ga_source = "tag"
 
