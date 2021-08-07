@@ -93,6 +93,9 @@ class Series(models.Model):
     def entries_ordest_first(self):
         return self.entry_set.order_by("created")
 
+    def get_absolute_url(self):
+        return "/series/{}/".format(self.slug)
+
     def __str__(self):
         return self.title
 
