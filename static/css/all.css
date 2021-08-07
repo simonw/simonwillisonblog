@@ -217,6 +217,13 @@ div.metabox {
 div.metabox p {
     margin-bottom: 0.8em
 }
+div.series-info {
+    margin: 2em 0;
+}
+div.series-info li {
+    margin-left: 1.5em;
+    list-style-type: decimal;
+}
 div.entryPage {
     border-bottom: none
 }
