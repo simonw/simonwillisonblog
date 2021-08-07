@@ -5,11 +5,11 @@
 <h2 class="archive-tag-h2">Series</h2>
 
 {% for series in all_series %}
-<h3>{{ series.title }}</h3>
+<h3><a href="/series/{{ series.slug }}/">{{ series.title }}</a></h3>
 <p style="margin: 0.5em 0">{{ series.summary }}</p>
 <ul>
   {% for entry in series.entries_ordest_first %}
-    <li><a href="{{ entry.get_absolute_url }}">{{ entry }}</a> - {{ entry.created }} </li>
+    <li style="margin-left: 1.5em; list-style-type: square"><a href="{{ entry.get_absolute_url }}">{{ entry }}</a> - {{ entry.created }} </li>
   {% endfor %}
 </ul>
 {% endfor %}
