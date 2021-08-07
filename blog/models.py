@@ -84,6 +84,19 @@ class Tag(models.Model):
         return self._related_tags
 
 
+class Series(models.Model):
+    created = models.DateTimeField(default=datetime.datetime.utcnow)
+    slug = models.SlugField(max_length=64, unique=True)
+    title = models.CharField(max_length=255)
+    summary = models.TextField()
+
+    def __str__(self):
+        return self.title
+
+    class Meta:
+        verbose_name_plural = "Series"
+
+
 class BaseModel(models.Model):
     created = models.DateTimeField(default=datetime.datetime.utcnow)
     tags = models.ManyToManyField(Tag, blank=True)
@@ -92,6 +105,7 @@ class BaseModel(models.Model):
     search_document = SearchVectorField(null=True)
     import_ref = models.TextField(max_length=64, null=True, unique=True)
     card_image = models.CharField(max_length=128, null=True, blank=True)
+    series = models.ForeignKey(Series, blank=True, null=True, on_delete=models.PROTECT)
 
     def created_unixtimestamp(self):
         return arrow.get(self.created).timestamp

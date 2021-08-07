@@ -4,7 +4,7 @@ from django.db.models.functions import Length
 from django.db.models import F
 from django import forms
 from xml.etree import ElementTree
-from .models import Entry, Tag, Quotation, Blogmark, Comment
+from .models import Entry, Tag, Quotation, Blogmark, Comment, Series
 
 
 class BaseAdmin(admin.ModelAdmin):
@@ -91,4 +91,12 @@ admin.site.register(
     ),
     list_display_links=("name", "admin_summary"),
     date_hierarchy="created",
+)
+
+admin.site.register(
+    Series,
+    list_display=(
+        "title",
+        "slug",
+    ),
 )
