@@ -124,7 +124,7 @@ def do_break_long_words(et, length):
     """Pass an ElementTree instance; breaks up long words in it"""
     if et.text:
         et.text = do_break_long_words_string(et.text, length)
-    for child in et.getchildren():
+    for child in et:
         do_break_long_words(child, length)
     if et.tail:
         et.tail = do_break_long_words_string(et.tail, length)
@@ -163,7 +163,7 @@ def do_typography(et):
         # Don't do et.text or children for those tags; just do et.tail
         if et.text:
             et.text = do_typography_string(et.text)
-        for child in et.getchildren():
+        for child in et:
             do_typography(child)
     if et.tail:
         et.tail = do_typography_string(et.tail)
