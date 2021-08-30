@@ -460,7 +460,7 @@ def archive_series(request, slug):
             "series": series,
             "items": [
                 {"type": "entry", "obj": obj}
-                for obj in series.entry_set.order_by("created")
+                for obj in series.entry_set.order_by("created").prefetch_related("tags")
             ],
         },
     )
