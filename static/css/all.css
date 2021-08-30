@@ -866,9 +866,6 @@ h3.blog-mixed-list-year {
   p#currenttags {
     width: auto;
   }
-  p#currenttags .more {
-    display: none;
-  }
   #secondary h2.overband {
     /* No longer on purple background */
     color: black;
