@@ -169,6 +169,27 @@ class Entry(BaseModel):
             "B": " ".join(self.tags.values_list("tag", flat=True)),
         }
 
+    def series_info(self):
+        entries = list(self.series.entries_ordest_first().defer("body"))
+        has_next = False
+        start = 1
+        # If there are more than 7, only show 3 before and 3 after this one
+        if len(entries) > 7:
+            entry_ids = [e.pk for e in entries]
+            this_index = entry_ids.index(self.pk)
+            if this_index < 4:
+                entries = entries[:7]
+                start = 1
+            else:
+                entries = entries[this_index - 3 : this_index + 4]
+                start = (this_index - 3) + 1
+            has_next = len(entry_ids) > start + len(entries) - 1
+        return {
+            "start": start,
+            "entries": entries,
+            "has_next": has_next,
+        }
+
     def __str__(self):
         return self.title
 

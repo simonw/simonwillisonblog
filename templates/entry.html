@@ -22,16 +22,21 @@
 {% block secondary %}
 <div class="metabox">
 <p class="this-is">This is <strong>{{ entry.title|typography }}</strong> by Simon Willison, posted on <a href="/{{ entry.created|date:"Y/M/j/" }}">{{ entry.created|date:"jS F Y" }}</a>.</p>
-{% if entry.series %}
+{% if entry.series %}{% with entry.series_info as series_info %}
 <div class="series-info">
   <p>Part of series <strong><a href="/series/{{ entry.series.slug }}/">{{ entry.series.title }}</a></strong></p>
-  <ol>
-    {% for other in entry.series.entries_ordest_first %}
-      <li><a href="{{ other.get_absolute_url }}">{{ other }}</a> - {{ other.created }} </li>
+  <ol start="{{ series_info.start }}">
+    {% for other in series_info.entries %}
+      {% if other.pk == entry.pk %}
+        <li><strong>{{ other }}</strong></a> - {{ other.created }} </li>
+      {% else %}
+        <li><a href="{{ other.get_absolute_url }}">{{ other }}</a> - {{ other.created }} </li>
+      {% endif %}
     {% endfor %}
+    {% if series_info.has_next %}<li style="list-style-type: none;"><a href="/series/{{ entry.series.slug }}/">&#8230; more</a></li>{% endif %}
   </ol>
 </div>
-{% endif %}
+{% endwith %}{% endif %}
 {% include "_tags.html" with obj=entry %}
 {% with entry.get_next_by_created as next_entry %}{% if next_entry %}
 <p><strong>Next:</strong> <a href="{{ next_entry.get_absolute_url }}">{{ next_entry.title }}</a></p>

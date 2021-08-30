@@ -9,7 +9,7 @@
 <p style="margin: 0.5em 0">{{ series.summary }}</p>
 <ol style="margin-bottom: 1em">
   {% for entry in series.entries_ordest_first %}
-    <li style="margin-left: 1.5em; list-style-type: decimal"><a href="{{ entry.get_absolute_url }}">{{ entry }}</a> - {{ entry.created }} </li>
+    <li style="margin-left: 2em; list-style-type: decimal"><a href="{{ entry.get_absolute_url }}">{{ entry }}</a> - {{ entry.created }} </li>
   {% endfor %}
 </ol>
 {% endfor %}
