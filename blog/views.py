@@ -402,6 +402,8 @@ def archive_tag(request, tags, atom=False):
     # Paginate it
     paginator = Paginator(items, min(1000, int(request.GET.get("size") or "30")))
     page_number = request.GET.get("page") or "1"
+    if page_number == "last":
+        page_number = paginator.num_pages
     try:
         page = paginator.page(page_number)
     except PageNotAnInteger:
