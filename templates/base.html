@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 {% block rel_canonical %}<link rel="canonical" href="https://simonwillison.net{{ request.path }}">{% endblock %}
 <title>{% block title %}{% endblock %}</title>
+<script defer data-domain="simonwillison.net" src="https://plausible.io/js/plausible.js"></script>
 {% if GOOGLE_ANALYTICS_ID %}
 <script async src="https://www.googletagmanager.com/gtag/js?id={{ GOOGLE_ANALYTICS_ID }}"></script>
 <script>
