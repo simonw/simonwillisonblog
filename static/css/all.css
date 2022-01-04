@@ -1053,3 +1053,7 @@ div.entry li li {
 div.entry li li:first-of-type {
     margin-top: 0.3em;
 }
+
+a.photoswipe-img {
+  border: none;
+}
