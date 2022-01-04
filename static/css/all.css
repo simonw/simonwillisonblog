@@ -1054,6 +1054,10 @@ div.entry li li:first-of-type {
     margin-top: 0.3em;
 }
 
-a.photoswipe-img {
+a:link.photoswipe-img,
+a:visited.photoswipe-img,
+a:hover.photoswipe-img,
+a:focus.photoswipe-img,
+a:active.photoswipe-img {
   border: none;
 }
