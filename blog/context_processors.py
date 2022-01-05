@@ -11,7 +11,7 @@ def all(request):
 
 
 def years_with_content():
-    cache_key = "years-with-content"
+    cache_key = "years-with-content-2"
     years = cache.get(cache_key)
     if not years:
         years = list(
@@ -22,5 +22,5 @@ def years_with_content():
             )
         )
         years.sort()
-        cache.set(cache_key, years, 24 * 60 * 60)
+        cache.set(cache_key, years, 60 * 60)
     return years
