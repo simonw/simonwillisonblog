@@ -51,6 +51,10 @@ def add_qsarg(context, name, value):
     query_dict = context["request"].GET.copy()
     if value not in query_dict.getlist(name):
         query_dict.appendlist(name, value)
+    # And always remove ?page= - see
+    # https://github.com/simonw/simonwillisonblog/issues/239
+    if "page" in query_dict:
+        query_dict.pop("page")
     return "?" + query_dict.urlencode()
 
 
