@@ -14,7 +14,7 @@ arrow==1.2.2
 redis==3.5.3
 pytest==7.0.1
 django-redis-cache==3.0.0
-factory-boy==3.2.0
+factory-boy==3.2.1
 beautifulsoup4==4.10.0
 html5lib==1.1
 db-to-sqlite==1.4
