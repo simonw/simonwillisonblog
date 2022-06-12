@@ -19,6 +19,9 @@ INTERNAL_IPS = ("127.0.0.1",)
 
 STAGING = bool(os.environ.get("STAGING"))
 
+# Django SQL Dashboard
+DASHBOARD_ROW_LIMIT = 200
+
 # Cloudflare details
 CLOUDFLARE_EMAIL = os.environ.get("CLOUDFLARE_EMAIL", "")
 CLOUDFLARE_TOKEN = os.environ.get("CLOUDFLARE_TOKEN", "")
