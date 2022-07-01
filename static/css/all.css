@@ -382,7 +382,8 @@ div#smallhead h1 {
 }
 div#smallhead a {
     color: #fff;
-    text-decoration: none
+    text-decoration: none;
+    border: none
 }
 div#smallhead span {
     float: right;
