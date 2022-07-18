@@ -1062,3 +1062,7 @@ a:focus.photoswipe-img,
 a:active.photoswipe-img {
   border: none;
 }
+
+div.ea-placement a:link {
+  border-bottom: none;
+}

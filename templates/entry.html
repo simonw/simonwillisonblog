@@ -5,6 +5,7 @@
 {% block extrahead %}
 {{ block.super }}
 {{ entry.extra_head_html|default:""|safe }}
+<script async src="https://media.ethicalads.io/media/client/ethicalads.min.js"></script>
 {% endblock %}
 
 {% block card_title %}{{ entry.title|typography }}{% endblock %}
@@ -44,6 +45,7 @@
 {% with entry.get_previous_by_created as previous_entry %}{% if previous_entry %}
 <p><strong>Previous:</strong> <a href="{{ previous_entry.get_absolute_url }}">{{ previous_entry.title }}</a></p>
 {% endif %}{% endwith %}
+<div data-ea-publisher="simonwillisonnet" data-ea-type="text"></div>
 </div>
 
 {% if entry.tweet_html %}{{ entry.tweet_html|safe }}{% endif %}
