@@ -3,6 +3,11 @@
 {% block title %}{{ blogmark.link_title }}{% endblock %}
 {% load entry_tags %}
 
+{% block extrahead %}
+{{ block.super }}
+<script async src="https://media.ethicalads.io/media/client/ethicalads.min.js"></script>
+{% endblock %}
+
 {% block card_title %}{{ blogmark.link_title|typography }}{% endblock %}
 {% block card_description %}{{ blogmark.commentary|truncatewords:30 }}{% endblock %}
 
@@ -17,5 +22,7 @@
 
 {% include "_tags.html" with obj=blogmark %}
 
+<div data-ea-publisher="simonwillisonnet" data-ea-type="text"></div>
+  
 </div> <!-- .metabox -->
 {% endblock %}
