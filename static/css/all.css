@@ -811,7 +811,7 @@ h3.blog-mixed-list-year {
     display: none;
 }
 
-@media (max-width: 800px) {
+@media (max-width: 1024px) {
   #primary .elsewhere-in-primary {
     display: block;
   }
