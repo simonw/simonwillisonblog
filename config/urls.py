@@ -1,7 +1,7 @@
 from django.urls import path, re_path, include
 from django_sql_dashboard.views import dashboard, dashboard_index
 from django.contrib import admin
-from django.http import HttpResponsePermanentRedirect, HttpResponse
+from django.http import HttpResponseRedirect, HttpResponsePermanentRedirect, HttpResponse
 from django.views.decorators.cache import never_cache
 from django.conf import settings
 import django_sql_dashboard
