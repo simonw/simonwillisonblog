@@ -11,6 +11,32 @@ from feedstats.utils import count_subscribers
 import os
 import pkg_resources
 import json
+from proxy.views import proxy_view
+
+
+def wellknown_webfinger(request):
+    remote_url = (
+        "https://fedi.simonwillison.net/.well-known/webfinger?"
+        + request.META["QUERY_STRING"]
+    )
+    return proxy_view(request, remote_url)
+
+
+def wellknown_hostmeta(request):
+    remote_url = (
+        "https://fedi.simonwillison.net/.well-known/host-meta?"
+        + request.META["QUERY_STRING"]
+    )
+    return proxy_view(request, remote_url)
+
+
+def wellknown_nodeinfo(request):
+    remote_url = "https://fedi.simonwillison.net/.well-known/nodeinfo"
+    return proxy_view(request, remote_url)
+
+
+def username_redirect(request):
+    return HttpResponseRedirect("https://fedi.simonwillison.net/@simon")
 
 
 FAVICON = open(os.path.join(settings.BASE_DIR, "static/favicon.ico"), "rb").read()
@@ -82,6 +108,11 @@ urlpatterns = [
         r"^/?archive/(\d{4})/(\d{2})/(\d{2})/([\-\w]+)/?$",
         blog_views.archive_item_redirect,
     ),
+    # Fediverse
+    path(".well-known/webfinger", wellknown_webfinger),
+    path(".well-known/host-meta", wellknown_hostmeta),
+    path(".well-known/nodeinfo", wellknown_nodeinfo),
+    path("@simon", username_redirect),
     re_path(r"^versions/$", versions),
     re_path(r"^robots\.txt$", robots_txt),
     re_path(r"^favicon\.ico$", favicon_ico),
