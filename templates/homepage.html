@@ -7,6 +7,7 @@
 {% block extrahead %}
 <link href="https://github.com/simonw" rel="me">
 <link href="https://twitter.com/simonw" rel="me">
+<link href="https://fedi.simonwillison.net/@simon" rel="me">
 <link rel="authorization_endpoint" href="https://indieauth.com/auth">
 {% for entry in entries %}{{ entry.extra_head_html|default:""|safe }}{% endfor %}
 {% endblock %}
