@@ -1,4 +1,4 @@
-dj-database-url==1.0.0
+dj-database-url==1.1.0
 Django==3.2.16
 gunicorn==20.1.0
 psycopg2-binary==2.9.3
