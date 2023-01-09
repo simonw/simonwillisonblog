@@ -19,4 +19,4 @@ beautifulsoup4==4.11.1
 html5lib==1.1
 db-to-sqlite==1.4
 django-sql-dashboard==1.1
-django-proxy==1.2.1
+django-proxy==1.2.2
