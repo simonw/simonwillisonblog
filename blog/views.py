@@ -531,6 +531,10 @@ def search(request):
         rank_annotation = SearchRank(models.F("search_document"), query)
 
     selected_tags = request.GET.getlist("tag")
+
+    if len(selected_tags) > 2:
+        return HttpResponse("Too many tags", status=400)
+
     excluded_tags = request.GET.getlist("exclude.tag")
     selected_type = request.GET.get("type", "")
     selected_year = request.GET.get("year", "")
