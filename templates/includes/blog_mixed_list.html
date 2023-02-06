@@ -1,7 +1,7 @@
 {% load entry_tags %}
 {% for item in items %}
 {% if year_headers %}{% ifchanged item.obj.created.year %}<h3 class="blog-mixed-list-year">{{ item.obj.created.year }}</h3>{% endifchanged %}{% endif %}
-{% ifequal item.type "photoset" %}
+{% if item.type == "photoset" %}
 <div class="photoset segment">
   <a class="primary" href="{{ item.obj.get_absolute_url }}"><img class="primary" src="{{ item.obj.primary.url_s }}" alt="{{ item.obj.primary.title }}" width="75" height="75"></a>
   <h4><a href="{{ item.obj.get_absolute_url }}">{{ item.obj.title }}</a>, a photoset</h4>
@@ -9,8 +9,8 @@
   <p class="meta">{{ item.obj.primary.created|date:"f A"|lower }} / {{ item.obj.photos.count }} photo{{ item.obj.photos.count|pluralize }}{% if item.obj.has_map %} / <a href="{{ item.obj.get_absolute_url }}map/">map</a>{% endif %}</p>
   <br style="clear: both">
 </div>
-{% endifequal %}
-{% ifequal item.type "entry" %}
+{% endif %}
+{% if item.type == "entry" %}
 <div class="entry segment">
   <h3><a href="{{ item.obj.get_absolute_url }}" rel="bookmark">{{ item.obj.title|typography }}</a></h3>
   <p>
@@ -19,13 +19,13 @@
   {% if showdate %}{% entry_footer item.obj %}{% else %}{% entry_footer_no_date item.obj %}{% endif %}
   </div>
 </div> <!-- end div.entry -->
-{% endifequal %}
-{% ifequal item.type "blogmark" %}
+{% endif %}
+{% if item.type == "blogmark" %}
 <div class="blogmark segment"><p><a href="{{ item.obj.link_url }}">{{ item.obj.link_title|typography }}</a>{% if item.obj.via_url %} (<a href="{{ item.obj.via_url }}" title="{{ item.obj.via_title|typography }}">via</a>){% endif %}{% if not item.obj.via_url and not item.obj.link_title|ends_with_punctuation %}.{% endif %} {{ item.obj.commentary|typography }} <a href="{{ item.obj.get_absolute_url }}" rel="bookmark">#</a> {% if showdate %}<a href="/{{ item.obj.created|date:"Y/M/j/" }}">{{ item.obj.created|date:"jS F Y" }}</a>, {% endif %}{{ item.obj.created|date:"f A"|lower }}</p>
 </div>
-{% endifequal %}
-{% ifequal item.type "quotation" %}
+{% endif %}
+{% if item.type == "quotation" %}
 <div class="quote segment"><blockquote{% if item.obj.source_url %} cite="{{ item.obj.source_url }}"{% endif %}><p>{{ item.obj.quotation|typography }}</p></blockquote><p class="cite">&mdash; {% if item.obj.source_url %}<a href="{{ item.obj.source_url }}">{{ item.obj.source }}</a>{% else %}{{ item.obj.source }}{% endif %} <a href="{{ item.obj.get_absolute_url }}" rel="bookmark">#</a> {% if showdate %}<a href="/{{ item.obj.created|date:"Y/M/j/" }}">{{ item.obj.created|date:"jS F Y" }}</a>, {% endif %}{{ item.obj.created|date:"f A"|lower }}</p>
 </div>
-{% endifequal %}
+{% endif %}
 {% endfor %}

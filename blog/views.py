@@ -1,7 +1,6 @@
 # coding=utf8
 from django.http.response import HttpResponseRedirect
 from django.shortcuts import render, get_object_or_404
-from django.utils.timezone import utc
 from django.http import HttpResponse, JsonResponse
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.postgres.search import SearchQuery, SearchRank
@@ -77,7 +76,7 @@ def archive_item(request, year, month, day, slug):
 
         # If item is entry posted before Dec 1 2006, add "previously hosted"
         if content_type == "entry" and obj.created < datetime.datetime(
-            2006, 12, 1, 1, 1, 1, tzinfo=utc
+            2006, 12, 1, 1, 1, 1, tzinfo=datetime.timezone.utc
         ):
             previously_hosted = (
                 "http://simon.incutio.com/archive/"

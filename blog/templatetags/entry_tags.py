@@ -1,5 +1,4 @@
 from django import template
-from django.utils.timezone import utc
 from django.utils.html import conditional_escape
 from django.utils.safestring import mark_safe
 from xml.etree import ElementTree
@@ -221,7 +220,7 @@ chunks = (
 @register.filter
 def text_ago(d):
     """Returns 'One day' or 'Three minutes' etc - similar to time_since"""
-    delta = datetime.datetime.utcnow().replace(tzinfo=utc) - d
+    delta = datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc) - d
     since_seconds = (24 * 60 * 60 * delta.days) + delta.seconds
     for i, (seconds, name) in enumerate(chunks):
         count = since_seconds // seconds
