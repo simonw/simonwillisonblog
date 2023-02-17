@@ -16,7 +16,7 @@
 
 {{ entry.body|xhtml|resize_images_to_fit_width:"450"|typography|xhtml2html }}
 
-<div class="entryFooter">Posted <a href="/{{ entry.created|date:"Y/M/j/" }}">{{ entry.created|date:"jS F Y" }}</a> at {{ entry.created|date:"f A"|lower }} &middot; Follow <a href="https://twitter.com/simonw">@simonw</a> on Twitter</div>
+<div class="entryFooter">Posted <a href="/{{ entry.created|date:"Y/M/j/" }}">{{ entry.created|date:"jS F Y" }}</a> at {{ entry.created|date:"f A"|lower }} &middot; Follow me <a href="https://fedi.simonwillison.net/@simon">on Mastodon</a> or <a href="https://twitter.com/simonw">on Twitter</a></div>
 
 {% endblock %}
 
