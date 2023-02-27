@@ -194,14 +194,16 @@ div#secondary blockquote {
     margin-top: 0.5em;
     margin-bottom: 0.2em;
     text-indent: 23px;
-    background-image: url(/static/css/img/lquote.png);
+    background-image: url(/static/css/img/lquo.png);
+    background-size: 18px 13px;
     background-repeat: no-repeat;
-    background-position: 0px 2px
+    background-position: 0px 3px
 }
 div#secondary blockquote p {
-    background-image: url(/static/css/img/rquote.png);
+    background-image: url(/static/css/img/rquo.png);
+    background-size: 18px 13px;
     background-repeat: no-repeat;
-    background-position: bottom right;
+    background-position: bottom 3px right;
     padding-right: 23px;
     font-size: 1.2em;
     font-family: serif;
@@ -641,14 +643,16 @@ div#primary div.quote blockquote {
     margin-top: 0.5em;
     margin-bottom: 0.2em;
     text-indent: 23px;
-    background-image: url(/static/css/img/lquote.png);
+    background-image: url(/static/css/img/lquo.png);
+    background-size: 18px 13px;
     background-repeat: no-repeat;
-    background-position: 12px 2px
+    background-position: 12px 4px
 }
 div#primary div.quote blockquote p {
-    background-image: url(/static/css/img/rquote.png);
+    background-image: url(/static/css/img/rquo.png);
+    background-size: 18px 13px;
     background-repeat: no-repeat;
-    background-position: bottom right;
+    background-position: bottom 3px right;
     padding-right: 23px;
     font-size: 1.1em;
     font-family: serif;
