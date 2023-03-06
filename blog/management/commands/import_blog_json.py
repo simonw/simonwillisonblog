@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand
-from django.utils.timezone import utc
+from datetime import timezone
 from blog.models import (
     Entry,
     Blogmark,
@@ -47,7 +47,7 @@ class Command(BaseCommand):
             items = json.load(open(url_or_path_to_json))
 
         for item in items:
-            created = parser.parse(item["datetime"]).replace(tzinfo=utc)
+            created = parser.parse(item["datetime"]).replace(tzinfo=timezone.utc)
             was_created = False
             slug = item["slug"][:64].strip("-")
             if item["type"] == "entry":

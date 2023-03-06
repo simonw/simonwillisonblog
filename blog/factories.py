@@ -1,12 +1,12 @@
 import factory
 import factory.django
 import factory.fuzzy
-from django.utils.timezone import utc
+from datetime import timezone
 
 
 class BaseFactory(factory.django.DjangoModelFactory):
     slug = factory.Sequence(lambda n: "slug%d" % n)
-    created = factory.Faker("past_datetime", tzinfo=utc)
+    created = factory.Faker("past_datetime", tzinfo=timezone.utc)
 
 
 class EntryFactory(BaseFactory):
