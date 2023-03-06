@@ -26,17 +26,10 @@ jobs:
           name: install dependencies and setup database
           command: |
             export DATABASE_URL=postgres://circleci:@localhost/circle_test
-            python3 -m venv venv
-            . venv/bin/activate
             pip install -U pip setuptools
             pip install -r requirements.txt
             python manage.py migrate --noinput
             python manage.py collectstatic
-
-      - save_cache:
-          paths:
-            - ./venv
-          key: v1-dependencies-{{ checksum "requirements.txt" }}
 
       # run tests!
       # this example uses Django's built-in test-runner
@@ -46,7 +39,6 @@ jobs:
       - run:
           name: run tests
           command: |
-            . venv/bin/activate
             export DATABASE_URL=postgres://circleci:@localhost/circle_test
             export REDIS_URL=redis://localhost:6379
             python manage.py test
