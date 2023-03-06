@@ -11,6 +11,7 @@ class BaseAdmin(admin.ModelAdmin):
     date_hierarchy = "created"
     raw_id_fields = ("tags",)
     list_display = ("__str__", "slug", "created", "tag_summary")
+    list_filter = ("created",)
     autocomplete_fields = ("tags",)
     readonly_fields = ("import_ref",)
     exclude = ("search_document",)
@@ -45,6 +46,7 @@ class EntryAdmin(BaseAdmin):
     form = MyEntryForm
     prepopulated_fields = {"slug": ("title",)}
     search_fields = ("title", "body")
+    list_filter = ("created", "series")
 
 
 @admin.register(Quotation)
