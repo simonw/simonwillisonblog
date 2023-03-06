@@ -4,7 +4,7 @@ version: 2
 jobs:
   build:
     docker:
-      - image: circleci/python:3.7.8
+      - image: cimg/python:3.11.2
       - image: circleci/postgres:12.6
         environment:
           POSTGRES_USER: circleci
