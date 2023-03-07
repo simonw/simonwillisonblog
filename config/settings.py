@@ -62,10 +62,15 @@ MIDDLEWARE = (
     #    "django.middleware.clickjacking.XFrameOptionsMiddleware",
 )
 if DEBUG:
-    MIDDLEWARE = ("debug_toolbar.middleware.DebugToolbarMiddleware",) + MIDDLEWARE
-    INSTALLED_APPS += ("debug_toolbar",)
-else:
-    MIDDLEWARE += ("whitenoise.middleware.WhiteNoiseMiddleware",)
+    try:
+        import debug_toolbar
+
+        MIDDLEWARE = ("debug_toolbar.middleware.DebugToolbarMiddleware",) + MIDDLEWARE
+        INSTALLED_APPS += ("debug_toolbar",)
+    except ImportError:
+        pass
+
+MIDDLEWARE += ("whitenoise.middleware.WhiteNoiseMiddleware",)
 
 
 # Sentry
