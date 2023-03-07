@@ -143,6 +143,11 @@ urlpatterns = [
     path("user-from-cookies/", blog_views.user_from_cookies),
 ]
 if settings.DEBUG:
-    import debug_toolbar
+    try:
+        import debug_toolbar
 
-    urlpatterns = [re_path(r"^__debug__/", include(debug_toolbar.urls))] + urlpatterns
+        urlpatterns = [
+            re_path(r"^__debug__/", include(debug_toolbar.urls))
+        ] + urlpatterns
+    except ImportError:
+        pass
