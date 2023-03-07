@@ -17,6 +17,6 @@ django-redis-cache==3.0.1
 factory-boy==3.2.1
 beautifulsoup4==4.12.1
 html5lib==1.1
-db-to-sqlite==1.4
+db-to-sqlite==1.5
 django-sql-dashboard==1.1
 django-proxy==1.2.1
