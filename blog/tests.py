@@ -56,6 +56,12 @@ class BlogTests(TransactionTestCase):
         self.assertTemplateUsed(response, "quotation.html")
         self.assertEqual(response.context["quotation"].pk, quotation.pk)
 
+    def test_archive_year(self):
+        quotation = QuotationFactory()
+        response = self.client.get("/{}/".format(quotation.created.year))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "archive_year.html")
+
     def test_markup(self):
         entry = EntryFactory(
             title="Hello & goodbye",
