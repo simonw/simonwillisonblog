@@ -150,6 +150,9 @@ div#primary blockquote blockquote {
     border-left: none;
     padding-left: 1.5em;
 }
+div#primary blockquote pre {
+    white-space: pre-wrap;
+}
 div#secondary {
     width: 280px;
     float: left
