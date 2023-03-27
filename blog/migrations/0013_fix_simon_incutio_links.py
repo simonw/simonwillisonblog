@@ -49,7 +49,6 @@ def actually_fix_them(Entry):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("blog", "0012_card_image"),
     ]
