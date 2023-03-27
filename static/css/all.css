@@ -1073,3 +1073,12 @@ a:active.photoswipe-img {
 div.ea-placement a:link {
   border-bottom: none;
 }
+
+.recent-articles {
+  margin-top: 1em;
+}
+.recent-articles li {
+  list-style-type: square;
+  margin-left: 1em;
+  margin-bottom: 0.1em;
+}

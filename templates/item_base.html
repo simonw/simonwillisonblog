@@ -24,9 +24,18 @@
 {% block item_content %}
 {% endblock %}
 </div>
+<div class="recent-articles">
+<h2>{% block recent_articles_header %}Recent articles{% endblock %}</h2>
+<ul class="bullets">
+  {% for article in recent_articles %}{% if article != item %}
+    <li><a href="{{ article.get_absolute_url }}">{{ article }}</a> - {{ article.created|date:"jS F Y" }}</li>
+  {% endif %}{% endfor %}
+</ul>
+</div>
 {% endblock %}
 
 {% block thirdsection %}
+
 {% if comments %}
   <h2 class="band">{{ comments|length }} comment{{ comments|length|pluralize }}</h2>
 

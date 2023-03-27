@@ -20,6 +20,8 @@
 
 {% endblock %}
 
+{% block recent_articles_header %}More recent articles{% endblock %}
+
 {% block secondary %}
 <div class="metabox">
 <p class="this-is">This is <strong>{{ entry.title|typography }}</strong> by Simon Willison, posted on <a href="/{{ entry.created|date:"Y/M/j/" }}">{{ entry.created|date:"jS F Y" }}</a>.</p>
