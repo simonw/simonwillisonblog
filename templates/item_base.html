@@ -24,6 +24,7 @@
 {% block item_content %}
 {% endblock %}
 </div>
+{% if recent_articles %}
 <div class="recent-articles">
 <h2>{% block recent_articles_header %}Recent articles{% endblock %}</h2>
 <ul class="bullets">
@@ -32,6 +33,7 @@
   {% endif %}{% endfor %}
 </ul>
 </div>
+{% endif %}
 {% endblock %}
 
 {% block thirdsection %}
