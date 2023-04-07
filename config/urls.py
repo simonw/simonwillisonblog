@@ -43,6 +43,9 @@ def username_redirect(request):
     return HttpResponseRedirect("https://fedi.simonwillison.net/@simon")
 
 
+def newsletter_redirect(request):
+    return HttpResponseRedirect("https://simonw.substack.com/")
+
 FAVICON = open(os.path.join(settings.BASE_DIR, "static/favicon.ico"), "rb").read()
 
 
@@ -117,6 +120,7 @@ urlpatterns = [
     path(".well-known/host-meta", wellknown_hostmeta),
     path(".well-known/nodeinfo", wellknown_nodeinfo),
     path("@simon", username_redirect),
+    path("newsletter", newsletter_redirect),
     re_path(r"^versions/$", versions),
     re_path(r"^robots\.txt$", robots_txt),
     re_path(r"^favicon\.ico$", favicon_ico),
