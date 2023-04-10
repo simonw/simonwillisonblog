@@ -46,6 +46,7 @@ def username_redirect(request):
 def newsletter_redirect(request):
     return HttpResponseRedirect("https://simonw.substack.com/")
 
+
 FAVICON = open(os.path.join(settings.BASE_DIR, "static/favicon.ico"), "rb").read()
 
 
