@@ -64,6 +64,7 @@ MIDDLEWARE = (
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
+    "blog.middleware.AmpersandRedirectMiddleware",
     #    "django.middleware.clickjacking.XFrameOptionsMiddleware",
 )
 if DEBUG:
