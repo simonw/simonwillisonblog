@@ -69,6 +69,9 @@ Disallow: /
 """
 
 PRODUCTION_ROBOTS_TXT = """
+User-agent: ChatGPT-User
+Disallow:
+
 User-agent: *
 Disallow: /admin/
 Disallow: /search/
