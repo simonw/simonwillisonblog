@@ -800,6 +800,9 @@ a.selected-tag {
     background-color: rgba(115, 60, 150, 0.28);
     color: black;
 }
+div p.search-selections .filters {
+    padding-right: 0.6em;
+}
 
 .archive-tag-h2 {
     font-size: 1.4em;

@@ -24,23 +24,26 @@
     {% endif %}
 </form>
 
-{% if selected %}
 <p class="search-selections">
-    Filters:
-    {% if selected.type %}
-        <a class="selected-tag" href="{% remove_qsarg "type" selected.type %}">Type: {{ selected.type }} <strong>&#x00D7;</strong></a>
-    {% endif %}
-    {% if selected.year %}
-        <a class="selected-tag" href="{% remove_qsarg "year" selected.year %}">Year: {{ selected.year }} <strong>&#x00D7;</strong></a>
-    {% endif %}
-    {% if selected.month %}
-        <a class="selected-tag" href="{% remove_qsarg "month" selected.month %}">Month: {{ selected.month_name }} <strong>&#x00D7;</strong></a>
-    {% endif %}
-    {% for tag in selected.tags %}
-        <a class="selected-tag" href="{% remove_qsarg "tag" tag %}">{{ tag }} <strong>&#x00D7;</strong></a>
-    {% endfor %}
+    {% if selected %}<span class="filters">
+        Filters:
+        {% if selected.type %}
+            <a class="selected-tag" href="{% remove_qsarg "type" selected.type %}">Type: {{ selected.type }} <strong>&#x00D7;</strong></a>
+        {% endif %}
+        {% if selected.year %}
+            <a class="selected-tag" href="{% remove_qsarg "year" selected.year %}">Year: {{ selected.year }} <strong>&#x00D7;</strong></a>
+        {% endif %}
+        {% if selected.month %}
+            <a class="selected-tag" href="{% remove_qsarg "month" selected.month %}">Month: {{ selected.month_name }} <strong>&#x00D7;</strong></a>
+        {% endif %}
+        {% for tag in selected.tags %}
+            <a class="selected-tag" href="{% remove_qsarg "tag" tag %}">{{ tag }} <strong>&#x00D7;</strong></a>
+        {% endfor %}
+    </span>{% endif %}
+    Sorted by <strong>{{ sort }}</strong>{% if q %} &middot; {% endif %}
+    {% if sort == "date" and q %}<a href="{% replace_qsarg "sort" "relevance" %}">relevance</a>{% endif %}
+    {% if sort == "relevance" %}<a href="{% replace_qsarg "sort" "date" %}">date</a>{% endif %}
 </p>
-{% endif %}
 
 <br>
 

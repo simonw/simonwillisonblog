@@ -619,10 +619,22 @@ def search(request):
                 )
         qs = qs.union(klass_qs.values(*values))
 
-    if q:
-        qs = qs.order_by("-rank")
-    else:
-        qs = qs.order_by("-created")
+    sort = request.GET.get("sort")
+    if sort not in ("relevance", "date"):
+        sort = None
+
+    if sort is None:
+        if q:
+            sort = "relevance"
+        else:
+            sort = "date"
+
+    # can't sort by relevance if there's no q
+    if sort == "relevance" and not q:
+        sort = "date"
+
+    db_sort = {"relevance": "-rank", "date": "-created"}[sort]
+    qs = qs.order_by(db_sort)
 
     type_counts = sorted(
         [
@@ -713,6 +725,7 @@ def search(request):
         "search.html",
         {
             "q": q,
+            "sort": sort,
             "title": title,
             "results": results,
             "total": paginator.count,
