@@ -1035,7 +1035,7 @@ body.homepage .hide-on-homepage {
 a.item-tag {
     display: inline-block;
     background-color: #ede3f1;
-    padding: 0px 8px;
+    padding: 4px 10px;
     border-radius: 5px;
     border: 1px solid #bbb;
     border-bottom: 1px solid #bbb;
