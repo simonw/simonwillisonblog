@@ -238,7 +238,7 @@ div.entry div.twitter-tweet {
     margin-right: auto;
 }
 div.entry a {
-    word-break: break-all;
+    word-break: break-word;
 }
 div.entry table {
     margin: 1em 0
