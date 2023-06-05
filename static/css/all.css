@@ -1050,6 +1050,9 @@ a.item-tag {
 a.item-tag:hover {
     background-color: #dabaea;
 }
+#bighead a.item-tag {
+    padding: 0px 8px;
+}
 .item-tag span {
     color: #666;
     font-size: 0.6em;

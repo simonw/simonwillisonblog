@@ -7,7 +7,7 @@
   <div id="bigheadcontainer">
   {% if current_tags %}<p id="currenttags">On {% for tag in current_tags %}<a href="/tags/{{ tag }}/" class="item-tag">{{ tag }} <span>{{ tag.total_count }}</span></a> {% endfor %}<a href="/tags/" class="more">...</a></p>{% else %}<a href="/tags/">Tags...</a>{% endif %}
   <form action="/search/" method="GET"><div>
-    <input type="search" placeholder="Search this site" class="search-input" name="q" value="" style="max-width: 560px; margin-top: 1.5em">
+    <input type="search" placeholder="Search this site" class="search-input" name="q" value="" style="max-width: 560px; margin-top: 0.5em">
     <input type="submit" class="search-submit" value="Search">
   </div></form>
   </div><!-- #bigheadcontainer -->
