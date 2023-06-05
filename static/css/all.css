@@ -1034,6 +1034,33 @@ body.homepage .hide-on-homepage {
     display: none;
 }
 
+#h1-nav-wrapper {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-start;
+}
+#h1-nav-wrapper h1 {
+    margin-right: 3em;
+}
+#h1-nav-wrapper ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0 1em 0 0 ;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    padding-bottom: 0.5em;
+}
+#h1-nav-wrapper li {
+    display: inline;
+    padding-right: 0.5em;
+}
+#h1-nav-wrapper li a {
+    border-bottom: none;
+    font-weight: bold;
+}
+
 /* Tag styles */
 a.item-tag {
     display: inline-block;

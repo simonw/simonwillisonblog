@@ -792,3 +792,7 @@ def redirect_blogmark(request, pk):
 
 def redirect_quotation(request, pk):
     return HttpResponseRedirect(get_object_or_404(Quotation, pk=pk).get_absolute_url())
+
+
+def about(request):
+    return render(request, "about.html")
