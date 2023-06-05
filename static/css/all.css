@@ -397,6 +397,9 @@ div#smallhead a {
     text-decoration: none;
     border: none
 }
+#smallhead-about {
+    padding-right: 1em
+}
 div#smallhead span {
     float: right;
     padding: 2px 5px 1px 0px;
