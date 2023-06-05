@@ -381,12 +381,16 @@ div#smallhead {
     background: linear-gradient(to bottom, rgb(154, 103, 175) 0%, rgb(96, 72, 129) 49%, rgb(100, 67, 130) 100%);
     color: white
 }
-div#smallhead h1 {
+div#smallhead #smallhead-inner {
     width: 1000px;
     margin: 0 auto;
     padding: 4px 0px 4px 0px;
     color: #fff;
-    font-weight: normal
+    display: flex;
+    justify-content: space-between;
+}
+div#smallhead #smallhead-inner h1 {
+    font-weight: normal;
 }
 div#smallhead a {
     color: #fff;
@@ -863,7 +867,7 @@ h3.blog-mixed-list-year {
   div#bighead h1 {
     font-size: 1.5em;
   }
-  div#smallhead h1 {
+  div#smallhead #smallhead-inner {
     padding-left: 15px;
     width: 100%;
     box-sizing: border-box;
