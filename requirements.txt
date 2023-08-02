@@ -8,7 +8,7 @@ django-proxy==1.2.2
 django-redis-cache==3.0.1
 django-sql-dashboard==1.1
 django-test-plus==2.2.1
-Django==4.1.9
+Django==4.2.4
 factory-boy==3.2.1
 gunicorn==20.1.0
 html5lib==1.1
