@@ -54,7 +54,6 @@ INSTALLED_APPS = (
     "blog",
     "redirects",
     "feedstats",
-    "projects",
 )
 
 MIDDLEWARE = (
