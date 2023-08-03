@@ -10,7 +10,6 @@ jobs:
           POSTGRES_USER: circleci
           POSTGRES_DB: circle_test
           POSTGRES_HOST_AUTH_METHOD: trust
-      - image: circleci/redis:5.0.9
 
     steps:
       - checkout
@@ -40,7 +39,6 @@ jobs:
           name: run tests
           command: |
             export DATABASE_URL=postgres://circleci:@localhost/circle_test
-            export REDIS_URL=redis://localhost:6379
             python manage.py test
 
       - store_artifacts:
