@@ -313,6 +313,12 @@ div.entry div.entryFooter {
     border-top: 1px solid #8a55a8;
     padding-top: 0.5em;
 }
+div.entry p.mobile-date {
+    color: #666;
+    margin-bottom: 0.5em;
+    margin-top: -0.5em;
+    display: none;
+}
 div#bighead {
     width: 1000px;
     margin: 0 auto;
@@ -832,6 +838,9 @@ h3.blog-mixed-list-year {
 }
 
 @media (max-width: 1024px) {
+  div.entry p.mobile-date {
+    display: block;
+  }
   #primary .elsewhere-in-primary {
     display: block;
   }

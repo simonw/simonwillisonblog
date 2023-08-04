@@ -13,6 +13,7 @@
 
 {% block item_content %}
 <h2>{{ entry.title|typography }}</h2>
+<p class="mobile-date">{{ entry.created|date:"jS F Y" }}</p>
 
 {{ entry.body|xhtml|resize_images_to_fit_width:"450"|typography|xhtml2html }}
 
