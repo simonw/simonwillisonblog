@@ -73,7 +73,7 @@ dd {
     padding-left: 1.5em
 }
 p.smallhead-toolbar {
-    width: 1000px;
+    width: 940px;
     margin: 0 auto 3px auto;
 }
 a#atomfeedlink {
@@ -131,13 +131,13 @@ p#previouslyhosted {
     color: #666
 }
 div#wrapper {
-    width: 1000px;
+    width: 940px;
     margin: 0 auto;
     padding: 0 10px;
     overflow: hidden;
 }
 div#primary {
-    width: 620px;
+    width: 560px;
     margin-right: 35px;
     float: left
 }
@@ -320,7 +320,7 @@ div.entry p.mobile-date {
     display: none;
 }
 div#bighead {
-    width: 1000px;
+    width: 940px;
     margin: 0 auto;
     padding: 25px 10px 15px 10px;
 }
@@ -388,7 +388,7 @@ div#smallhead {
     color: white
 }
 div#smallhead #smallhead-inner {
-    width: 1000px;
+    width: 940px;
     margin: 0 auto;
     padding: 4px 0px 4px 0px;
     color: #fff;
@@ -453,7 +453,7 @@ p#commentwarning {
     background-color: rgb(221, 163, 255)
 }
 div#comment-wrapper {
-    width: 1000px;
+    width: 940px;
     margin-left: 35px
 }
 div#comments {
@@ -837,7 +837,10 @@ h3.blog-mixed-list-year {
     display: none;
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 964px) {
+  div.entry {
+    max-width: 680px
+  }
   div.entry p.mobile-date {
     display: block;
   }
