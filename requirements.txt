@@ -11,7 +11,7 @@ Django==4.2.4
 factory-boy==3.3.0
 gunicorn==21.2.0
 html5lib==1.1
-psycopg2-binary==2.9.6
+psycopg2-binary==2.9.7
 pytest==7.4.0
 raven>=3
 requests==2.31.0
