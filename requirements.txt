@@ -1,6 +1,6 @@
 arrow==1.2.3
 beautifulsoup4==4.12.2
-cloudflare==2.11.6
+cloudflare==2.11.7
 dateutils==0.6.12
 db-to-sqlite==1.5
 dj-database-url==2.1.0
