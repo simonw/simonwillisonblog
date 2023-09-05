@@ -22,6 +22,9 @@ caption, th {
 h1, h2, h3, h4, h5, h6 {
     font-size: 100%
 }
+h5 {
+    margin-bottom: 0.7em
+}
 q:before, q:after {
     content: ''
 }
