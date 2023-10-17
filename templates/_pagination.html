@@ -1,7 +1,7 @@
-{% if page.paginator.num_pages > 1 %}{% load blog_tags %}
+{% if page.paginator.num_pages > 1 %}{% load blog_tags %}{% load humanize %}
     <div class="pagination">
         {% if page_total %}
-        <strong>{{ page_total }} result{{ page_total|pluralize }}</strong> 
+        <strong>{{ page_total|intcomma }} result{{ page_total|pluralize }}</strong> 
         {% endif %}
         <span class="step-links">
             {% if page.has_previous %}
@@ -22,7 +22,7 @@
 {% else %}
     {% if page_total %}
         <div class="pagination">
-            <strong>{{ page_total }} result{{ page_total|pluralize }}</strong> 
+            <strong>{{ page_total|intcomma }} result{{ page_total|pluralize }}</strong> 
         </div>
     {% endif %}
 {% endif %}
