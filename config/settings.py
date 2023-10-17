@@ -51,6 +51,7 @@ INSTALLED_APPS = (
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django_sql_dashboard",
+    "django.contrib.humanize",
     "blog",
     "redirects",
     "feedstats",
