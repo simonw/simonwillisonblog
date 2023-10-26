@@ -27,6 +27,10 @@ class Base(Feed):
     def item_updateddate(self, item):
         return item.created
 
+    def get_feed(self, obj, request):
+        feedgen = super().get_feed(obj, request)
+        feedgen.content_type = "application/xml; charset=utf-8"
+        return feedgen
 
 class Entries(Base):
     title = "Simon Willison's Weblog: Entries"
