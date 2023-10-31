@@ -6,6 +6,22 @@
 {{ block.super }}
 {{ entry.extra_head_html|default:""|safe }}
 <script async src="https://media.ethicalads.io/media/client/ethicalads.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('h4[id],h5[id],h6[id]').forEach(el => {
+    id = el.getAttribute('id');
+    let hashLink = document.createElement('a');
+    hashLink.style.borderBottom = 'none'; 
+    hashLink.style.color = '#666';
+    hashLink.style.fontSize = '1em';
+    hashLink.style.opacity = 0.8;
+    hashLink.setAttribute('href', '#' + id);
+    hashLink.innerText = '#';
+    el.appendChild(document.createTextNode(' '));
+    el.appendChild(hashLink);
+  });
+});
+</script>
 {% endblock %}
 
 {% block card_title %}{{ entry.title|typography }}{% endblock %}
