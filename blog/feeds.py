@@ -16,7 +16,7 @@ class Base(Feed):
         return response
 
     def item_link(self, item):
-        return item.get_absolute_url() + "#atom-%s" % self.ga_source
+        return 'https://simonwillison.net' + item.get_absolute_url() + "#atom-%s" % self.ga_source
 
     def item_categories(self, item):
         return [t.tag for t in item.tags.all()]
