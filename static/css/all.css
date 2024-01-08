@@ -710,6 +710,11 @@ ul#searchorder a {
     text-decoration: none;
     font-size: 0.8em
 }
+.blogmark br {
+    display: block;
+    line-height: 0;
+    margin-bottom: 0.3em;
+}
 div.paginator {
     clear: both;
     padding: 0.5em 0;
