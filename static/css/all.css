@@ -710,7 +710,8 @@ ul#searchorder a {
     text-decoration: none;
     font-size: 0.8em
 }
-.blogmark br {
+.blogmark br,
+div#secondary div.day br {
     display: block;
     line-height: 0;
     margin-bottom: 0.3em;
