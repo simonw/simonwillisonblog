@@ -287,7 +287,8 @@ div.entry h3, div.entry h4 {
 div.entry h4 {
     font-size: 1.1em;
 }
-div.entry p {
+div.entry p,
+div.day p {
     margin: 0 0 0.8em 0
 }
 div.entry li {

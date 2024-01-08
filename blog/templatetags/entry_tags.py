@@ -156,6 +156,16 @@ def typography(xhtml):
     return x
 
 
+@register.filter
+def strip_wrapping_p(xhtml):
+    xhtml = xhtml.strip()
+    if xhtml.startswith("<p>"):
+        xhtml = xhtml[3:]
+    if xhtml.endswith("</p>"):
+        xhtml = xhtml[:-4]
+    return mark_safe(xhtml)
+
+
 def do_typography(et):
     # Designed to be called recursively on ElementTree objects
     if et.tag not in ("pre", "code"):
