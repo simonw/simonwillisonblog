@@ -714,7 +714,7 @@ ul#searchorder a {
     text-decoration: none;
     font-size: 0.8em
 }
-.blogmark br,
+.quote blockquote br,
 div#secondary div.day br {
     display: block;
     line-height: 0;
