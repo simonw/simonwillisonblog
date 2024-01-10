@@ -652,6 +652,9 @@ div#primary div.segment {
 div#primary div.blogmark {
     font-size: 0.9em
 }
+div#primary div.blogmark p {
+    margin-bottom: 0.8em;   
+}
 div#primary div.photoset img.primary {
     background-image: url(/static/css/img/set_case.png);
     padding: 8px 8px 12px 8px;
