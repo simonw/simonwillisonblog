@@ -52,6 +52,7 @@ class EntryAdmin(BaseAdmin):
 @admin.register(Quotation)
 class QuotationAdmin(BaseAdmin):
     search_fields = ("tags__tag", "quotation")
+    list_display = ("__str__", "source", "created", "tag_summary")
     prepopulated_fields = {"slug": ("source",)}
 
 
