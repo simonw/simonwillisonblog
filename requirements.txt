@@ -7,7 +7,7 @@ dj-database-url==2.1.0
 django-proxy==1.2.2
 django-sql-dashboard==1.2
 django-test-plus==2.2.3
-Django==5.0
+Django==5.0.2
 factory-boy==3.3.0
 gunicorn==21.2.0
 html5lib==1.1
