@@ -200,6 +200,9 @@ def do_typography_string(s):
     # Only do this on text that isn't between < and >
     if "<" in s and ">" in s:
         bits = tag_contents_re.split(s)
+        # Avoid recursion error
+        if len(bits) == 1:
+            return s
         for i, bit in enumerate(bits):
             if i % 2 == 0:
                 bits[i] = do_typography_string(bit)
