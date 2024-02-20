@@ -1,4 +1,5 @@
 from django.test import TransactionTestCase
+from blog.templatetags.entry_tags import do_typography_string
 from .factories import (
     EntryFactory,
     BlogmarkFactory,
@@ -88,3 +89,15 @@ class BlogTests(TransactionTestCase):
         assert blogmark.pk
         blogmark.commentary = "hello there"
         blogmark.save()
+
+    def test_do_typography_string(self):
+        for input, expected in (
+            ("Hello, world", "Hello, world"),
+            ('Hello, "world"!', 'Hello, “world”!'),
+            ("Hello, world's!", "Hello, world’s!"),
+            ('Hello, <"world"!', 'Hello, <“world”!'),
+            # Do not do these ones:
+            ('Hello, <"world">!', 'Hello, <"world">!'),
+            ("Hello, <'world'>!", "Hello, <'world'>!"),
+        ):
+            self.assertEqual(do_typography_string(input), expected)

@@ -193,9 +193,18 @@ def quote_alternator():
 
 
 double_re = re.compile('"')
+tag_contents_re = re.compile("(<.*?>)", re.DOTALL)
 
 
 def do_typography_string(s):
+    # Only do this on text that isn't between < and >
+    if "<" in s and ">" in s:
+        bits = tag_contents_re.split(s)
+        for i, bit in enumerate(bits):
+            if i % 2 == 0:
+                bits[i] = do_typography_string(bit)
+        return "".join(bits)
+
     # Do single quotes
     s = s.replace("'", RIGHT_SINGLE_QUOTATION_MARK)
     # Now do double quotes, but only if an even number of them
