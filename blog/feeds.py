@@ -16,7 +16,11 @@ class Base(Feed):
         return response
 
     def item_link(self, item):
-        return 'https://simonwillison.net' + item.get_absolute_url() + "#atom-%s" % self.ga_source
+        return (
+            "https://simonwillison.net"
+            + item.get_absolute_url()
+            + "#atom-%s" % self.ga_source
+        )
 
     def item_categories(self, item):
         return [t.tag for t in item.tags.all()]
@@ -31,6 +35,7 @@ class Base(Feed):
         feedgen = super().get_feed(obj, request)
         feedgen.content_type = "application/xml; charset=utf-8"
         return feedgen
+
 
 class Entries(Base):
     title = "Simon Willison's Weblog: Entries"

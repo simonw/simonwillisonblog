@@ -93,9 +93,9 @@ class BlogTests(TransactionTestCase):
     def test_do_typography_string(self):
         for input, expected in (
             ("Hello, world", "Hello, world"),
-            ('Hello, "world"!', 'Hello, “world”!'),
+            ('Hello, "world"!', "Hello, “world”!"),
             ("Hello, world's!", "Hello, world’s!"),
-            ('Hello, <"world"!', 'Hello, <“world”!'),
+            ('Hello, <"world"!', "Hello, <“world”!"),
             # Do not do these ones:
             ('Hello, <"world">!', 'Hello, <"world">!'),
             ("Hello, <'world'>!", "Hello, <'world'>!"),

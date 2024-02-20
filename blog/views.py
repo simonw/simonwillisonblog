@@ -101,7 +101,7 @@ def archive_item(request, year, month, day, slug):
                 "item": obj,
                 "recent_articles": Entry.objects.prefetch_related("tags").order_by(
                     "-created"
-                )[0:6 if content_type != "entry" else 10],
+                )[0 : 6 if content_type != "entry" else 10],
             },
         )
 
@@ -153,7 +153,7 @@ def index(request):
             {
                 "date": day,
                 "items": items,
-                "photos": []
+                "photos": [],
                 # Photo.objects.filter(
                 #   created__year = day.year,
                 #   created__month = day.month,
