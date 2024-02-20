@@ -102,7 +102,7 @@ class BlogTests(TransactionTestCase):
             # This caused a recursion error at one point
             (
                 """Should you pin your library's dependencies using "click>=7,<8" or "click~=7.0"? Henry Schreiner's short answer is no, and his long answer is an exhaustive essay covering every conceivable aspect of this thorny Python packaging problem.""",
-                "...",
+                'Should you pin your library\'s dependencies using "click>=7,<8" or "click~=7.0"? Henry Schreiner\'s short answer is no, and his long answer is an exhaustive essay covering every conceivable aspect of this thorny Python packaging problem.',
             ),
         ):
             self.assertEqual(do_typography_string(input), expected)
