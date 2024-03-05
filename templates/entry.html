@@ -6,33 +6,18 @@
 {{ block.super }}
 {{ entry.extra_head_html|default:""|safe }}
 <script async src="https://media.ethicalads.io/media/client/ethicalads.min.js"></script>
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-  document.querySelectorAll('h4[id],h5[id],h6[id]').forEach(el => {
-    id = el.getAttribute('id');
-    let hashLink = document.createElement('a');
-    hashLink.style.borderBottom = 'none'; 
-    hashLink.style.color = '#666';
-    hashLink.style.fontSize = '1em';
-    hashLink.style.opacity = 0.8;
-    hashLink.setAttribute('href', '#' + id);
-    hashLink.innerText = '#';
-    el.appendChild(document.createTextNode(' '));
-    el.appendChild(hashLink);
-  });
-});
-</script>
 {% endblock %}
 
 {% block card_title %}{{ entry.title|typography }}{% endblock %}
 {% block card_description %}{{ entry.body|xhtml|remove_context_paragraph|typography|xhtml2html|striptags|truncatewords:30 }}{% endblock %}
 
 {% block item_content %}
+<div data-permalink-context="{{ entry.get_absolute_url }}">
 <h2>{{ entry.title|typography }}</h2>
 <p class="mobile-date">{{ entry.created|date:"jS F Y" }}</p>
 
 {{ entry.body|xhtml|resize_images_to_fit_width:"450"|typography|xhtml2html }}
-
+</div>
 <div class="entryFooter">Posted <a href="/{{ entry.created|date:"Y/M/j/" }}">{{ entry.created|date:"jS F Y" }}</a> at {{ entry.created|date:"f A"|lower }} &middot; Follow me on <a href="https://fedi.simonwillison.net/@simon">Mastodon</a> or <a href="https://twitter.com/simonw">Twitter</a> or <a href="https://simonwillison.net/about/#subscribe">subscribe to my newsletter</a></div>
 
 {% endblock %}
