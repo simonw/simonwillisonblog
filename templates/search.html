@@ -64,7 +64,7 @@
 {% block secondary %}
 <div class="metabox">
     {% if type_counts %}
-        <h3>Types</h3>
+        <h3 id="facet-types">Types</h3>
         <ul>
             {% for t in type_counts %}
                 <li><a href="{% add_qsarg "type" t.type %}">{{ t.type }}</a> {{ t.n }}</a></li>
@@ -72,7 +72,7 @@
         </ul>
     {% endif %}
     {% if year_counts %}
-        <h3>Years</h3>
+        <h3 id="facet-years">Years</h3>
         <ul>
             {% for t in year_counts %}
                 <li><a href="{% add_qsarg "year" t.year|date:"Y" %}">{{ t.year|date:"Y" }}</a> {{ t.n }}</a></li>
@@ -80,7 +80,7 @@
         </ul>
     {% endif %}
     {% if month_counts %}
-        <h3>Months</h3>
+        <h3 id="facet-months">Months</h3>
         <ul>
             {% for t in month_counts %}
                 <li><a href="{% add_qsarg "month" t.month|date:"n" %}">{{ t.month|date:"F" }}</a> {{ t.n }}</a></li>
@@ -88,7 +88,7 @@
         </ul>
     {% endif %}
     {% if tag_counts %}
-        <h3>Tags</h3>
+        <h3 id="facet-tags">Tags</h3>
         <ul>
             {% for t in tag_counts %}
                 <li><a href="{% add_qsarg "tag" t.tag %}">{{ t.tag }}</a> {{ t.n }}</a></li>
