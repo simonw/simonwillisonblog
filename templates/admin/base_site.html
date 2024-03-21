@@ -3,7 +3,14 @@
 {% block extrastyle %}
 {{ block.super }}
 <style>
-form input, form textarea {
+form .form-row input[type=text],
+form .form-row input[type=password],
+form .form-row input[type=email],
+form .form-row input[type=url],
+form .form-row input[type=tel],
+form .form-row input[type=number],
+form .form-row textarea,
+form .form-row select {
     font-size: 16px;
 }
 </style>
