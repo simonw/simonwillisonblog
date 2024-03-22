@@ -114,7 +114,7 @@ class BaseModel(models.Model):
     series = models.ForeignKey(Series, blank=True, null=True, on_delete=models.PROTECT)
 
     def created_unixtimestamp(self):
-        return arrow.get(self.created).timestamp()
+        return int(arrow.get(self.created).timestamp())
 
     def tag_summary(self):
         return " ".join(t.tag for t in self.tags.all())
