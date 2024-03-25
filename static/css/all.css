@@ -203,7 +203,8 @@ div#secondary blockquote {
     background-image: url(/static/css/img/lquo.png);
     background-size: 18px 13px;
     background-repeat: no-repeat;
-    background-position: 0px 3px
+    background-position: 0px 3px;
+    word-break: break-word;
 }
 div#secondary blockquote p {
     background-image: url(/static/css/img/rquo.png);
