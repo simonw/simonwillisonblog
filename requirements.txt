@@ -9,7 +9,7 @@ django-sql-dashboard==1.2
 django-test-plus==2.2.3
 Django==5.0.2
 factory-boy==3.3.0
-gunicorn==21.2.0
+gunicorn==22.0.0
 html5lib==1.1
 psycopg2-binary==2.9.9
 pytest==8.0.1
