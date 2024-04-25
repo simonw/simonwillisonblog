@@ -91,7 +91,7 @@
         <h3 id="facet-tags">Tags</h3>
         <ul>
             {% for t in tag_counts %}
-                <li><a href="{% add_qsarg "tag" t.tag %}">{{ t.tag }}</a> {{ t.n }}</a></li>
+                <li><a href="{% add_qsarg "tag" t.tag %}">{{ t.tag }}</a> {{ t.n }} <a href="{% add_qsarg "exclude.tag" t.tag %}">x</a></li>
             {% endfor %}
         </ul>
     {% endif %}
