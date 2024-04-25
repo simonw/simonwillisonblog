@@ -1,5 +1,6 @@
+{% load entry_tags %}
 <p><a href="{{ obj.link_url }}">{{ obj.link_title }}</a></p>
-{% if obj.commentary %}{{ obj.commentary|linebreaks }}{% endif %}
+{% if obj.commentary %}{% if not obj.use_markdown %}{{ obj.commentary|typography|linebreaks|strip_wrapping_p }}{% else %}{{ obj.body|strip_wrapping_p }}{% endif %}{% endif %}
 {% if obj.via_title %}
     <p>Via <a href="{{ obj.via_url }}">{{ obj.via_title }}</a></p>
 {% endif %}

@@ -11,6 +11,7 @@ from collections import Counter
 import re
 import arrow
 import datetime
+from markdown import markdown
 from xml.etree import ElementTree
 
 tag_re = re.compile("^[a-z0-9]+$")
@@ -228,6 +229,7 @@ class Blogmark(BaseModel):
     via_url = models.URLField(blank=True, null=True, max_length=512)
     via_title = models.CharField(max_length=255, blank=True, null=True)
     commentary = models.TextField()
+    use_markdown = models.BooleanField(default=False)
 
     is_blogmark = True
 
@@ -247,6 +249,11 @@ class Blogmark(BaseModel):
 
     def link_domain(self):
         return self.link_url.split("/")[2]
+
+    def body(self):
+        if self.use_markdown:
+            return mark_safe(markdown(self.commentary))
+        return self.commentary
 
     def word_count(self):
         count = len(self.commentary.split())
