@@ -149,12 +149,14 @@ div#primary {
     margin-right: 35px;
     float: left
 }
-div#primary blockquote {
+div#primary blockquote,
+.item-link blockquote {
     margin: 1em 0;
     border-left: 0.75em solid #9e6bb52e;
     padding-left: 0.75em;
 }
-div#primary blockquote blockquote {
+div#primary blockquote blockquote,
+.item-link blockquote blockquote {
     border-left: none;
     padding-left: 1.5em;
 }
@@ -197,7 +199,7 @@ div#secondary ul {
     clear: both;
     margin-top: 0.5em
 }
-div#secondary blockquote {
+.item-quote blockquote {
     clear: both;
     margin-top: 0.5em;
     margin-bottom: 0.2em;
@@ -208,7 +210,7 @@ div#secondary blockquote {
     background-position: 0px 3px;
     word-break: break-word;
 }
-div#secondary blockquote p {
+.item-quote blockquote p {
     background-image: url(/static/css/img/rquo.png);
     background-size: 18px 13px;
     background-repeat: no-repeat;
