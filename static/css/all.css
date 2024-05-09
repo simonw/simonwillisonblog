@@ -673,7 +673,8 @@ div#primary div.quote blockquote {
     background-image: url(/static/css/img/lquo.png);
     background-size: 18px 13px;
     background-repeat: no-repeat;
-    background-position: 12px 4px
+    background-position: 12px 4px;
+    border-left: none;
 }
 div#primary div.quote blockquote p {
     background-image: url(/static/css/img/rquo.png);
