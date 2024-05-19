@@ -70,7 +70,7 @@ function rearrangeForMobile() {
       var div = document.createElement('div');
       div.classList.add('segment');
       div.classList.add('elsewhere-in-primary');
-      if (el.querySelector('blockquote')) {
+      if (el.classList.contains('item-quote')) {
         div.classList.add('quote');
       }
       div.innerHTML = el.innerHTML;
