@@ -30,16 +30,12 @@
 
 {% block footer %}
 {{ block.super }}
-<script
-  src="https://cdn.jsdelivr.net/npm/d3-cloud@1.2.5"
-  integrity="sha384-QdJK9M8QwqLqENe8Vd/mQIIk/BUQCC3BLh+kqB+UPKbKBsvOmcnmZTikm9prWMeO"
-  crossorigin="anonymous"
-></script>
-<script
-  src="https://cdn.jsdelivr.net/npm/d3@6.7.0"
-  integrity="sha384-ma33ZEb8L5emtidZhYJFZNIFdht2E8f5wHQMKQGom0aIx9rRKm86XXCjGxOISpM9"
-  crossorigin="anonymous"
-></script>
+<script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"
+  integrity="sha256-8glLv2FBs1lyLE/kVOtsSw8OQswQzHr5IfwVj864ZTk="
+  crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/d3-cloud@1.2.7/build/d3.layout.cloud.min.js"
+  integrity="sha512-QOn5z8Fa63hvHWmu7Sp8XEAocATKiS8KcQRuLKNGS4+vi9oWH0ajPtb8ugJYP5JDxK56lX7/R1VlBNaUU2qc6g=="
+  crossorigin="anonymous"></script>
 <script>
 document.addEventListener("DOMContentLoaded", function() {
   var firstH2 = document.querySelector('h2');
