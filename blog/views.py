@@ -6,6 +6,7 @@ from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.postgres.search import SearchQuery, SearchRank
 from django.views.decorators.cache import never_cache
 from django.db import models
+from django.db.models import CharField, Value
 from django.db.models.functions import TruncYear, TruncMonth
 from django.conf import settings
 from django.core.paginator import (
@@ -109,70 +110,56 @@ def archive_item(request, year, month, day, slug):
     raise Http404
 
 
-def find_last_x_days(x=10):
-    """
-    Returns 5 date objects representing most recent days that have either
-    photos, blogmarks or quotes available. Looks at most recent 50 of each.
-    """
-    # photos = list(Photo.objects.values('created')[0:50])
-    blogmarks = list(Blogmark.objects.values("created")[0:50])
-    quotes = list(Quotation.objects.values("created")[0:50])
-    dates = set([o["created"].date() for o in blogmarks + quotes])
-    dates = list(dates)
-    dates.sort()
-    dates.reverse()
-    return dates[0:x]
-
-
 def index(request):
-    last_x_days = find_last_x_days()
-
-    if not last_x_days:
-        raise Http404("No links to display")
-    blogmarks = Blogmark.objects.filter(created__gte=last_x_days[-1]).prefetch_related(
-        "tags"
-    )
-    quotations = Quotation.objects.filter(
-        created__gte=last_x_days[-1]
-    ).prefetch_related("tags")
-    days = []
-    for day in last_x_days:
-        links = [
-            {"type": "link", "obj": link, "date": link.created}
-            for link in blogmarks
-            if link.created.date() == day
-        ]
-        quotes = [
-            {"type": "quote", "obj": q, "date": q.created}
-            for q in quotations
-            if q.created.date() == day
-        ]
-        items = links + quotes
-        items.sort(key=lambda x: x["date"], reverse=True)
-        days.append(
-            {
-                "date": day,
-                "items": items,
-                "photos": [],
-                # Photo.objects.filter(
-                #   created__year = day.year,
-                #   created__month = day.month,
-                #   created__day = day.day
-                # )
-            }
+    # Get back 30 most recent across all item types
+    recent = list(
+        Entry.objects.annotate(content_type=Value("entry", output_field=CharField()))
+        .values("content_type", "id", "created")
+        .order_by()
+        .union(
+            Blogmark.objects.annotate(
+                content_type=Value("blogmark", output_field=CharField())
+            )
+            .values("content_type", "id", "created")
+            .order_by()
         )
-        # If day is today or yesterday, flag it as special
-        if day == datetime.date.today():
-            days[-1]["special"] = "Today"
-        elif day == datetime.date.today() - datetime.timedelta(days=1):
-            days[-1]["special"] = "Yesterday"
+        .union(
+            Quotation.objects.annotate(
+                content_type=Value("quotation", output_field=CharField())
+            )
+            .values("content_type", "id", "created")
+            .order_by()
+        )
+        .order_by("-created")[:30]
+    )
+
+    # Now load the entries, blogmarks, quotations
+    items = []
+    to_load = {}
+    for item in recent:
+        to_load.setdefault(item["content_type"], []).append(item["id"])
+    for content_type, model in (
+        ("entry", Entry),
+        ("blogmark", Blogmark),
+        ("quotation", Quotation),
+    ):
+        if content_type not in to_load:
+            continue
+        items.extend(
+            [
+                {"type": content_type, "obj": obj}
+                for obj in model.objects.in_bulk(to_load[content_type]).values()
+            ]
+        )
+
+    items.sort(key=lambda x: x["obj"].created, reverse=True)
 
     response = render(
         request,
         "homepage.html",
         {
-            "days": days,
-            "entries": Entry.objects.prefetch_related("tags")[0:6],
+            "items": items,
+            "entries": Entry.objects.prefetch_related("tags")[0:30],
             "current_tags": find_current_tags(5),
         },
     )

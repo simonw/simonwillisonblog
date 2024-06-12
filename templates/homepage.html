@@ -1,4 +1,4 @@
-{% extends "bighead.html" %}
+{% extends "bighead.html" %}{% load entry_tags %}
 
 {% block title %}Simon Willison’s Weblog{% endblock %}
 
@@ -13,81 +13,17 @@
 {% endblock %}
 
 {% block primary %}
-<h2 class="overband">Recent entries</h2>
-{% load entry_tags %}
-{% for entry in entries %}
-<div class="entry segment" data-date="{{ entry.created|date:"c" }}" data-permalink-context="{{ entry.get_absolute_url }}">
-<h3><a href="{{ entry.get_absolute_url }}" rel="bookmark">{{ entry.title|typography }}</a> <span class="textago" title="{{ entry.created|date:"jS F Y" }}">{% if entry.is_today %}today{% else %}{{ entry.created|text_ago }}{% endif %}</span></h3>
-{{ entry.body|split_cutoff|xhtml|resize_images_to_fit_width:"450"|typography|strip_p_ids|xhtml2html }}
-<div class="entryFooter">
-{% entry_footer entry %}
-</div>
-</div> <!-- end div.entry -->
-{% endfor %}
+<h2 class="overband">Recent</h2>
+
+{% load blog_tags %}
+{% blog_mixed_list_with_dates items day_headers=1 %}
 {% endblock %}
 
 {% block secondary %}
-<h2 class="overband">Elsewhere</h2>
-{% for day in days %}
-<div class="day">
-<h3><a href="{{ day.date|date:"/Y/M/j/" }}" title="{{ day.date|date:"jS F Y" }}">{% if day.special %}{{ day.special }}{% else %}{{ day.date|date:"jS F Y" }}{% endif %}</a></h3>
-{% if day.photos %}<div class="photos">{% for photo in day.photos %}<a href="{{ photo.photopage }}" class="photolink"><img src="{{ photo.url_s }}" alt="{{ photo.title }}" title="{{ photo.title }}"></a>{% endfor %}</div>
-<br style="clear: both">{% endif %}
-{% if day.items %}
-<ul>{% for item in day.items %}
-  <li data-date="{{ item.obj.created|date:"c" }}" class="item-{{ item.type }}">{% if item.type == "link" %}<p>
-      <a href="{{ item.obj.link_url }}">{{ item.obj.link_title }}</a>{% if item.obj.via_url %} (<a href="{{ item.obj.via_url }}" title="{{ item.obj.via_title }}">via</a>){% endif %}{% if not item.obj.via_url and not item.obj.link_title|ends_with_punctuation %}.{% endif %} {% if not item.obj.use_markdown %}{{ item.obj.commentary|typography|linebreaks|strip_wrapping_p }}{% else %}{{ item.obj.body|strip_wrapping_p }}{% endif %} <a href="{{ item.obj.get_absolute_url }}" rel="bookmark">#</a><span class="elsewhere-date"> &mdash; <a href="/{{ item.obj.created|date:"Y/M/j/" }}">{{ item.obj.created|date:"jS F Y" }}</a>, {{ item.obj.created|date:"f" }}&nbsp;{{ item.obj.created|date:"A"|lower }}</span>
-    </p>{% else %}
-      <blockquote><p>{{ item.obj.quotation|typography|linebreaksbr }}</p></blockquote><p class="cite">&mdash; {% if item.obj.source_url %}<a href="{{ item.obj.source_url }}">{{ item.obj.source }}</a>{% else %}{{ item.obj.source }}{% endif %} <a href="{{ item.obj.get_absolute_url }}" rel="bookmark">#</a> <span class="elsewhere-date">&mdash; <a href="/{{ item.obj.created|date:"Y/M/j/" }}">{{ item.obj.created|date:"jS F Y" }}</a>, {{ item.obj.created|date:"f" }}&nbsp;{{ item.obj.created|date:"A"|lower }}</span></p>
-      {% endif %}
-  </li>
-  {% endfor %}
-</ul>
-{% endif %}
-</div> <!-- .day -->
+<h2 class="overband">Highlights</h2>
+<ul>
+{% for entry in entries %}
+  <li><a href="{{ entry.get_absolute_url }}">{{ entry }}</a> - {{ entry.created.date }}</li>
 {% endfor %}
-<script>
-/* Rearrange content on smaller screens */
-window.hasBeenRearrangedForMobile = false;
-function rearrangeForMobile() {
-  document.querySelector('#secondary').classList.add('hide-secondary-on-mobile');
-  const items = Array.from(document.querySelectorAll('*[data-date]'));
-  items.sort((a, b) => {
-    const aDate = a.getAttribute('data-date');
-    const bDate = b.getAttribute('data-date');
-    if (aDate < bDate) {
-      return 1;
-    }
-    if (aDate > bDate) {
-      return -1;
-    }
-    return 0;
-  });
-  const primary = document.querySelector('#primary');
-  items.forEach(el => {
-    if (el.tagName == 'LI') {
-      // Turn this into a <div>
-      var div = document.createElement('div');
-      div.classList.add('segment');
-      div.classList.add('elsewhere-in-primary');
-      if (el.classList.contains('item-quote')) {
-        div.classList.add('quote');
-      }
-      div.innerHTML = el.innerHTML;
-      primary.appendChild(div);
-    } else {
-      primary.appendChild(el);
-    }
-  });
-}
-function conditionalRearrange(m) {
-  if (m.matches && !window.hasBeenRearrangedForMobile) {
-    rearrangeForMobile();
-    window.hasBeenRearrangedForMobile = true;
-  }
-}
-var mediaMatcher = window.matchMedia('(max-width: 800px)');
-conditionalRearrange(mediaMatcher);
-mediaMatcher.addListener(conditionalRearrange);
-</script>
+</ul>
 {% endblock %}
