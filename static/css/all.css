@@ -92,15 +92,6 @@ a#atomfeedlink svg {
     height: 20px;
     width: 20px;
 }
-.small-atom:link,
-.small-atom:visited,
-.small-atom:hover,
-.small-atom:focus,
-.small-atom:active {
-    position: relative;
-    top: 2px;
-    border-bottom: none;
-}
 p.bighead-toolbar img, p.smallhead-toolbar img {
     vertical-align: top;
     padding-top: 2px
