@@ -415,7 +415,11 @@ def archive_tag(request, tags, atom=False):
     # Include the tag's description in the context passed to the template
     tag_description = None
     if len(tags) == 1:
-        tag_description = Tag.objects.filter(tag=tags[0]).values_list('description', flat=True).first()
+        tag_description = (
+            Tag.objects.filter(tag=tags[0])
+            .values_list("description", flat=True)
+            .first()
+        )
 
     return render(
         request,
