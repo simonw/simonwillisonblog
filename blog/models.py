@@ -19,9 +19,16 @@ tag_re = re.compile("^[a-z0-9]+$")
 
 class Tag(models.Model):
     tag = models.SlugField(unique=True)
+    description = models.TextField(blank=True)  # Added description field
 
     def __str__(self):
         return self.tag
+
+    def description_rendered(self):
+        if self.description:
+            return mark_safe(markdown(self.description))
+        else:
+            return ''
 
     def get_absolute_url(self):
         return "/tags/%s/" % self.tag

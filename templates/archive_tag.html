@@ -4,6 +4,10 @@
 
 {% block primary %}
 <h2 class="archive-tag-h2">{{ total }} item{{ total|pluralize }} tagged “{{ tags|join:"” and “" }}”</h2>
+<!-- Tag ID: {{ tag.pk }} -->
+{% if tag.description %}
+    <div class="tag-description">{{ tag.description_rendered }}</div>
+{% endif %}
 
 {% if total > 10 %}
     <form action="/search/" method="GET">
