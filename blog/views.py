@@ -412,6 +412,11 @@ def archive_tag(request, tags, atom=False):
             response["link"] = '<{}>; rel="next"'.format(next_url)
         return response
 
+    # Include the tag's description in the context passed to the template
+    tag_description = None
+    if len(tags) == 1:
+        tag_description = Tag.objects.filter(tag=tags[0]).values_list('description', flat=True).first()
+
     return render(
         request,
         "archive_tag.html",
@@ -422,6 +427,7 @@ def archive_tag(request, tags, atom=False):
             "page": page,
             "only_one_tag": len(tags) == 1,
             "tag": Tag.objects.get(tag=tags[0]),
+            "tag_description": tag_description,  # Added tag description to context
         },
     )
 

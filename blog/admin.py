@@ -65,6 +65,7 @@ class BlogmarkAdmin(BaseAdmin):
 @admin.register(Tag)
 class TagAdmin(admin.ModelAdmin):
     search_fields = ("tag",)
+    fields = ("tag", "description",)  # Added description field to TagAdmin
 
     def get_search_results(self, request, queryset, search_term):
         search_term = search_term.strip()
