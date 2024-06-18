@@ -19,7 +19,7 @@ tag_re = re.compile("^[a-z0-9]+$")
 
 class Tag(models.Model):
     tag = models.SlugField(unique=True)
-    description = models.TextField(blank=True)  # Added description field
+    description = models.TextField(blank=True)
 
     def __str__(self):
         return self.tag
