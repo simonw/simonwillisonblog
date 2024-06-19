@@ -18,8 +18,13 @@
 
 {{ entry.body|xhtml|resize_images_to_fit_width:"450"|typography|xhtml2html }}
 </div>
-<div class="entryFooter">Posted <a href="/{{ entry.created|date:"Y/M/j/" }}">{{ entry.created|date:"jS F Y" }}</a> at {{ entry.created|date:"f A"|lower }} &middot; Follow me on <a href="https://fedi.simonwillison.net/@simon">Mastodon</a> or <a href="https://twitter.com/simonw">Twitter</a> or <a href="https://simonwillison.net/about/#subscribe">subscribe to my newsletter</a></div>
-
+<div class="entryFooter">
+  Posted <a href="/{{ entry.created|date:"Y/M/j/" }}">{{ entry.created|date:"jS F Y" }}</a> at 
+  <time-display date="{{ entry.created|date:'Y-m-d' }}">{{ entry.created|date:"H:i" }}</time-display> &middot; 
+  Follow me on <a href="https://fedi.simonwillison.net/@simon">Mastodon</a> or 
+  <a href="https://twitter.com/simonw">Twitter</a> or 
+  <a href="https://simonwillison.net/about/#subscribe">subscribe to my newsletter</a>
+</div>
 {% endblock %}
 
 {% block recent_articles_header %}More recent articles{% endblock %}

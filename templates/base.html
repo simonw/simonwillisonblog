@@ -59,6 +59,41 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 });
+
+class TimeDisplay extends HTMLElement {
+  // <time-display date="2021-01-01">12:00</time-display>
+  constructor() {
+    super();
+    this.attachShadow({ mode: "open" });
+  }
+  connectedCallback() {
+    // Defer render method to ensure this.innerHTML is available
+    setTimeout(() => this.render(), 0);
+  }
+  render() {
+    const date = this.getAttribute("date");
+    console.log(this);
+    const time = this.innerHTML.trim();
+    try {
+      const isoString = `${date}T${time}:00Z`;
+      const utcDate = new Date(isoString);
+      console.log({date, time, 'this': this, isoString});
+      const formattedTime = new Intl.DateTimeFormat("en-US", {
+        hour: "numeric",
+        minute: "numeric",
+        hour12: true,
+        timeZoneName: "shortGeneric",
+      })
+        .format(utcDate)
+        .replace(/ (AM|PM) /i, (m) => m.slice(1).toLowerCase());
+      this.shadowRoot.innerHTML = `<span title="${isoString}">${formattedTime}</span>`;
+    } catch (error) {
+      console.error("Error parsing date:", error);
+      this.shadowRoot.innerHTML = `<span title="Invalid date">${date} ${time} (Invalid)</span>`;
+    }
+  }
+}
+customElements.define("time-display", TimeDisplay);
 </script>
 </body>
 </html>
