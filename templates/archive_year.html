@@ -51,12 +51,18 @@ document.addEventListener("DOMContentLoaded", function() {
       var fontScale = d3.scaleLinear()
         .domain([minScore, maxScore])
         .range([20, 100]);
-      function colors(s) {
-        return s.match(/.{6}/g).map(function(x) {
-          return "#" + x;
-        });
-      }
-      var fill = colors("1f77b4ff7f0e2ca02cd627289467bd8c564be377c27f7f7fbcbd2217becf");
+      var fill = [
+        "#4a6fa5",
+        "#c47e5c",
+        "#5b8c5a",
+        "#9e4a54",
+        "#7d6d9f",
+        "#b59a74",
+        "#d4a5a5",
+        "#7c858e",
+        "#a2a775",
+        "#5e8b8c"
+      ];
       function draw(words) {
         var svg = d3.select("#tag-cloud").append("svg")
             .attr("width", layout.size()[0])
