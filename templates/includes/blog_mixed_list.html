@@ -14,6 +14,11 @@
 {% if item.type == "entry" %}
 <div class="entry segment">
   <h3><a href="{{ item.obj.get_absolute_url }}" rel="bookmark">{{ item.obj.title|typography }}</a></h3>
+  {% if item.obj.card_image %}
+    <div class="card-container">
+      <a href="{{ item.obj.get_absolute_url }}"><img src="{{ item.obj.card_image }}" alt="Visit {{ item.obj.title }}"></a>
+    </div>
+  {% endif %}
   <p>
     {{ item.obj.body|split_cutoff|xhtml|remove_context_paragraph|first_paragraph|typography|xhtml2html }} <span style="font-size: 0.9em">[... <a href="{{ item.obj.get_absolute_url }}">{{ item.obj.body|wordcount }} word{{ item.obj.body|wordcount|pluralize }}</a>]</span></p>
   <div class="entryFooter">

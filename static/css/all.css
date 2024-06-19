@@ -1124,6 +1124,11 @@ div.entry li li:first-of-type {
     margin-top: 0.3em;
 }
 
+.card-container img {
+    display: block;
+    max-width: 100%;
+}
+
 a:link.photoswipe-img,
 a:visited.photoswipe-img,
 a:hover.photoswipe-img,
