@@ -28,7 +28,7 @@ class Tag(models.Model):
         if self.description:
             return mark_safe(markdown(self.description))
         else:
-            return ''
+            return ""
 
     def get_absolute_url(self):
         return "/tags/%s/" % self.tag

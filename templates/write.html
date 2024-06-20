@@ -1,50 +1,48 @@
 {% extends "item_base.html" %}
 {% block extrahead %}
-<script src="/static/js/jquery-1.11.2.min.js"></script>
-<script>
-jQuery(function($) {
-    var title = $('#id_title');
-    var body = $('#id_body');
-    title.keyup(function() {
+  <script src="/static/js/jquery-1.11.2.min.js"></script>
+  <script>
+    jQuery(function ($) {
+      var title = $("#id_title");
+      var body = $("#id_body");
+      title.keyup(function () {
         window.title = title.val();
-        $('h2').text(title.val());
-        localStorage.setItem('backup-title', title.val());
+        $("h2").text(title.val());
+        localStorage.setItem("backup-title", title.val());
+      });
+      body.keyup(function () {
+        $("#js-body-preview").html(body.val());
+        localStorage.setItem("backup-body", body.val());
+      });
     });
-    body.keyup(function() {
-        $('#js-body-preview').html(body.val());
-        localStorage.setItem('backup-body', body.val());
-    });
-});
-</script>
-
+  </script>
 {% endblock %}
 {% load entry_tags %}
 {% block title %}{{ entry.title|typography }}{% endblock %}
 
 {% block item_content %}
-<h2>...</h2>
+  <h2>...</h2>
 
-<div id="js-body-preview"></div>
+  <div id="js-body-preview"></div>
 
-<div class="entryFooter">Posted {% now "jS F Y" %} at {% now "f A" %}</div>
-
+  <div class="entryFooter">Posted {% now "jS F Y" %} at {% now "f A" %}</div>
 {% endblock %}
 
 {% block secondary %}
-<div class="metabox">
-
-<form action="/write/" method="POST">
-<p>
-    <label>h2</label>
-    <input type="text" name="title" id="id_title" style="width: 100%">
-</p>
-<p>
-    <label>body</label>
-    <textarea name="body" id="id_body" style="width: 100%; height: 30em"></textarea>
-</p>
-
-</form>
-
-
-</div>
+  <div class="metabox">
+    <form action="/write/" method="POST">
+      <p>
+        <label>h2</label>
+        <input type="text" name="title" id="id_title" style="width: 100%" />
+      </p>
+      <p>
+        <label>body</label>
+        <textarea
+          name="body"
+          id="id_body"
+          style="width: 100%; height: 30em"
+        ></textarea>
+      </p>
+    </form>
+  </div>
 {% endblock %}

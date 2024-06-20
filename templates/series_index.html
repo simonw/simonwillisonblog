@@ -1,17 +1,18 @@
 {% extends "smallhead.html" %}
 {% block title %}Simon Willison’s Weblog: Series of posts{% endblock %}
 {% block primary %}
+  <h2 class="archive-tag-h2">Series of posts</h2>
 
-<h2 class="archive-tag-h2">Series of posts</h2>
-
-{% for series in all_series %}
-<h3><a href="/series/{{ series.slug }}/">{{ series.title }}</a></h3>
-<p style="margin: 0.5em 0">{{ series.summary }}</p>
-<ol style="margin-bottom: 1em">
-  {% for entry in series.entries_ordest_first %}
-    <li style="margin-left: 2em; list-style-type: decimal"><a href="{{ entry.get_absolute_url }}">{{ entry }}</a> - {{ entry.created }} </li>
+  {% for series in all_series %}
+    <h3><a href="/series/{{ series.slug }}/">{{ series.title }}</a></h3>
+    <p style="margin: 0.5em 0">{{ series.summary }}</p>
+    <ol style="margin-bottom: 1em">
+      {% for entry in series.entries_ordest_first %}
+        <li style="margin-left: 2em; list-style-type: decimal">
+          <a href="{{ entry.get_absolute_url }}">{{ entry }}</a> -
+          {{ entry.created }}
+        </li>
+      {% endfor %}
+    </ol>
   {% endfor %}
-</ol>
-{% endfor %}
-
 {% endblock %}

@@ -1,89 +1,161 @@
 {% extends "smallhead.html" %}
 
 {% block extrahead %}
-{% if item.card_image %}
-<meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="{{ item.card_image }}">
-{% else %}
-<meta name="twitter:card" content="summary">
-{% endif %}
-<meta name="twitter:creator" content="@simonw">
-<meta property="og:url" content="https://simonwillison.net{{ request.path }}">
-<meta property="og:title" content="{% block card_title %}{% endblock %}">
-{% if item.card_image %}<meta property="og:image" content="{{ item.card_image }}">{% endif %}
-<meta property="og:type" content="article">
-<meta property="og:description" content="{% block card_description %}{% endblock %}">
-<meta property="og:updated_time" content="{{ item.created_unixtimestamp }}">
+  {% if item.card_image %}
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:image" content="{{ item.card_image }}" />
+  {% else %}
+    <meta name="twitter:card" content="summary" />
+  {% endif %}
+  <meta name="twitter:creator" content="@simonw" />
+  <meta
+    property="og:url"
+    content="https://simonwillison.net{{ request.path }}"
+  />
+  <meta property="og:title" content="{% block card_title %}{% endblock %}" />
+  {% if item.card_image %}<meta
+    property="og:image"
+    content="{{ item.card_image }}"
+  />{% endif %}
+  <meta property="og:type" content="article" />
+  <meta
+    property="og:description"
+    content="{% block card_description %}{% endblock %}"
+  />
+  <meta property="og:updated_time" content="{{ item.created_unixtimestamp }}" />
 {% endblock %}
 
 {% block primary %}
-<div class="entry entryPage">
-{% if show_comment_warning %}
-<p id="commentwarning">Your comment is being held in a moderation queue. (<a href="{{ item.get_absolute_url }}">clear</a>)</p>
-{% endif %}
-{% block item_content %}
-{% endblock %}
-</div>
-{% if recent_articles %}
-<div class="recent-articles">
-<h2>{% block recent_articles_header %}Recent articles{% endblock %}</h2>
-<ul class="bullets">
-  {% for article in recent_articles %}{% if article != item %}
-    <li><a href="{{ article.get_absolute_url }}">{{ article }}</a> - {{ article.created|date:"jS F Y" }}</li>
-  {% endif %}{% endfor %}
-</ul>
-</div>
-{% endif %}
+  <div class="entry entryPage">
+    {% if show_comment_warning %}
+      <p id="commentwarning">
+        Your comment is being held in a moderation queue. (<a
+          href="{{ item.get_absolute_url }}"
+          >clear</a
+        >)
+      </p>
+    {% endif %}
+    {% block item_content %}
+    {% endblock %}
+  </div>
+  {% if recent_articles %}
+    <div class="recent-articles">
+      <h2>{% block recent_articles_header %}Recent articles{% endblock %}</h2>
+      <ul class="bullets">
+        {% for article in recent_articles %}{% if article != item %}
+          <li>
+            <a href="{{ article.get_absolute_url }}">{{ article }}</a> -
+            {{ article.created|date:"jS F Y" }}
+          </li>
+        {% endif %}{% endfor %}
+      </ul>
+    </div>
+  {% endif %}
 {% endblock %}
 
 {% block thirdsection %}
 
-{% if comments %}
-  <h2 class="band">{{ comments|length }} comment{{ comments|length|pluralize }}</h2>
+  {% if comments %}
+    <h2 class="band">
+      {{ comments|length }} comment{{ comments|length|pluralize }}
+    </h2>
 
-  <div id="comment-wrapper">
-
-  <div id="addcomment">
-  {% if comments_open %}
-  <form action="/addcomment/" method="post">
-  <p class="formrow"><label for="yourname">Name:</label>
-    <input type="text" class="text" id="yourname" name="name" value="{{ name }}"></p>
-  {% if not openid %}<p class="formrow"><label for="yoururl">URL:</label>
-    <input type="text" class="text" id="yoururl" name="url"></p>
-    <p><img alt="" src="/static/css/img/openid-14x14.png" style="vertical-align: top; padding-top: 3px"> <a href="/openid/">Sign in with OpenID</a></p>
-  {% else %}
-    <p  style="clear: both;"><strong><img alt="" src="/static/css/img/openid-14x14.png" style="vertical-align: top; padding-top: 3px"> {{ openid }}</strong></p>
+    <div id="comment-wrapper">
+      <div id="addcomment">
+        {% if comments_open %}
+          <form action="/addcomment/" method="post">
+            <p class="formrow">
+              <label for="yourname">Name:</label>
+              <input
+                type="text"
+                class="text"
+                id="yourname"
+                name="name"
+                value="{{ name }}"
+              />
+            </p>
+            {% if not openid %}
+              <p class="formrow">
+                <label for="yoururl">URL:</label>
+                <input type="text" class="text" id="yoururl" name="url" />
+              </p>
+              <p>
+                <img
+                  alt=""
+                  src="/static/css/img/openid-14x14.png"
+                  style="vertical-align: top; padding-top: 3px"
+                />
+                <a href="/openid/">Sign in with OpenID</a>
+              </p>
+            {% else %}
+              <p style="clear: both;">
+                <strong
+                  ><img
+                    alt=""
+                    src="/static/css/img/openid-14x14.png"
+                    style="vertical-align: top; padding-top: 3px"
+                  />
+                  {{ openid }}</strong
+                >
+              </p>
+            {% endif %}
+            <p class="formrow">
+              <textarea rows="10" cols="35" name="body"></textarea>
+            </p>
+            <p>
+              <input
+                type="radio"
+                name="html_mode"
+                value="simple"
+                id="html_simple"
+                checked="checked"
+              />
+              <label for="html_simple">Auto-HTML</label>
+              <input
+                type="radio"
+                name="html_mode"
+                value="advanced"
+                id="html_advanced"
+              />
+              <label for="html_advanced">Manual XHTML</label>
+            </p>
+            <p id="help_html_simple" class="help">
+              <strong class="helpcontext">Auto-HTML:</strong> Line breaks are
+              preserved; URLs will be converted in to links.
+            </p>
+            <p id="help_html_advanced" class="help">
+              <strong class="helpcontext">Manual XHTML:</strong> Enter your own,
+              valid
+              <acronym
+                title="eXtensible HyperText Markup
+    Language"
+                >XHTML</acronym
+              >. Allowed tags are <samp>a</samp>, <samp>p</samp>,
+              <samp>blockquote</samp>, <samp>ul</samp>, <samp>ol</samp>,
+              <samp>li</samp>, <samp>dl</samp>, <samp>dt</samp>,
+              <samp>dd</samp>, <samp>em</samp>, <samp>strong</samp>,
+              <samp>dfn</samp>, <samp>code</samp>, <samp>q</samp>,
+              <samp>samp</samp>, <samp>kbd</samp>, <samp>var</samp>,
+              <samp>cite</samp>, <samp>abbr</samp>, <samp>acronym</samp>,
+              <samp>sub</samp>, <samp>sup</samp>, <samp>br</samp>,
+              <samp>pre</samp>
+            </p>
+            <p>
+              <input type="submit" value="Preview comment" />
+              <input
+                type="hidden"
+                name="content_type"
+                value="{{ content_type }}"
+              />
+              <input type="hidden" name="object_id" value="{{ object_id }}" />
+            </p>
+          </form>
+        {% else %}
+          <em>Comments are closed.</em>
+        {% endif %}
+      </div>
+      <!-- #addcomment -->
+    </div>
+    <!-- #comment-wrapper -->
   {% endif %}
-  <p class="formrow"><textarea rows="10" cols="35" name="body"></textarea></p>
-  <p><input type="radio" name="html_mode" value="simple" id="html_simple"
-      checked="checked">
-     <label for="html_simple">Auto-HTML</label>
-     <input type="radio" name="html_mode" value="advanced" id="html_advanced">
-     <label for="html_advanced">Manual XHTML</label>
-  </p>
-  <p id="help_html_simple" class="help">
-    <strong class="helpcontext">Auto-HTML:</strong> Line breaks are preserved; URLs will be converted in to links.
-  </p>
-  <p id="help_html_advanced" class="help">
-    <strong class="helpcontext">Manual XHTML:</strong> Enter your own, valid <acronym title="eXtensible HyperText Markup
-    Language">XHTML</acronym>. Allowed tags are 
-    <samp>a</samp>, <samp>p</samp>, <samp>blockquote</samp>, <samp>ul</samp>,
-    <samp>ol</samp>, <samp>li</samp>, <samp>dl</samp>, <samp>dt</samp>,
-    <samp>dd</samp>, <samp>em</samp>, <samp>strong</samp>, <samp>dfn</samp>,
-    <samp>code</samp>, <samp>q</samp>, <samp>samp</samp>, <samp>kbd</samp>,
-    <samp>var</samp>, <samp>cite</samp>, <samp>abbr</samp>, <samp>acronym</samp>,
-    <samp>sub</samp>, <samp>sup</samp>, <samp>br</samp>, <samp>pre</samp>
-  </p>
-  <p><input type="submit" value="Preview comment">
-  <input type="hidden" name="content_type" value="{{ content_type }}">
-  <input type="hidden" name="object_id" value="{{ object_id }}">
-  </p>
-  </form>
-  {% else %}
-  <em>Comments are closed.</em>
-  {% endif %}
-  </div><!-- #addcomment -->
-
-  </div><!-- #comment-wrapper -->
-{% endif %}
 {% endblock %}
