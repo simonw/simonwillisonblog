@@ -207,9 +207,6 @@ div#secondary ul {
     background-repeat: no-repeat;
     background-position: bottom 3px right;
     padding-right: 23px;
-    font-size: 1.2em;
-    font-family: serif;
-    font-style: italic;
     display: inline
 }
 p.cite {
@@ -673,9 +670,6 @@ div#primary div.quote blockquote p {
     background-repeat: no-repeat;
     background-position: bottom 3px right;
     padding-right: 23px;
-    font-size: 1.1em;
-    font-family: serif;
-    font-style: italic;
     display: inline
 }
 div#primary div.quote p.cite {
