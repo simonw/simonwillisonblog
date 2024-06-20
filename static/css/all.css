@@ -284,16 +284,20 @@ div.entry p,
 div.day p {
     margin: 0 0 0.8em 0
 }
-div.entry li {
+div.entry li,
+div.blogmark li
+{
     margin-left: 1em;
     margin-bottom: 0.6em;
     list-style-type: square
 }
-div.entry ol li {
+div.entry ol li,
+div.blogmark ol li{
     list-style-type: decimal;
     margin-left: 2em
 }
-div.entry ol li ul li {
+div.entry ol li ul li,
+div.blogmark ol li ul li {
     list-style-type: square
 }
 div.entry iframe {
