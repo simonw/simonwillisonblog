@@ -3,20 +3,30 @@
 {% block title %}Archive for {{ date|date:"l, jS F Y" }}{% endblock %}
 
 {% block primary %}
-<h2>{{ date|date:"l, jS F Y"}}</h2>
-{% load blog_tags %}
-{% blog_mixed_list items %}
-
+  <h2>{{ date|date:"l, jS F Y" }}</h2>
+  {% load blog_tags %}
+  {% blog_mixed_list items %}
 {% endblock %}
 
 {% block secondary %}
-<div class="metabox">
-<p><a href="/{{ date|date:"Y" }}/">{{ date|date:"Y" }}</a> &raquo; <a href="{{ date|date:"/Y/M/" }}">{{ date|date:"F" }}</a></p>
-{% load blog_calendar %}
-{% render_calendar date %}
-{% if photo %}
-<div class="photos">{% for p in photo %}<a class="photolink" href="{{ p.photopage }}"><img src="{{ p.url_s }}" alt="{{ p.title }}" title="{{ p.title }}"></a>{% endfor %}</div><br style="clear: both">
-{% if more_photos %}<a href="http://www.flickr.com/photos/simon/archives/date-posted/{{ date|date:"Y/m/d/"}}">... {{ more_photos }} photo{{ more_photos|pluralize }}</a>{% endif %}
-{% endif %}
-</div>
+  <div class="metabox">
+    <p>
+      <a href="/{{ date|date:"Y" }}/">{{ date|date:"Y" }}</a> &raquo;
+      <a href="{{ date|date:"/Y/M/" }}">{{ date|date:"F" }}</a>
+    </p>
+    {% load blog_calendar %}
+    {% render_calendar date %}
+    {% if photo %}
+      <div class="photos">
+        {% for p in photo %}<a class="photolink" href="{{ p.photopage }}"
+          ><img src="{{ p.url_s }}" alt="{{ p.title }}" title="{{ p.title }}"
+        /></a>{% endfor %}
+      </div>
+      <br style="clear: both" />
+      {% if more_photos %}<a
+        href="http://www.flickr.com/photos/simon/archives/date-posted/{{ date|date:"Y/m/d/" }}"
+        >... {{ more_photos }} photo{{ more_photos|pluralize }}</a
+      >{% endif %}
+    {% endif %}
+  </div>
 {% endblock %}

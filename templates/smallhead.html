@@ -1,24 +1,23 @@
 {% extends "base.html" %}
 
-{% block body_class %} class="smallhead"{% endblock %}
+{% block body_class %}class="smallhead"{% endblock %}
 {% block body %}
-<div id="smallhead">
-  <div id="smallhead-inner">
-    <h1><a href="/">Simon Willison’s Weblog</a></h1>
-    <a id="smallhead-about" href="/about/#subscribe">Subscribe</a>
+  <div id="smallhead">
+    <div id="smallhead-inner">
+      <h1><a href="/">Simon Willison’s Weblog</a></h1>
+      <a id="smallhead-about" href="/about/#subscribe">Subscribe</a>
+    </div>
   </div>
-</div><!-- #smallhead -->
+  <!-- #smallhead -->
 
-<div id="wrapper">
-<div id="primary">
-{% block primary %}{% endblock %}
-</div> <!-- #primary -->
+  <div id="wrapper">
+    <div id="primary">{% block primary %}{% endblock %}</div>
+    <!-- #primary -->
 
-<div id="secondary">
-{% block secondary %}{% endblock %}
-</div> <!-- #secondary -->
-</div> <!-- #wrapper -->
+    <div id="secondary">{% block secondary %}{% endblock %}</div>
+    <!-- #secondary -->
+  </div>
+  <!-- #wrapper -->
 
-{% block thirdsection %}{% endblock %}
-
+  {% block thirdsection %}{% endblock %}
 {% endblock %}
