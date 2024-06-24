@@ -727,12 +727,19 @@ div#primary div.quote blockquote {
   clear: both;
   margin-top: 0.5em;
   margin-bottom: 0.2em;
-  text-indent: 23px;
   background-image: url(/static/css/img/lquo.png);
   background-size: 18px 13px;
   background-repeat: no-repeat;
   background-position: 12px 4px;
   border-left: none;
+}
+/* The text-indent is ignored on the first paragraph if it
+is also the last paragraph (because it is inline), so in
+the case where there is only one contained paragraph we
+indent the blockquote itself. */
+div#primary div.quote blockquote:has(p:only-child),
+div#primary div.quote blockquote p:first-child {
+  text-indent: 23px;
 }
 div#primary div.quote blockquote p:last-child {
   background-image: url(/static/css/img/rquo.png);
