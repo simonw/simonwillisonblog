@@ -218,6 +218,9 @@ class Quotation(BaseModel):
     def body(self):
         return mark_safe(markdown(self.quotation))
 
+    def body_strip_tags(self):
+        return strip_tags(markdown(self.quotation))
+
     def title(self):
         """Mainly a convenence for the comments RSS feed"""
         return "A quote from %s" % escape(self.source)
@@ -230,7 +233,7 @@ class Quotation(BaseModel):
         }
 
     def __str__(self):
-        return self.quotation
+        return self.body_strip_tags()
 
 
 class Blogmark(BaseModel):
