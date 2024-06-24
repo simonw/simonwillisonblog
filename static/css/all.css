@@ -717,6 +717,7 @@ div#primary div.blogmark {
   font-size: 0.9em;
 }
 div#primary div.blogmark p,
+div#primary div.quote p,
 div#primary .elsewhere-in-primary p:not(:last-child) {
   margin-bottom: 0.8em;
 }
