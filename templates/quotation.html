@@ -8,7 +8,7 @@
 {% load entry_tags %}
 {% block item_content %}
 <div class="quote">
-<blockquote{% if quotation.source_url %} cite="{{ quotation.source_url }}"{% endif %}><p>{{ quotation.quotation|typography|linebreaksbr }}</p></blockquote><p class="cite">&mdash; {% if quotation.source_url %}<a href="{{ quotation.source_url }}">{{ quotation.source }}</a>{% else %}{{ quotation.source }}{% endif %}</p>
+<blockquote{% if quotation.source_url %} cite="{{ quotation.source_url }}"{% endif %}>{{ quotation.body }}</blockquote><p class="cite">&mdash; {% if quotation.source_url %}<a href="{{ quotation.source_url }}">{{ quotation.source }}</a>{% else %}{{ quotation.source }}{% endif %}</p>
 </div>
 
 <div class="entryFooter">Posted <a href="/{{ quotation.created|date:"Y/M/j/" }}">{{ quotation.created|date:"jS F Y" }}</a> at {{ quotation.created|date:"f A"|lower }}</div>

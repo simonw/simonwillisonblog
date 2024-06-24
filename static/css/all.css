@@ -734,7 +734,7 @@ div#primary div.quote blockquote {
   background-position: 12px 4px;
   border-left: none;
 }
-div#primary div.quote blockquote p {
+div#primary div.quote blockquote p:last-child {
   background-image: url(/static/css/img/rquo.png);
   background-size: 18px 13px;
   background-repeat: no-repeat;

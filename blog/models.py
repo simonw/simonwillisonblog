@@ -215,6 +215,9 @@ class Quotation(BaseModel):
 
     is_quotation = True
 
+    def body(self):
+        return mark_safe(markdown(self.quotation))
+
     def title(self):
         """Mainly a convenence for the comments RSS feed"""
         return "A quote from %s" % escape(self.source)
