@@ -334,6 +334,14 @@ div.entry p,
 div.day p {
   margin: 0 0 0.8em 0;
 }
+div.entry ul,
+div.entry ol,
+div.blogmark ul,
+div.blogmark ol,
+div.quotation ul,
+div.quotation ol {
+  margin-bottom: 0.8em;
+}
 div.entry li,
 div.blogmark li,
 div.quotation li {
