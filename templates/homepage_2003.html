@@ -1,0 +1,478 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <link
+      rel="shortcut icon"
+      href="https://web.archive.org/web/20030723185129im_/http://simon.incutio.com/favicon.ico"
+    />
+    <meta name="ICBM" content="51.375336, -2.377516" />
+    <meta name="DC.title" content="Simon Willison's Weblog" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Simon Willison's Weblog</title>
+    <base href="https://simonwillison.net/" />
+    <style type="text/css">
+      body,
+      html {
+        font-family: georgia, serif;
+        margin: 0;
+        padding: 0;
+        background-color: #fff;
+        color: #000;
+      }
+      div#header {
+        margin: 0;
+        padding: 0.2em 0.2em 0.3em 0.2em;
+        background-color: orange;
+        border-bottom: 1px solid #ccc;
+      }
+      img {
+        max-width: 100%;
+      }
+      div#header p {
+        margin: 0;
+        font-style: italic;
+        font-size: 0.9em;
+      }
+      div#header h1 {
+        margin: 0 0 0.1em 0;
+      }
+      div#header h1 a,
+      div#header h1 a:hover {
+        color: navy;
+        text-decoration: none;
+        border-bottom: none;
+      }
+      /* Skip styles: see http://blog.tom.me.uk/2003/09/13/skipadeedoodah.php */
+      div#skip a {
+        position: absolute;
+        overflow: hidden;
+        width: 0;
+        height: 0;
+      }
+      div#skip a:active,
+      div#skip a:focus {
+        overflow: visible;
+        width: auto;
+        height: auto;
+        top: 2px;
+        right: 2px;
+        background-color: yellow;
+        color: red;
+        padding: 5px;
+        border: 2px solid red;
+        font-weight: bold;
+      }
+
+      div#mainArea {
+        margin-right: 13.5em;
+        margin-left: 2em;
+        padding-top: 1em;
+      }
+
+      div#mainArea h3 {
+        margin: 0 0 0.8em -0.8em;
+      }
+      div#mainArea h4 {
+        margin: 0.3em 0;
+      }
+      div.entry {
+        margin-bottom: 1em;
+      }
+      div.entry span.entryDate {
+        font-weight: normal;
+        float: right;
+        position: relative;
+        top: 1px; /* Prevents overlap of border in IE6 */
+      }
+      div.entry p.img {
+        text-align: center;
+      }
+      div.entryFooter {
+        text-align: right;
+        font-size: 0.9em;
+        padding: 3px;
+      }
+
+      div#menu {
+        width: 12em;
+        position: absolute;
+        top: 5.2em;
+        right: 0px;
+        border-right: 1px solid orange;
+        border-left: 1px solid orange;
+        border-bottom: 1px solid orange;
+      }
+      div#menu form#searchForm div {
+        margin: 0.5em;
+      }
+      div#menu h3 {
+        margin: 0;
+        padding-left: 0.2em;
+        background-color: orange;
+        color: navy;
+      }
+
+      div#menu ul {
+        margin: 1em 0;
+        padding-left: 2em;
+        list-style-type: square;
+        font-size: 0.9em;
+      }
+
+      div#menu img {
+        margin-left: 1em;
+        border: none;
+      }
+
+      #contentTitle {
+        text-align: right;
+      }
+
+      .footerMessage {
+        width: 80%;
+        text-align: center;
+        font-style: italic;
+        padding: 3px;
+      }
+      .hotOrNot {
+        font-size: x-small;
+      }
+
+      /* Element Styles */
+
+      img {
+        border: none;
+      }
+      blockquote {
+        /* font-style: italic; - this causes horizontal scrollbars in IE6. Lord only 
+knows why. */
+        border-left: 0.25em solid orange;
+        padding: 0 0.5em;
+        margin: 0.5em 1.5em 0.5em 2.5em;
+      }
+      div.blockquotesource {
+        font-weight: bold;
+        font-size: 0.8em;
+        text-align: right;
+        padding-top: 0.5em;
+      }
+      div.blockquotesource a {
+        text-decoration: none;
+        font-style: normal;
+      }
+
+      dt {
+        font-weight: bold;
+        margin-top: 5px;
+        margin-bottom: 3px;
+      }
+      pre {
+        padding-left: 30px;
+        font-size: x-small;
+        font-style: normal;
+        voice-family: '"}"';
+        voice-family: inherit;
+        font-size: small;
+      }
+      cite {
+        font-style: italic;
+      }
+      a:link {
+        color: #d43c00;
+      }
+      a:visited {
+        color: #555;
+      }
+      a:hover {
+        text-decoration: none;
+        border-bottom: 1px dashed #555;
+      }
+      label,
+      div.label {
+        display: block;
+        font-variant: small-caps;
+        font-size: 0.9em;
+      }
+      label.remember {
+        display: inline;
+        font-variant: normal;
+        font-size: 0.9em;
+      }
+      label {
+        cursor: pointer;
+      }
+      table {
+        border: 2px solid #ccc;
+        margin-left: 2em;
+      }
+      table caption {
+        font-style: italic;
+        padding-bottom: 0.1em;
+      }
+      td.numeric {
+        text-align: right;
+      }
+      dfn {
+        font-style: normal;
+        font-variant: small-caps;
+      }
+      a.some {
+        font-weight: bold;
+      }
+      /* Comment Styles */
+      div.comment {
+        margin: 0.3em;
+        padding: 0.5em;
+        border-top: 1px solid black;
+      }
+      p.commentFooter {
+        font-size: 0.8em;
+      }
+      div.pingback {
+        margin: 0.5em;
+        font-size: 0.8em;
+        border: 1px dashed #ccc;
+        padding: 0.5em;
+      }
+      p.pingbackFooter {
+        text-align: right;
+      }
+      div#addCommentForm {
+        margin: 0.3em;
+        padding: 0.5em;
+        border-top: 1px solid black;
+        border-bottom: 1px solid black;
+      }
+      div#addCommentForm textarea {
+        height: 17em;
+        width: 75%;
+      }
+      p#commentInstructions {
+        float: right;
+        width: 50%;
+      }
+      p#spamwarning {
+        margin: 0 0 0.3em 0;
+      }
+      /* New Category Styles */
+      div#subcats ul {
+        list-style-type: square;
+        margin: 0;
+        padding: 0 2em;
+      }
+      div#subcats {
+        font-size: 0.8em;
+        margin: 1em 0;
+      }
+      div.breadcrumbs {
+        font-size: 0.8em;
+      }
+      div.breadcrumbs a {
+        color: black;
+        text-decoration: none;
+        border-bottom: 1px solid grey;
+      }
+
+      ul#categoryList {
+        list-style-type: none;
+      }
+      ul#categoryList img {
+        width: 32px;
+      }
+
+      ul.related {
+        font-size: 0.8em;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="header">
+      <h1><a href="/">Simon Willison's Weblog</a></h1>
+      <p>PHP, Python, CSS, XML and general web development</p>
+    </div>
+    <div class="hidden"><a href="#startNavigation">Skip to Navigation</a></div>
+    <div id="mainArea">
+      {% load blog_tags %}
+      {% blog_mixed_list_with_dates items day_headers=1 %}
+    </div>
+    <div id="menu">
+      <a class="hidden" name="startNavigation" id="startNavigation"></a>
+      <h3>This Site</h3>
+      <ul>
+        <li>
+          <a
+            href="https://web.archive.org/web/20030723185129/http://simon.incutio.com/"
+            >Front Page</a
+          >
+        </li>
+        <li>
+          <a
+            href="https://web.archive.org/web/20030723185129/http://simon.incutio.com/archive/"
+            >Archive</a
+          >
+        </li>
+        <li>
+          <a
+            href="https://web.archive.org/web/20030723185129/http://simon.incutio.com/categories/"
+            >Categories</a
+          >
+        </li>
+        <li>
+          <a
+            href="https://web.archive.org/web/20030723185129/http://simon.incutio.com/referrals/"
+            >Referrals</a
+          >
+        </li>
+        <li>
+          <a
+            href="https://web.archive.org/web/20030723185129/http://simon.incutio.com/comments/"
+            >Comments</a
+          >
+        </li>
+        <li>
+          <a
+            href="https://web.archive.org/web/20030723185129/http://simon.incutio.com/contact/"
+            >Contact Me</a
+          >
+        </li>
+      </ul>
+      <h3>Search Site</h3>
+      <form
+        id="searchForm"
+        action="https://simonwillison.net/search/"
+        method="get"
+      >
+        <div>
+          <input type="text" name="q" size="14" />
+          <input type="submit" value="Go" />
+        </div>
+      </form>
+      <h3>Of Interest</h3>
+      <ul>
+        <li>
+          <a
+            href="https://web.archive.org/web/20030723185129/http://www.incutio.com/"
+            title="Incutio Ltd: Be Inspired (where I work)"
+            >Incutio</a
+          >
+        </li>
+        <li>
+          <a
+            href="https://web.archive.org/web/20030723185129/http://css-discuss.incutio.com/"
+            title="Public CSS Wiki"
+            >css-discuss wiki</a
+          >
+        </li>
+        <li>
+          <a
+            href="https://web.archive.org/web/20030723185129/http://archivist.incutio.com/viewlist/css-discuss/"
+            title="Searchable archive for the css-discuss mailing list"
+            >css-discuss archive</a
+          >
+        </li>
+        <li>
+          <a
+            href="https://web.archive.org/web/20030723185129/http://www.xfml.org/"
+            title="eXchangable Faceted Metadata Language"
+            >XFML.org</a
+          >
+        </li>
+        <li>
+          <a
+            href="https://web.archive.org/web/20030723185129/http://blo.gs/"
+            title="Centralised weblog update tracking"
+            >blo.gs</a
+          >
+        </li>
+        <li>
+          <a
+            href="https://web.archive.org/web/20030723185129/http://www.mozilla.org/projects/phoenix/"
+            title="My browser of choice"
+            >Phoenix</a
+          >
+        </li>
+        <li>
+          <a
+            href="https://web.archive.org/web/20030723185129/http://www.php.net/"
+            title="Versatile web scripting language"
+            >PHP</a
+          >
+        </li>
+        <li>
+          <a
+            href="https://web.archive.org/web/20030723185129/http://www.python.org/"
+            title="An agile programming language"
+            >Python</a
+          >
+        </li>
+        <li>
+          <a
+            href="https://web.archive.org/web/20030723185129/http://www.pythoncard.org/"
+            title="Fast and easy Python GUI applications"
+            >PythonCard</a
+          >
+        </li>
+        <li>
+          <a
+            href="https://web.archive.org/web/20030723185129/http://www.webstandards.org/"
+            title="The Web Standards Project"
+            >WaSP</a
+          >
+        </li>
+      </ul>
+      <h3>Lurking Grounds</h3>
+      <ul>
+        <li>
+          <a
+            href="https://web.archive.org/web/20030723185129/http://www.evolt.org/"
+            title="A web development community"
+            >Evolt</a
+          >
+        </li>
+        <li>
+          <a
+            href="https://web.archive.org/web/20030723185129/http://www.webdesign-l.com/"
+            >Webdesign-L</a
+          >
+        </li>
+        <li>
+          <a
+            href="https://web.archive.org/web/20030723185129/http://www.css-discuss.org/"
+            >CSS Discuss</a
+          >
+        </li>
+        <li>
+          <a
+            href="https://web.archive.org/web/20030723185129/http://slashdot.org/"
+            >Slashdot</a
+          >
+        </li>
+        <li>
+          <a
+            href="https://web.archive.org/web/20030723185129/http://www.sitepointforums.com/"
+            title="I post as Skunk"
+            >SitePoint</a
+          >
+        </li>
+      </ul>
+      <h3>My Other Half</h3>
+      <ul>
+        <li>
+          <a
+            href="https://web.archive.org/web/20030723185129/http://www.natbat.co.uk/"
+            >Natalie Downe</a
+          >
+        </li>
+      </ul>
+      <p>
+        <a
+          href="https://simonwillison.net/atom/everything/"
+          title="Last 30 entries in Atom"
+          ><img
+            src="https://web.archive.org/web/20030723185129im_/http://simon.incutaio.com/images/rss-blue.png"
+            alt="RSS"
+        /></a>
+      </p>
+    </div>
+  </body>
+</html>

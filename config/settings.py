@@ -52,12 +52,14 @@ INSTALLED_APPS = (
     "django.contrib.staticfiles",
     "django_sql_dashboard",
     "django.contrib.humanize",
+    "django_hosts",
     "blog",
     "redirects",
     "feedstats",
 )
 
 MIDDLEWARE = (
+    "django_hosts.middleware.HostsRequestMiddleware",
     "redirects.middleware.redirect_middleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -66,13 +68,14 @@ MIDDLEWARE = (
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "blog.middleware.AmpersandRedirectMiddleware",
+    "django_hosts.middleware.HostsResponseMiddleware",
     #    "django.middleware.clickjacking.XFrameOptionsMiddleware",
 )
 if DEBUG:
     try:
         import debug_toolbar
 
-        MIDDLEWARE = ("debug_toolbar.middleware.DebugToolbarMiddleware",) + MIDDLEWARE
+        MIDDLEWARE = MIDDLEWARE + ("debug_toolbar.middleware.DebugToolbarMiddleware",)
         INSTALLED_APPS += ("debug_toolbar",)
     except ImportError:
         pass
@@ -91,6 +94,8 @@ if SENTRY_DSN:
 
 
 ROOT_URLCONF = "config.urls"
+ROOT_HOSTCONF = "config.hosts"
+DEFAULT_HOST = "www"
 
 TEMPLATES = [
     {
