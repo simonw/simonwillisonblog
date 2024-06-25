@@ -76,7 +76,7 @@ class TagAdmin(admin.ModelAdmin):
                 False,
             )
         else:
-            return queryset.none(), False
+            return queryset.all(), False
 
 
 admin.site.register(
