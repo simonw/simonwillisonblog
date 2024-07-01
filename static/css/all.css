@@ -144,6 +144,9 @@ p.smallhead-toolbar a.signin {
 img.bubble {
   vertical-align: top;
 }
+.date-and-tags {
+  font-size: 0.85em;
+}
 div#sidead {
   margin-top: 2em;
 }
