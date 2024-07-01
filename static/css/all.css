@@ -144,9 +144,8 @@ p.smallhead-toolbar a.signin {
 img.bubble {
   vertical-align: top;
 }
-.date-and-tags,
-div#primary div.blogmark p.date-and-tags {
-  font-size: 0.85em;
+.date-and-tags {
+  font-size: 0.85rem;
 }
 div#sidead {
   margin-top: 2em;
@@ -717,7 +716,7 @@ div#primary div.segment {
   border-bottom: 1px solid #ccc;
   margin-bottom: 0.75em;
 }
-div#primary div.blogmark p {
+div#primary div.blogmark {
   font-size: 0.9em;
 }
 div#primary div.blogmark p,
