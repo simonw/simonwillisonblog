@@ -27,11 +27,24 @@
 </div> <!-- end div.entry -->
 {% endif %}
 {% if item.type == "blogmark" %}
-<div class="blogmark segment"><p><a href="{{ item.obj.link_url }}">{{ item.obj.link_title|typography }}</a>{% if item.obj.via_url %} (<a href="{{ item.obj.via_url }}" title="{{ item.obj.via_title|typography }}">via</a>){% endif %}{% if not item.obj.via_url and not item.obj.link_title|ends_with_punctuation %}.{% endif %} {% if not item.obj.use_markdown %}{{ item.obj.commentary|typography|linebreaks|strip_wrapping_p }}{% else %}{{ item.obj.body|strip_wrapping_p }}{% endif %} <a href="{{ item.obj.get_absolute_url }}" rel="bookmark">#</a> {% if showdate %}<a href="/{{ item.obj.created|date:"Y/M/j/" }}">{{ item.obj.created|date:"jS F Y" }}</a>, {% endif %}{{ item.obj.created|date:"f A"|lower }}</p>
+<div class="blogmark segment">
+  <p><a href="{{ item.obj.link_url }}">{{ item.obj.link_title|typography }}</a>{% if item.obj.via_url %}
+    (<a href="{{ item.obj.via_url }}" title="{{ item.obj.via_title|typography }}">via</a>){% endif %}{% if not item.obj.via_url and not item.obj.link_title|ends_with_punctuation %}.{% endif %}
+    {% if not item.obj.use_markdown %}{{ item.obj.commentary|typography|linebreaks|strip_wrapping_p }}{% else %}{{ item.obj.body|strip_wrapping_p }}{% endif %}</p>
+    <p><a href="{{ item.obj.get_absolute_url }}" rel="bookmark">#</a> {% if showdate %}<a href="/{{ item.obj.created|date:"Y/M/j/" }}">{{ item.obj.created|date:"jS F Y" }}</a>,
+    {% endif %}{{ item.obj.created|date:"f A"|lower }}
+    {% if item.obj.tags.count %} / {% for tag in item.obj.tags.all %}{{ tag.get_link }}{% if not forloop.last %}, {% endif %}{% endfor %}{% endif %}</p>
 </div>
 {% endif %}
 {% if item.type == "quotation" %}
-<div class="quote segment"><blockquote{% if item.obj.source_url %} cite="{{ item.obj.source_url }}"{% endif %}>{{ item.obj.body }}</blockquote><p class="cite">&mdash; {% if item.obj.source_url %}<a href="{{ item.obj.source_url }}">{{ item.obj.source }}</a>{% else %}{{ item.obj.source }}{% endif %} <a href="{{ item.obj.get_absolute_url }}" rel="bookmark">#</a> {% if showdate %}<a href="/{{ item.obj.created|date:"Y/M/j/" }}">{{ item.obj.created|date:"jS F Y" }}</a>, {% endif %}{{ item.obj.created|date:"f A"|lower }}</p>
+<div class="quote segment">
+  <blockquote{% if item.obj.source_url %} cite="{{ item.obj.source_url }}"{% endif %}>{{ item.obj.body }}</blockquote>
+  <p class="cite">&mdash; {% if item.obj.source_url %}<a href="{{ item.obj.source_url }}">{{ item.obj.source }}</a>{% else %}{{ item.obj.source }}{% endif %}
+    <a href="{{ item.obj.get_absolute_url }}" rel="bookmark">#</a>
+    {% if showdate %}<a href="/{{ item.obj.created|date:"Y/M/j/" }}">{{ item.obj.created|date:"jS F Y" }}</a>,
+    {% endif %}{{ item.obj.created|date:"f A"|lower }}
+    {% if item.obj.tags.count %} / {% for tag in item.obj.tags.all %}{{ tag.get_link }}{% if not forloop.last %}, {% endif %}{% endfor %}{% endif %}
+  </p>
 </div>
 {% endif %}
 {% endfor %}
