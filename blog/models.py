@@ -198,6 +198,9 @@ class Entry(BaseModel):
             "has_next": has_next,
         }
 
+    def multi_paragraph(self):
+        return self.body.count("<p") > 1
+
     def __str__(self):
         return self.title
 

@@ -20,7 +20,9 @@
     </div>
   {% endif %}
   <p>
-    {{ item.obj.body|split_cutoff|xhtml|remove_context_paragraph|first_paragraph|typography|xhtml2html }} <span style="font-size: 0.9em">[... <a href="{{ item.obj.get_absolute_url }}">{{ item.obj.body|wordcount }} word{{ item.obj.body|wordcount|pluralize }}</a>]</span></p>
+    {{ item.obj.body|split_cutoff|xhtml|remove_context_paragraph|first_paragraph|typography|xhtml2html }}
+    {% if item.obj.multi_paragraph %}<span style="font-size: 0.9em">[... <a href="{{ item.obj.get_absolute_url }}">{{ item.obj.body|wordcount }} word{{ item.obj.body|wordcount|pluralize }}</a>]</span>{% endif %}
+  </p>
   <div class="entryFooter">
   {% if showdate %}{% entry_footer item.obj %}{% else %}{% entry_footer_no_date item.obj %}{% endif %}
   </div>
