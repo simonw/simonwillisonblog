@@ -45,6 +45,8 @@
     {% if sort == "relevance" %}<a href="{% replace_qsarg "sort" "date" %}">date</a>{% endif %}
 </p>
 
+<div id="autocomplete-tags" aria-live="polite"></div>
+
 <br>
 
 {% if total %}
@@ -96,4 +98,48 @@
         </ul>
     {% endif %}
 </div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    function debounce(func, wait) {
+        let timeout;
+        return function(...args) {
+            const context = this;
+            clearTimeout(timeout);
+            timeout = setTimeout(() => func.apply(context, args), wait);
+        };
+    }
+
+    function fetchTags(query) {
+        fetch(`/tags-autocomplete/?q=${query}`)
+            .then(response => response.json())
+            .then(data => {
+                const tagsContainer = document.getElementById('autocomplete-tags');
+                tagsContainer.innerHTML = '';
+                if (data.tags.length > 0) {
+                    const ul = document.createElement('ul');
+                    data.tags.forEach(tag => {
+                        const li = document.createElement('li');
+                        const a = document.createElement('a');
+                        a.href = `/tags/${tag}/`;
+                        a.textContent = tag;
+                        li.appendChild(a);
+                        ul.appendChild(li);
+                    });
+                    tagsContainer.appendChild(ul);
+                }
+            });
+    }
+
+    const searchInput = document.querySelector('.search-input');
+    searchInput.addEventListener('input', debounce(function() {
+        const query = this.value.trim();
+        if (query.length > 0) {
+            fetchTags(query);
+        } else {
+            document.getElementById('autocomplete-tags').innerHTML = '';
+        }
+    }, 500));
+</script>
 {% endblock %}

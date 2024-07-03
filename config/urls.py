@@ -16,6 +16,7 @@ import os
 import pkg_resources
 import json
 from proxy.views import proxy_view
+from blog.tag_views import tags_autocomplete
 
 
 def wellknown_webfinger(request):
@@ -150,6 +151,7 @@ urlpatterns = [
     re_path(r"^static/", static_redirect),
     path("dashboard/", include(django_sql_dashboard.urls)),
     path("user-from-cookies/", blog_views.user_from_cookies),
+    path("tags-autocomplete/", tags_autocomplete),
 ]
 if settings.DEBUG:
     try:
