@@ -1,12 +1,18 @@
 from django.http import JsonResponse
-from django.db.models import Q
+from django.db.models.functions import Length
 from .models import Tag
 
+
 def tags_autocomplete(request):
-    query = request.GET.get('q', '')
+    query = request.GET.get("q", "")
     if query:
-        tags = Tag.objects.filter(tag__icontains=query)[:5]
+        tags = (
+            Tag.objects.filter(tag__icontains=query)
+            .annotate(tag_length=Length("tag"))
+            .order_by("tag_length")[:5]
+        )
     else:
         tags = Tag.objects.none()
-    tag_list = [tag.tag for tag in tags]
-    return JsonResponse({'tags': tag_list})
+    return JsonResponse(
+        {"tags": [{"tag": tag.tag, "count": tag.total_count()} for tag in tags]}
+    )
