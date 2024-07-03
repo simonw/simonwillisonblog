@@ -9,7 +9,7 @@
 <h2>{{ title }}</h2>
 
 <form action="{{ request.path }}" method="GET">
-    <input type="search" class="search-input" name="q" value="{{ q }}" style="width: 80%">
+    <input type="search" class="search-input" name="q" value="{{ q }}" style="width: 80%" autocomplete="off">
     <input type="submit" class="search-submit" value="Search">
     {% if selected %}
         {% for pair in selected.items %}
@@ -44,6 +44,8 @@
     {% if sort == "date" and q %}<a href="{% replace_qsarg "sort" "relevance" %}">relevance</a>{% endif %}
     {% if sort == "relevance" %}<a href="{% replace_qsarg "sort" "date" %}">date</a>{% endif %}
 </p>
+
+<div id="autocomplete-tags" aria-live="polite"></div>
 
 <br>
 
@@ -96,4 +98,52 @@
         </ul>
     {% endif %}
 </div>
+<script>
+function debounce(func, wait) {
+  let timeout;
+  return function (...args) {
+    const context = this;
+    clearTimeout(timeout);
+    timeout = setTimeout(() => func.apply(context, args), wait);
+  };
+}
+
+function fetchTags(query) {
+  fetch(`/tags-autocomplete/?q=${query}`)
+    .then((response) => response.json())
+    .then((data) => {
+      const tagsContainer = document.getElementById("autocomplete-tags");
+      tagsContainer.innerHTML = "";
+      if (data.tags.length > 0) {
+        const p = document.createElement("p");
+        p.appendChild(document.createTextNode("Tags "));
+        data.tags.forEach((tag) => {
+          const a = document.createElement("a");
+          a.href = `/tags/${tag.tag}/`;
+          a.className = "item-tag";
+          a.innerHTML = `${tag.tag} <span>${tag.count}</span>`;
+          p.appendChild(a);
+          // Add a space between tags
+          p.appendChild(document.createTextNode(" "));
+        });
+        tagsContainer.appendChild(p);
+      }
+    });
+}
+const searchInput = document.querySelector(".search-input");
+searchInput.addEventListener(
+  "input",
+  debounce(function () {
+    const query = this.value.trim();
+    if (query.length > 0) {
+      fetchTags(query);
+    } else {
+      document.getElementById("autocomplete-tags").innerHTML = "";
+    }
+  }, 500),
+);
+if (searchInput.value) {
+  fetchTags(searchInput.value);
+}
+</script>
 {% endblock %}
