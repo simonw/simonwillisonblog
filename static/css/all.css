@@ -279,6 +279,10 @@ div.series-info li {
 div.entryPage {
   border-bottom: none;
 }
+.entry img,
+.blogmark img {
+  max-width: 100%;
+}
 /* Center embedded tweets in articles */
 div.entry div.twitter-tweet {
   margin-left: auto;
