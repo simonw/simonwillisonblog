@@ -5,6 +5,8 @@ from .models import Tag
 
 def tags_autocomplete(request):
     query = request.GET.get("q", "")
+    # Remove whitespace
+    query = "".join(query.split())
     if query:
         tags = (
             Tag.objects.filter(tag__icontains=query)
