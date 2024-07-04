@@ -1,18 +1,69 @@
-from django.http import JsonResponse
-from django.db.models.functions import Length
 from .models import Tag
+from django.db.models import (
+    Case,
+    When,
+    Value,
+    IntegerField,
+    F,
+    Subquery,
+    OuterRef,
+    Count,
+)
+from django.db.models.functions import Length
+from django.http import JsonResponse, HttpResponse
+import json
 
 
 def tags_autocomplete(request):
     query = request.GET.get("q", "")
     if query:
+        entry_count = (
+            Tag.objects.filter(id=OuterRef("pk"))
+            .annotate(count=Count("entry", distinct=True))
+            .values("count")
+        )
+
+        # Subquery for counting blogmarks
+        blogmark_count = (
+            Tag.objects.filter(id=OuterRef("pk"))
+            .annotate(count=Count("blogmark", distinct=True))
+            .values("count")
+        )
+
+        # Subquery for counting quotations
+        quotation_count = (
+            Tag.objects.filter(id=OuterRef("pk"))
+            .annotate(count=Count("quotation", distinct=True))
+            .values("count")
+        )
+
         tags = (
             Tag.objects.filter(tag__icontains=query)
-            .annotate(tag_length=Length("tag"))
-            .order_by("tag_length")[:5]
+            .annotate(
+                total_entry=Subquery(entry_count),
+                total_blogmark=Subquery(blogmark_count),
+                total_quotation=Subquery(quotation_count),
+                is_exact_match=Case(
+                    When(tag__iexact=query, then=Value(1)),
+                    default=Value(0),
+                    output_field=IntegerField(),
+                ),
+            )
+            .annotate(
+                count=F("total_entry") + F("total_blogmark") + F("total_quotation")
+            )
+            .order_by("-is_exact_match", "-count", Length("tag"))[:5]
         )
     else:
         tags = Tag.objects.none()
-    return JsonResponse(
-        {"tags": [{"tag": tag.tag, "count": tag.total_count()} for tag in tags]}
-    )
+
+    if request.GET.get("debug"):
+        return HttpResponse(
+            "<html><body><pre>"
+            + json.dumps(list(tags.values()), indent=4)
+            + "</pre><hr><code>"
+            + str(tags.query)
+            + "</body></html>"
+        )
+
+    return JsonResponse({"tags": list(tags.values())})
