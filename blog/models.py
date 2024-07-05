@@ -245,7 +245,10 @@ class Blogmark(BaseModel):
     via_url = models.URLField(blank=True, null=True, max_length=512)
     via_title = models.CharField(max_length=255, blank=True, null=True)
     commentary = models.TextField()
-    use_markdown = models.BooleanField(default=False)
+    use_markdown = models.BooleanField(
+        default=False,
+        help_text='Images can use the img element - set width="..." for a specific width and use class="centered-image" to ensure it is centered.',
+    )
 
     is_blogmark = True
 
