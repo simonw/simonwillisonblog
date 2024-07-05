@@ -247,7 +247,7 @@ class Blogmark(BaseModel):
     commentary = models.TextField()
     use_markdown = models.BooleanField(
         default=False,
-        help_text='Images can use the img element - set width="..." for a specific width and use class="centered-image" to ensure it is centered.',
+        help_text='Images can use the img element - set width="..." for a specific width and use class="blogmark-image" to center and add a drop shadow.',
     )
 
     is_blogmark = True

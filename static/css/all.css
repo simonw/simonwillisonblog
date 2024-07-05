@@ -79,9 +79,10 @@ a:link {
   border-bottom: 1px solid rgb(0, 0, 238);
 }
 
-.centered-image {
+.blogmark-image {
   display: block;
-  margin: auto;
+  margin: 1em auto;
+  box-shadow: 0px 0px 8px -4px black;
 }
 
 a:visited {
