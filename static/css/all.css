@@ -79,6 +79,11 @@ a:link {
   border-bottom: 1px solid rgb(0, 0, 238);
 }
 
+.centered-image {
+  display: block;
+  margin: auto;
+}
+
 a:visited {
   color: #636;
   border-color: #636;
