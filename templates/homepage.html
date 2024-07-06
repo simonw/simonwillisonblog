@@ -2,28 +2,31 @@
 
 {% block title %}Simon Willison’s Weblog{% endblock %}
 
-{% block body_class %} class="homepage"{% endblock %}
+{% block body_class %}class="homepage"{% endblock %}
 
 {% block extrahead %}
-<link href="https://github.com/simonw" rel="me">
-<link href="https://twitter.com/simonw" rel="me">
-<link href="https://fedi.simonwillison.net/@simon" rel="me">
-<link rel="authorization_endpoint" href="https://indieauth.com/auth">
-{% for entry in entries %}{{ entry.extra_head_html|default:""|safe }}{% endfor %}
+  <link href="https://github.com/simonw" rel="me" />
+  <link href="https://twitter.com/simonw" rel="me" />
+  <link href="https://fedi.simonwillison.net/@simon" rel="me" />
+  <link rel="authorization_endpoint" href="https://indieauth.com/auth" />
+  {% for entry in entries %}{{ entry.extra_head_html|default:""|safe }}{% endfor %}
 {% endblock %}
 
 {% block primary %}
-<h2 class="overband">Recent</h2>
+  <h2 class="overband">Recent</h2>
 
-{% load blog_tags %}
-{% blog_mixed_list_with_dates items day_headers=1 %}
+  {% load blog_tags %}
+  {% blog_mixed_list_with_dates items day_headers=1 %}
 {% endblock %}
 
 {% block secondary %}
-<h2 class="overband">Highlights</h2>
-<ul>
-{% for entry in entries %}
-  <li><a href="{{ entry.get_absolute_url }}">{{ entry }}</a> - {{ entry.created.date }}</li>
-{% endfor %}
-</ul>
+  <h2 class="overband">Highlights</h2>
+  <ul>
+    {% for entry in entries %}
+      <li>
+        <a href="{{ entry.get_absolute_url }}">{{ entry }}</a> -
+        {{ entry.created.date }}
+      </li>
+    {% endfor %}
+  </ul>
 {% endblock %}

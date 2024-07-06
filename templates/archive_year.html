@@ -3,103 +3,154 @@
 {% block title %}Archive for {{ year }}{% endblock %}
 
 {% block primary %}
-<div class="entry">
-<h2>Archive for {{ year }}</h2>
+  <div class="entry">
+    <h2>Archive for {{ year }}</h2>
 
-<ul>
-{% for month in months %}
-<li><strong><a href="/{{ year }}/{{ month.date|date:"M" }}/">{{ month.date|date:"F" }}</a></strong> - {% for count in month.counts_not_0 %}{{ count.1 }} {% if count.0 == "entry" %}{{ count.1|pluralize:"entry,entries" }}{% else %}{{ count.0 }}{{ count.1|pluralize }}{% endif %}{% if not forloop.last %}, {% endif %}{% endfor %}
-    {% if month.entries %}
     <ul>
-    {% for entry in month.entries %}
-        <li><a href="{{ entry.get_absolute_url }}">{{ entry }}</a></li>
-    {% endfor %}
+      {% for month in months %}
+        <li>
+          <strong
+            ><a href="/{{ year }}/{{ month.date|date:"M" }}/"
+              >{{ month.date|date:"F" }}</a
+            ></strong
+          >
+          -
+          {% for count in month.counts_not_0 %}{{ count.1 }}
+          {% if count.0 == "entry" %}{{ count.1|pluralize:"entry,entries" }}{% else %}{{ count.0 }}{{ count.1|pluralize }}{% endif %}{% if not forloop.last %},{% endif %}{% endfor %}
+          {% if month.entries %}
+            <ul>
+              {% for entry in month.entries %}
+                <li><a href="{{ entry.get_absolute_url }}">{{ entry }}</a></li>
+              {% endfor %}
+            </ul>
+          {% endif %}
+        </li>
+      {% endfor %}
     </ul>
-    {% endif %}
-</li>
-{% endfor %}
-</ul>
-</div>
+  </div>
 {% endblock %}
 
 {% block secondary %}
-<div class="metabox">
-<p>{% for year in years_with_content %}<a href="/{{ year|date:"Y" }}/">{{ year|date:"Y" }}</a>{% if not forloop.last %} / {% endif %}{% endfor %}</p>
-</div>
+  <div class="metabox">
+    <p>
+      {% for year in years_with_content %}<a href="/{{ year|date:"Y" }}/"
+        >{{ year|date:"Y" }}</a
+      >{% if not forloop.last %}/{% endif %}{% endfor %}
+    </p>
+  </div>
 {% endblock %}
 
 {% block footer %}
-{{ block.super }}
-<script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"
-  integrity="sha256-8glLv2FBs1lyLE/kVOtsSw8OQswQzHr5IfwVj864ZTk="
-  crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/d3-cloud@1.2.7/build/d3.layout.cloud.min.js"
-  integrity="sha512-QOn5z8Fa63hvHWmu7Sp8XEAocATKiS8KcQRuLKNGS4+vi9oWH0ajPtb8ugJYP5JDxK56lX7/R1VlBNaUU2qc6g=="
-  crossorigin="anonymous"></script>
-<script>
-document.addEventListener("DOMContentLoaded", function() {
-  var firstH2 = document.querySelector('h2');
-  var newDiv = document.createElement('div');
-  newDiv.setAttribute('id', 'tag-cloud');
-  firstH2.insertAdjacentElement('afterend', newDiv);
-  fetch('/dashboard/tag-cloud-by-year.json?year={{ year }}')
-    .then(response => response.json())
-    .then(data => {
-      var wordcloudData = data.queries[0].rows;
-      var minScore = Math.min(...wordcloudData.map(w => w.wordcloud_count));
-      var maxScore = Math.max(...wordcloudData.map(w => w.wordcloud_count));
-      var fontScale = d3.scaleLinear()
-        .domain([minScore, maxScore])
-        .range([20, 100]);
-      var fill = [
-        "#4a6fa5",
-        "#c47e5c",
-        "#5b8c5a",
-        "#9e4a54",
-        "#7d6d9f",
-        "#b59a74",
-        "#d4a5a5",
-        "#7c858e",
-        "#a2a775",
-        "#5e8b8c"
-      ];
-      function draw(words) {
-        var svg = d3.select("#tag-cloud").append("svg")
-            .attr("width", layout.size()[0])
-            .attr("height", layout.size()[1]);
-        var g = svg.append("g")
-            .attr("transform", "translate(" + layout.size()[0] / 2 + "," + layout.size()[1] / 2 + ")");
-        var wordGroups = g.selectAll("g")
-            .data(words)
-            .enter().append("g")
-            .attr("transform", function(d) {
-              return "translate(" + [d.x, d.y] + ")rotate(" + d.rotate + ")";
-            });
-        wordGroups.append("a")
-            .attr("xlink:href", function(d) { return `/search/?tag=${encodeURIComponent(d.text)}&year={{ year }}` })
-          .append("text")
-            .style("font-size", function(d) { return d.size + "px"; })
-            .style("font-family", "Impact")
-            .style("fill", function(d, i) { return fill[i % fill.length]; })
-            .attr("text-anchor", "middle")
-            .text(function(d) { return d.text; });
-      }
-      var wordData = wordcloudData.map(function(d) {
-        return {text: d.wordcloud_word, size: d.wordcloud_count};
-      });
-      var layout = d3.layout.cloud()
-        .size([document.querySelector('#tag-cloud').getBoundingClientRect().width, 300])
-        .words(wordData)
-        .rotate(function() { return (~~(Math.random() * 6) - 3) * 30; })
-        .padding(5)
-        .font("Impact")
-        .fontSize(function(d) { return fontScale(d.size); })
-        .on("end", draw);
-      layout.start();
-    })
-    .catch(error => {
-      console.error('Error fetching data:', error);
+  {{ block.super }}
+  <script
+    src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"
+    integrity="sha256-8glLv2FBs1lyLE/kVOtsSw8OQswQzHr5IfwVj864ZTk="
+    crossorigin="anonymous"
+  ></script>
+  <script
+    src="https://cdn.jsdelivr.net/npm/d3-cloud@1.2.7/build/d3.layout.cloud.min.js"
+    integrity="sha512-QOn5z8Fa63hvHWmu7Sp8XEAocATKiS8KcQRuLKNGS4+vi9oWH0ajPtb8ugJYP5JDxK56lX7/R1VlBNaUU2qc6g=="
+    crossorigin="anonymous"
+  ></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      var firstH2 = document.querySelector("h2");
+      var newDiv = document.createElement("div");
+      newDiv.setAttribute("id", "tag-cloud");
+      firstH2.insertAdjacentElement("afterend", newDiv);
+      fetch("/dashboard/tag-cloud-by-year.json?year={{ year }}")
+        .then((response) => response.json())
+        .then((data) => {
+          var wordcloudData = data.queries[0].rows;
+          var minScore = Math.min(
+            ...wordcloudData.map((w) => w.wordcloud_count),
+          );
+          var maxScore = Math.max(
+            ...wordcloudData.map((w) => w.wordcloud_count),
+          );
+          var fontScale = d3
+            .scaleLinear()
+            .domain([minScore, maxScore])
+            .range([20, 100]);
+          var fill = [
+            "#4a6fa5",
+            "#c47e5c",
+            "#5b8c5a",
+            "#9e4a54",
+            "#7d6d9f",
+            "#b59a74",
+            "#d4a5a5",
+            "#7c858e",
+            "#a2a775",
+            "#5e8b8c",
+          ];
+          function draw(words) {
+            var svg = d3
+              .select("#tag-cloud")
+              .append("svg")
+              .attr("width", layout.size()[0])
+              .attr("height", layout.size()[1]);
+            var g = svg
+              .append("g")
+              .attr(
+                "transform",
+                "translate(" +
+                  layout.size()[0] / 2 +
+                  "," +
+                  layout.size()[1] / 2 +
+                  ")",
+              );
+            var wordGroups = g
+              .selectAll("g")
+              .data(words)
+              .enter()
+              .append("g")
+              .attr("transform", function (d) {
+                return "translate(" + [d.x, d.y] + ")rotate(" + d.rotate + ")";
+              });
+            wordGroups
+              .append("a")
+              .attr("xlink:href", function (d) {
+                return `/search/?tag=${encodeURIComponent(d.text)}&year={{ year }}`;
+              })
+              .append("text")
+              .style("font-size", function (d) {
+                return d.size + "px";
+              })
+              .style("font-family", "Impact")
+              .style("fill", function (d, i) {
+                return fill[i % fill.length];
+              })
+              .attr("text-anchor", "middle")
+              .text(function (d) {
+                return d.text;
+              });
+          }
+          var wordData = wordcloudData.map(function (d) {
+            return { text: d.wordcloud_word, size: d.wordcloud_count };
+          });
+          var layout = d3.layout
+            .cloud()
+            .size([
+              document.querySelector("#tag-cloud").getBoundingClientRect()
+                .width,
+              300,
+            ])
+            .words(wordData)
+            .rotate(function () {
+              return (~~(Math.random() * 6) - 3) * 30;
+            })
+            .padding(5)
+            .font("Impact")
+            .fontSize(function (d) {
+              return fontScale(d.size);
+            })
+            .on("end", draw);
+          layout.start();
+        })
+        .catch((error) => {
+          console.error("Error fetching data:", error);
+        });
     });
-});
-</script>
+  </script>
 {% endblock %}

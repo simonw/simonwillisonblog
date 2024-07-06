@@ -1,27 +1,32 @@
 {% extends "smallhead.html" %}
 {% block title %}Tags{% endblock %}
 {% block primary %}
+  <form action="/search/" method="GET">
+    <input
+      type="search"
+      class="search-input"
+      name="q"
+      value=""
+      style="width: 80%"
+    />
+    <input type="submit" class="search-submit" value="Search" />
+  </form>
 
-<form action="/search/" method="GET">
-    <input type="search" class="search-input" name="q" value="" style="width: 80%">
-    <input type="submit" class="search-submit" value="Search">
-</form>
-
-{% load tag_cloud %}
-<p id="tagcloud">{% tag_cloud %}</p>
-
+  {% load tag_cloud %}
+  <p id="tagcloud">{% tag_cloud %}</p>
 {% endblock %}
 
 {% block secondary %}
-<div class="metabox">
-You can view the intersection of up to three tags by navigating to <samp>/tags/tag1+tag2/</samp>.
+  <div class="metabox">
+    You can view the intersection of up to three tags by navigating to
+    <samp>/tags/tag1+tag2/</samp>.
 
-<h3>Archive by year</h3>
-<p>
-    {% for year in years_with_content reversed %}
-        <a href="/{{ year|date:"Y" }}/">{{ year|date:"Y" }}</a>{% if not forloop.last %} / {% endif %}
-    {% endfor %}
-</p>
-</div>
+    <h3>Archive by year</h3>
+    <p>
+      {% for year in years_with_content reversed %}
+        <a href="/{{ year|date:"Y" }}/">{{ year|date:"Y" }}</a
+        >{% if not forloop.last %}/{% endif %}
+      {% endfor %}
+    </p>
+  </div>
 {% endblock %}
-
