@@ -1,20 +1,13 @@
 name: CI
 
-on:
-  push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
+on: [push, pull_request]
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
     services:
       postgres:
-        image: postgres:12.6
+        image: postgres
         env:
           POSTGRES_USER: postgres
           POSTGRES_DB: test_db
@@ -26,36 +19,24 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-
     steps:
       - name: Check out code
-        uses: actions/checkout@v2
-
+        uses: actions/checkout@v4
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v5
         with:
-          python-version: 3.11
-
+          python-version: "3.12"
+          cache: pip
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
           pip install -r requirements.txt
-
       - name: Set up database
         run: |
           sudo apt-get install -y postgresql-client
           export DATABASE_URL=postgres://postgres:@localhost/test_db
           python manage.py migrate --noinput
           python manage.py collectstatic --noinput
-
       - name: Run tests
         run: |
           export DATABASE_URL=postgres://postgres:@localhost/test_db
           python manage.py test
-
-      - name: Store test reports
-        if: always()
-        uses: actions/upload-artifact@v2
-        with:
-          name: test-reports
-          path: test-reports
