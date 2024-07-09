@@ -252,18 +252,18 @@ div#secondary ul {
   margin-top: 0.5em;
   margin-bottom: 0.2em;
   text-indent: 23px;
-  background-image: url(/static/css/img/lquo.png);
-  background-size: 18px 13px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext x='11' y='171' font-family='Times New Roman, serif' font-size='180' fill='%238A2BE2'%3E%E2%80%9C%3C/text%3E%3C/svg%3E");
+  background-size: 23px 23px;
   background-repeat: no-repeat;
-  background-position: 0px 3px;
+  background-position: 9px -5px;
   word-break: break-word;
 }
 .item-quote blockquote p {
-  background-image: url(/static/css/img/rquo.png);
-  background-size: 18px 13px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext x='11' y='171' font-family='Times New Roman, serif' font-size='180' fill='%238A2BE2'%3E%E2%80%9D%3C/text%3E%3C/svg%3E");
+  background-size: 23px 23px;
   background-repeat: no-repeat;
-  background-position: bottom 3px right;
-  padding-right: 23px;
+  background-position: bottom 2px right;
+  padding-right: 25px;
   display: inline;
 }
 p.cite {
@@ -750,10 +750,10 @@ div#primary div.quote blockquote {
   clear: both;
   margin-top: 0.5em;
   margin-bottom: 0.2em;
-  background-image: url(/static/css/img/lquo.png);
-  background-size: 18px 13px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext x='11' y='171' font-family='Times New Roman, serif' font-size='180' fill='%238A2BE2'%3E%E2%80%9C%3C/text%3E%3C/svg%3E");
+  background-size: 23px 23px;
   background-repeat: no-repeat;
-  background-position: 12px 4px;
+  background-position: 9px -5px;
   border-left: none;
 }
 /* The text-indent is ignored on the first paragraph if it
@@ -765,11 +765,11 @@ div#primary div.quote blockquote p:first-child {
   text-indent: 23px;
 }
 div#primary div.quote blockquote p:last-child {
-  background-image: url(/static/css/img/rquo.png);
-  background-size: 18px 13px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext x='11' y='171' font-family='Times New Roman, serif' font-size='180' fill='%238A2BE2'%3E%E2%80%9D%3C/text%3E%3C/svg%3E");
+  background-size: 23px 23px;
   background-repeat: no-repeat;
-  background-position: bottom 3px right;
-  padding-right: 23px;
+  background-position: bottom 2px right;
+  padding-right: 25px;
   display: inline;
 }
 div#primary div.quote p.cite {
