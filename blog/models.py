@@ -91,6 +91,19 @@ class Tag(models.Model):
             self._related_tags = [tags_by_name[name] for name in tag_names]
         return self._related_tags
 
+    def rename_tag(self, new_name):
+        PreviousTagName.objects.create(tag=self, previous_name=self.tag)
+        self.tag = new_name
+        self.save()
+
+
+class PreviousTagName(models.Model):
+    tag = models.ForeignKey(Tag, on_delete=models.CASCADE)
+    previous_name = models.SlugField()
+
+    def __str__(self):
+        return self.previous_name
+
 
 class Series(models.Model):
     created = models.DateTimeField(default=datetime.datetime.utcnow)

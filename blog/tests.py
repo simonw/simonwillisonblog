@@ -5,6 +5,7 @@ from .factories import (
     BlogmarkFactory,
     QuotationFactory,
 )
+from blog.models import Tag, PreviousTagName
 
 
 class BlogTests(TransactionTestCase):
@@ -106,3 +107,14 @@ class BlogTests(TransactionTestCase):
             ),
         ):
             self.assertEqual(do_typography_string(input), expected)
+
+    def test_rename_tag_creates_previous_tag_name(self):
+        tag = Tag.objects.create(tag="old-name")
+        tag.rename_tag("new-name")
+        self.assertEqual(tag.tag, "new-name")
+        previous_tag_name = PreviousTagName.objects.get(tag=tag)
+        self.assertEqual(previous_tag_name.previous_name, "old-name")
+
+    def test_tag_with_hyphen(self):
+        tag = Tag.objects.create(tag="tag-with-hyphen")
+        self.assertEqual(tag.tag, "tag-with-hyphen")

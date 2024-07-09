@@ -4,7 +4,7 @@ from django.db.models.functions import Length
 from django.db.models import F
 from django import forms
 from xml.etree import ElementTree
-from .models import Entry, Tag, Quotation, Blogmark, Comment, Series
+from .models import Entry, Tag, Quotation, Blogmark, Comment, Series, PreviousTagName
 
 
 class BaseAdmin(admin.ModelAdmin):
@@ -77,6 +77,13 @@ class TagAdmin(admin.ModelAdmin):
             )
         else:
             return queryset.all(), False
+
+    def save_model(self, request, obj, form, change):
+        if change:
+            old_obj = Tag.objects.get(pk=obj.pk)
+            if old_obj.tag != obj.tag:
+                PreviousTagName.objects.create(tag=obj, previous_name=old_obj.tag)
+        super().save_model(request, obj, form, change)
 
 
 admin.site.register(
