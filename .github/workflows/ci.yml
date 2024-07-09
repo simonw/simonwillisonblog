@@ -1,0 +1,42 @@
+name: CI
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_DB: test_db
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+      - name: Set up database
+        run: |
+          sudo apt-get install -y postgresql-client
+          export DATABASE_URL=postgres://postgres:@localhost/test_db
+          python manage.py migrate --noinput
+          python manage.py collectstatic --noinput
+      - name: Run tests
+        run: |
+          export DATABASE_URL=postgres://postgres:@localhost/test_db
+          python manage.py test
