@@ -110,10 +110,19 @@ class BlogTests(TransactionTestCase):
 
     def test_rename_tag_creates_previous_tag_name(self):
         tag = Tag.objects.create(tag="old-name")
+        tag.entry_set.create(
+            title="Test entry",
+            body="Test entry body",
+            created="2020-01-01",
+        )
+        assert self.client.get("/tags/old-name/").status_code == 200
+        assert self.client.get("/tags/new-name/").status_code == 404
         tag.rename_tag("new-name")
         self.assertEqual(tag.tag, "new-name")
         previous_tag_name = PreviousTagName.objects.get(tag=tag)
         self.assertEqual(previous_tag_name.previous_name, "old-name")
+        assert self.client.get("/tags/old-name/").status_code == 301
+        assert self.client.get("/tags/new-name/").status_code == 200
 
     def test_tag_with_hyphen(self):
         tag = Tag.objects.create(tag="tag-with-hyphen")

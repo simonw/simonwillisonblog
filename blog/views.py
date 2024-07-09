@@ -1,5 +1,4 @@
 # coding=utf8
-from django.http.response import HttpResponseRedirect
 from django.shortcuts import render, get_object_or_404
 from django.http import HttpResponse, JsonResponse
 from django.contrib.admin.views.decorators import staff_member_required
@@ -23,6 +22,7 @@ from .models import (
     Photoset,
     Series,
     Tag,
+    PreviousTagName,
     load_mixed_objects,
 )
 import requests
@@ -354,9 +354,20 @@ INTERSECTION_SQL = """
 def archive_tag(request, tags, atom=False):
     from .feeds import EverythingTagged
 
-    tags = Tag.objects.filter(tag__in=tags.split("+")).values_list("tag", flat=True)[:3]
-    if not tags:
+    tags_ = Tag.objects.filter(tag__in=tags.split("+")).values_list("tag", flat=True)[
+        :3
+    ]
+    if not tags_:
+        # Try for a previous tag name
+        if "+" not in tags:
+            try:
+                previous = PreviousTagName.objects.get(previous_name=tags)
+            except PreviousTagName.DoesNotExist:
+                raise Http404
+            return Redirect("/tag/%s/" % previous.tag.tag)
+
         raise Http404
+    tags = tags_
     items = []
     from django.db import connection
 
@@ -770,15 +781,15 @@ def user_from_cookies(request):
 
 
 def redirect_entry(request, pk):
-    return HttpResponseRedirect(get_object_or_404(Entry, pk=pk).get_absolute_url())
+    return Redirect(get_object_or_404(Entry, pk=pk).get_absolute_url())
 
 
 def redirect_blogmark(request, pk):
-    return HttpResponseRedirect(get_object_or_404(Blogmark, pk=pk).get_absolute_url())
+    return Redirect(get_object_or_404(Blogmark, pk=pk).get_absolute_url())
 
 
 def redirect_quotation(request, pk):
-    return HttpResponseRedirect(get_object_or_404(Quotation, pk=pk).get_absolute_url())
+    return Redirect(get_object_or_404(Quotation, pk=pk).get_absolute_url())
 
 
 def about(request):
