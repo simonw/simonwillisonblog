@@ -110,3 +110,8 @@ admin.site.register(
         "slug",
     ),
 )
+
+
+admin.site.register(
+    PreviousTagName, raw_id_fields=("tag",), list_display=("previous_name", "tag")
+)
