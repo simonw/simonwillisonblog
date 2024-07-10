@@ -48,7 +48,11 @@ class Entries(Base):
         return item.title
 
     def item_description(self, item):
-        return item.body
+        tags = ", ".join(
+            f'<a href="https://simonwillison.net/tags/{tag.tag}">{tag.tag}</a>'
+            for tag in item.tags.all()
+        )
+        return f"{item.body}<p>Tags: {tags}</p>"
 
 
 class Blogmarks(Base):
@@ -61,6 +65,13 @@ class Blogmarks(Base):
 
     def item_title(self, item):
         return item.link_title
+
+    def item_description(self, item):
+        tags = ", ".join(
+            f'<a href="https://simonwillison.net/tags/{tag.tag}">{tag.tag}</a>'
+            for tag in item.tags.all()
+        )
+        return f"{item.commentary}<p>Tags: {tags}</p>"
 
 
 class Everything(Base):
@@ -91,6 +102,18 @@ class Everything(Base):
             return item.link_title
         else:
             return "Quoting %s" % item.source
+
+    def item_description(self, item):
+        tags = ", ".join(
+            f'<a href="https://simonwillison.net/tags/{tag.tag}">{tag.tag}</a>'
+            for tag in item.tags.all()
+        )
+        if isinstance(item, Entry):
+            return f"{item.body}<p>Tags: {tags}</p>"
+        elif isinstance(item, Blogmark):
+            return f"{item.commentary}<p>Tags: {tags}</p>"
+        else:
+            return f"{item.quotation}<p>Tags: {tags}</p>"
 
 
 class SeriesFeed(Everything):
