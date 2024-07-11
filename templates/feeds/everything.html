@@ -5,12 +5,6 @@
     {% endif %}
 {% elif obj.is_blogmark %}
     {% include "feeds/blogmark.html" %}
-    {% if obj.tags.count %}
-        <p>Tags: {% for tag in obj.tags.all %}<a href="https://simonwillison.net/tags/{{ tag.tag }}">{{ tag.tag }}</a>{% if not forloop.last %}, {% endif %}{% endfor %}</p>
-    {% endif %}
 {% elif obj.is_quotation %}
     {% include "feeds/quotation.html" %}
-    {% if obj.tags.count %}
-        <p>Tags: {% for tag in obj.tags.all %}<a href="https://simonwillison.net/tags/{{ tag.tag }}">{{ tag.tag }}</a>{% if not forloop.last %}, {% endif %}{% endfor %}</p>
-    {% endif %}
 {% endif %}
