@@ -4,3 +4,6 @@
 {% if obj.via_title %}
     <p>Via <a href="{{ obj.via_url }}">{{ obj.via_title }}</a></p>
 {% endif %}
+{% if obj.tags.count %}
+    <p>Tags: {% for tag in obj.tags.all %}<a href="https://simonwillison.net/tags/{{ tag.tag }}">{{ tag.tag }}</a>{% if not forloop.last %}, {% endif %}{% endfor %}</p>
+{% endif %}
