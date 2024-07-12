@@ -17,6 +17,7 @@ import pkg_resources
 import json
 from proxy.views import proxy_view
 from blog.tag_views import tags_autocomplete
+from blog.staff_views import merge_tags
 
 
 def wellknown_webfinger(request):
@@ -146,6 +147,7 @@ urlpatterns = [
     path("tools/extract-title/", blog_views.tools_extract_title),
     re_path(r"^tools/search-tags/$", blog_views.tools_search_tags),
     re_path(r"^write/$", blog_views.write),
+    re_path(r"^admin/merge-tags/$", merge_tags),
     #  (r'^about/$', blog_views.about),
     re_path(r"^admin/", admin.site.urls),
     re_path(r"^static/", static_redirect),
