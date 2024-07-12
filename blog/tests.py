@@ -127,3 +127,35 @@ class BlogTests(TransactionTestCase):
     def test_tag_with_hyphen(self):
         tag = Tag.objects.create(tag="tag-with-hyphen")
         self.assertEqual(tag.tag, "tag-with-hyphen")
+
+    def test_merge_tags(self):
+        winner_tag = Tag.objects.create(tag="winner")
+        loser_tag = Tag.objects.create(tag="loser")
+
+        entry = EntryFactory(tags=[loser_tag])
+        blogmark = BlogmarkFactory(tags=[loser_tag])
+        quotation = QuotationFactory(tags=[loser_tag])
+
+        response = self.client.post(
+            "/admin/merge-tags/",
+            {"winner_tag": winner_tag.id, "loser_tag": loser_tag.id},
+        )
+
+        self.assertRedirects(response, "/admin/merge-tags/")
+        entry.refresh_from_db()
+        blogmark.refresh_from_db()
+        quotation.refresh_from_db()
+
+        self.assertIn(winner_tag, entry.tags.all())
+        self.assertNotIn(loser_tag, entry.tags.all())
+
+        self.assertIn(winner_tag, blogmark.tags.all())
+        self.assertNotIn(loser_tag, blogmark.tags.all())
+
+        self.assertIn(winner_tag, quotation.tags.all())
+        self.assertNotIn(loser_tag, quotation.tags.all())
+
+        self.assertFalse(Tag.objects.filter(id=loser_tag.id).exists())
+        self.assertTrue(
+            PreviousTagName.objects.filter(tag=winner_tag, previous_name="loser").exists()
+        )
