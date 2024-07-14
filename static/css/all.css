@@ -1215,9 +1215,11 @@ a.item-tag:hover {
 div.entry li li {
   margin-bottom: 0.2em;
 }
-
+div.entry ul ul {
+  margin-bottom: 0;
+}
 div.entry li li:first-of-type {
-  margin-top: 0.3em;
+  margin-top: 0.2em;
 }
 
 .card-container img {
