@@ -1,4 +1,4 @@
-{% load entry_tags %}
+{% load entry_tags %}{% load humanize %}
 {% for item in items %}
 {% if year_headers %}{% ifchanged item.obj.created.year %}<h3 class="blog-mixed-list-year">{{ item.obj.created.year }}</h3>{% endifchanged %}{% endif %}
 {% if day_headers %}{% ifchanged item.obj.created.date %}<h3 class="blog-mixed-list-year">{{ item.obj.created.date }}</h3>{% endifchanged %}{% endif %}
@@ -21,7 +21,7 @@
   {% endif %}
   <p>
     {{ item.obj.body|split_cutoff|xhtml|remove_context_paragraph|first_paragraph|typography|xhtml2html }}
-    {% if item.obj.multi_paragraph %}<span style="font-size: 0.9em">[... <a href="{{ item.obj.get_absolute_url }}">{{ item.obj.body|wordcount }} word{{ item.obj.body|wordcount|pluralize }}</a>]</span>{% endif %}
+    {% if item.obj.multi_paragraph %}<span style="font-size: 0.9em">[... <a href="{{ item.obj.get_absolute_url }}">{{ item.obj.body|wordcount|intcomma }} word{{ item.obj.body|wordcount|pluralize }}</a>]</span>{% endif %}
   </p>
   <div class="entryFooter">
   {% if showdate %}{% entry_footer item.obj %}{% else %}{% entry_footer_no_date item.obj %}{% endif %}
