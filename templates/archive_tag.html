@@ -1,9 +1,9 @@
-{% extends "smallhead.html" %}
+{% extends "smallhead.html" %}{% load humanize %}
 
 {% block title %}Simon Willison on {{ tags|join:" and " }}{% endblock %}
 
 {% block primary %}
-<h2 class="archive-tag-h2">{{ total }} item{{ total|pluralize }} tagged “{{ tags|join:"” and “" }}”</h2>
+<h2 class="archive-tag-h2">{{ total|intcomma }} item{{ total|pluralize }} tagged “{{ tags|join:"” and “" }}”</h2>
 <!-- Tag ID: {{ tag.pk }} -->
 {% if tag.description %}
     <div class="tag-description">{{ tag.description_rendered }}</div>
