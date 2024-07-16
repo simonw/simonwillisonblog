@@ -339,7 +339,7 @@ def archive_day(request, year, month, day):
     items.extend([{"type": "photoset", "obj": ps} for ps in context["photoset"]])
     if count == 0:
         raise Http404("No photosets/photos/entries/quotes/links for that day")
-    items.sort(key=lambda x: x["obj"].created, reverse=True)
+    items.sort(key=lambda x: x["obj"].created)
     context["items"] = items
     photos = Photo.objects.filter(
         created__year=context["date"].year,
