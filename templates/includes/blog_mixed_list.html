@@ -1,7 +1,7 @@
 {% load entry_tags %}{% load humanize %}
 {% for item in items %}
 {% if year_headers %}{% ifchanged item.obj.created.year %}<h3 class="blog-mixed-list-year">{{ item.obj.created.year }}</h3>{% endifchanged %}{% endif %}
-{% if day_headers %}{% ifchanged item.obj.created.date %}<h3 class="blog-mixed-list-year">{{ item.obj.created.date }}</h3>{% endifchanged %}{% endif %}
+{% if day_headers %}{% ifchanged item.obj.created.date %}<h3 class="blog-mixed-list-year">{% if day_links %}<a href="/{{ item.obj.created|date:"Y/M/j/" }}">{{ item.obj.created.date }}</a>{% else %}{{ item.obj.created.date }}{% endif %}</h3>{% endifchanged %}{% endif %}
 {% if item.type == "photoset" %}
 <div class="photoset segment">
   <a class="primary" href="{{ item.obj.get_absolute_url }}"><img class="primary" src="{{ item.obj.primary.url_s }}" alt="{{ item.obj.primary.title }}" width="75" height="75"></a>

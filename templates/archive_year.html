@@ -3,9 +3,9 @@
 {% block title %}Archive for {{ year }}{% endblock %}
 
 {% block primary %}
-<div class="entry">
-<h2>Archive for {{ year }}</h2>
+<h2 class="archive-h2">Archive for {{ year }}</h2>
 
+<div class="entry">
 <ul>
 {% for month in months %}
 <li><strong><a href="/{{ year }}/{{ month.date|date:"M" }}/">{{ month.date|date:"F" }}</a></strong> - {% for count in month.counts_not_0 %}{{ count.1 }} {% if count.0 == "entry" %}{{ count.1|pluralize:"entry,entries" }}{% else %}{{ count.0 }}{{ count.1|pluralize }}{% endif %}{% if not forloop.last %}, {% endif %}{% endfor %}

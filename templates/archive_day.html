@@ -3,7 +3,7 @@
 {% block title %}Archive for {{ date|date:"l, jS F Y" }}{% endblock %}
 
 {% block primary %}
-<h2>{{ date|date:"l, jS F Y"}}</h2>
+<h2 class="archive-h2">{{ date|date:"l, jS F Y"}}</h2>
 {% load blog_tags %}
 {% blog_mixed_list items %}
 
