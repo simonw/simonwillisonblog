@@ -249,36 +249,55 @@ def archive_year(request, year):
     )
 
 
+
 def archive_month(request, year, month):
     year = int(year)
     month = MONTHS_3_REV[month.lower()]
 
-    def by_date(objs):
-        lookup = {}
-        for obj in objs:
-            lookup.setdefault(obj.created.date(), []).append(obj)
-        return lookup
+    items = []
+    from django.db import connection
 
-    entries = list(
-        Entry.objects.filter(created__year=year, created__month=month).order_by(
-            "created"
+    cursor = connection.cursor()
+    for model, content_type in (
+        (Entry, "entry"),
+        (Quotation, "quotation"),
+        (Blogmark, "blogmark"),
+    ):
+        ids = model.objects.filter(
+            created__year=year, created__month=month
+        ).values_list("id", flat=True)
+        items.extend(
+            [
+                {"type": content_type, "obj": obj}
+                for obj in list(
+                    model.objects.prefetch_related("tags").in_bulk(ids).values()
+                )
+            ]
         )
-    )
-    blogmarks = list(Blogmark.objects.filter(created__year=year, created__month=month))
-    quotations = list(
-        Quotation.objects.filter(created__year=year, created__month=month)
-    )
-    # photos = list(Photo.objects.filter(
-    #     created__year=year, created__month=month
-    # ))
-    # Extract non-de-duped list of ALL tags, for tag cloud
-    tags = []
-    for obj in entries + blogmarks + quotations:
-        tags.extend([t.tag for t in obj.tags.all()])
+    if not items:
+        raise Http404
+    items.sort(key=lambda x: x["obj"].created)
+    # Paginate it
+    paginator = Paginator(items, min(1000, int(request.GET.get("size") or "30")))
+    page_number = request.GET.get("page") or "1"
+    if page_number == "last":
+        page_number = paginator.num_pages
+    try:
+        page = paginator.page(page_number)
+    except PageNotAnInteger:
+        raise Http404
+    except EmptyPage:
+        raise Http404
+
     return render(
         request,
         "archive_month.html",
-        {"date": datetime.date(year, month, 1), "entries": entries, "tags": tags},
+        {
+            "items": page.object_list,
+            "total": paginator.count,
+            "page": page,
+            "date": datetime.date(year, month, 1),
+        },
     )
 
 

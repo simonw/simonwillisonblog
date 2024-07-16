@@ -1,28 +1,17 @@
-{% extends "smallhead.html" %}
+{% extends "smallhead.html" %}{% load humanize %}
 
 {% block title %}Archive for {{ date|date:"F Y" }}{% endblock %}
 
 {% block primary %}
-<div class="entry">
-<h2>{{ date|date:"F Y"}}</h2>
 
-{% if entries %}
-<h3>Blog entries</h3>
-<ul>
-{% for entry in entries %}
-<li>{{ entry.created|date:"jS"}}: <strong><a href="{{ entry.get_absolute_url }}">{{ entry.title }}</a></strong></li>
-{% endfor %}
-</ul>
-{% endif %}
+<h2 class="archive-h2">{{ date|date:"F Y"}}</h2>
 
-{% if tags %}
-<h3>Tags</h3>
-<p id="tagcloud">
-{% load tag_cloud %}
-{% tag_cloud_for_tags tags %}
-</p>
-{% endif %}
-</div>
+{% load blog_tags %}
+
+{% blog_mixed_list_with_dates items %}
+
+{% include "_pagination.html" %}
+
 {% endblock %}
 
 {% block secondary %}
