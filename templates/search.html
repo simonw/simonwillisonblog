@@ -58,7 +58,7 @@
 {% else %}
     {% if selected or q %}
         <p><strong>No results found</strong></p>
-        {% if suggestion %}
+        {% if suggestion and num_corrected_results %}
             <p style="margin: 1em 0">Suggestion: <a href="/search/?q={{ suggestion }}">{{ suggestion }}</a> ({{ num_corrected_results }} result{{ num_corrected_results|pluralize }})</p>
         {% endif %}
     {% endif %}
