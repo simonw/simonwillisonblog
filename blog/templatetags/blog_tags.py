@@ -10,7 +10,9 @@ def blog_mixed_list(context, items):
 
 
 @register.inclusion_tag("includes/blog_mixed_list.html", takes_context=True)
-def blog_mixed_list_with_dates(context, items, year_headers=False, day_headers=False, day_links=False):
+def blog_mixed_list_with_dates(
+    context, items, year_headers=False, day_headers=False, day_links=False
+):
     context.update(
         {
             "items": items,
