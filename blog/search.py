@@ -8,10 +8,45 @@ from django.http import HttpResponse, Http404
 from django.shortcuts import render
 from blog.models import Entry, Blogmark, Quotation, Tag, load_mixed_objects
 from .views import MONTHS_3_REV_REV
+from spellchecker import SpellChecker
 
 
-def search(request):
-    q = request.GET.get("q", "").strip()
+_spell = None
+
+
+def get_spellchecker():
+    global _spell
+    if _spell is None:
+        _spell = SpellChecker()
+        # Load all tags into the spellchecker
+        tag_words = set()
+        for tag in Tag.objects.values_list("tag", flat=True):
+            tag_words.update(tag.split("-"))
+        _spell.word_frequency.load_words(tag_words)
+    return _spell
+
+
+def get_suggestion(phrase):
+    words = phrase.split()
+    spell = get_spellchecker()
+    unknown = spell.unknown(words)
+    if not unknown:
+        return phrase
+    new_words = []
+    for word in words:
+        if word in unknown:
+            suggestion = spell.correction(word)
+            if suggestion:
+                new_words.append(suggestion)
+            else:
+                new_words.append(word)
+        else:
+            new_words.append(word)
+    return " ".join(new_words)
+
+
+def search(request, q=None, return_context=False):
+    q = (q or request.GET.get("q", "")).strip()
     start = time.time()
 
     query = None
@@ -208,26 +243,37 @@ def search(request):
     if not q and not selected:
         title = "Search"
 
-    return render(
-        request,
-        "search.html",
-        {
-            "q": q,
-            "sort": sort,
-            "title": title,
-            "results": results,
-            "total": paginator.count,
-            "page": page,
-            "duration": end - start,
-            "type_counts": type_counts,
-            "tag_counts": tag_counts,
-            "year_counts": year_counts,
-            "month_counts": month_counts,
-            "selected_tags": selected_tags,
-            "excluded_tags": excluded_tags,
-            "selected": selected,
-        },
-    )
+    # if no results, count how many a spell-corrected search would get
+    suggestion = None
+    num_corrected_results = 0
+    if not results and q and not return_context:
+        suggestion = get_suggestion(q)
+        corrected_context = search(request, suggestion, return_context=True)
+        num_corrected_results = corrected_context["total"]
+
+    context = {
+        "q": q,
+        "sort": sort,
+        "title": title,
+        "results": results,
+        "total": paginator.count,
+        "page": page,
+        "duration": end - start,
+        "type_counts": type_counts,
+        "tag_counts": tag_counts,
+        "year_counts": year_counts,
+        "month_counts": month_counts,
+        "selected_tags": selected_tags,
+        "excluded_tags": excluded_tags,
+        "selected": selected,
+        "suggestion": suggestion,
+        "num_corrected_results": num_corrected_results,
+    }
+
+    if return_context:
+        return context
+    else:
+        return render(request, "search.html", context)
 
 
 def tools_search_tags(request):

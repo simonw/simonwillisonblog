@@ -40,14 +40,14 @@
             <a class="selected-tag" href="{% remove_qsarg "tag" tag %}">{{ tag }} <strong>&#x00D7;</strong></a>
         {% endfor %}
     </span>{% endif %}
-    Sorted by <strong>{{ sort }}</strong>{% if q %} &middot; {% endif %}
-    {% if sort == "date" and q %}<a href="{% replace_qsarg "sort" "relevance" %}">relevance</a>{% endif %}
-    {% if sort == "relevance" %}<a href="{% replace_qsarg "sort" "date" %}">date</a>{% endif %}
+    {% if results %}
+        Sorted by <strong>{{ sort }}</strong>{% if q %} &middot; {% endif %}
+        {% if sort == "date" and q %}<a href="{% replace_qsarg "sort" "relevance" %}">relevance</a>{% endif %}
+        {% if sort == "relevance" %}<a href="{% replace_qsarg "sort" "date" %}">date</a>{% endif %}
+    {% endif %}
 </p>
 
 <div id="autocomplete-tags" aria-live="polite"></div>
-
-<br>
 
 {% if total %}
     {% if selected or q %}
@@ -57,7 +57,10 @@
     {% endif %}
 {% else %}
     {% if selected or q %}
-        <p><em>No results found</em></p>
+        <p><strong>No results found</strong></p>
+        {% if suggestion %}
+            <p style="margin: 1em 0">Suggestion: <a href="/search/?q={{ suggestion }}">{{ suggestion }}</a> ({{ num_corrected_results }} result{{ num_corrected_results|pluralize }})</p>
+        {% endif %}
     {% endif %}
 {% endif %}
 
