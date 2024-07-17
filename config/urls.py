@@ -1,5 +1,4 @@
 from django.urls import path, re_path, include
-from django_sql_dashboard.views import dashboard, dashboard_index
 from django.contrib import admin
 from django.http import (
     HttpResponseRedirect,
@@ -10,13 +9,15 @@ from django.views.decorators.cache import never_cache
 from django.conf import settings
 import django_sql_dashboard
 from blog import views as blog_views
+from blog import search as search_views
+from blog import tag_views
 from blog import feeds
 from feedstats.utils import count_subscribers
 import os
 import pkg_resources
 import json
 from proxy.views import proxy_view
-from blog.tag_views import tags_autocomplete
+
 
 handler404 = "blog.views.custom_404"
 
@@ -131,7 +132,7 @@ urlpatterns = [
     re_path(r"^versions/$", versions),
     re_path(r"^robots\.txt$", robots_txt),
     re_path(r"^favicon\.ico$", favicon_ico),
-    re_path(r"^search/$", blog_views.search),
+    re_path(r"^search/$", search_views.search),
     re_path(r"^about/$", blog_views.about),
     re_path(r"^tags/$", blog_views.tag_index),
     re_path(r"^tags/(.*?)/$", blog_views.archive_tag),
@@ -146,14 +147,14 @@ urlpatterns = [
     re_path(r"^sitemap\.xml$", feeds.sitemap),
     path("tools/", blog_views.tools),
     path("tools/extract-title/", blog_views.tools_extract_title),
-    re_path(r"^tools/search-tags/$", blog_views.tools_search_tags),
+    re_path(r"^tools/search-tags/$", search_views.tools_search_tags),
     re_path(r"^write/$", blog_views.write),
     #  (r'^about/$', blog_views.about),
     re_path(r"^admin/", admin.site.urls),
     re_path(r"^static/", static_redirect),
     path("dashboard/", include(django_sql_dashboard.urls)),
     path("user-from-cookies/", blog_views.user_from_cookies),
-    path("tags-autocomplete/", tags_autocomplete),
+    path("tags-autocomplete/", tag_views.tags_autocomplete),
 ]
 if settings.DEBUG:
     try:
