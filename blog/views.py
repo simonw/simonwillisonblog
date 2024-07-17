@@ -249,7 +249,6 @@ def archive_year(request, year):
     )
 
 
-
 def archive_month(request, year, month):
     year = int(year)
     month = MONTHS_3_REV[month.lower()]
@@ -813,3 +812,12 @@ def redirect_quotation(request, pk):
 
 def about(request):
     return render(request, "about.html")
+
+
+def custom_404(request, exception):
+    return render(
+        request,
+        "404.html",
+        {"q": [b.strip() for b in request.path.split("/") if b.strip()][-1]},
+        status=404,
+    )

@@ -18,6 +18,8 @@ import json
 from proxy.views import proxy_view
 from blog.tag_views import tags_autocomplete
 
+handler404 = "blog.views.custom_404"
+
 
 def wellknown_webfinger(request):
     remote_url = (

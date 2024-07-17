@@ -1,0 +1,15 @@
+{% extends "smallhead.html" %}{% load humanize %}
+
+{% block title %}404: Page not found{% endblock %}
+
+{% block primary %}
+<h2 class="archive-h2">404: Page not found</h2>
+
+<p style="margin-bottom: 1em">Try running a search instead:</p>
+
+<form action="/search/" method="GET">
+  <input type="search" class="search-input" name="q" value="{{ q }}" style="width: 80%" autocomplete="off">
+  <input type="submit" class="search-submit" value="Search">
+</form>
+
+{% endblock %}
