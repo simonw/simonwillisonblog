@@ -2,7 +2,7 @@
 <p><strong><a href="{{ obj.link_url }}">{{ obj.link_title }}</a></strong></p>
 {% if obj.commentary %}{% if not obj.use_markdown %}{{ obj.commentary|typography|linebreaks|strip_wrapping_p }}{% else %}{{ obj.body|strip_wrapping_p }}{% endif %}{% endif %}
 {% if obj.via_title %}
-    <p>Via <a href="{{ obj.via_url }}">{{ obj.via_title }}</a></p>
+    <p><small></small>Via <a href="{{ obj.via_url }}">{{ obj.via_title }}</a></small></p>
 {% endif %}
 {% if obj.tags.count %}
     <p>Tags: {% for tag in obj.tags.all %}<a href="https://simonwillison.net/tags/{{ tag.tag }}">{{ tag.tag }}</a>{% if not forloop.last %}, {% endif %}{% endfor %}</p>
