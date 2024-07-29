@@ -11,6 +11,10 @@ class Base(Feed):
 
     def __call__(self, request, *args, **kwargs):
         response = super(Base, self).__call__(request, *args, **kwargs)
+        # Open CORS headers
+        response["Access-Control-Allow-Origin"] = "*"
+        response["Access-Control-Allow-Methods"] = "GET, OPTIONS"
+        response["Access-Control-Max-Age"] = "1000"
         # Tell CloudFlare to cache my feeds for 2 minutes
         response["Cache-Control"] = "s-maxage=%d" % (2 * 60)
         return response
