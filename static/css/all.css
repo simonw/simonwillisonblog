@@ -286,7 +286,9 @@ div.entryPage {
   border-bottom: none;
 }
 .entry img,
-.blogmark img {
+.blogmark img,
+.entry video,
+.blogmark video {
   max-width: 100%;
 }
 /* Center embedded tweets in articles */
