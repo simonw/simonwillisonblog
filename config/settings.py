@@ -56,6 +56,7 @@ INSTALLED_APPS = (
     "blog",
     "redirects",
     "feedstats",
+    "django_http_debug",
 )
 
 MIDDLEWARE = (
@@ -63,6 +64,7 @@ MIDDLEWARE = (
     "redirects.middleware.redirect_middleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    "django_http_debug.middleware.DebugMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
