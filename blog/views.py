@@ -27,7 +27,7 @@ from bs4 import BeautifulSoup as Soup
 import datetime
 import random
 from collections import Counter
-import CloudFlare
+import cloudflare
 import os
 
 MONTHS_3_REV = {
@@ -97,7 +97,7 @@ def archive_item(request, year, month, day, slug):
                 "item": obj,
                 "recent_articles": Entry.objects.prefetch_related("tags").order_by(
                     "-created"
-                )[0 : 3],
+                )[0:3],
             },
         )
 
@@ -498,7 +498,7 @@ def write(request):
 @staff_member_required
 def tools(request):
     if request.POST.get("purge_all"):
-        cf = CloudFlare.CloudFlare(
+        cf = cloudflare.CloudFlare(
             email=settings.CLOUDFLARE_EMAIL, token=settings.CLOUDFLARE_TOKEN
         )
         cf.zones.purge_cache.delete(

@@ -8,7 +8,9 @@ class Redirect(models.Model):
     created = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        unique_together = (("domain", "path"),)
+        constraints = [
+            models.UniqueConstraint(fields=["domain", "path"], name="unique_redirect")
+        ]
 
     def __unicode__(self):
         return "%s/%s => %s" % (self.domain, self.path, self.target)
