@@ -17,24 +17,24 @@
     <p>He is a co-creator of the Django Web Framework, and has been blogging about web development and programming since 2002 at <a href="https://simonwillison.net/">simonwillison.net</a></p>
 </blockquote>
 
-<h3 id="subscribe">Subscribe</h3>
+<h2 id="subscribe">Subscribe</h2>
 
 <p>You can subscribe to my blog via email newsletter, using Atom feeds or by following me on Mastodon or Twitter.</p>
 
-<h4>Newsletter</h4>
+<h3 id="newsletter">Newsletter</h3>
 
 <p>I send out <a href="https://simonw.substack.com/">a newsletter version</a> of this blog once every week or so. You can subscribe to that here:</p>
 
 <iframe src="https://simonw.substack.com/embed" width="480" height="320" style="border:1px solid #EEE; background:white;" frameborder="0" scrolling="no"></iframe>
 
-<h4>Mastodon and Twitter</h4>
+<h3 id="social">Mastodon and Twitter</h3>
 
 <ul>
     <li><a href="https://fedi.simonwillison.net/@simon">@simon@simonwillison.net</a> on Mastodon</li>
     <li><a href="https://twitter.com/simonw">@simonw</a> on Twitter</li>
 </ul>
 
-<h4>Atom feeds</h4>
+<h3 id="atom">Atom feeds</h3>
 
 <p>The main feed for my site combines my blog entries, my blogmarks and my collected quotations:</p>
 
@@ -53,5 +53,10 @@
 <p>For example, to subscribe to just my content about Datasette, use the following:</p>
 
 <p><code>https://simonwillison.net/tags/datasette.atom</code></p>
+
+<h2 id="about-site">About this site</h2>
+
+<p>This site is a custom web application built using <a href="https://www.djangoproject.com/">Django</a>. The source code can be found on GitHub at <a href="https://github.com/simonw/simonwillisonblog">simonw/simonwillisonblog</a>.</p>
+<p>The site is hosted on <a href="https://www.heroku.com/">Heroku</a> and stores content in PostgreSQL, which is backed up to JSON files in <a href="https://github.com/simonw/simonwillisonblog-backup">simonw/simonwillisonblog-backup</a>. These are then deployed to a <a href="https://datasette.io/">Datasette</a> instance running at <a href="https://datasette.simonwillison.net/">datasette.simonwillison.net</a>.</p>
 
 {% endblock %}
