@@ -25,8 +25,8 @@ class Migration(migrations.Migration):
                 ("user_agent", models.CharField(db_index=True, max_length=128)),
             ],
         ),
-        migrations.AlterIndexTogether(
-            name="subscribercount",
-            index_together=set([("path", "user_agent", "count", "created")]),
-        ),
+        # migrations.AlterIndexTogether(
+        #     name="subscribercount",
+        #     index_together=set([("path", "user_agent", "count", "created")]),
+        # ),
     ]

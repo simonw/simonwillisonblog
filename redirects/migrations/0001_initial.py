@@ -29,8 +29,8 @@ class Migration(migrations.Migration):
                 ("created", models.DateTimeField(auto_now_add=True)),
             ],
         ),
-        migrations.AlterUniqueTogether(
-            name="redirect",
-            unique_together=set([("domain", "path")]),
-        ),
+        # migrations.AlterUniqueTogether(
+        #     name="redirect",
+        #     unique_together=set([("domain", "path")]),
+        # ),
     ]
