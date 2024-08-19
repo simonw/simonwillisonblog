@@ -3,7 +3,7 @@ from django.utils.dates import MONTHS_3
 from django.utils.safestring import mark_safe
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
-from django.db.models import JSONField
+from django.db.models import JSONField, Count
 from django.contrib.postgres.search import SearchVectorField
 from django.contrib.postgres.indexes import GinIndex
 from django.utils.html import escape, strip_tags
@@ -52,7 +52,9 @@ class Tag(models.Model):
         return self.quotation_set.count()
 
     def total_count(self):
-        return self.entry_count() + self.link_count() + self.quote_count()
+        return Tag.objects.filter(pk=self.pk).aggregate(
+            total=Count("entry") + Count("blogmark") + Count("quotation")
+        )["total"]
 
     def all_types_queryset(self):
         entries = (

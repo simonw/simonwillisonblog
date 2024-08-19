@@ -28,6 +28,7 @@
   </div>
 </div> <!-- end div.entry -->
 {% endif %}
+{% with item.obj.tags.all as all_tags %}
 {% if item.type == "blogmark" %}
 <div class="blogmark segment">
   <p><strong><a href="{{ item.obj.link_url }}">{{ item.obj.link_title|typography }}</a></strong>{% if item.obj.via_url %}
@@ -35,7 +36,7 @@
     {% if not item.obj.use_markdown %}{{ item.obj.commentary|typography|linebreaks|strip_wrapping_p }}{% else %}{{ item.obj.body|strip_wrapping_p }}{% endif %}</p>
     <p class="date-and-tags"><a href="{{ item.obj.get_absolute_url }}" rel="bookmark">#</a> {% if showdate %}<a href="/{{ item.obj.created|date:"Y/M/j/" }}">{{ item.obj.created|date:"jS F Y" }}</a>,
     {% endif %}{{ item.obj.created|date:"f A"|lower }}
-    {% if item.obj.tags.count %} / {% for tag in item.obj.tags.all %}{{ tag.get_link }}{% if not forloop.last %}, {% endif %}{% endfor %}{% endif %}</p>
+    {% if all_tags %} / {% for tag in all_tags %}{{ tag.get_link }}{% if not forloop.last %}, {% endif %}{% endfor %}{% endif %}</p>
 </div>
 {% endif %}
 {% if item.type == "quotation" %}
@@ -46,8 +47,9 @@
     <a href="{{ item.obj.get_absolute_url }}" rel="bookmark">#</a>
     {% if showdate %}<a href="/{{ item.obj.created|date:"Y/M/j/" }}">{{ item.obj.created|date:"jS F Y" }}</a>,
     {% endif %}{{ item.obj.created|date:"f A"|lower }}
-    {% if item.obj.tags.count %} / {% for tag in item.obj.tags.all %}{{ tag.get_link }}{% if not forloop.last %}, {% endif %}{% endfor %}{% endif %}
+    {% if all_tags %} / {% for tag in all_tags %}{{ tag.get_link }}{% if not forloop.last %}, {% endif %}{% endfor %}{% endif %}
   </p>
 </div>
 {% endif %}
+{% endwith %}
 {% endfor %}
