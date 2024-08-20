@@ -154,7 +154,9 @@ def index(request):
         "homepage.html",
         {
             "items": items,
-            "entries": Entry.objects.prefetch_related("tags")[0:30],
+            "entries": Entry.objects.only(
+                "id", "slug", "created", "title", "extra_head_html"
+            ).prefetch_related("tags")[0:40],
             "current_tags": find_current_tags(5),
         },
     )
