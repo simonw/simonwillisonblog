@@ -1,5 +1,7 @@
 from django.db import models
+from django.db.models import Sum, Subquery, OuterRef, IntegerField
 from django.utils.dates import MONTHS_3
+from django.db.models.functions import Coalesce
 from django.utils.safestring import mark_safe
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
@@ -52,9 +54,44 @@ class Tag(models.Model):
         return self.quotation_set.count()
 
     def total_count(self):
-        return Tag.objects.filter(pk=self.pk).aggregate(
-            total=Count("entry") + Count("blogmark") + Count("quotation")
-        )["total"]
+        entry_count = Subquery(
+            Entry.objects.filter(tags=OuterRef("pk"))
+            .values("tags")
+            .annotate(count=Count("id"))
+            .values("count"),
+            output_field=IntegerField(),
+        )
+
+        blogmark_count = Subquery(
+            Blogmark.objects.filter(tags=OuterRef("pk"))
+            .values("tags")
+            .annotate(count=Count("id"))
+            .values("count"),
+            output_field=IntegerField(),
+        )
+
+        quotation_count = Subquery(
+            Quotation.objects.filter(tags=OuterRef("pk"))
+            .values("tags")
+            .annotate(count=Count("id"))
+            .values("count"),
+            output_field=IntegerField(),
+        )
+
+        result = (
+            Tag.objects.filter(pk=self.pk)
+            .annotate(
+                total_count=Sum(
+                    Coalesce(entry_count, 0)
+                    + Coalesce(blogmark_count, 0)
+                    + Coalesce(quotation_count, 0)
+                )
+            )
+            .values("total_count")
+            .first()
+        )
+
+        return result["total_count"] if result else 0
 
     def all_types_queryset(self):
         entries = (
