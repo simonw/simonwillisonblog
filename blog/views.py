@@ -140,12 +140,8 @@ def index(request):
     ):
         if content_type not in to_load:
             continue
-        items.extend(
-            [
-                {"type": content_type, "obj": obj}
-                for obj in model.objects.in_bulk(to_load[content_type]).values()
-            ]
-        )
+        objects = model.objects.prefetch_related("tags").in_bulk(to_load[content_type])
+        items.extend([{"type": content_type, "obj": obj} for obj in objects.values()])
 
     items.sort(key=lambda x: x["obj"].created, reverse=True)
 
