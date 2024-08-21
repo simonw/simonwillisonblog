@@ -1,5 +1,6 @@
 import time
 import json
+import re
 from django.db import models
 from django.db.models.functions import TruncYear, TruncMonth
 from django.contrib.postgres.search import SearchQuery, SearchRank
@@ -9,6 +10,7 @@ from django.shortcuts import render
 from blog.models import Entry, Blogmark, Quotation, Tag, load_mixed_objects
 from .views import MONTHS_3_REV_REV
 from spellchecker import SpellChecker
+import datetime
 
 
 _spell = None
@@ -45,8 +47,23 @@ def get_suggestion(phrase):
     return " ".join(new_words)
 
 
+def parse_date_clauses(query):
+    from_date = None
+    to_date = None
+    from_match = re.search(r'from:(\d{4}-\d{2}-\d{2})', query)
+    to_match = re.search(r'to:(\d{4}-\d{2}-\d{2})', query)
+    if from_match:
+        from_date = datetime.datetime.strptime(from_match.group(1), "%Y-%m-%d").date()
+    if to_match:
+        to_date = datetime.datetime.strptime(to_match.group(1), "%Y-%m-%d").date()
+    query = re.sub(r'from:\d{4}-\d{2}-\d{2}', '', query)
+    query = re.sub(r'to:\d{4}-\d{2}-\d{2}', '', query)
+    return query.strip(), from_date, to_date
+
+
 def search(request, q=None, return_context=False):
     q = (q or request.GET.get("q", "")).strip()
+    q, from_date, to_date = parse_date_clauses(q)
     start = time.time()
 
     query = None
@@ -81,6 +98,10 @@ def search(request, q=None, return_context=False):
             and 1 <= int(selected_month) <= 12
         ):
             qs = qs.filter(created__month=int(selected_month))
+        if from_date:
+            qs = qs.filter(created__gte=from_date)
+        if to_date:
+            qs = qs.filter(created__lt=to_date)
         if q:
             qs = qs.filter(search_document=query)
             qs = qs.annotate(rank=rank_annotation)
@@ -214,6 +235,8 @@ def search(request, q=None, return_context=False):
         "month_name": MONTHS_3_REV_REV.get(
             selected_month and int(selected_month) or "", ""
         ).title(),
+        "from_date": from_date,
+        "to_date": to_date,
     }
     # Remove empty keys
     selected = {key: value for key, value in list(selected.items()) if value}
@@ -239,6 +262,14 @@ def search(request, q=None, return_context=False):
         datebits.append(selected["year"])
     if datebits:
         title += " in %s" % (", ".join(datebits))
+
+    if from_date or to_date:
+        date_range = []
+        if from_date:
+            date_range.append(f"from {from_date}")
+        if to_date:
+            date_range.append(f"to {to_date}")
+        title += " " + " ".join(date_range)
 
     if not q and not selected:
         title = "Search"
