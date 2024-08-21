@@ -50,26 +50,27 @@ def get_suggestion(phrase):
 def parse_date_clauses(query):
     from_date = None
     to_date = None
-    from_match = re.search(r'from:(\d{4}-\d{2}-\d{2})', query)
-    to_match = re.search(r'to:(\d{4}-\d{2}-\d{2})', query)
+    from_match = re.search(r"from:(\d{4}-\d{2}-\d{2})", query)
+    to_match = re.search(r"to:(\d{4}-\d{2}-\d{2})", query)
     if from_match:
         from_date = datetime.datetime.strptime(from_match.group(1), "%Y-%m-%d").date()
     if to_match:
         to_date = datetime.datetime.strptime(to_match.group(1), "%Y-%m-%d").date()
-    query = re.sub(r'from:\d{4}-\d{2}-\d{2}', '', query)
-    query = re.sub(r'to:\d{4}-\d{2}-\d{2}', '', query)
+    query = re.sub(r"from:\d{4}-\d{2}-\d{2}", "", query)
+    query = re.sub(r"to:\d{4}-\d{2}-\d{2}", "", query)
     return query.strip(), from_date, to_date
 
 
 def search(request, q=None, return_context=False):
     q = (q or request.GET.get("q", "")).strip()
-    q, from_date, to_date = parse_date_clauses(q)
+    search_q, from_date, to_date = parse_date_clauses(q)
+    search_q = search_q.strip()
     start = time.time()
 
     query = None
     rank_annotation = None
-    if q:
-        query = SearchQuery(q, search_type="websearch")
+    if search_q:
+        query = SearchQuery(search_q, search_type="websearch")
         rank_annotation = SearchRank(models.F("search_document"), query)
 
     selected_tags = request.GET.getlist("tag")
@@ -83,7 +84,7 @@ def search(request, q=None, return_context=False):
     selected_month = request.GET.get("month", "")
 
     values = ["pk", "type", "created"]
-    if q:
+    if search_q:
         values.append("rank")
 
     def make_queryset(klass, type_name):
@@ -102,7 +103,7 @@ def search(request, q=None, return_context=False):
             qs = qs.filter(created__gte=from_date)
         if to_date:
             qs = qs.filter(created__lt=to_date)
-        if q:
+        if search_q:
             qs = qs.filter(search_document=query)
             qs = qs.annotate(rank=rank_annotation)
         for tag in selected_tags:
@@ -115,7 +116,7 @@ def search(request, q=None, return_context=False):
     qs = Entry.objects.annotate(
         type=models.Value("empty", output_field=models.CharField())
     )
-    if q:
+    if search_q:
         qs = qs.annotate(rank=rank_annotation)
     qs = qs.values(*values).none()
 
@@ -168,13 +169,13 @@ def search(request, q=None, return_context=False):
         sort = None
 
     if sort is None:
-        if q:
+        if search_q:
             sort = "relevance"
         else:
             sort = "date"
 
-    # can't sort by relevance if there's no q
-    if sort == "relevance" and not q:
+    # can't sort by relevance if there's no search_q
+    if sort == "relevance" and not search_q:
         sort = "date"
 
     db_sort = {"relevance": "-rank", "date": "-created"}[sort]
@@ -249,8 +250,8 @@ def search(request, q=None, return_context=False):
     }.get(selected.get("type")) or "Items"
     title = noun
 
-    if q:
-        title = "“%s” in %s" % (q, title.lower())
+    if search_q:
+        title = "“%s” in %s" % (search_q, title.lower())
 
     if selected.get("tags"):
         title += " tagged %s" % (", ".join(selected["tags"]))
@@ -271,14 +272,14 @@ def search(request, q=None, return_context=False):
             date_range.append(f"to {to_date}")
         title += " " + " ".join(date_range)
 
-    if not q and not selected:
+    if not search_q and not selected:
         title = "Search"
 
     # if no results, count how many a spell-corrected search would get
     suggestion = None
     num_corrected_results = 0
-    if not results and q and not return_context:
-        suggestion = get_suggestion(q)
+    if not results and search_q and not return_context:
+        suggestion = get_suggestion(search_q)
         corrected_context = search(request, suggestion, return_context=True)
         num_corrected_results = corrected_context["total"]
 
