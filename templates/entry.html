@@ -16,11 +16,7 @@
 <h2>{{ entry.title|typography }}</h2>
 <p class="mobile-date">{{ entry.created|date:"jS F Y" }}</p>
 
-{% if is_draft %}
-<div style="background-color: pink; border: 2px solid red; padding: 10px;">
-  <strong>Warning:</strong> This is a draft post.
-</div>
-{% endif %}
+{% include "_draft_warning.html" %}
 
 {{ entry.body|xhtml|resize_images_to_fit_width:"450"|typography|xhtml2html }}
 </div>
