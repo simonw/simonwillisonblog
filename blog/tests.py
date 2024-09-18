@@ -171,17 +171,21 @@ class BlogTests(TransactionTestCase):
             response = self.client.get(path)
             self.assertNotContains(response, "draftentry")
 
-        response1 = self.client.get(draft_entry.get_absolute_url())
-        self.assertContains(response1, "This is a draft post")
+        robots_fragment = '<meta name="robots" content="noindex">'
+        draft_warning_fragment = "This is a draft post"
 
-        response2 = self.client.get(draft_blogmark.get_absolute_url())
-        self.assertContains(response2, "This is a draft post")
+        for obj in (draft_entry, draft_blogmark, draft_quotation):
+            response2 = self.client.get(obj.get_absolute_url())
+            self.assertContains(response2, robots_fragment)
+            self.assertContains(response2, draft_warning_fragment)
 
-        response3 = self.client.get(draft_quotation.get_absolute_url())
-        self.assertContains(response3, "This is a draft post")
+            # Publish it
+            obj.is_draft = False
+            obj.save()
 
-        draft_entry.is_draft = False
-        draft_entry.save()
+            response3 = self.client.get(obj.get_absolute_url())
+            self.assertNotContains(response3, robots_fragment)
+            self.assertNotContains(response3, draft_warning_fragment)
 
         for path in paths:
             response4 = self.client.get(path)
