@@ -95,9 +95,9 @@ def archive_item(request, year, month, day, slug):
                 "object_id": obj.id,
                 "previously_hosted": previously_hosted,
                 "item": obj,
-                "recent_articles": Entry.objects.prefetch_related("tags").order_by(
-                    "-created"
-                )[0:3],
+                "recent_articles": Entry.objects.filter(is_draft=False)
+                .prefetch_related("tags")
+                .order_by("-created")[0:3],
                 "is_draft": obj.is_draft,
             },
         )

@@ -165,6 +165,7 @@ class BlogTests(TransactionTestCase):
             ),
             "/search/?q=testing",
             "/tags/testing/",
+            live_entry.get_absolute_url(),
         )
 
         for path in paths:

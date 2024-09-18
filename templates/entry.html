@@ -45,10 +45,10 @@
 </div>
 {% endwith %}{% endif %}
 {% include "_tags.html" with obj=entry %}
-{% with entry.get_next_by_created as next_entry %}{% if next_entry %}
+{% with entry.next_by_created as next_entry %}{% if next_entry %}
 <p><strong>Next:</strong> <a href="{{ next_entry.get_absolute_url }}">{{ next_entry.title }}</a></p>
 {% endif %}{% endwith %}
-{% with entry.get_previous_by_created as previous_entry %}{% if previous_entry %}
+{% with entry.previous_by_created as previous_entry %}{% if previous_entry %}
 <p><strong>Previous:</strong> <a href="{{ previous_entry.get_absolute_url }}">{{ previous_entry.title }}</a></p>
 {% endif %}{% endwith %}
 <div data-ea-publisher="simonwillisonnet" data-ea-type="image"></div>

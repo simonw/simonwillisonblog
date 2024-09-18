@@ -218,6 +218,12 @@ class Entry(BaseModel):
     custom_template = models.CharField(max_length=100, null=True, blank=True)
     is_entry = True
 
+    def next_by_created(self):
+        return super().get_next_by_created(is_draft=False)
+
+    def previous_by_created(self):
+        return super().get_previous_by_created(is_draft=False)
+
     def images(self):
         """Extracts images from entry.body"""
         et = ElementTree.fromstring("<entry>%s</entry>" % self.body)
