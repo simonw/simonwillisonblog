@@ -45,17 +45,17 @@ class Tag(models.Model):
         return self.get_link(reltag=True)
 
     def entry_count(self):
-        return self.entry_set.count()
+        return self.entry_set.filter(is_draft=False).count()
 
     def link_count(self):
-        return self.blogmark_set.count()
+        return self.blogmark_set.filter(is_draft=False).count()
 
     def quote_count(self):
-        return self.quotation_set.count()
+        return self.quotation_set.filter(is_draft=False).count()
 
     def total_count(self):
         entry_count = Subquery(
-            Entry.objects.filter(tags=OuterRef("pk"))
+            Entry.objects.filter(is_draft=False, tags=OuterRef("pk"))
             .values("tags")
             .annotate(count=Count("id"))
             .values("count"),
@@ -63,7 +63,7 @@ class Tag(models.Model):
         )
 
         blogmark_count = Subquery(
-            Blogmark.objects.filter(tags=OuterRef("pk"))
+            Blogmark.objects.filter(is_draft=False, tags=OuterRef("pk"))
             .values("tags")
             .annotate(count=Count("id"))
             .values("count"),
@@ -71,7 +71,7 @@ class Tag(models.Model):
         )
 
         quotation_count = Subquery(
-            Quotation.objects.filter(tags=OuterRef("pk"))
+            Quotation.objects.filter(is_draft=False, tags=OuterRef("pk"))
             .values("tags")
             .annotate(count=Count("id"))
             .values("count"),
