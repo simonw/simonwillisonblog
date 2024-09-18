@@ -127,3 +127,38 @@ class BlogTests(TransactionTestCase):
     def test_tag_with_hyphen(self):
         tag = Tag.objects.create(tag="tag-with-hyphen")
         self.assertEqual(tag.tag, "tag-with-hyphen")
+
+    def test_draft_items_not_displayed(self):
+        draft_entry = EntryFactory(is_draft=True)
+        draft_blogmark = BlogmarkFactory(is_draft=True)
+        draft_quotation = QuotationFactory(is_draft=True)
+
+        response = self.client.get("/")
+        self.assertNotContains(response, draft_entry.title)
+        self.assertNotContains(response, draft_blogmark.link_title)
+        self.assertNotContains(response, draft_quotation.source)
+
+        response = self.client.get(draft_entry.get_absolute_url())
+        self.assertContains(response, "This is a draft post")
+
+        response = self.client.get(draft_blogmark.get_absolute_url())
+        self.assertContains(response, "This is a draft post")
+
+        response = self.client.get(draft_quotation.get_absolute_url())
+        self.assertContains(response, "This is a draft post")
+
+    def test_draft_items_not_in_feeds(self):
+        draft_entry = EntryFactory(is_draft=True)
+        draft_blogmark = BlogmarkFactory(is_draft=True)
+        draft_quotation = QuotationFactory(is_draft=True)
+
+        response = self.client.get("/atom/entries/")
+        self.assertNotContains(response, draft_entry.title)
+
+        response = self.client.get("/atom/links/")
+        self.assertNotContains(response, draft_blogmark.link_title)
+
+        response = self.client.get("/atom/everything/")
+        self.assertNotContains(response, draft_entry.title)
+        self.assertNotContains(response, draft_blogmark.link_title)
+        self.assertNotContains(response, draft_quotation.source)

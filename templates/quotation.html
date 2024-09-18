@@ -8,6 +8,11 @@
 {% load entry_tags %}
 {% block item_content %}
 <div class="quote">
+{% if is_draft %}
+<div style="background-color: pink; border: 2px solid red; padding: 10px;">
+  <strong>Warning:</strong> This is a draft post.
+</div>
+{% endif %}
 <blockquote{% if quotation.source_url %} cite="{{ quotation.source_url }}"{% endif %}>{{ quotation.body }}</blockquote><p class="cite">&mdash; {% if quotation.source_url %}<a href="{{ quotation.source_url }}">{{ quotation.source }}</a>{% else %}{{ quotation.source }}{% endif %}</p>
 </div>
 

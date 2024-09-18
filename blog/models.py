@@ -172,6 +172,7 @@ class BaseModel(models.Model):
     import_ref = models.TextField(max_length=64, null=True, unique=True)
     card_image = models.CharField(max_length=128, null=True, blank=True)
     series = models.ForeignKey(Series, blank=True, null=True, on_delete=models.PROTECT)
+    is_draft = models.BooleanField(default=False)  # P9163
 
     def created_unixtimestamp(self):
         return int(arrow.get(self.created).timestamp())

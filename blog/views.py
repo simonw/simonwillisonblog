@@ -98,6 +98,7 @@ def archive_item(request, year, month, day, slug):
                 "recent_articles": Entry.objects.prefetch_related("tags").order_by(
                     "-created"
                 )[0:3],
+                "is_draft": obj.is_draft,  # Pa91e
             },
         )
 
@@ -108,20 +109,19 @@ def archive_item(request, year, month, day, slug):
 def index(request):
     # Get back 30 most recent across all item types
     recent = list(
-        Entry.objects.annotate(content_type=Value("entry", output_field=CharField()))
+        Entry.objects.filter(is_draft=False)  # P9fad
+        .annotate(content_type=Value("entry", output_field=CharField()))
         .values("content_type", "id", "created")
         .order_by()
         .union(
-            Blogmark.objects.annotate(
-                content_type=Value("blogmark", output_field=CharField())
-            )
+            Blogmark.objects.filter(is_draft=False)  # P9fad
+            .annotate(content_type=Value("blogmark", output_field=CharField()))
             .values("content_type", "id", "created")
             .order_by()
         )
         .union(
-            Quotation.objects.annotate(
-                content_type=Value("quotation", output_field=CharField())
-            )
+            Quotation.objects.filter(is_draft=False)  # P9fad
+            .annotate(content_type=Value("quotation", output_field=CharField()))
             .values("content_type", "id", "created")
             .order_by()
         )
@@ -256,7 +256,7 @@ def archive_month(request, year, month):
         (Blogmark, "blogmark"),
     ):
         ids = model.objects.filter(
-            created__year=year, created__month=month
+            created__year=year, created__month=month, is_draft=False  # P9fad
         ).values_list("id", flat=True)
         items.extend(
             [
@@ -311,6 +311,7 @@ def archive_day(request, year, month, day):
             created__year=int(year),
             created__month=MONTHS_3_REV[month.lower()],
             created__day=int(day),
+            is_draft=False,  # P9fad
         ).order_by("created")
         if name == "photo":
             filt = filt[:25]
