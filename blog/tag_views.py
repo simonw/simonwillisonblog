@@ -5,6 +5,7 @@ from django.db.models import (
     Value,
     IntegerField,
     F,
+    Q,
     Subquery,
     OuterRef,
     Count,
@@ -21,21 +22,31 @@ def tags_autocomplete(request):
     if query:
         entry_count = (
             Tag.objects.filter(id=OuterRef("pk"))
-            .annotate(count=Count("entry", distinct=True))
+            .annotate(
+                count=Count("entry", filter=Q(entry__is_draft=False), distinct=True)
+            )
             .values("count")
         )
 
         # Subquery for counting blogmarks
         blogmark_count = (
             Tag.objects.filter(id=OuterRef("pk"))
-            .annotate(count=Count("blogmark", distinct=True))
+            .annotate(
+                count=Count(
+                    "blogmark", filter=Q(blogmark__is_draft=False), distinct=True
+                )
+            )
             .values("count")
         )
 
         # Subquery for counting quotations
         quotation_count = (
             Tag.objects.filter(id=OuterRef("pk"))
-            .annotate(count=Count("quotation", distinct=True))
+            .annotate(
+                count=Count(
+                    "quotation", filter=Q(quotation__is_draft=False), distinct=True
+                )
+            )
             .values("count")
         )
 

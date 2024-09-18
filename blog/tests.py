@@ -6,6 +6,7 @@ from .factories import (
     QuotationFactory,
 )
 from blog.models import Tag, PreviousTagName
+import json
 
 
 class BlogTests(TransactionTestCase):
@@ -168,6 +169,22 @@ class BlogTests(TransactionTestCase):
             live_entry.get_absolute_url(),
         )
 
+        counts = json.loads(self.client.get("/tags-autocomplete/?q=testing").content)
+        assert counts == {
+            "tags": [
+                {
+                    "id": testing.pk,
+                    "tag": "testing",
+                    "description": "",
+                    "total_entry": 1,
+                    "total_blogmark": 1,
+                    "total_quotation": 1,
+                    "is_exact_match": 1,
+                    "count": 3,
+                }
+            ]
+        }
+
         for path in paths:
             response = self.client.get(path)
             self.assertNotContains(response, "draftentry")
@@ -187,6 +204,22 @@ class BlogTests(TransactionTestCase):
             response3 = self.client.get(obj.get_absolute_url())
             self.assertNotContains(response3, robots_fragment)
             self.assertNotContains(response3, draft_warning_fragment)
+
+        counts2 = json.loads(self.client.get("/tags-autocomplete/?q=testing").content)
+        assert counts2 == {
+            "tags": [
+                {
+                    "id": testing.pk,
+                    "tag": "testing",
+                    "description": "",
+                    "total_entry": 2,
+                    "total_blogmark": 2,
+                    "total_quotation": 2,
+                    "is_exact_match": 1,
+                    "count": 6,
+                }
+            ]
+        }
 
         for path in paths:
             response4 = self.client.get(path)
