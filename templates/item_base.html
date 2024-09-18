@@ -14,6 +14,9 @@
 <meta property="og:type" content="article">
 <meta property="og:description" content="{% block card_description %}{% endblock %}">
 <meta property="og:updated_time" content="{{ item.created_unixtimestamp }}">
+{% if item.is_draft %}
+<meta name="robots" content="noindex">
+{% endif %}
 {% endblock %}
 
 {% block primary %}

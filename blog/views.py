@@ -98,6 +98,7 @@ def archive_item(request, year, month, day, slug):
                 "recent_articles": Entry.objects.prefetch_related("tags").order_by(
                     "-created"
                 )[0:3],
+                "is_draft": obj.is_draft,
             },
         )
 
@@ -108,20 +109,19 @@ def archive_item(request, year, month, day, slug):
 def index(request):
     # Get back 30 most recent across all item types
     recent = list(
-        Entry.objects.annotate(content_type=Value("entry", output_field=CharField()))
+        Entry.objects.filter(is_draft=False)
+        .annotate(content_type=Value("entry", output_field=CharField()))
         .values("content_type", "id", "created")
         .order_by()
         .union(
-            Blogmark.objects.annotate(
-                content_type=Value("blogmark", output_field=CharField())
-            )
+            Blogmark.objects.filter(is_draft=False)
+            .annotate(content_type=Value("blogmark", output_field=CharField()))
             .values("content_type", "id", "created")
             .order_by()
         )
         .union(
-            Quotation.objects.annotate(
-                content_type=Value("quotation", output_field=CharField())
-            )
+            Quotation.objects.filter(is_draft=False)
+            .annotate(content_type=Value("quotation", output_field=CharField()))
             .values("content_type", "id", "created")
             .order_by()
         )
@@ -150,9 +150,9 @@ def index(request):
         "homepage.html",
         {
             "items": items,
-            "entries": Entry.objects.only(
-                "id", "slug", "created", "title", "extra_head_html"
-            ).prefetch_related("tags")[0:40],
+            "entries": Entry.objects.filter(is_draft=False)
+            .only("id", "slug", "created", "title", "extra_head_html")
+            .prefetch_related("tags")[0:40],
             "current_tags": find_current_tags(5),
         },
     )
@@ -196,13 +196,13 @@ def archive_year(request, year):
     for month in range(1, 12 + 1):
         date = datetime.date(year=year, month=month, day=1)
         entry_count = Entry.objects.filter(
-            created__year=year, created__month=month
+            created__year=year, created__month=month, is_draft=False
         ).count()
         link_count = Blogmark.objects.filter(
-            created__year=year, created__month=month
+            created__year=year, created__month=month, is_draft=False
         ).count()
         quote_count = Quotation.objects.filter(
-            created__year=year, created__month=month
+            created__year=year, created__month=month, is_draft=False
         ).count()
         photo_count = Photo.objects.filter(
             created__year=year, created__month=month
@@ -223,7 +223,7 @@ def archive_year(request, year):
                     "counts_not_0": counts_not_0,
                     "entries": list(
                         Entry.objects.filter(
-                            created__year=year, created__month=month
+                            created__year=year, created__month=month, is_draft=False
                         ).order_by("created")
                     ),
                 }
@@ -249,14 +249,13 @@ def archive_month(request, year, month):
     items = []
     from django.db import connection
 
-    cursor = connection.cursor()
     for model, content_type in (
         (Entry, "entry"),
         (Quotation, "quotation"),
         (Blogmark, "blogmark"),
     ):
         ids = model.objects.filter(
-            created__year=year, created__month=month
+            created__year=year, created__month=month, is_draft=False
         ).values_list("id", flat=True)
         items.extend(
             [
@@ -305,15 +304,13 @@ def archive_day(request, year, month, day):
         ("blogmark", Blogmark),
         ("entry", Entry),
         ("quotation", Quotation),
-        ("photo", Photo),
     ):
         filt = model.objects.filter(
             created__year=int(year),
             created__month=MONTHS_3_REV[month.lower()],
             created__day=int(day),
+            is_draft=False,
         ).order_by("created")
-        if name == "photo":
-            filt = filt[:25]
         context[name] = list(filt)
         count += len(context[name])
         items.extend([{"type": name, "obj": obj} for obj in context[name]])
@@ -353,7 +350,7 @@ def tag_index(request):
 INTERSECTION_SQL = """
     SELECT %(content_table)s.id
         FROM %(content_table)s, %(tag_table)s
-    WHERE %(tag_table)s.tag_id IN (
+    WHERE is_draft = false AND %(tag_table)s.tag_id IN (
             SELECT id FROM blog_tag WHERE tag IN (%(joined_tags)s)
         )
         AND %(tag_table)s.%(tag_table_content_key)s = %(content_table)s.id

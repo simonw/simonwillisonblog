@@ -46,7 +46,11 @@ class Entries(Base):
     ga_source = "entries"
 
     def items(self):
-        return Entry.objects.prefetch_related("tags").order_by("-created")[:15]
+        return (
+            Entry.objects.filter(is_draft=False)
+            .prefetch_related("tags")
+            .order_by("-created")[:15]
+        )
 
     def item_title(self, item):
         return item.title
@@ -61,7 +65,11 @@ class Blogmarks(Base):
     ga_source = "blogmarks"
 
     def items(self):
-        return Blogmark.objects.prefetch_related("tags").order_by("-created")[:15]
+        return (
+            Blogmark.objects.filter(is_draft=False)
+            .prefetch_related("tags")
+            .order_by("-created")[:15]
+        )
 
     def item_title(self, item):
         return item.link_title
@@ -76,13 +84,19 @@ class Everything(Base):
         # Pretty dumb implementation: pull top 30 of entries/blogmarks/quotations
         # then sort them together and return most recent 30 combined
         last_30_entries = list(
-            Entry.objects.prefetch_related("tags").order_by("-created")[:30]
+            Entry.objects.filter(is_draft=False)
+            .prefetch_related("tags")
+            .order_by("-created")[:30]
         )
         last_30_blogmarks = list(
-            Blogmark.objects.prefetch_related("tags").order_by("-created")[:30]
+            Blogmark.objects.filter(is_draft=False)
+            .prefetch_related("tags")
+            .order_by("-created")[:30]
         )
         last_30_quotations = list(
-            Quotation.objects.prefetch_related("tags").order_by("-created")[:30]
+            Quotation.objects.filter(is_draft=False)
+            .prefetch_related("tags")
+            .order_by("-created")[:30]
         )
         combined = last_30_blogmarks + last_30_entries + last_30_quotations
         combined.sort(key=lambda e: e.created, reverse=True)

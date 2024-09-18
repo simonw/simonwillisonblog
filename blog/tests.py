@@ -127,3 +127,103 @@ class BlogTests(TransactionTestCase):
     def test_tag_with_hyphen(self):
         tag = Tag.objects.create(tag="tag-with-hyphen")
         self.assertEqual(tag.tag, "tag-with-hyphen")
+
+    def test_draft_items_not_displayed(self):
+        draft_entry = EntryFactory(is_draft=True, title="draftentry")
+        draft_blogmark = BlogmarkFactory(is_draft=True, link_title="draftblogmark")
+        draft_quotation = QuotationFactory(is_draft=True, source="draftquotation")
+        testing = Tag.objects.get_or_create(tag="testing")[0]
+
+        live_entry = EntryFactory(title="publishedentry", created=draft_entry.created)
+        live_blogmark = BlogmarkFactory(
+            link_title="publishedblogmark", created=draft_blogmark.created
+        )
+        live_quotation = QuotationFactory(
+            source="publishedquotation", created=draft_quotation.created
+        )
+
+        for obj in (
+            draft_entry,
+            draft_blogmark,
+            draft_quotation,
+            live_entry,
+            live_blogmark,
+            live_quotation,
+        ):
+            obj.tags.add(testing)
+
+        paths = (
+            "/",  # Homepage
+            "/{}/".format(draft_entry.created.year),
+            "/{}/{}/".format(
+                draft_entry.created.year, draft_entry.created.strftime("%b")
+            ),
+            "/{}/{}/{}/".format(
+                draft_entry.created.year,
+                draft_entry.created.strftime("%b"),
+                draft_entry.created.day,
+            ),
+            "/search/?q=testing",
+            "/tags/testing/",
+        )
+
+        for path in paths:
+            response = self.client.get(path)
+            self.assertNotContains(response, "draftentry")
+
+        robots_fragment = '<meta name="robots" content="noindex">'
+        draft_warning_fragment = "This is a draft post"
+
+        for obj in (draft_entry, draft_blogmark, draft_quotation):
+            response2 = self.client.get(obj.get_absolute_url())
+            self.assertContains(response2, robots_fragment)
+            self.assertContains(response2, draft_warning_fragment)
+
+            # Publish it
+            obj.is_draft = False
+            obj.save()
+
+            response3 = self.client.get(obj.get_absolute_url())
+            self.assertNotContains(response3, robots_fragment)
+            self.assertNotContains(response3, draft_warning_fragment)
+
+        for path in paths:
+            response4 = self.client.get(path)
+            self.assertContains(response4, "draftentry")
+
+    def test_draft_items_not_in_feeds(self):
+        draft_entry = EntryFactory(is_draft=True, title="draftentry")
+        draft_blogmark = BlogmarkFactory(is_draft=True, link_title="draftblogmark")
+        draft_quotation = QuotationFactory(is_draft=True, source="draftquotation")
+
+        response1 = self.client.get("/atom/entries/")
+        self.assertNotContains(response1, draft_entry.title)
+
+        response2 = self.client.get("/atom/links/")
+        self.assertNotContains(response2, draft_blogmark.link_title)
+
+        response3 = self.client.get("/atom/everything/")
+        self.assertNotContains(response3, draft_entry.title)
+        self.assertNotContains(response3, draft_blogmark.link_title)
+        self.assertNotContains(response3, draft_quotation.source)
+
+        # Change draft status and check they show up
+        draft_entry.is_draft = False
+        draft_entry.save()
+
+        draft_blogmark.is_draft = False
+        draft_blogmark.save()
+
+        draft_quotation.is_draft = False
+        draft_quotation.save()
+
+        response4 = self.client.get("/atom/entries/")
+        self.assertContains(response4, draft_entry.title)
+
+        response5 = self.client.get("/atom/links/")
+        self.assertContains(response5, draft_blogmark.link_title)
+
+        response6 = self.client.get("/atom/everything/")
+        self.assertContains(response6, draft_entry.title)
+        self.assertContains(response6, draft_blogmark.link_title)
+        self.assertContains(response6, draft_quotation.source)

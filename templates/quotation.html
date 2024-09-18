@@ -8,6 +8,7 @@
 {% load entry_tags %}
 {% block item_content %}
 <div class="quote">
+{% include "_draft_warning.html" %}
 <blockquote{% if quotation.source_url %} cite="{{ quotation.source_url }}"{% endif %}>{{ quotation.body }}</blockquote><p class="cite">&mdash; {% if quotation.source_url %}<a href="{{ quotation.source_url }}">{{ quotation.source }}</a>{% else %}{{ quotation.source }}{% endif %}</p>
 </div>
 
