@@ -88,7 +88,7 @@ def search(request, q=None, return_context=False):
         values.append("rank")
 
     def make_queryset(klass, type_name):
-        qs = klass.objects.annotate(
+        qs = klass.objects.filter(is_draft=False).annotate(
             type=models.Value(type_name, output_field=models.CharField())
         )
         if selected_year and selected_year.isdigit() and 2000 <= int(selected_year):
