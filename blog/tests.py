@@ -38,7 +38,7 @@ class BlogTests(TransactionTestCase):
             "/{}/".format(entry.created.year),
             "/atom/everything/",
         ):
-            response = self.client.get("/")
+            response = self.client.get(path)
             assert response.status_code == 200
 
     def test_entry(self):
