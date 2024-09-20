@@ -14,7 +14,7 @@ from blog import tag_views
 from blog import feeds
 from feedstats.utils import count_subscribers
 import os
-import pkg_resources
+import importlib.metadata
 import json
 from proxy.views import proxy_view
 
@@ -99,8 +99,10 @@ def favicon_ico(request):
 @never_cache
 def versions(request):
     installed_packages = [
-        (d.project_name, d.version)
-        for d in sorted(pkg_resources.working_set, key=lambda d: d.project_name.lower())
+        (dist.metadata["Name"], dist.version)
+        for dist in sorted(
+            importlib.metadata.distributions(), key=lambda d: d.metadata["Name"].lower()
+        )
     ]
     return HttpResponse(
         json.dumps(installed_packages, indent=4), content_type="text/plain"
