@@ -196,6 +196,10 @@ class BlogTests(TransactionTestCase):
             response2 = self.client.get(obj.get_absolute_url())
             self.assertContains(response2, robots_fragment)
             self.assertContains(response2, draft_warning_fragment)
+            assert (
+                response2.headers["cache-control"]
+                == "private, no-cache, no-store, must-revalidate"
+            )
 
             # Publish it
             obj.is_draft = False
@@ -204,6 +208,7 @@ class BlogTests(TransactionTestCase):
             response3 = self.client.get(obj.get_absolute_url())
             self.assertNotContains(response3, robots_fragment)
             self.assertNotContains(response3, draft_warning_fragment)
+            assert "cache-control" not in response3.headers
 
         counts2 = json.loads(self.client.get("/tags-autocomplete/?q=testing").content)
         assert counts2 == {

@@ -48,6 +48,13 @@ MONTHS_3_REV_REV = {value: key for key, value in list(MONTHS_3_REV.items())}
 BLACKLISTED_TAGS = ("quora", "flash", "resolved", "recovered")
 
 
+def set_no_cache(response):
+    response["Cache-Control"] = "private, no-cache, no-store, must-revalidate"
+    response["Pragma"] = "no-cache"
+    response["Expires"] = "0"
+    return response
+
+
 def archive_item(request, year, month, day, slug):
     if day.startswith("0"):
         day = day.lstrip("0")
@@ -86,7 +93,7 @@ def archive_item(request, year, month, day, slug):
             content_type
         )
 
-        return render(
+        response = render(
             request,
             template,
             {
@@ -101,6 +108,9 @@ def archive_item(request, year, month, day, slug):
                 "is_draft": obj.is_draft,
             },
         )
+        if obj.is_draft:
+            set_no_cache(response)
+        return response
 
     # If we get here, non of the views matched
     raise Http404
