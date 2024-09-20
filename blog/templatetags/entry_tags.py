@@ -46,7 +46,7 @@ def resize_images_to_fit_width(value, arg):
     return x
 
 
-xhtml_endtag_fragment = re.compile("\s*/>")
+xhtml_endtag_fragment = re.compile(r"\s*/>")
 
 
 @register.filter
@@ -129,7 +129,7 @@ def do_break_long_words(et, length):
         et.tail = do_break_long_words_string(et.tail, length)
 
 
-whitespace_re = re.compile("(\s+)")
+whitespace_re = re.compile(r"(\s+)")
 
 
 def do_break_long_words_string(s, length):
@@ -220,7 +220,7 @@ def do_typography_string(s):
 
 
 NUMBERS = "zero one two three four five six seven eight nine".split()
-number_re = re.compile("\d+")
+number_re = re.compile(r"\d+")
 
 
 def num_to_string(s):

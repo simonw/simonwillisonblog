@@ -3,7 +3,7 @@ from .models import SubscriberCount
 import datetime
 import re
 
-subscribers_re = re.compile("(\d+) subscribers")
+subscribers_re = re.compile(r"(\d+) subscribers")
 
 
 def count_subscribers(view_fn):
