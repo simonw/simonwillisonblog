@@ -25,6 +25,11 @@ class BlogTests(TransactionTestCase):
             [e.pk for e in sorted(db_entries, key=lambda e: e.created, reverse=True)],
         )
 
+    def test_django_header_plugin(self):
+        response = self.client.get("/")
+        self.assertIn("Django-Composition", response)
+
+
     def test_other_pages(self):
         entry = EntryFactory()
         blogmark = BlogmarkFactory()

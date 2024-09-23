@@ -1,6 +1,6 @@
 import os
 import dj_database_url
-import urllib.parse
+import djp
 
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
@@ -43,7 +43,7 @@ if os.environ.get("SESSION_COOKIE_SECURE"):
 
 # Application definition
 
-INSTALLED_APPS = (
+INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -57,9 +57,9 @@ INSTALLED_APPS = (
     "redirects",
     "feedstats",
     "django_http_debug",
-)
+]
 
-MIDDLEWARE = (
+MIDDLEWARE = [
     "django_hosts.middleware.HostsRequestMiddleware",
     "redirects.middleware.redirect_middleware",
     "django.middleware.security.SecurityMiddleware",
@@ -72,17 +72,17 @@ MIDDLEWARE = (
     "blog.middleware.AmpersandRedirectMiddleware",
     "django_hosts.middleware.HostsResponseMiddleware",
     #    "django.middleware.clickjacking.XFrameOptionsMiddleware",
-)
+]
 if DEBUG:
     try:
         import debug_toolbar
 
-        MIDDLEWARE = MIDDLEWARE + ("debug_toolbar.middleware.DebugToolbarMiddleware",)
-        INSTALLED_APPS += ("debug_toolbar",)
+        MIDDLEWARE += ["debug_toolbar.middleware.DebugToolbarMiddleware"]
+        INSTALLED_APPS += ["debug_toolbar"]
     except ImportError:
         pass
 
-MIDDLEWARE += ("whitenoise.middleware.WhiteNoiseMiddleware",)
+MIDDLEWARE += ["whitenoise.middleware.WhiteNoiseMiddleware"]
 
 
 # Sentry
@@ -196,3 +196,5 @@ CACHES = {
         "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
     }
 }
+
+djp.settings(globals())
