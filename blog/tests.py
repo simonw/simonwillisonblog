@@ -29,7 +29,6 @@ class BlogTests(TransactionTestCase):
         response = self.client.get("/")
         self.assertIn("Django-Composition", response)
 
-
     def test_other_pages(self):
         entry = EntryFactory()
         blogmark = BlogmarkFactory()
