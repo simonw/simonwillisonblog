@@ -200,6 +200,34 @@ def entry_updates(request, entry_id):
     return response
 
 
+def entry_updates_json(request, entry_id):
+    entry = get_object_or_404(Entry, pk=entry_id)
+    updates = entry.updates.order_by("created")
+    since_id = request.GET.get("since")
+    if since_id:
+        updates = updates.filter(id__gt=since_id)
+    return JsonResponse(
+        {
+            "updates": [
+                {
+                    "created": update.created.isoformat(),
+                    "cerated_str": (
+                        str(
+                            update.created.astimezone(
+                                pytz.timezone("America/Los_Angeles")
+                            ).time()
+                        )
+                        .split(".")[0]
+                        .rsplit(":", 1)[0]
+                    ),
+                    "content": update.content,
+                }
+                for update in updates
+            ]
+        }
+    )
+
+
 def find_current_tags(num=5):
     """Returns num random tags from top 30 in recent 400 taggings"""
     last_400_tags = list(

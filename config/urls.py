@@ -123,6 +123,7 @@ urlpatterns = [
     re_path(r"^(\d{4})/(\w{3})/(\d{1,2})/$", blog_views.archive_day),
     re_path(r"^(\d{4})/(\w{3})/(\d{1,2})/([\-\w]+)/$", blog_views.archive_item),
     re_path(r"^updates/(\d+)/$", blog_views.entry_updates),
+    re_path(r"^updates/(\d+)\.json/$", blog_views.entry_updates_json),
     # Redirects for entries, blogmarks, quotations by ID
     re_path(r"^e/(\d+)/?$", blog_views.redirect_entry),
     re_path(r"^b/(\d+)/?$", blog_views.redirect_blogmark),
