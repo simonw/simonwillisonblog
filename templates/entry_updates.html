@@ -1,0 +1,3 @@
+{% for update in updates %}
+<p><strong>{{ update.created_str }}</strong> {{ update.content|safe }}</p>
+{% endfor %}
