@@ -210,8 +210,9 @@ def entry_updates_json(request, entry_id):
         {
             "updates": [
                 {
+                    "id": update.id,
                     "created": update.created.isoformat(),
-                    "cerated_str": (
+                    "created_str": (
                         str(
                             update.created.astimezone(
                                 pytz.timezone("America/Los_Angeles")
