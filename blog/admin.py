@@ -4,7 +4,16 @@ from django.db.models.functions import Length
 from django.db.models import F
 from django import forms
 from xml.etree import ElementTree
-from .models import Entry, Tag, Quotation, Blogmark, Comment, Series, PreviousTagName
+from .models import (
+    Entry,
+    Tag,
+    Quotation,
+    Blogmark,
+    Comment,
+    Series,
+    PreviousTagName,
+    LiveUpdate,
+)
 
 
 class BaseAdmin(admin.ModelAdmin):
@@ -47,6 +56,11 @@ class EntryAdmin(BaseAdmin):
     prepopulated_fields = {"slug": ("title",)}
     search_fields = ("title", "body")
     list_filter = ("created", "series")
+
+
+@admin.register(LiveUpdate)
+class LiveUpdateAdmin(admin.ModelAdmin):
+    raw_id_fields = ("entry",)
 
 
 @admin.register(Quotation)

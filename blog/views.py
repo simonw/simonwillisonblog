@@ -29,6 +29,7 @@ import random
 from collections import Counter
 import cloudflare
 import os
+import pytz
 
 MONTHS_3_REV = {
     "jan": 1,
@@ -93,6 +94,20 @@ def archive_item(request, year, month, day, slug):
             content_type
         )
 
+        updates = []
+        if isinstance(obj, Entry):
+            updates = list(obj.updates.order_by("created"))
+            for update in updates:
+                update.created_str = (
+                    str(
+                        update.created.astimezone(
+                            pytz.timezone("America/Los_Angeles")
+                        ).time()
+                    )
+                    .split(".")[0]
+                    .rsplit(":", 1)[0]
+                )
+
         response = render(
             request,
             template,
@@ -106,6 +121,7 @@ def archive_item(request, year, month, day, slug):
                 .prefetch_related("tags")
                 .order_by("-created")[0:3],
                 "is_draft": obj.is_draft,
+                "updates": updates,
             },
         )
         if obj.is_draft:
@@ -167,6 +183,20 @@ def index(request):
         },
     )
     response["Cache-Control"] = "s-maxage=200"
+    return response
+
+
+def entry_updates(request, entry_id):
+    entry = get_object_or_404(Entry, pk=entry_id)
+    updates = list(entry.updates.order_by("created"))
+    for update in updates:
+        update.created_str = (
+            str(update.created.astimezone(pytz.timezone("America/Los_Angeles")).time())
+            .split(".")[0]
+            .rsplit(":", 1)[0]
+        )
+    response = render(request, "entry_updates.html", {"updates": updates})
+    response["Cache-Control"] = "s-maxage=10"
     return response
 
 

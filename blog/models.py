@@ -217,6 +217,7 @@ class Entry(BaseModel):
     )
     custom_template = models.CharField(max_length=100, null=True, blank=True)
     is_entry = True
+    live_timezone = models.CharField(max_length=100, null=True, blank=True)
 
     def next_by_created(self):
         return super().get_next_by_created(is_draft=False)
@@ -265,6 +266,15 @@ class Entry(BaseModel):
 
     class Meta(BaseModel.Meta):
         verbose_name_plural = "Entries"
+
+
+class LiveUpdate(models.Model):
+    created = models.DateTimeField(auto_now_add=True)
+    content = models.TextField()
+    entry = models.ForeignKey(Entry, related_name="updates", on_delete=models.CASCADE)
+
+    def __str__(self):
+        return "{}: {}".format(self.created, self.content)
 
 
 class Quotation(BaseModel):
