@@ -1,3 +1,5 @@
 {% for update in updates %}
-<p data-update-id="{{ update.id }}"><strong>{{ update.created_str }}</strong> {{ update.content|safe }}</p>
+<div data-update-id="{{ update.id }}">
+  <p><strong>{{ update.created_str }}</strong> {{ update.content|safe }}</p>
+</div>
 {% endfor %}
