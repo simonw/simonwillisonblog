@@ -22,9 +22,7 @@
 
 {% if updates %}
 <div id="live-updates">
-{% for update in updates %}
-<p><strong>{{ update.created_str }}</strong> {{ update.content|safe }}</p>
-{% endfor %}
+{% include "entry_updates.html" %}
 </div>
 {% endif %}
 </div>
