@@ -206,7 +206,7 @@ def entry_updates_json(request, entry_id):
     since_id = request.GET.get("since")
     if since_id:
         updates = updates.filter(id__gt=since_id)
-    return JsonResponse(
+    response = JsonResponse(
         {
             "updates": [
                 {
@@ -227,6 +227,8 @@ def entry_updates_json(request, entry_id):
             ]
         }
     )
+    response["Cache-Control"] = "s-maxage=10"
+    return response
 
 
 def find_current_tags(num=5):
