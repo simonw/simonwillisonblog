@@ -909,6 +909,7 @@ div.help p {
 .search-submit {
   background-color: #733b96;
   color: white;
+  cursor: pointer;
 }
 div p.search-selections {
   margin-top: 0.5em;
