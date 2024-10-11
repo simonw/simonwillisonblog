@@ -1,4 +1,4 @@
-{% extends "item_base.html" %}
+{% extends "item_base.html" %}{% load humanize %}
 
 {% block title %}{{ title }}{% endblock %}
 
@@ -72,7 +72,7 @@
         <h3 id="facet-types">Types</h3>
         <ul>
             {% for t in type_counts %}
-                <li><a href="{% add_qsarg "type" t.type %}">{{ t.type }}</a> {{ t.n }}</a></li>
+                <li><a href="{% add_qsarg "type" t.type %}">{{ t.type }}</a> {{ t.n|intcomma }}</a></li>
             {% endfor %}
         </ul>
     {% endif %}
@@ -80,7 +80,7 @@
         <h3 id="facet-years">Years</h3>
         <ul>
             {% for t in year_counts %}
-                <li><a href="{% add_qsarg "year" t.year|date:"Y" %}">{{ t.year|date:"Y" }}</a> {{ t.n }}</a></li>
+                <li><a href="{% add_qsarg "year" t.year|date:"Y" %}">{{ t.year|date:"Y" }}</a> {{ t.n|intcomma }}</a></li>
             {% endfor %}
         </ul>
     {% endif %}
@@ -88,7 +88,7 @@
         <h3 id="facet-months">Months</h3>
         <ul>
             {% for t in month_counts %}
-                <li><a href="{% add_qsarg "month" t.month|date:"n" %}">{{ t.month|date:"F" }}</a> {{ t.n }}</a></li>
+                <li><a href="{% add_qsarg "month" t.month|date:"n" %}">{{ t.month|date:"F" }}</a> {{ t.n|intcomma }}</a></li>
             {% endfor %}
         </ul>
     {% endif %}
@@ -96,7 +96,7 @@
         <h3 id="facet-tags">Tags</h3>
         <ul>
             {% for t in tag_counts %}
-                <li><a href="{% add_qsarg "tag" t.tag %}">{{ t.tag }}</a> {{ t.n }}</a></li>
+                <li><a href="{% add_qsarg "tag" t.tag %}">{{ t.tag }}</a> {{ t.n|intcomma }}</a></li>
             {% endfor %}
         </ul>
     {% endif %}
