@@ -42,7 +42,7 @@
 {% if item.type == "quotation" %}
 <div class="quote segment">
   <blockquote{% if item.obj.source_url %} cite="{{ item.obj.source_url }}"{% endif %}>{{ item.obj.body }}</blockquote>
-  <p class="cite">&mdash; {% if item.obj.source_url %}<a href="{{ item.obj.source_url }}">{{ item.obj.source }}</a>{% else %}{{ item.obj.source }}{% endif %}</p>
+  <p class="cite">&mdash; {% if item.obj.source_url %}<a href="{{ item.obj.source_url }}">{{ item.obj.source }}</a>{% else %}{{ item.obj.source }}{% endif %}{% if item.obj.context %}, <span class="context">{{ item.obj.context_rendered }}{% endif %}</span></p>
   <p class="date-and-tags">
     <a href="{{ item.obj.get_absolute_url }}" rel="bookmark">#</a>
     {% if showdate %}<a href="/{{ item.obj.created|date:"Y/M/j/" }}">{{ item.obj.created|date:"jS F Y" }}</a>,

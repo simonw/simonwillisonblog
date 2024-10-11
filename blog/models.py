@@ -284,6 +284,7 @@ class Quotation(BaseModel):
         blank=True,
         null=True,
     )
+    context = models.CharField(max_length=255, blank=True, null=True)
 
     is_quotation = True
 
@@ -293,8 +294,18 @@ class Quotation(BaseModel):
     def body_strip_tags(self):
         return strip_tags(markdown(self.quotation))
 
+    def context_rendered(self):
+        if self.context:
+            rendered = markdown(self.context)
+            # Remove leading/trailing <p> tag
+            if rendered.startswith("<p>") and rendered.endswith("</p>"):
+                return mark_safe(rendered[3:-4])
+            return mark_safe(rendered)
+        else:
+            return ""
+
     def title(self):
-        """Mainly a convenence for the comments RSS feed"""
+        """Mainly a convenience for the comments RSS feed"""
         return "A quote from %s" % escape(self.source)
 
     def index_components(self):

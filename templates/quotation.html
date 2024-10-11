@@ -9,7 +9,8 @@
 {% block item_content %}
 <div class="quote">
 {% include "_draft_warning.html" %}
-<blockquote{% if quotation.source_url %} cite="{{ quotation.source_url }}"{% endif %}>{{ quotation.body }}</blockquote><p class="cite">&mdash; {% if quotation.source_url %}<a href="{{ quotation.source_url }}">{{ quotation.source }}</a>{% else %}{{ quotation.source }}{% endif %}</p>
+<blockquote{% if quotation.source_url %} cite="{{ quotation.source_url }}"{% endif %}>{{ quotation.body }}</blockquote>
+<p class="cite">&mdash; {% if quotation.source_url %}<a href="{{ quotation.source_url }}">{{ quotation.source }}</a>{% else %}{{ quotation.source }}{% endif %}{% if quotation.context %}, <span class="context">{{ quotation.context_rendered }}</span>{% endif %}</p>
 </div>
 
 <div class="entryFooter">Posted <a href="/{{ quotation.created|date:"Y/M/j/" }}">{{ quotation.created|date:"jS F Y" }}</a> at {{ quotation.created|date:"f A"|lower }}</div>

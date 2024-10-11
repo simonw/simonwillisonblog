@@ -266,8 +266,12 @@ div#secondary ul {
   padding-right: 25px;
   display: inline;
 }
+.quote .context {
+  font-weight: normal;
+}
 p.cite {
   text-indent: 16px;
+  font-weight: bold;
 }
 div.metabox {
   font-size: 0.9em;

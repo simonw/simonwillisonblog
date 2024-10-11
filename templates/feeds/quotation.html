@@ -1,4 +1,5 @@
-<blockquote{% if obj.source_url %} cite="{{ obj.source_url }}"{% endif %}>{{ obj.body }}</blockquote><p class="cite">&mdash; {% if obj.source_url %}<a href="{{ obj.source_url }}">{{ obj.source }}</a>{% else %}{{ obj.source }}{% endif %}</p>
+<blockquote{% if obj.source_url %} cite="{{ obj.source_url }}"{% endif %}>{{ obj.body }}</blockquote>
+<p class="cite">&mdash; {% if obj.source_url %}<a href="{{ obj.source_url }}">{{ obj.source }}</a>{% else %}{{ obj.source }}{% endif %}{% if obj.context %}, {{ obj.context_rendered }}{% endif %}</p>
 {% if obj.tags.count %}
     <p>Tags: {% for tag in obj.tags.all %}<a href="https://simonwillison.net/tags/{{ tag.tag }}">{{ tag.tag }}</a>{% if not forloop.last %}, {% endif %}{% endfor %}</p>
 {% endif %}
