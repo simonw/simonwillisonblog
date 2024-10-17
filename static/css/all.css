@@ -114,7 +114,8 @@ body {
 strong {
   font-weight: bold;
 }
-em {
+em,
+em strong {
   font-style: italic;
 }
 dl {
