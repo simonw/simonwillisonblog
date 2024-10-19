@@ -39,4 +39,4 @@ jobs:
       - name: Run tests
         run: |
           export DATABASE_URL=postgres://postgres:@localhost/test_db
-          python manage.py test
+          python manage.py test -v3
