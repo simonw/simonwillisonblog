@@ -5,7 +5,6 @@ from django.core.cache import cache
 
 def all(request):
     return {
-        "GOOGLE_ANALYTICS_ID": settings.GOOGLE_ANALYTICS_ID,
         "years_with_content": years_with_content(),
     }
 

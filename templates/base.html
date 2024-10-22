@@ -6,21 +6,6 @@
 {% block rel_canonical %}<link rel="canonical" href="https://simonwillison.net{{ request.path }}">{% endblock %}
 <title>{% block title %}{% endblock %}</title>
 <script defer data-domain="simonwillison.net" src="https://plausible.io/js/plausible.js"></script>
-{% if GOOGLE_ANALYTICS_ID %}
-<script async src="https://www.googletagmanager.com/gtag/js?id={{ GOOGLE_ANALYTICS_ID }}"></script>
-<script>
-window.dataLayer = window.dataLayer || [];function gtag(){dataLayer.push(arguments)}; gtag('js', new Date());gtag('config', '{{ GOOGLE_ANALYTICS_ID }}', {send_page_view: false });
-(function() {
-    var m = /#atom\-(\w+)/.exec(location.hash);
-    if (m) {
-        gtag('event', 'page_view', {dimension1: m[1]});
-        history.replaceState && history.replaceState(null, '', location.href.split('#')[0]);
-    } else {
-        gtag('event', 'page_view');
-    }
-})();
-</script>
-{% endif %}
 <link rel="alternate" type="application/atom+xml" title="Atom" href="/atom/everything/">
 <link rel="stylesheet" type="text/css" href="{% static "css/all.css" %}">
 <link rel="webmention" href="https://webmention.io/simonwillison.net/webmention">
