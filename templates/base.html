@@ -47,7 +47,8 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 <script type="module">
   const config = [
-    {"tag": "lite-youtube", "js": "/static/lite-yt-embed.js", "css": "/static/lite-yt-embed.css"}
+    {"tag": "lite-youtube", "js": "/static/lite-yt-embed.js", "css": "/static/lite-yt-embed.css"},
+    {"tag": "image-gallery", "js": "/static/image-gallery.js", "css": "/static/photoswipe/photoswipe.css"}
   ];
   for (const {tag, js, css} of config) {
     if (document.querySelector(tag)) {

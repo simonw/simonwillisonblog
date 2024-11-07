@@ -13,7 +13,7 @@ from collections import Counter
 import re
 import arrow
 import datetime
-from markdown import markdown
+from markdown import markdown, Markdown
 from xml.etree import ElementTree
 
 tag_re = re.compile("^[a-z0-9]+$")
@@ -351,7 +351,9 @@ class Blogmark(BaseModel):
 
     def body(self):
         if self.use_markdown:
-            return mark_safe(markdown(self.commentary))
+            md = Markdown()
+            md.block_level_elements.append("image-gallery")
+            return mark_safe(md.convert(self.commentary))
         return self.commentary
 
     def word_count(self):
