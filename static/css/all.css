@@ -200,7 +200,7 @@ div#primary {
 }
 div#primary blockquote,
 .item-link blockquote,
-div#primary .item-quote blockquote blockquote {
+div#primary .quote blockquote blockquote {
   margin: 1em 0;
   border-left: 0.75em solid #9e6bb52e;
   padding-left: 0.75em;
@@ -754,7 +754,7 @@ div#primary div.photoset a.primary:hover,
 div#primary div.photoset a.primary:active {
   float: left;
 }
-div#primary div.quote blockquote {
+div#primary div.quote > blockquote {
   clear: both;
   margin-top: 0.5em;
   margin-bottom: 0.2em;
@@ -768,11 +768,17 @@ div#primary div.quote blockquote {
 is also the last paragraph (because it is inline), so in
 the case where there is only one contained paragraph we
 indent the blockquote itself. */
-div#primary div.quote blockquote:has(p:only-child),
-div#primary div.quote blockquote p:first-child {
+div#primary div.quote > blockquote:has(p:only-child),
+div#primary div.quote > blockquote p:first-child {
   text-indent: 23px;
 }
-div#primary div.quote blockquote p:last-child {
+/* But not on nested blockquote */
+div#primary div.quote blockquote blockquote:has(p:only-child),
+div#primary div.quote blockquote  blockquote p:first-child {
+  text-indent: 0;
+}
+
+div#primary div.quote > blockquote p:last-child {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext x='11' y='171' font-family='Times New Roman, serif' font-size='180' fill='%238A2BE2'%3E%E2%80%9D%3C/text%3E%3C/svg%3E");
   background-size: 23px 23px;
   background-repeat: no-repeat;
