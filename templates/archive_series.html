@@ -5,7 +5,7 @@
 {% block primary %}
 <h2 class="archive-h2"><a href="/series/">Series</a>: {{ series }}</h2>
 
-<p>{{ series.summary }}</p>
+<p>{{ series.summary_rendered }}</p>
 
 <p style="margin-top: 1em"><a style="text-decoration: none; border-bottom: none;" href="/series/{{ series.slug }}.atom" title="Atom feed"><svg xmlns="http://www.w3.org/2000/svg" width="14px" height="14px" viewBox="0 0 256 256">
   <defs>
