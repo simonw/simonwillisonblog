@@ -305,15 +305,20 @@ div.entry div.twitter-tweet {
 div.entry a {
   word-break: break-word;
 }
-div.entry table {
+div.entry table,
+div.blogmark table {
   margin: 1em 0;
 }
 div.entry table th,
-div.entry table td {
+div.entry table td,
+div.blogmark table th,
+div.blogmark table td
+{
   font-size: 0.9em;
   padding-right: 0.5em;
 }
-div.entry table th {
+div.entry table th,
+div.blogmark table th {
   padding: 0 1em 0 0;
   font-weight: bold;
   border-bottom: 1px solid #666;
