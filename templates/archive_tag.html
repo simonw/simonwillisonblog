@@ -2,6 +2,13 @@
 
 {% block title %}Simon Willison on {{ tags|join:" and " }}{% endblock %}
 
+{% block extrahead %}
+<meta property="og:type" content="website" />
+<meta property="og:title" content="Simon Willison on {{ tags|join:" and " }}" />
+<meta property="og:description" content="{{ total|intcomma }} items tagged ‘{{ tags|join:"’ and ‘" }}’. {{ tag.description|striptags|truncatechars:160 }}" />
+<meta property="og:site_name" content="Simon Willison’s Weblog" />
+{% endblock %}
+
 {% block primary %}
 {% if tags|length == 1 %}
     <a style="float: right; border-bottom: none; margin-top: 0.4em" href="/tags/{{ tags.0 }}.atom"><svg
