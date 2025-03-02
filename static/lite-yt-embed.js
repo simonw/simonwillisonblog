@@ -236,3 +236,102 @@ class LiteYTEmbed extends HTMLElement {
 }
 // Register custom element
 customElements.define('lite-youtube', LiteYTEmbed);
+
+/* Simon's extensions to cause YouTube links to ?t= points to use the player on the page */
+
+function getYouTubeVideoId(url) {
+  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+  const match = url.match(regExp);
+  return (match && match[2].length === 11) ? match[2] : null;
+}
+
+function getYouTubeTimestamp(url) {
+  // Check for time format patterns first (1h2m3s)
+  const timePattern = /[?&]t=((?:\d+h)?(?:\d+m)?(?:\d+s)?)/;
+  const timeMatch = url.match(timePattern);
+  
+  if (timeMatch && /[hms]/.test(timeMatch[1])) {
+    const timeString = timeMatch[1];
+    let seconds = 0;
+    
+    const hours = timeString.match(/(\d+)h/);
+    const minutes = timeString.match(/(\d+)m/);
+    const secs = timeString.match(/(\d+)s/);
+    
+    if (hours) seconds += parseInt(hours[1], 10) * 3600;
+    if (minutes) seconds += parseInt(minutes[1], 10) * 60;
+    if (secs) seconds += parseInt(secs[1], 10);
+    
+    return seconds;
+  }
+  
+  // Handle simple seconds format (t=123)
+  const secMatch = url.match(/[?&]t=(\d+)/);
+  if (secMatch) return parseInt(secMatch[1], 10);
+  
+  return null;
+}
+
+function findLiteYouTubePlayer(videoId) {
+  const players = document.querySelectorAll('lite-youtube');
+  for (const player of players) {
+    if (player.getAttribute('videoid') === videoId) {
+      return player;
+    }
+  }
+  return null;
+}
+
+document.addEventListener('click', async (event) => {
+  // Check if a link was clicked
+  let target = event.target;
+  
+  // If target is not an anchor, check if parent is
+  if (target.tagName !== 'A') {
+    target = target.closest('a');
+    if (!target) return; // Not a link or child of a link
+  }
+  
+  const href = target.href;
+  
+  // Check if it's a YouTube link
+  if (!href || !(href.includes('youtube.com') || href.includes('youtu.be'))) {
+    return;
+  }
+  
+  // Extract video ID and timestamp
+  const videoId = getYouTubeVideoId(href);
+  const timestamp = getYouTubeTimestamp(href);
+  
+  // If we couldn't extract a video ID or timestamp, let the navigation happen normally
+  if (!videoId || timestamp === null) {
+    return;
+  }
+  
+  // Find a matching lite-youtube player on the page
+  const liteYouTubePlayer = findLiteYouTubePlayer(videoId);
+  
+  // If a matching player exists, cancel the navigation and seek to the timestamp
+  if (liteYouTubePlayer) {
+    event.preventDefault();
+    
+    try {
+      const player = await liteYouTubePlayer.getYTPlayer();
+      player.seekTo(timestamp);
+      
+      // Make sure player is activated/playing
+      if (player.getPlayerState() !== 1) { // 1 is "playing" state
+        player.playVideo();
+      }
+      
+      // Scroll the player into view if needed
+      liteYouTubePlayer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    } catch (error) {
+      console.error('Error controlling YouTube player:', error);
+      // If there's an error, navigate to the original link as fallback
+      window.location.href = href;
+    }
+  }
+  // If no matching player is found, let the navigation happen normally
+});
+</script>
