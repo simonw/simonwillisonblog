@@ -334,4 +334,3 @@ document.addEventListener('click', async (event) => {
   }
   // If no matching player is found, let the navigation happen normally
 });
-</script>
