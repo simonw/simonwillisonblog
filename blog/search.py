@@ -247,7 +247,7 @@ def search(request, q=None, return_context=False):
         "quotation": "Quotations",
         "blogmark": "Blogmarks",
         "entry": "Entries",
-    }.get(selected.get("type")) or "Items"
+    }.get(selected.get("type")) or "Posts"
     title = noun
 
     if search_q:
