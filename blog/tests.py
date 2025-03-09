@@ -118,7 +118,7 @@ class BlogTests(TransactionTestCase):
         tag.entry_set.create(
             title="Test entry",
             body="Test entry body",
-            created="2020-01-01",
+            created="2020-01-01T00:00:00+00:00",
         )
         assert self.client.get("/tags/old-name/").status_code == 200
         assert self.client.get("/tags/new-name/").status_code == 404
