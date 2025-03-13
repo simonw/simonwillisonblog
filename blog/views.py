@@ -2,6 +2,7 @@
 from django.shortcuts import render, get_object_or_404
 from django.http import JsonResponse
 from django.contrib.admin.views.decorators import staff_member_required
+from django.views.decorators.http import require_POST
 from django.views.decorators.cache import never_cache
 from django.db import models
 from django.db.models import CharField, Value
@@ -651,3 +652,52 @@ def custom_404(request, exception):
         {"q": [b.strip() for b in request.path.split("/") if b.strip()][-1]},
         status=404,
     )
+
+
+@staff_member_required
+@never_cache
+def bulk_tag(request):
+    """
+    Admin-only view for bulk tagging search results.
+    Reuses the search functionality but renders a custom template with tagging UI.
+    """
+    from blog import search as search_views
+
+    context = search_views.search(request, return_context=True)
+    return render(request, "bulk_tag.html", context)
+
+
+@require_POST
+@staff_member_required
+def api_add_tag(request):
+    """
+    API endpoint to handle adding a tag to an object.
+    Expects content_type, object_id, and tag in the POST data.
+    """
+    content_type = request.POST.get("content_type")
+    object_id = request.POST.get("object_id")
+    tag_name = request.POST.get("tag")
+
+    # Validate inputs
+    if not content_type or not object_id or not tag_name:
+        return JsonResponse({"error": "Missing required parameters"}, status=400)
+
+    # Get the object
+    model = {"entry": Entry, "blogmark": Blogmark, "quotation": Quotation}.get(
+        content_type
+    )
+    if not model:
+        return JsonResponse({"error": "Invalid content type"}, status=400)
+
+    try:
+        obj = model.objects.get(pk=object_id)
+    except model.DoesNotExist:
+        return JsonResponse({"error": "Object not found"}, status=404)
+
+    # Get or create the tag
+    tag = Tag.objects.get_or_create(tag=tag_name)[0]
+
+    # Add the tag to the object
+    obj.tags.add(tag)
+
+    return JsonResponse({"success": True, "tag": tag_name})

@@ -1,0 +1,419 @@
+{% extends "search.html" %}
+{% load blog_tags %}
+{% load humanize %}
+
+{% block title %}{{ title }} - Bulk Tagging{% endblock %}
+
+{% block extrahead %}
+{{ block.super }}
+<style>
+  .tag-input-container {
+    margin-bottom: 1em;
+    padding: 15px;
+    border: 1px solid #ddd;
+    background-color: #f9f9f9;
+    border-radius: 4px;
+  }
+  .tag-input-wrapper {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  .tag-input {
+    flex-grow: 1;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    margin-right: 10px;
+    font-size: 1em;
+  }
+  .tag-button {
+    background-color: #733b96;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    cursor: pointer;
+    border-radius: 4px;
+    font-weight: bold;
+  }
+  .tag-button:hover {
+    background-color: #5e2f7a;
+  }
+  .tag-button:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+  }
+  .tag-actions {
+    margin-top: 0.5em;
+  }
+  .tag-success {
+    color: green;
+    font-weight: bold;
+    margin-left: 5px;
+  }
+  .tag-error {
+    color: red;
+    font-weight: bold;
+    margin-left: 5px;
+  }
+  .autocomplete-container {
+    position: relative;
+    flex-grow: 1;
+  }
+  .autocomplete-results {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    max-height: 200px;
+    overflow-y: auto;
+    background-color: white;
+    border: 1px solid #ccc;
+    border-radius: 0 0 4px 4px;
+    z-index: 10;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  }
+  .autocomplete-result {
+    padding: 8px 10px;
+    cursor: pointer;
+    border-bottom: 1px solid #eee;
+  }
+  .autocomplete-result:hover {
+    background-color: #f0f0f0;
+  }
+  .autocomplete-result .count {
+    color: #666;
+    font-size: 0.9em;
+    margin-left: 5px;
+  }
+  .help-text {
+    font-size: 0.9em;
+    color: #666;
+    margin-top: 5px;
+  }
+  .tag-all-container {
+    display: flex;
+    align-items: center;
+    margin-top: 10px;
+  }
+  .bulk-actions {
+    margin-top: 1em;
+    padding: 10px;
+    background-color: #f0f0f0;
+    border-radius: 4px;
+  }
+  .tagged-label {
+    display: inline-block;
+    background-color: #e6f7e6;
+    color: #2c662d;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 0.8em;
+    margin-left: 5px;
+  }
+</style>
+{% endblock %}
+
+{% block item_content %}
+<h2>Bulk Tagging</h2>
+
+<form action="{{ request.path }}" method="GET" id="search-form">
+    <input type="search" class="search-input" name="q" value="{{ q }}" style="width: 80%" autocomplete="off">
+    <input type="submit" class="search-submit" value="Search">
+    {% if selected %}
+        {% for pair in selected.items %}
+            {% if pair.0 == 'tags' %}
+                {% for tag in pair.1 %}
+                    <input type="hidden" name="tag" value="{{ tag }}">
+                {% endfor %}
+            {% else %}
+                <input type="hidden" name="{{ pair.0 }}" value="{{ pair.1 }}">
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+</form>
+
+{% if total %}
+    <div class="tag-input-container">
+        <div class="tag-input-wrapper">
+            <div class="autocomplete-container">
+                <input type="text" class="tag-input" placeholder="Enter tag to apply..." id="tag-input">
+                <div class="autocomplete-results" style="display: none;"></div>
+            </div>
+            <button id="tag-selected-button" class="tag-button" disabled>Tag Selected</button>
+        </div>
+        <div class="help-text">
+            Search for tags above or type a new one. Click the tag buttons next to search results or use the "Tag Selected" button.
+        </div>
+        <div class="tag-all-container">
+            <button id="select-all-button" class="tag-button">Select All</button>
+            <button id="select-none-button" class="tag-button" style="margin-left: 10px;">Select None</button>
+            <span id="selection-count" style="margin-left: 15px;">0 items selected</span>
+        </div>
+    </div>
+
+    {% if selected or q %}
+        {% include "_pagination.html" with page_total=total %}
+        {{ block.super }}
+        {% include "_pagination.html" %}
+    {% endif %}
+{% else %}
+    {% if selected or q %}
+        <p><strong>No results found</strong></p>
+        {% if suggestion and num_corrected_results %}
+            <p style="margin: 1em 0">Suggestion: <a href="/admin/bulk-tag/?q={{ suggestion }}">{{ suggestion }}</a> ({{ num_corrected_results }} result{{ num_corrected_results|pluralize }})</p>
+        {% endif %}
+    {% endif %}
+{% endif %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const tagInput = document.getElementById('tag-input');
+    const autocompleteResults = document.querySelector('.autocomplete-results');
+    const autocompleteContainer = document.querySelector('.autocomplete-container');
+    const tagSelectedButton = document.getElementById('tag-selected-button');
+    const selectAllButton = document.getElementById('select-all-button');
+    const selectNoneButton = document.getElementById('select-none-button');
+    const selectionCount = document.getElementById('selection-count');
+
+    // Add checkboxes to each result
+    const segments = document.querySelectorAll('.segment');
+    let selectedCount = 0;
+
+    segments.forEach(segment => {
+        // Get content type and ID directly from data attributes
+        const contentType = segment.dataset.type;
+        const objectId = segment.dataset.id;
+
+        // Handle content type conversion for the API
+        const apiContentType = contentType === 'quote' ? 'quotation' : contentType;
+
+        // Add checkbox
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.className = 'item-checkbox';
+        checkbox.style.marginRight = '8px';
+        checkbox.addEventListener('change', function() {
+            if (this.checked) {
+                selectedCount++;
+            } else {
+                selectedCount--;
+            }
+            updateSelectionCount();
+        });
+
+        // Add tag button
+        const tagButton = document.createElement('button');
+        tagButton.className = 'tag-button tag-this-button';
+        tagButton.textContent = 'Tag';
+        tagButton.style.marginLeft = '10px';
+
+        // Add click handler for tag button
+        tagButton.addEventListener('click', function() {
+            const tagValue = document.getElementById('tag-input').value.trim();
+            if (tagValue) {
+                addTag(apiContentType, objectId, tagValue, tagButton);
+            } else {
+                alert('Please enter a tag first');
+            }
+        });
+
+        // Find where to insert checkbox and tag button
+        if (contentType === 'entry') {
+            const title = segment.querySelector('h3');
+            if (title) {
+                title.insertBefore(checkbox, title.firstChild);
+
+                const entryFooter = segment.querySelector('.entryFooter');
+                if (entryFooter) {
+                    entryFooter.appendChild(tagButton);
+                }
+            }
+        } else {
+            const firstPara = segment.querySelector('p');
+            if (firstPara) {
+                firstPara.insertBefore(checkbox, firstPara.firstChild);
+
+                const dateAndTags = segment.querySelector('.date-and-tags');
+                if (dateAndTags) {
+                    dateAndTags.appendChild(tagButton);
+                }
+            }
+        }
+    });
+
+    // Handle tag autocomplete
+    tagInput.addEventListener('input', function() {
+        const query = this.value.trim();
+        if (query.length > 0) {
+            fetch(`/tags-autocomplete/?q=${encodeURIComponent(query)}`)
+                .then(response => response.json())
+                .then(data => {
+                    autocompleteResults.innerHTML = '';
+                    if (data.tags && data.tags.length > 0) {
+                        autocompleteResults.style.display = 'block';
+                        data.tags.forEach(tag => {
+                            const resultItem = document.createElement('div');
+                            resultItem.className = 'autocomplete-result';
+                            resultItem.innerHTML = `${tag.tag} <span class="count">(${tag.count})</span>`;
+                            resultItem.addEventListener('click', function() {
+                                tagInput.value = tag.tag;
+                                autocompleteResults.style.display = 'none';
+                                tagSelectedButton.disabled = selectedCount === 0;
+                            });
+                            autocompleteResults.appendChild(resultItem);
+                        });
+                    } else {
+                        autocompleteResults.style.display = 'none';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching tags:', error);
+                });
+        } else {
+            autocompleteResults.style.display = 'none';
+            tagSelectedButton.disabled = true;
+        }
+    });
+
+    // Enable tag selected button when tag input has value and items are selected
+    tagInput.addEventListener('input', function() {
+        tagSelectedButton.disabled = this.value.trim() === '' || selectedCount === 0;
+    });
+
+    // Close autocomplete when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!autocompleteContainer.contains(e.target)) {
+            autocompleteResults.style.display = 'none';
+        }
+    });
+
+    // Select all button
+    selectAllButton.addEventListener('click', function() {
+        const checkboxes = document.querySelectorAll('.item-checkbox');
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = true;
+        });
+        selectedCount = checkboxes.length;
+        updateSelectionCount();
+        tagSelectedButton.disabled = tagInput.value.trim() === '';
+    });
+
+    // Select none button
+    selectNoneButton.addEventListener('click', function() {
+        const checkboxes = document.querySelectorAll('.item-checkbox');
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = false;
+        });
+        selectedCount = 0;
+        updateSelectionCount();
+        tagSelectedButton.disabled = true;
+    });
+
+    // Tag selected button
+    tagSelectedButton.addEventListener('click', function() {
+        const tagValue = tagInput.value.trim();
+        if (tagValue) {
+            const selectedSegments = Array.from(document.querySelectorAll('.item-checkbox:checked'))
+                .map(checkbox => checkbox.closest('.segment'));
+
+            if (selectedSegments.length > 0) {
+                selectedSegments.forEach(segment => {
+                    const tagButton = segment.querySelector('.tag-this-button');
+                    addTag(segment.dataset.type, segment.dataset.id, tagValue, tagButton);
+                });
+            } else {
+                alert('No items selected');
+            }
+        } else {
+            alert('Please enter a tag first');
+        }
+    });
+
+    // Update selection count
+    function updateSelectionCount() {
+        selectionCount.textContent = `${selectedCount} item${selectedCount !== 1 ? 's' : ''} selected`;
+        tagSelectedButton.disabled = selectedCount === 0 || tagInput.value.trim() === '';
+    }
+
+    // Function to add tag to an object
+    function addTag(contentType, objectId, tagValue, button) {
+        // Disable the button while request is in progress
+        button.disabled = true;
+
+        // Remove existing success/error messages
+        const existingMessages = button.parentNode.querySelectorAll('.tag-success, .tag-error');
+        existingMessages.forEach(msg => msg.remove());
+
+        // Remove existing "Tagged" label
+        const existingLabels = button.parentNode.querySelectorAll('.tagged-label');
+        existingLabels.forEach(label => label.remove());
+
+        // Send fetch request to add tag
+        const formData = new FormData();
+        formData.append('content_type', contentType);
+        formData.append('object_id', objectId);
+        formData.append('tag', tagValue);
+
+        fetch('/api/add-tag/', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Show success message
+                const taggedLabel = document.createElement('span');
+                taggedLabel.className = 'tagged-label';
+                taggedLabel.textContent = `Tagged: ${data.tag}`;
+                button.insertAdjacentElement('afterend', taggedLabel);
+
+                // Re-enable the button
+                button.disabled = false;
+            } else {
+                // Show error message
+                const errorMessage = document.createElement('span');
+                errorMessage.className = 'tag-error';
+                errorMessage.textContent = data.error || 'Error adding tag';
+                button.insertAdjacentElement('afterend', errorMessage);
+
+                // Re-enable the button
+                button.disabled = false;
+            }
+        })
+        .catch(error => {
+            console.error('Error adding tag:', error);
+
+            // Show error message
+            const errorMessage = document.createElement('span');
+            errorMessage.className = 'tag-error';
+            errorMessage.textContent = 'Network error';
+            button.insertAdjacentElement('afterend', errorMessage);
+
+            // Re-enable the button
+            button.disabled = false;
+        });
+    }
+
+    // Function to get CSRF token from cookies
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+});
+
+</script>
+{% endblock %}

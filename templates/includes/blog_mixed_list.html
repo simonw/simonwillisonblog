@@ -12,7 +12,7 @@
 </div>
 {% endif %}
 {% if item.type == "entry" %}
-<div class="entry segment">
+<div class="entry segment" data-type="entry" data-id="{{ item.obj.id }}">
   <h3><a href="{{ item.obj.get_absolute_url }}" rel="bookmark">{{ item.obj.title|typography }}</a></h3>
   {% if item.obj.card_image %}
     <div class="card-container">
@@ -30,7 +30,7 @@
 {% endif %}
 {% with item.obj.tags.all as all_tags %}
 {% if item.type == "blogmark" %}
-<div class="blogmark segment">
+<div class="blogmark segment" data-type="blogmark" data-id="{{ item.obj.id }}">
   <p><strong><a href="{{ item.obj.link_url }}">{{ item.obj.link_title|typography }}</a></strong>{% if item.obj.via_url %}
     (<a href="{{ item.obj.via_url }}" title="{{ item.obj.via_title|typography }}">via</a>){% endif %}{% if not item.obj.via_url and not item.obj.link_title|ends_with_punctuation %}.{% endif %}
     {% if not item.obj.use_markdown %}{{ item.obj.commentary|typography|linebreaks|strip_wrapping_p }}{% else %}{{ item.obj.body|strip_wrapping_p }}{% endif %}</p>
@@ -40,7 +40,7 @@
 </div>
 {% endif %}
 {% if item.type == "quotation" %}
-<div class="quote segment">
+<div class="quote segment" data-type="quotation" data-id="{{ item.obj.id }}">
   <blockquote{% if item.obj.source_url %} cite="{{ item.obj.source_url }}"{% endif %}>{{ item.obj.body }}</blockquote>
   <p class="cite">&mdash; {% if item.obj.source_url %}<a href="{{ item.obj.source_url }}">{{ item.obj.source }}</a>{% else %}{{ item.obj.source }}{% endif %}{% if item.obj.context %}, <span class="context">{{ item.obj.context_rendered }}{% endif %}</span></p>
   <p class="date-and-tags">

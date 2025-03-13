@@ -162,6 +162,8 @@ urlpatterns = [
     re_path(r"^tools/search-tags/$", search_views.tools_search_tags),
     re_path(r"^write/$", blog_views.write),
     #  (r'^about/$', blog_views.about),
+    path("admin/bulk-tag/", blog_views.bulk_tag, name="bulk_tag"),
+    path("api/add-tag/", blog_views.api_add_tag, name="api_add_tag"),
     re_path(r"^admin/", admin.site.urls),
     re_path(r"^static/", static_redirect),
     path("dashboard/", include(django_sql_dashboard.urls)),
