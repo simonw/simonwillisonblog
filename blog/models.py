@@ -53,6 +53,9 @@ class Tag(models.Model):
     def quote_count(self):
         return self.quotation_set.filter(is_draft=False).count()
 
+    def note_count(self):
+        return self.note_set.filter(is_draft=False).count()
+
     def total_count(self):
         entry_count = Subquery(
             Entry.objects.filter(is_draft=False, tags=OuterRef("pk"))
@@ -78,6 +81,14 @@ class Tag(models.Model):
             output_field=IntegerField(),
         )
 
+        note_count = Subquery(
+            Note.objects.filter(is_draft=False, tags=OuterRef("pk"))
+            .values("tags")
+            .annotate(count=Count("id"))
+            .values("count"),
+            output_field=IntegerField(),
+        )
+
         result = (
             Tag.objects.filter(pk=self.pk)
             .annotate(
@@ -85,6 +96,7 @@ class Tag(models.Model):
                     Coalesce(entry_count, 0)
                     + Coalesce(blogmark_count, 0)
                     + Coalesce(quotation_count, 0)
+                    + Coalesce(note_count, 0)
                 )
             )
             .values("total_count")
@@ -109,7 +121,12 @@ class Tag(models.Model):
             .annotate(type=models.Value("quotation", output_field=models.CharField()))
             .values("pk", "created", "type")
         )
-        return entries.union(blogmarks, quotations).order_by("-created")
+        notes = (
+            self.note_set.all()
+            .annotate(type=models.Value("note", output_field=models.CharField()))
+            .values("pk", "created", "type")
+        )
+        return entries.union(blogmarks, quotations, notes).order_by("-created")
 
     def get_related_tags(self, limit=10):
         """Get all items tagged with this, look at /their/ tags, order by count"""
@@ -119,6 +136,7 @@ class Tag(models.Model):
                 (Entry, "entry_set"),
                 (Blogmark, "blogmark_set"),
                 (Quotation, "quotation_set"),
+                (Note, "note_set"),
             ):
                 qs = klass.objects.filter(
                     pk__in=getattr(self, collection).all()
@@ -368,6 +386,30 @@ class Blogmark(BaseModel):
             return "%d words" % count
 
 
+class Note(BaseModel):
+    body = models.TextField()
+    is_note = True
+
+    def body_rendered(self):
+        return mark_safe(markdown(self.body))
+
+    def index_components(self):
+        # Note: 'A' is typically title/headline, 'C' is main body, 'B' is tags
+        return {
+            "C": self.body,
+            "B": " ".join(self.tags.values_list("tag", flat=True)),
+        }
+
+    def __str__(self):
+        # Return first 50 chars as string representation
+        if len(self.body) > 50:
+            return self.body[:50] + "..."
+        return self.body
+
+    class Meta(BaseModel.Meta):
+        verbose_name_plural = "Notes"
+
+
 class Photo(models.Model):
     flickr_id = models.CharField(max_length=32)
     server = models.CharField(max_length=8)
@@ -445,7 +487,7 @@ SPAM_STATUS_OPTIONS = (
     ("spam", "SPAM"),
 )
 
-COMMENTS_ALLOWED_ON = ("entry", "blogmark", "quotation")
+COMMENTS_ALLOWED_ON = ("entry", "blogmark", "quotation", "note")
 
 
 class Comment(models.Model):
@@ -548,6 +590,7 @@ def load_mixed_objects(dicts):
         ("blogmark", Blogmark),
         ("entry", Entry),
         ("quotation", Quotation),
+        ("note", Note),
     ):
         ids = to_fetch.get(key) or []
         objects = model.objects.prefetch_related("tags").filter(pk__in=ids)

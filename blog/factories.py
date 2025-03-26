@@ -28,3 +28,8 @@ class BlogmarkFactory(BaseFactory):
 class QuotationFactory(BaseFactory):
     class Meta:
         model = "blog.Quotation"
+
+
+class NoteFactory(BaseFactory):
+    class Meta:
+        model = "blog.Note"

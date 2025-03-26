@@ -1,4 +1,4 @@
-from blog.models import Entry, Blogmark, Quotation
+from blog.models import Entry, Blogmark, Quotation, Note
 from django.conf import settings
 from django.core.cache import cache
 
@@ -18,6 +18,7 @@ def years_with_content():
                 list(Entry.objects.datetimes("created", "year"))
                 + list(Blogmark.objects.datetimes("created", "year"))
                 + list(Quotation.objects.datetimes("created", "year"))
+                + list(Note.objects.datetimes("created", "year"))
             )
         )
         years.sort()

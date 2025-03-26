@@ -7,4 +7,6 @@
     {% include "feeds/blogmark.html" %}
 {% elif obj.is_quotation %}
     {% include "feeds/quotation.html" %}
+{% elif obj.is_note %}
+    {% include "feeds/note.html" %}
 {% endif %}
