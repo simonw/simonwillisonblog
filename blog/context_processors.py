@@ -10,7 +10,7 @@ def all(request):
 
 
 def years_with_content():
-    cache_key = "years-with-content-2"
+    cache_key = "years-with-content-3"
     years = cache.get(cache_key)
     if not years:
         years = list(
