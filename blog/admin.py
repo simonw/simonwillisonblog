@@ -10,6 +10,7 @@ from .models import (
     Quotation,
     Blogmark,
     Comment,
+    Note,
     Series,
     PreviousTagName,
     LiveUpdate,
@@ -74,6 +75,12 @@ class QuotationAdmin(BaseAdmin):
 class BlogmarkAdmin(BaseAdmin):
     search_fields = ("tags__tag", "commentary")
     prepopulated_fields = {"slug": ("link_title",)}
+
+
+@admin.register(Note)
+class NoteAdmin(BaseAdmin):
+    search_fields = ("tags__tag", "body")
+    list_display = ("__str__", "created", "tag_summary")
 
 
 @admin.register(Tag)

@@ -7,7 +7,7 @@ from django.contrib.postgres.search import SearchQuery, SearchRank
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.http import HttpResponse, Http404
 from django.shortcuts import render
-from blog.models import Entry, Blogmark, Quotation, Tag, load_mixed_objects
+from blog.models import Entry, Blogmark, Quotation, Note, Tag, load_mixed_objects
 from .views import MONTHS_3_REV_REV
 from spellchecker import SpellChecker
 import datetime
@@ -129,6 +129,7 @@ def search(request, q=None, return_context=False):
         (Entry, "entry"),
         (Blogmark, "blogmark"),
         (Quotation, "quotation"),
+        (Note, "note"),
     ):
         if selected_type and selected_type != type_name:
             continue
@@ -247,6 +248,7 @@ def search(request, q=None, return_context=False):
         "quotation": "Quotations",
         "blogmark": "Blogmarks",
         "entry": "Entries",
+        "note": "Notes",
     }.get(selected.get("type")) or "Posts"
     title = noun
 

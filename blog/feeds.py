@@ -1,7 +1,8 @@
 from django.contrib.syndication.views import Feed
+from django.utils.dateformat import format as date_format
 from django.utils.feedgenerator import Atom1Feed
 from django.http import HttpResponse
-from blog.models import Entry, Blogmark, Quotation
+from blog.models import Entry, Blogmark, Quotation, Note
 
 
 class Base(Feed):
@@ -98,7 +99,14 @@ class Everything(Base):
             .prefetch_related("tags")
             .order_by("-created")[:30]
         )
-        combined = last_30_blogmarks + last_30_entries + last_30_quotations
+        last_30_notes = list(
+            Note.objects.filter(is_draft=False)
+            .prefetch_related("tags")
+            .order_by("-created")[:30]
+        )
+        combined = (
+            last_30_blogmarks + last_30_entries + last_30_quotations + last_30_notes
+        )
         combined.sort(key=lambda e: e.created, reverse=True)
         return combined[:30]
 
@@ -107,8 +115,12 @@ class Everything(Base):
             return item.title
         elif isinstance(item, Blogmark):
             return item.link_title
-        else:
+        elif isinstance(item, Quotation):
             return "Quoting %s" % item.source
+        elif isinstance(item, Note):
+            return "Note on {}".format(date_format(item.created, "jS F Y"))
+        else:
+            return "Unknown item type"
 
 
 class SeriesFeed(Everything):
@@ -138,7 +150,7 @@ def sitemap(request):
         '<?xml version="1.0" encoding="UTF-8"?>'
         '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
     ]
-    for klass in (Entry, Blogmark, Quotation):
+    for klass in (Entry, Blogmark, Quotation, Note):
         for obj in klass.objects.only("slug", "created"):
             xml.append(
                 "<url><loc>https://simonwillison.net%s</loc></url>"

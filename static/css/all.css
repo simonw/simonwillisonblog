@@ -795,6 +795,11 @@ div#primary div.quote p.cite {
   font-size: 0.9em;
   text-indent: 16px;
 }
+
+div#primary div.note p:not(.date-and-tags) {
+  margin-bottom: 1em;
+}
+
 ul#searchorder {
   border-bottom: 1px solid black;
   margin: 0 0 0.5em 0;

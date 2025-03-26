@@ -1,0 +1,22 @@
+{% extends "item_base.html" %}
+
+{% block title %}Note on {{ note.created|date:"jS F Y" }}{% endblock %}
+
+{% block card_title %}Note on {{ note.created|date:"jS F Y" }}{% endblock %}
+{% block card_description %}{{ note.body|truncatewords:30 }}{% endblock %}
+
+{% load entry_tags %}
+{% block item_content %}
+<div class="note">
+{% include "_draft_warning.html" %}
+{{ note.body_rendered }}
+</div>
+
+<div class="entryFooter">Posted <a href="/{{ note.created|date:"Y/M/j/" }}">{{ note.created|date:"jS F Y" }}</a> at {{ note.created|date:"f A"|lower }}</div>
+{% endblock %}
+
+{% block secondary %}
+<div class="metabox">
+{% include "_tags.html" with obj=note %}
+</div> <!-- .metabox -->
+{% endblock %}

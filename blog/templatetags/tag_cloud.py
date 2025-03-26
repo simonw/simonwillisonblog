@@ -103,7 +103,11 @@ def tag_cloud():
         "select tag from blog_quotation_tags, blog_tag where blog_quotation_tags.tag_id = blog_tag.id"
     )
     quotation_tags = [row[0] for row in cursor.fetchall()]
+    cursor.execute(
+        "select tag from blog_note_tags, blog_tag where blog_note_tags.tag_id = blog_tag.id"
+    )
+    note_tags = [row[0] for row in cursor.fetchall()]
     cursor.close()
     # Add them together
-    tags = entry_tags + blogmark_tags + quotation_tags
+    tags = entry_tags + blogmark_tags + quotation_tags + note_tags
     return _tag_cloud_helper(tags)

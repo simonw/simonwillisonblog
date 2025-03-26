@@ -17,6 +17,7 @@ from .models import (
     Blogmark,
     Entry,
     Quotation,
+    Note,
     Photo,
     Photoset,
     Series,
@@ -67,6 +68,7 @@ def archive_item(request, year, month, day, slug):
         ("blogmark", Blogmark),
         ("entry", Entry),
         ("quotation", Quotation),
+        ("note", Note),
     ):
         try:
             obj = get_object_or_404(
@@ -152,6 +154,12 @@ def index(request):
             .values("content_type", "id", "created")
             .order_by()
         )
+        .union(
+            Note.objects.filter(is_draft=False)
+            .annotate(content_type=Value("note", output_field=CharField()))
+            .values("content_type", "id", "created")
+            .order_by()
+        )
         .order_by("-created")[:30]
     )
 
@@ -164,6 +172,7 @@ def index(request):
         ("entry", Entry),
         ("blogmark", Blogmark),
         ("quotation", Quotation),
+        ("note", Note),
     ):
         if content_type not in to_load:
             continue
@@ -246,6 +255,9 @@ def find_current_tags(num=5):
             Tag.blogmark_set.through.objects.annotate(
                 created=models.F("blogmark__created")
             ).values("tag__tag", "created"),
+            Tag.note_set.through.objects.annotate(
+                created=models.F("note__created")
+            ).values("tag__tag", "created"),
         )
         .order_by("-created")[:400]
     )
@@ -279,13 +291,17 @@ def archive_year(request, year):
         photo_count = Photo.objects.filter(
             created__year=year, created__month=month
         ).count()
-        month_count = entry_count + link_count + quote_count + photo_count
+        note_count = Note.objects.filter(
+            created__year=year, created__month=month, is_draft=False
+        ).count()
+        month_count = entry_count + link_count + quote_count + photo_count + note_count
         if month_count:
             counts = [
                 ("entry", entry_count),
                 ("link", link_count),
                 ("photo", photo_count),
                 ("quote", quote_count),
+                ("note", note_count),
             ]
             counts_not_0 = [p for p in counts if p[1]]
             months.append(
@@ -301,7 +317,7 @@ def archive_year(request, year):
                 }
             )
             max_count = max(
-                max_count, entry_count, link_count, quote_count, photo_count
+                max_count, entry_count, link_count, quote_count, photo_count, note_count
             )
     return render(
         request,
@@ -325,6 +341,7 @@ def archive_month(request, year, month):
         (Entry, "entry"),
         (Quotation, "quotation"),
         (Blogmark, "blogmark"),
+        (Note, "note"),
     ):
         ids = model.objects.filter(
             created__year=year, created__month=month, is_draft=False
@@ -376,6 +393,7 @@ def archive_day(request, year, month, day):
         ("blogmark", Blogmark),
         ("entry", Entry),
         ("quotation", Quotation),
+        ("note", Note),
     ):
         filt = model.objects.filter(
             created__year=int(year),
@@ -456,6 +474,7 @@ def archive_tag(request, tags, atom=False):
         (Entry, "entry"),
         (Quotation, "quotation"),
         (Blogmark, "blogmark"),
+        (Note, "note"),
     ):
         cursor.execute(
             INTERSECTION_SQL
@@ -641,6 +660,10 @@ def redirect_quotation(request, pk):
     return Redirect(get_object_or_404(Quotation, pk=pk).get_absolute_url())
 
 
+def redirect_note(request, pk):
+    return Redirect(get_object_or_404(Note, pk=pk).get_absolute_url())
+
+
 def about(request):
     return render(request, "about.html")
 
@@ -683,9 +706,12 @@ def api_add_tag(request):
         return JsonResponse({"error": "Missing required parameters"}, status=400)
 
     # Get the object
-    model = {"entry": Entry, "blogmark": Blogmark, "quotation": Quotation}.get(
-        content_type
-    )
+    model = {
+        "entry": Entry,
+        "blogmark": Blogmark,
+        "quotation": Quotation,
+        "note": Note,
+    }.get(content_type)
     if not model:
         return JsonResponse({"error": "Invalid content type"}, status=400)
 

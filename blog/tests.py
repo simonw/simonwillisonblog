@@ -4,6 +4,7 @@ from .factories import (
     EntryFactory,
     BlogmarkFactory,
     QuotationFactory,
+    NoteFactory,
 )
 from blog.models import Tag, PreviousTagName
 import json
@@ -18,6 +19,7 @@ class BlogTests(TransactionTestCase):
         ]
         BlogmarkFactory()
         QuotationFactory()
+        NoteFactory()
         response = self.client.get("/")
         entries = response.context["entries"]
         self.assertEqual(
@@ -33,12 +35,14 @@ class BlogTests(TransactionTestCase):
         entry = EntryFactory()
         blogmark = BlogmarkFactory()
         quotation = QuotationFactory()
+        note = NoteFactory()
         for path in (
             "/",
             "/{}/".format(entry.created.year),
             entry.get_absolute_url(),
             blogmark.get_absolute_url(),
             quotation.get_absolute_url(),
+            note.get_absolute_url(),
             "/{}/".format(entry.created.year),
             "/atom/everything/",
         ):
@@ -62,6 +66,12 @@ class BlogTests(TransactionTestCase):
         response = self.client.get(quotation.get_absolute_url())
         self.assertTemplateUsed(response, "quotation.html")
         self.assertEqual(response.context["quotation"].pk, quotation.pk)
+
+    def test_note(self):
+        note = NoteFactory()
+        response = self.client.get(note.get_absolute_url())
+        self.assertTemplateUsed(response, "note.html")
+        self.assertEqual(response.context["note"].pk, note.pk)
 
     def test_archive_year(self):
         quotation = QuotationFactory()
@@ -137,6 +147,7 @@ class BlogTests(TransactionTestCase):
         draft_entry = EntryFactory(is_draft=True, title="draftentry")
         draft_blogmark = BlogmarkFactory(is_draft=True, link_title="draftblogmark")
         draft_quotation = QuotationFactory(is_draft=True, source="draftquotation")
+        draft_note = NoteFactory(is_draft=True, body="draftnote")
         testing = Tag.objects.get_or_create(tag="testing")[0]
 
         live_entry = EntryFactory(title="publishedentry", created=draft_entry.created)
@@ -146,14 +157,17 @@ class BlogTests(TransactionTestCase):
         live_quotation = QuotationFactory(
             source="publishedquotation", created=draft_quotation.created
         )
+        live_note = NoteFactory(body="publishednote", created=draft_note.created)
 
         for obj in (
             draft_entry,
             draft_blogmark,
             draft_quotation,
+            draft_note,
             live_entry,
             live_blogmark,
             live_quotation,
+            live_note,
         ):
             obj.tags.add(testing)
 
@@ -177,14 +191,15 @@ class BlogTests(TransactionTestCase):
         assert counts == {
             "tags": [
                 {
-                    "id": testing.pk,
+                    "id": 1,
                     "tag": "testing",
                     "description": "",
                     "total_entry": 1,
                     "total_blogmark": 1,
                     "total_quotation": 1,
+                    "total_note": 1,
                     "is_exact_match": 1,
-                    "count": 3,
+                    "count": 4,
                 }
             ]
         }
@@ -196,7 +211,7 @@ class BlogTests(TransactionTestCase):
         robots_fragment = '<meta name="robots" content="noindex">'
         draft_warning_fragment = "This is a draft post"
 
-        for obj in (draft_entry, draft_blogmark, draft_quotation):
+        for obj in (draft_entry, draft_blogmark, draft_quotation, draft_note):
             response2 = self.client.get(obj.get_absolute_url())
             self.assertContains(response2, robots_fragment)
             self.assertContains(response2, draft_warning_fragment)
@@ -218,14 +233,15 @@ class BlogTests(TransactionTestCase):
         assert counts2 == {
             "tags": [
                 {
-                    "id": testing.pk,
+                    "id": 1,
                     "tag": "testing",
                     "description": "",
                     "total_entry": 2,
                     "total_blogmark": 2,
                     "total_quotation": 2,
+                    "total_note": 2,
                     "is_exact_match": 1,
-                    "count": 6,
+                    "count": 8,
                 }
             ]
         }
