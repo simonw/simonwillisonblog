@@ -175,7 +175,7 @@ class Series(models.Model):
             return ""
 
     def entries_ordest_first(self):
-        return self.entry_set.order_by("created")
+        return self.entry_set.filter(is_draft=False).order_by("created")
 
     def get_absolute_url(self):
         return "/series/{}/".format(self.slug)
@@ -268,7 +268,10 @@ class Entry(BaseModel):
         # If there are more than 7, only show 3 before and 3 after this one
         if len(entries) > 7:
             entry_ids = [e.pk for e in entries]
-            this_index = entry_ids.index(self.pk)
+            try:
+                this_index = entry_ids.index(self.pk)
+            except ValueError:
+                this_index = len(entries)
             if this_index < 4:
                 entries = entries[:7]
                 start = 1
