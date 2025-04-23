@@ -391,6 +391,9 @@ class Blogmark(BaseModel):
 
 class Note(BaseModel):
     body = models.TextField()
+    title = models.CharField(
+        max_length=255, blank=True, default="", help_text="Optional page title"
+    )
     is_note = True
 
     def body_rendered(self):

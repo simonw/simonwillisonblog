@@ -118,7 +118,10 @@ class Everything(Base):
         elif isinstance(item, Quotation):
             return "Quoting %s" % item.source
         elif isinstance(item, Note):
-            return "Note on {}".format(date_format(item.created, "jS F Y"))
+            if item.title:
+                return item.title
+            else:
+                return "Note on {}".format(date_format(item.created, "jS F Y"))
         else:
             return "Unknown item type"
 
