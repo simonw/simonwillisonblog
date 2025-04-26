@@ -378,6 +378,7 @@ div.quote li {
 }
 div.entry ol li,
 div.blogmark ol li,
+div.note ol li,
 div.quote ol li {
   list-style-type: decimal;
   margin-left: 2em;
