@@ -314,14 +314,22 @@ div.blogmark table {
 div.entry table th,
 div.entry table td,
 div.blogmark table th,
-div.blogmark table td
-{
+div.blogmark table td,
+div.note table th,
+div.note table td {
   font-size: 0.9em;
   padding-right: 0.5em;
 }
+div.entry table td,
+div.blogmark table td,
+div.note table td {
+  vertical-align: top;
+  padding-bottom: 0.3em;
+  padding-top: 0.3em;
+}
 div.entry table th,
-div.blogmark table th {
-  padding: 0 1em 0 0;
+div.blogmark table th,
+div.note  table th {
   font-weight: bold;
   border-bottom: 1px solid #666;
 }
