@@ -20,8 +20,8 @@ from .models import (
 class BaseAdmin(admin.ModelAdmin):
     date_hierarchy = "created"
     raw_id_fields = ("tags",)
-    list_display = ("__str__", "slug", "created", "tag_summary")
-    list_filter = ("created",)
+    list_display = ("__str__", "slug", "created", "tag_summary", "is_draft")
+    list_filter = ("created", "is_draft")
     autocomplete_fields = ("tags",)
     readonly_fields = ("import_ref",)
     exclude = ("search_document",)
@@ -67,7 +67,7 @@ class LiveUpdateAdmin(admin.ModelAdmin):
 @admin.register(Quotation)
 class QuotationAdmin(BaseAdmin):
     search_fields = ("tags__tag", "quotation")
-    list_display = ("__str__", "source", "created", "tag_summary")
+    list_display = ("__str__", "source", "created", "tag_summary", "is_draft")
     prepopulated_fields = {"slug": ("source",)}
 
 
@@ -80,7 +80,7 @@ class BlogmarkAdmin(BaseAdmin):
 @admin.register(Note)
 class NoteAdmin(BaseAdmin):
     search_fields = ("tags__tag", "body")
-    list_display = ("__str__", "created", "tag_summary")
+    list_display = ("__str__", "created", "tag_summary", "is_draft")
 
 
 @admin.register(Tag)
