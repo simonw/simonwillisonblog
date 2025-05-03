@@ -18,7 +18,7 @@
 {{ entry.body|xhtml|resize_images_to_fit_width:"450"|typography|xhtml2html }}
 
 <div class="entryFooter">
-    Posted <a href="/{{ entry.created|date:"Y/M/j/" }}">{{ entry.created|date:"jS F Y" }}</a> at {{ entry.created|date:"f A"|lower }}
+    Posted <time datetime="{{ entry.created|date:"c" }}"><a href="/{{ entry.created|date:"Y/M/j/" }}">{{ entry.created|date:"jS F Y" }}</a> at {{ entry.created|date:"f A"|lower }}</time>
     {% if entry.tags.count %}
     &middot; Tagged {% for tag in entry.tags.all %}{{ tag.get_reltag }}{% if not forloop.last %}, {% endif %}{% endfor %}
     {% endif %}    &middot; Follow me <a href="https://fedi.simonwillison.net/@simon">on Mastodon</a> or <a href="https://twitter.com/simonw">on Twitter</a>

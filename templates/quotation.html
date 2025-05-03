@@ -13,7 +13,7 @@
 <p class="cite">&mdash; {% if quotation.source_url %}<a href="{{ quotation.source_url }}">{{ quotation.source }}</a>{% else %}{{ quotation.source }}{% endif %}{% if quotation.context %}, <span class="context">{{ quotation.context_rendered }}</span>{% endif %}</p>
 </div>
 
-<div class="entryFooter">Posted <a href="/{{ quotation.created|date:"Y/M/j/" }}">{{ quotation.created|date:"jS F Y" }}</a> at {{ quotation.created|date:"f A"|lower }}</div>
+<div class="entryFooter">Posted <time datetime="{{ quotation.created|date:"c" }}"><a href="/{{ quotation.created|date:"Y/M/j/" }}">{{ quotation.created|date:"jS F Y" }}</a> at {{ quotation.created|date:"f A"|lower }}</time></div>
 {% endblock %}
 
 {% block secondary %}

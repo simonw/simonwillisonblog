@@ -1,13 +1,13 @@
 {% load entry_tags %}{% load humanize %}
 {% for item in items %}
 {% if year_headers %}{% ifchanged item.obj.created.year %}<h3 class="blog-mixed-list-year">{{ item.obj.created.year }}</h3>{% endifchanged %}{% endif %}
-{% if day_headers %}{% ifchanged item.obj.created.date %}<h3 class="blog-mixed-list-year">{% if day_links %}<a href="/{{ item.obj.created|date:"Y/M/j/" }}">{{ item.obj.created.date }}</a>{% else %}{{ item.obj.created.date }}{% endif %}</h3>{% endifchanged %}{% endif %}
+{% if day_headers %}{% ifchanged item.obj.created.date %}<h3 class="blog-mixed-list-year">{% if day_links %}<a href="/{{ item.obj.created|date:"Y/M/j/" }}"><time datetime="{{ item.obj.created|date:"c" }}">{{ item.obj.created.date }}</time></a>{% else %}<time datetime="{{ item.obj.created|date:"c" }}">{{ item.obj.created.date }}</time>{% endif %}</h3>{% endifchanged %}{% endif %}
 {% if item.type == "photoset" %}
 <div class="photoset segment">
   <a class="primary" href="{{ item.obj.get_absolute_url }}"><img class="primary" src="{{ item.obj.primary.url_s }}" alt="{{ item.obj.primary.title }}" width="75" height="75"></a>
   <h4><a href="{{ item.obj.get_absolute_url }}">{{ item.obj.title }}</a>, a photoset</h4>
   {% if item.obj.description %}<p>{{ item.obj.description }}</p>{% endif %}
-  <p class="meta">{{ item.obj.primary.created|date:"f A"|lower }} / {{ item.obj.photos.count }} photo{{ item.obj.photos.count|pluralize }}{% if item.obj.has_map %} / <a href="{{ item.obj.get_absolute_url }}map/">map</a>{% endif %}</p>
+  <p class="meta"><time datetime="{{ item.obj.created|date:"c" }}">{{ item.obj.primary.created|date:"f A"|lower }}</time> / {{ item.obj.photos.count }} photo{{ item.obj.photos.count|pluralize }}{% if item.obj.has_map %} / <a href="{{ item.obj.get_absolute_url }}map/">map</a>{% endif %}</p>
   <br style="clear: both">
 </div>
 {% endif %}
@@ -34,8 +34,10 @@
   <p><strong><a href="{{ item.obj.link_url }}">{{ item.obj.link_title|typography }}</a></strong>{% if item.obj.via_url %}
     (<a href="{{ item.obj.via_url }}" title="{{ item.obj.via_title|typography }}">via</a>){% endif %}{% if not item.obj.via_url and not item.obj.link_title|ends_with_punctuation %}.{% endif %}
     {% if not item.obj.use_markdown %}{{ item.obj.commentary|typography|linebreaks|strip_wrapping_p }}{% else %}{{ item.obj.body|strip_wrapping_p }}{% endif %}</p>
-    <p class="date-and-tags"><a href="{{ item.obj.get_absolute_url }}" rel="bookmark">#</a> {% if showdate %}<a href="/{{ item.obj.created|date:"Y/M/j/" }}">{{ item.obj.created|date:"jS F Y" }}</a>,
-    {% endif %}<a href="{{ item.obj.get_absolute_url }}">{{ item.obj.created|date:"f A"|lower }}</a>
+    <p class="date-and-tags"><a href="{{ item.obj.get_absolute_url }}" rel="bookmark">#</a> <time datetime="{{ item.obj.created|date:"c" }}">
+      {% if showdate %}<a href="/{{ item.obj.created|date:"Y/M/j/" }}">{{ item.obj.created|date:"jS F Y" }}</a>,
+      {% endif %}<a href="{{ item.obj.get_absolute_url }}">{{ item.obj.created|date:"f A"|lower }}</a>
+    </time>
     {% if all_tags %} / {% for tag in all_tags %}{{ tag.get_link }}{% if not forloop.last %}, {% endif %}{% endfor %}{% endif %}</p>
 </div>
 {% endif %}
@@ -45,8 +47,10 @@
   <p class="cite">&mdash; {% if item.obj.source_url %}<a href="{{ item.obj.source_url }}">{{ item.obj.source }}</a>{% else %}{{ item.obj.source }}{% endif %}{% if item.obj.context %}, <span class="context">{{ item.obj.context_rendered }}{% endif %}</span></p>
   <p class="date-and-tags">
     <a href="{{ item.obj.get_absolute_url }}" rel="bookmark">#</a>
-    {% if showdate %}<a href="/{{ item.obj.created|date:"Y/M/j/" }}">{{ item.obj.created|date:"jS F Y" }}</a>,
-    {% endif %}<a href="{{ item.obj.get_absolute_url }}">{{ item.obj.created|date:"f A"|lower }}</a>
+    <time datetime="{{ item.obj.created|date:"c" }}">
+      {% if showdate %}<a href="/{{ item.obj.created|date:"Y/M/j/" }}">{{ item.obj.created|date:"jS F Y" }}</a>,
+      {% endif %}<a href="{{ item.obj.get_absolute_url }}">{{ item.obj.created|date:"f A"|lower }}</a>
+    </time>
     {% if all_tags %} / {% for tag in all_tags %}{{ tag.get_link }}{% if not forloop.last %}, {% endif %}{% endfor %}{% endif %}
   </p>
 </div>
@@ -56,8 +60,10 @@
   {{ item.obj.body_rendered }}
   <p class="date-and-tags">
     <a href="{{ item.obj.get_absolute_url }}" rel="bookmark">#</a>
-    {% if showdate %}<a href="/{{ item.obj.created|date:"Y/M/j/" }}">{{ item.obj.created|date:"jS F Y" }}</a>,
-    {% endif %}<a href="{{ item.obj.get_absolute_url }}">{{ item.obj.created|date:"f A"|lower }}</a>
+    <time datetime="{{ item.obj.created|date:"c" }}">
+      {% if showdate %}<a href="/{{ item.obj.created|date:"Y/M/j/" }}">{{ item.obj.created|date:"jS F Y" }}</a>,
+      {% endif %}<a href="{{ item.obj.get_absolute_url }}">{{ item.obj.created|date:"f A"|lower }}</a>
+    </time>
     {% if all_tags %} / {% for tag in all_tags %}{{ tag.get_link }}{% if not forloop.last %}, {% endif %}{% endfor %}{% endif %}
   </p>
 </div>
