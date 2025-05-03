@@ -14,7 +14,7 @@
 {% block item_content %}
 <div data-permalink-context="{{ entry.get_absolute_url }}">
 <h2>{{ entry.title|typography }}</h2>
-<p class="mobile-date">{{ entry.created|date:"jS F Y" }}</p>
+<p class="mobile-date"><time datetime="{{ entry.created|date:"c" }}">{{ entry.created|date:"jS F Y" }}</time></p>
 
 {% include "_draft_warning.html" %}
 
@@ -26,23 +26,23 @@
 </div>
 {% endif %}
 </div>
-<div class="entryFooter">Posted <a href="/{{ entry.created|date:"Y/M/j/" }}">{{ entry.created|date:"jS F Y" }}</a> at {{ entry.created|date:"f A"|lower }} &middot; Follow me on <a href="https://fedi.simonwillison.net/@simon">Mastodon</a>, <a href="https://bsky.app/profile/simonwillison.net">Bluesky</a>, <a href="https://twitter.com/simonw">Twitter</a> or <a href="https://simonwillison.net/about/#subscribe">subscribe to my newsletter</a></div>
+<div class="entryFooter">Posted <time datetime="{{ entry.created|date:"c" }}"><a href="/{{ entry.created|date:"Y/M/j/" }}">{{ entry.created|date:"jS F Y" }}</a> at {{ entry.created|date:"f A"|lower }}</time> &middot; Follow me on <a href="https://fedi.simonwillison.net/@simon">Mastodon</a>, <a href="https://bsky.app/profile/simonwillison.net">Bluesky</a>, <a href="https://twitter.com/simonw">Twitter</a> or <a href="https://simonwillison.net/about/#subscribe">subscribe to my newsletter</a></div>
 {% endblock %}
 
 {% block recent_articles_header %}More recent articles{% endblock %}
 
 {% block secondary %}
 <div class="metabox">
-<p class="this-is">This is <strong>{{ entry.title|typography }}</strong> by Simon Willison, posted on <a href="/{{ entry.created|date:"Y/M/j/" }}">{{ entry.created|date:"jS F Y" }}</a>.</p>
+<p class="this-is">This is <strong>{{ entry.title|typography }}</strong> by Simon Willison, posted on <time datetime="{{ entry.created|date:"c" }}"><a href="/{{ entry.created|date:"Y/M/j/" }}">{{ entry.created|date:"jS F Y" }}</a></time>.</p>
 {% if entry.series %}{% with entry.series_info as series_info %}
 <div class="series-info">
   <p>Part of series <strong><a href="/series/{{ entry.series.slug }}/">{{ entry.series.title }}</a></strong></p>
   <ol start="{{ series_info.start }}">
     {% for other in series_info.entries %}
       {% if other.pk == entry.pk %}
-        <li><strong>{{ other }}</strong></a> - {{ other.created }} </li>
+        <li><strong>{{ other }}</strong></a> - <time datetime="{{ other.created|date:"c" }}">{{ other.created }}</time></li>
       {% else %}
-        <li><a href="{{ other.get_absolute_url }}">{{ other }}</a> - {{ other.created }} </li>
+        <li><a href="{{ other.get_absolute_url }}">{{ other }}</a> - <time datetime="{{ other.created|date:"c" }}">{{ other.created }}</time></li>
       {% endif %}
     {% endfor %}
     {% if series_info.has_next %}<li style="list-style-type: none;"><a href="/series/{{ entry.series.slug }}/">&#8230; more</a></li>{% endif %}

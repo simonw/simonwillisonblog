@@ -15,7 +15,7 @@
 {% include "_draft_warning.html" %}
 <p><strong><a href="{{ blogmark.link_url }}">{{ blogmark.link_title }}</a></strong>{% if blogmark.via_url %} (<a href="{{ blogmark.via_url }}" title="{{ blogmark.via_title }}">via</a>){% endif %}{% if not blogmark.via_url and not blogmark.link_title|ends_with_punctuation %}.{% endif %} {% if not blogmark.use_markdown %}{{ blogmark.commentary|typography|linebreaks|strip_wrapping_p }}{% else %}{{ blogmark.body|strip_wrapping_p }}{% endif %}</p>
 
-<div class="entryFooter">Posted <a href="/{{ blogmark.created|date:"Y/M/j/" }}">{{ blogmark.created|date:"jS F Y" }}</a> at {{ blogmark.created|date:"f A"|lower }}</div>
+<div class="entryFooter">Posted <time datetime="{{ blogmark.created|date:"c" }}"><a href="/{{ blogmark.created|date:"Y/M/j/" }}">{{ blogmark.created|date:"jS F Y" }}</a> at {{ blogmark.created|date:"f A"|lower }}</time></div>
 {% endblock %}
 
 {% block secondary %}
