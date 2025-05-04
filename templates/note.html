@@ -2,7 +2,7 @@
 
 {% block title %}{% if note.title %}{{ note.title }}{% else %}Note on {{ note.created|date:"jS F Y" }}{% endif %}{% endblock %}
 
-{% block card_title %}Note on {{ note.created|date:"jS F Y" }}{% endblock %}
+{% block card_title %}{% if note.title %}{{ note.title }}{% else %}Note on {{ note.created|date:"jS F Y" }}{% endif %}{% endblock %}
 {% block card_description %}{{ note.body|truncatewords:30 }}{% endblock %}
 
 {% load entry_tags %}
