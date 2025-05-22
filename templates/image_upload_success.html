@@ -1,0 +1,12 @@
+{% extends "item_base.html" %}
+
+{% block title %}Upload image{% endblock %}
+
+{% block item_content %}
+    <h2>Upload Successful!</h2>
+    <p><strong>Image URL:</strong> <a href="{{ url }}" target="_blank">{{ url }}</a></p>
+    <p><strong>S3 Key:</strong> {{ key }}</p>
+    <img src="{{ url }}" alt="Uploaded image" style="max-width: 500px; max-height: 500px;">
+    <br><br>
+    <a href="{% url 'image_upload' %}">Upload Another Image</a>
+{% endblock %}

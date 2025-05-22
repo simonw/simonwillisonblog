@@ -18,6 +18,7 @@ import os
 import importlib.metadata
 import json
 from proxy.views import proxy_view
+from blog.image_upload import image_upload_view
 
 
 handler404 = "blog.views.custom_404"
@@ -164,6 +165,7 @@ urlpatterns = [
     re_path(r"^write/$", blog_views.write),
     #  (r'^about/$', blog_views.about),
     path("admin/bulk-tag/", blog_views.bulk_tag, name="bulk_tag"),
+    path("admin/upload-image/", image_upload_view, name="image_upload"),
     path("api/add-tag/", blog_views.api_add_tag, name="api_add_tag"),
     re_path(r"^admin/", admin.site.urls),
     re_path(r"^static/", static_redirect),

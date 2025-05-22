@@ -1,0 +1,63 @@
+{% extends "item_base.html" %}
+
+{% block title %}Upload image{% endblock %}
+
+{% block item_content %}
+<h2>Upload Image</h2>
+    
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Upload</button>
+    </form>
+    
+    <!-- AJAX Upload Example -->
+    <div id="ajax-upload" style="margin-top: 30px;">
+        <h3>AJAX Upload</h3>
+        <input type="file" id="ajax-file" accept="image/*">
+        <button onclick="uploadAjax()">Upload via AJAX</button>
+        <div id="upload-status"></div>
+    </div>
+    
+    <script>
+    function uploadAjax() {
+        const fileInput = document.getElementById('ajax-file');
+        const statusDiv = document.getElementById('upload-status');
+        
+        if (!fileInput.files[0]) {
+            statusDiv.innerHTML = '<p style="color: red;">Please select a file</p>';
+            return;
+        }
+        
+        const formData = new FormData();
+        formData.append('image', fileInput.files[0]);
+        
+        statusDiv.innerHTML = '<p>Uploading...</p>';
+        
+        fetch('{% url "image_upload" %}', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': '{{ csrf_token }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                statusDiv.innerHTML = `
+                    <p style="color: green;">Upload successful!</p>
+                    <p>URL: <a href="${data.url}" target="_blank">${data.url}</a></p>
+                    <p>S3 Key: ${data.key}</p>
+                `;
+            } else {
+                statusDiv.innerHTML = `<p style="color: red;">Error: ${data.error}</p>`;
+            }
+        })
+        .catch(error => {
+            statusDiv.innerHTML = `<p style="color: red;">Upload failed: ${error}</p>`;
+        });
+    }
+    </script>
+
+{% endblock %}
