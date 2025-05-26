@@ -329,7 +329,7 @@ div.note table td {
 }
 div.entry table th,
 div.blogmark table th,
-div.note  table th {
+div.note table th {
   font-weight: bold;
   border-bottom: 1px solid #666;
 }
@@ -375,12 +375,15 @@ div.entry ol,
 div.blogmark ul,
 div.blogmark ol,
 div.quote ul,
-div.quote ol {
+div.quote ol,
+div.note ul,
+div.note ol {
   margin-bottom: 0.8em;
 }
 div.entry li,
 div.blogmark li,
-div.quote li {
+div.quote li,
+div.note li {
   margin-left: 1em;
   list-style-type: square;
 }
