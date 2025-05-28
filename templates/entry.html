@@ -57,6 +57,7 @@
 <p><strong>Previous:</strong> <a href="{{ previous_entry.get_absolute_url }}">{{ previous_entry.title }}</a></p>
 {% endif %}{% endwith %}
 <div data-ea-publisher="simonwillisonnet" data-ea-type="image"></div>
+{% include "_sponsor_promo.html" %}
 </div>
 
 {% if entry.tweet_html %}{{ entry.tweet_html|safe }}{% endif %}

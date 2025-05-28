@@ -1,6 +1,11 @@
 {% extends "item_base.html" %}
 
-{% block title %}{% if note.title %}{{ note.title }}{% else %}Note on {{ note.created|date:"jS F Y" }}{% endif %}{% endblock %}
+{% block title %}padding-top{% endblock %}
+
+{% block extrahead %}
+{{ block.super }}
+<script async src="https://media.ethicalads.io/media/client/ethicalads.min.js"></script>
+{% endblock %}
 
 {% block card_title %}{% if note.title %}{{ note.title }}{% else %}Note on {{ note.created|date:"jS F Y" }}{% endif %}{% endblock %}
 {% block card_description %}{{ note.body|truncatewords:30 }}{% endblock %}
@@ -18,5 +23,9 @@
 {% block secondary %}
 <div class="metabox">
 {% include "_tags.html" with obj=note %}
+
+<div data-ea-publisher="simonwillisonnet" data-ea-type="text"></div>
+{% include "_sponsor_promo.html" %}
+
 </div> <!-- .metabox -->
 {% endblock %}
