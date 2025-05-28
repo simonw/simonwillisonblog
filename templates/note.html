@@ -1,6 +1,6 @@
 {% extends "item_base.html" %}
 
-{% block title %}padding-top{% endblock %}
+{% block title %}{% if note.title %}{{ note.title }}{% else %}Note on {{ note.created|date:"jS F Y" }}{% endif %}{% endblock %}
 
 {% block extrahead %}
 {{ block.super }}
