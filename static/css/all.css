@@ -1290,3 +1290,102 @@ div.ea-placement a:link {
 .tag-description {
   margin-bottom: 1em;
 }
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+  body {
+    background-color: #1a1a1a;
+    color: #e0e0e0;
+  }
+
+  a:link {
+    color: #88c0ff;
+    border-color: #88c0ff;
+  }
+
+  a:visited {
+    color: #c088ff;
+    border-color: #c088ff;
+  }
+
+  div#ft {
+    background: linear-gradient(
+      to bottom,
+      #4a2e5c 0%,
+      #2d1b3d 49%,
+      #301c3e 100%
+    );
+  }
+
+  div#band,
+  div#smallhead,
+  h2.band {
+    background: linear-gradient(
+      to bottom,
+      #4a2e5c 0%,
+      #2d1b3d 49%,
+      #301c3e 100%
+    );
+  }
+
+  div#comments ol li {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10'%3E%3Crect width='10' height='10' fill='%23333'/%3E%3C/svg%3E");
+  }
+
+  div#comments ol li.openid {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10'%3E%3Crect width='10' height='10' fill='%23553300'/%3E%3C/svg%3E");
+  }
+
+  div#comments ol li.simon {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10'%3E%3Crect width='10' height='10' fill='%23330033'/%3E%3C/svg%3E");
+  }
+
+  div#comments div.comment {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10'%3E%3Crect width='10' height='10' fill='%23333'/%3E%3C/svg%3E");
+  }
+
+  div#comments ol li.openid div.comment {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10'%3E%3Crect width='10' height='10' fill='%23553300'/%3E%3C/svg%3E");
+  }
+
+  div#comments ol li.simon div.comment {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10'%3E%3Crect width='10' height='10' fill='%23330033'/%3E%3C/svg%3E");
+  }
+
+  table.monthcalendar {
+    border-color: #444;
+  }
+
+  table.monthcalendar td,
+  table.monthcalendar th {
+    border-color: #444;
+  }
+
+  div#primary div.segment {
+    border-bottom-color: #444;
+  }
+
+  .item-quote blockquote,
+  div#primary div.quote blockquote {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext x='11' y='171' font-family='Times New Roman, serif' font-size='180' fill='%23674188'%3E%E2%80%9C%3C/text%3E%3C/svg%3E");
+  }
+
+  .item-quote blockquote p,
+  div#primary div.quote blockquote p:last-child {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext x='11' y='171' font-family='Times New Roman, serif' font-size='180' fill='%23674188'%3E%E2%80%9D%3C/text%3E%3C/svg%3E");
+  }
+
+  a.item-tag {
+    background-color: #2c2433;
+    border-color: #555;
+    color: #e0e0e0;
+  }
+
+  a.item-tag:hover {
+    background-color: #3d3347;
+  }
+
+  .item-tag span {
+    color: #aaa;
+  }
+}
