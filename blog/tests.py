@@ -286,3 +286,20 @@ class BlogTests(TransactionTestCase):
         self.assertContains(response6, draft_entry.title)
         self.assertContains(response6, draft_blogmark.link_title)
         self.assertContains(response6, draft_quotation.source)
+
+    def test_og_description_strips_markdown(self):
+        blogmark = BlogmarkFactory(commentary="This **has** *markdown*", use_markdown=True)
+        response = self.client.get(blogmark.get_absolute_url())
+        self.assertContains(
+            response,
+            '<meta property="og:description" content="This has markdown"',
+            html=False,
+        )
+
+        note = NoteFactory(body="A note with **bold** text")
+        response2 = self.client.get(note.get_absolute_url())
+        self.assertContains(
+            response2,
+            '<meta property="og:description" content="A note with bold text"',
+            html=False,
+        )

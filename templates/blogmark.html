@@ -9,7 +9,7 @@
 {% endblock %}
 
 {% block card_title %}{{ blogmark.link_title|typography }}{% endblock %}
-{% block card_description %}{{ blogmark.commentary|truncatewords:30 }}{% endblock %}
+{% block card_description %}{{ blogmark.body|striptags|truncatewords:30 }}{% endblock %}
 
 {% block item_content %}
 {% include "_draft_warning.html" %}
