@@ -57,7 +57,12 @@ class Entries(Base):
         return item.title
 
     def item_description(self, item):
-        return item.body
+        note = (
+            '<p><em>You are only seeing the entries from my blog. '
+            'Subscribe to <a href="/atom/everything/">/atom/everything/</a> '
+            'to get all of my posts.</em></p>'
+        )
+        return item.body + note
 
 
 class Blogmarks(Base):
