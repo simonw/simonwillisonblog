@@ -58,9 +58,9 @@ class Entries(Base):
 
     def item_description(self, item):
         note = (
-            '<p><em>You are only seeing the entries from my blog. '
-            'Subscribe to <a href="/atom/everything/">/atom/everything/</a> '
-            'to get all of my posts.</em></p>'
+            '<p><em>You are only seeing the long-form articles from my blog. '
+            'Subscribe to <a href="https://simonwillison.net/atom/everything/">/atom/everything/</a> '
+            'to get all of my posts, or take a look at my <a href="https://simonwillison.net/about/#subscribe">other subscription options</a>.</em></p>'
         )
         return item.body + note
 
