@@ -287,6 +287,14 @@ class BlogTests(TransactionTestCase):
         self.assertContains(response6, draft_blogmark.link_title)
         self.assertContains(response6, draft_quotation.source)
 
+    def test_entries_feed_includes_subscribe_note(self):
+        EntryFactory()
+        response = self.client.get("/atom/entries/")
+        self.assertIn(
+            "You are only seeing the",
+            response.content.decode(),
+        )
+
     def test_og_description_strips_markdown(self):
         blogmark = BlogmarkFactory(commentary="This **has** *markdown*", use_markdown=True)
         response = self.client.get(blogmark.get_absolute_url())
