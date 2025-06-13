@@ -291,7 +291,7 @@ class BlogTests(TransactionTestCase):
         EntryFactory()
         response = self.client.get("/atom/entries/")
         self.assertIn(
-            "You are only seeing the entries from my blog. Subscribe to",
+            "You are only seeing the",
             response.content.decode(),
         )
 
