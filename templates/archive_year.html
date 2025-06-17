@@ -12,7 +12,7 @@
     {% if month.entries %}
     <ul>
     {% for entry in month.entries %}
-        <li><a href="{{ entry.get_absolute_url }}">{{ entry }}</a></li>
+        <li>{{ entry.created|date:"jS" }}: <a href="{{ entry.get_absolute_url }}">{{ entry }}</a></li>
     {% endfor %}
     </ul>
     {% endif %}
