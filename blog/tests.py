@@ -311,3 +311,14 @@ class BlogTests(TransactionTestCase):
             '<meta property="og:description" content="A note with bold text"',
             html=False,
         )
+
+    def test_og_description_escapes_quotes(self):
+        blogmark = BlogmarkFactory(
+            commentary='Fun new "live music model" release', use_markdown=True
+        )
+        response = self.client.get(blogmark.get_absolute_url())
+        self.assertContains(
+            response,
+            '<meta property="og:description" content="Fun new &quot;live music model&quot; release"',
+            html=False,
+        )
