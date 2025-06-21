@@ -8,7 +8,7 @@
 {% endblock %}
 
 {% block card_title %}{% if note.title %}{{ note.title }}{% else %}Note on {{ note.created|date:"jS F Y" }}{% endif %}{% endblock %}
-{% block card_description %}{{ note.body_rendered|striptags|truncatewords:30 }}{% endblock %}
+{% block card_description %}{{ note.body_rendered|striptags|truncatewords:30|force_escape }}{% endblock %}
 
 {% load entry_tags %}
 {% block item_content %}

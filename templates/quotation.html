@@ -3,7 +3,7 @@
 {% block title %}A quote from {{ quotation.source }}{% endblock %}
 
 {% block card_title %}A quote from {{ quotation.source }}{% endblock %}
-{% block card_description %}{{ quotation.body_strip_tags|truncatewords:30 }}{% endblock %}
+{% block card_description %}{{ quotation.body_strip_tags|truncatewords:30|force_escape }}{% endblock %}
 
 {% load entry_tags %}
 {% block item_content %}
