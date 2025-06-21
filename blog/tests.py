@@ -322,3 +322,41 @@ class BlogTests(TransactionTestCase):
             '<meta property="og:description" content="Fun new &quot;live music model&quot; release"',
             html=False,
         )
+
+    def test_og_description_escapes_quotes_entry(self):
+        entry = EntryFactory(body='<p>Entry with "quotes" in it</p>')
+        response = self.client.get(entry.get_absolute_url())
+        self.assertContains(
+            response,
+            '<meta property="og:description" content="Entry with “quotes” in it"',
+            html=False,
+        )
+
+    def test_og_description_escapes_quotes_note(self):
+        note = NoteFactory(body='Note with "quotes" inside')
+        response = self.client.get(note.get_absolute_url())
+        self.assertContains(
+            response,
+            '<meta property="og:description" content="Note with &quot;quotes&quot; inside"',
+            html=False,
+        )
+
+    def test_og_description_escapes_quotes_quotation(self):
+        quotation = QuotationFactory(quotation='A "quoted" statement', source='Someone')
+        response = self.client.get(quotation.get_absolute_url())
+        self.assertContains(
+            response,
+            '<meta property="og:description" content="A &quot;quoted&quot; statement"',
+            html=False,
+        )
+
+    def test_og_description_escapes_quotes_tag_page(self):
+        tag = Tag.objects.create(tag='test', description='Tag with "quotes"')
+        entry = EntryFactory()
+        entry.tags.add(tag)
+        response = self.client.get('/tags/test/')
+        self.assertContains(
+            response,
+            '<meta property="og:description" content="1 posts tagged ‘test’. Tag with &quot;quotes&quot;"',
+            html=False,
+        )

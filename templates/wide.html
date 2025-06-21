@@ -10,7 +10,7 @@
 {% endblock %}
 
 {% block card_title %}{{ entry.title|typography }}{% endblock %}
-{% block card_description %}{{ entry.body|xhtml|remove_context_paragraph|typography|xhtml2html|striptags|truncatewords:30 }}{% endblock %}
+{% block card_description %}{{ entry.body|xhtml|remove_context_paragraph|typography|xhtml2html|striptags|truncatewords:30|force_escape }}{% endblock %}
 
 {% block item_content %}
 <h2>{{ entry.title|typography }}</h2>

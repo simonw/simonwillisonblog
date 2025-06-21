@@ -5,7 +5,7 @@
 {% block extrahead %}
 <meta property="og:type" content="website" />
 <meta property="og:title" content="Simon Willison on {{ tags|join:" and " }}" />
-<meta property="og:description" content="{{ total|intcomma }} posts tagged ‘{{ tags|join:"’ and ‘" }}’. {{ tag.description_rendered|striptags|truncatechars:160 }}" />
+<meta property="og:description" content="{{ total|intcomma }} posts tagged ‘{{ tags|join:"’ and ‘" }}’. {{ tag.description_rendered|striptags|truncatechars:160|force_escape }}" />
 <meta property="og:site_name" content="Simon Willison’s Weblog" />
 {% endblock %}
 
