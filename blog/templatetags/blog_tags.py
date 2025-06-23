@@ -1,4 +1,6 @@
 from django import template
+from django.utils.safestring import mark_safe
+from markdown import markdown
 
 register = template.Library()
 
@@ -80,3 +82,11 @@ def replace_qsarg(context, name, value):
     query_dict = context["request"].GET.copy()
     query_dict[name] = value
     return "?" + query_dict.urlencode()
+
+
+@register.filter
+def markdownify(text):
+    """
+    Convert Markdown text to HTML.
+    """
+    return mark_safe(markdown(text))

@@ -4,7 +4,7 @@
 
 {% block rel_canonical %}{% endblock %}
 
-{% block item_content %}
+{% block item_content %}{% load blog_tags %}
 <h2>About me</h2>
 
 <p>Here's my most recent conference bio:</p>
@@ -58,6 +58,25 @@
 <p>For example, to subscribe to just my content about Datasette, use the following:</p>
 
 <p><code>https://simonwillison.net/tags/datasette.atom</code></p>
+
+<h3 id="disclosures">Disclosures</h3>
+
+{% filter markdownify %}
+I do not receive any compensation for my writing on this blog - no sponsored content! If I ever do I will disclose that both here and in the post itself.
+
+Parts of work on [Datasette Cloud](https://www.datasette.cloud/) is sponsored by [Fly.io](https://fly.io/). I have a generous set of [GitHub Sponsors](https://github.com/sponsors/simonw) who support my work on Datasette and other open source projects.
+
+I am a [GitHub Star](https://stars.github.com/profiles/simonw/) (an unpaid position). GitHub paid me as a participant of their [GitHub Accelerator](https://github.blog/news-insights/company-news/github-accelerator-our-first-cohort-and-whats-next/) program in 2023.
+
+Mozilla supported my work as part of [their MIECO program](https://web.archive.org/web/20240917063820/https://future.mozilla.org/mieco2023/) (Internet Ecosystem program) in 2023-2024.
+
+I have not accepted payments from LLM vendors, but I am frequently invited to preview new LLM products and features from organizations that include OpenAI, Anthropic, Gemini and Mistral, often under NDA or subject to an embargo. This often also includes free API credits.
+
+I run ads on my blog using [EthicalAds](https://www.ethicalads.io/). I also earn money from Twitter's [Creator Revenue Sharing](https://help.x.com/en/using-x/creator-revenue-sharing) program, and try not to let that incentivize me to post engagement bait!
+
+I provide ad-hoc consulting and training services to a number of different companies and organizations. If any of those represent a conflict of interest with my writing here I will disclose that in the relevant post.
+
+{% endfilter %}
 
 <h2 id="about-site">About this site</h2>
 
