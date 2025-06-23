@@ -296,7 +296,9 @@ class BlogTests(TransactionTestCase):
         )
 
     def test_og_description_strips_markdown(self):
-        blogmark = BlogmarkFactory(commentary="This **has** *markdown*", use_markdown=True)
+        blogmark = BlogmarkFactory(
+            commentary="This **has** *markdown*", use_markdown=True
+        )
         response = self.client.get(blogmark.get_absolute_url())
         self.assertContains(
             response,
@@ -342,7 +344,7 @@ class BlogTests(TransactionTestCase):
         )
 
     def test_og_description_escapes_quotes_quotation(self):
-        quotation = QuotationFactory(quotation='A "quoted" statement', source='Someone')
+        quotation = QuotationFactory(quotation='A "quoted" statement', source="Someone")
         response = self.client.get(quotation.get_absolute_url())
         self.assertContains(
             response,
@@ -351,10 +353,10 @@ class BlogTests(TransactionTestCase):
         )
 
     def test_og_description_escapes_quotes_tag_page(self):
-        tag = Tag.objects.create(tag='test', description='Tag with "quotes"')
+        tag = Tag.objects.create(tag="test", description='Tag with "quotes"')
         entry = EntryFactory()
         entry.tags.add(tag)
-        response = self.client.get('/tags/test/')
+        response = self.client.get("/tags/test/")
         self.assertContains(
             response,
             '<meta property="og:description" content="1 posts tagged ‘test’. Tag with &quot;quotes&quot;"',
