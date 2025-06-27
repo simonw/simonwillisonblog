@@ -1,0 +1,15 @@
+{% extends "smallhead.html" %}
+{% block title %}Top tags{% endblock %}
+{% block primary %}
+<h2 class="archive-h2">Top tags</h2>
+{% for info in tags_info %}
+<h3><a href="{{ info.tag.get_absolute_url }}">{{ info.tag.tag }}</a> ({{ info.total }})</h3>
+<ul>
+  {% for entry in info.recent_entries %}
+  <li><a href="{{ entry.get_absolute_url }}">{{ entry.title }}</a></li>
+  {% empty %}
+  <li>No entries yet</li>
+  {% endfor %}
+</ul>
+{% endfor %}
+{% endblock %}

@@ -362,3 +362,18 @@ class BlogTests(TransactionTestCase):
             '<meta property="og:description" content="1 posts tagged ‘test’. Tag with &quot;quotes&quot;"',
             html=False,
         )
+
+    def test_top_tags_page(self):
+        for i in range(1, 12):
+            tag = Tag.objects.create(tag=f"tag{i}")
+            for j in range(i):
+                entry = EntryFactory(title=f"Entry{i}-{j}")
+                entry.tags.add(tag)
+        response = self.client.get("/top-tags/")
+        assert response.status_code == 200
+        tags_info = response.context["tags_info"]
+        self.assertEqual(len(tags_info), 10)
+        self.assertEqual(tags_info[0]["tag"].tag, "tag11")
+        self.assertFalse(any(info["tag"].tag == "tag1" for info in tags_info))
+        latest = Tag.objects.get(tag="tag11").entry_set.order_by("-created")[0].title
+        self.assertContains(response, latest)
