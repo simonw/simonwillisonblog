@@ -436,6 +436,43 @@ def tag_index(request):
     return render(request, "tags.html")
 
 
+def top_tags(request):
+    """Display recent headlines for the 10 most popular tags."""
+    tags = (
+        Tag.objects.annotate(
+            entry_count=models.Count(
+                "entry", filter=models.Q(entry__is_draft=False), distinct=True
+            ),
+            blogmark_count=models.Count(
+                "blogmark", filter=models.Q(blogmark__is_draft=False), distinct=True
+            ),
+            quotation_count=models.Count(
+                "quotation", filter=models.Q(quotation__is_draft=False), distinct=True
+            ),
+            note_count=models.Count(
+                "note", filter=models.Q(note__is_draft=False), distinct=True
+            ),
+        )
+        .annotate(
+            total=models.F("entry_count")
+            + models.F("blogmark_count")
+            + models.F("quotation_count")
+            + models.F("note_count")
+        )
+        .order_by("-total")[:10]
+    )
+    tags_info = [
+        {
+            "tag": tag,
+            "total": tag.total,
+            "recent_entries": tag.entry_set.filter(is_draft=False)
+            .order_by("-created")[:5],
+        }
+        for tag in tags
+    ]
+    return render(request, "top_tags.html", {"tags_info": tags_info})
+
+
 # This query gets the IDs of things that match all of the tags
 INTERSECTION_SQL = """
     SELECT %(content_table)s.id
