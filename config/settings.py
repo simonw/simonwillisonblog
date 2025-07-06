@@ -12,6 +12,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.environ.get("DJANGO_SECRET") or "dev-secret-s(p7%ue-l6r^&@y63p*ix*1"
+SCREENSHOT_SECRET = os.environ.get("SCREENSHOT_SECRET") or ""
 
 # CSRF trusted origins
 CSRF_TRUSTED_ORIGINS = []

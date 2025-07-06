@@ -12,7 +12,8 @@ from django.core.paginator import (
     EmptyPage,
     PageNotAnInteger,
 )
-from django.http import Http404, HttpResponsePermanentRedirect as Redirect
+from django.http import Http404, HttpResponsePermanentRedirect as Redirect, HttpResponse
+from django.test import Client
 from .models import (
     Blogmark,
     Entry,
@@ -24,6 +25,9 @@ from .models import (
     Tag,
     PreviousTagName,
 )
+import hashlib
+import hmac
+from urllib.parse import urlencode
 import requests
 from bs4 import BeautifulSoup as Soup
 import datetime
@@ -465,8 +469,9 @@ def top_tags(request):
         {
             "tag": tag,
             "total": tag.total,
-            "recent_entries": tag.entry_set.filter(is_draft=False)
-            .order_by("-created")[:5],
+            "recent_entries": tag.entry_set.filter(is_draft=False).order_by("-created")[
+                :5
+            ],
         }
         for tag in tags
     ]
@@ -764,3 +769,98 @@ def api_add_tag(request):
     obj.tags.add(tag)
 
     return JsonResponse({"success": True, "tag": tag_name})
+
+
+# Hide vertical scrollbar, add fade at bottom of viewport
+SCREENSHOT_EXTRA_CSS = """
+::-webkit-scrollbar {
+  display: none;
+}
+body::after {
+  content: "";
+  position: fixed;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 20px;
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0),
+    rgba(255, 255, 255, 1)
+  );
+}
+"""
+
+
+def screenshot_card(request, path):
+    # Fetch HTML for this path, to use as the version
+    response = Client().get("/" + path)
+    if response.status_code == 200:
+        html_bytes = response.content
+    else:
+        raise Http404("Page not found")
+    if not getattr(settings, "SCREENSHOT_SECRET", None):
+        raise Http404("SCREENSHOT_SECRET is not set")
+    screenshot_url = generate_screenshot_url(
+        "https://screenshot-worker.simonw.workers.dev/",
+        "https://simonwillison.net/" + path,
+        hashlib.sha256(html_bytes).hexdigest(),
+        secret=settings.SCREENSHOT_SECRET,
+        width="700",
+        height="350",
+        css=SCREENSHOT_EXTRA_CSS,
+    )
+    # Proxy fetch that URL, so Cloudflare can cache it
+    screenshot_bytes = requests.get(screenshot_url).content
+    # Return with cache header
+    response = HttpResponse(
+        screenshot_bytes,
+        content_type="image/png",
+    )
+    response["Cache-Control"] = "s-maxage={}".format(365 * 60 * 60)
+    return response
+
+
+def generate_screenshot_url(
+    worker_url: str,
+    target_url: str,
+    version: str,
+    secret: str,
+    *,
+    width: str = "1200",
+    height: str = "800",
+    js: str = "",
+    css: str = "",
+) -> str:
+    """
+    Build a **signed** screenshot URL (now supports inline JS/CSS injection).
+
+    Parameters
+    ----------
+    js, css : str
+        JavaScript and CSS strings to inject with `addScriptTag` / `addStyleTag`.
+        Empty strings (default) mean “none”.
+    """
+    width, height = str(width), str(height)
+    # ---- (dimension validation unchanged) ---- #
+
+    message = _make_message(target_url, version, width, height, js, css)
+    signature = hmac.new(secret.encode(), message.encode(), hashlib.sha256).hexdigest()
+    params = {
+        "url": target_url,
+        "version": version,
+        "w": width,
+        "h": height,
+        "js": js,
+        "css": css,
+        "sig": signature,
+    }
+    return f"{worker_url.rstrip('/')}/?{urlencode(params, safe='')}"
+
+
+def _make_message(
+    target_url: str, version: str, width: str, height: str, js: str, css: str
+) -> str:
+    """Message string that must exactly match the Worker implementation."""
+    return f"{target_url}|{version}|{width}|{height}|{js}|{css}"
