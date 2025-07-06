@@ -1,16 +1,12 @@
 {% extends "smallhead.html" %}
 
 {% block extrahead %}
-{% if item.card_image %}
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="{{ item.card_image }}">
-{% else %}
-<meta name="twitter:card" content="summary">
-{% endif %}
+<meta name="twitter:image" content="{% if item.card_image %}{{ item.card_image }}{% else %}https://simonwillison.net/card{{ request.path }}{% endif %}">
 <meta name="twitter:creator" content="@simonw">
 <meta property="og:url" content="https://simonwillison.net{{ request.path }}">
 <meta property="og:title" content="{% block card_title %}{% endblock %}">
-{% if item.card_image %}<meta property="og:image" content="{{ item.card_image }}">{% endif %}
+<meta property="og:image" content="{% if item.card_image %}{{ item.card_image }}{% else %}https://simonwillison.net/card{{ request.path }}{% endif %}">
 <meta property="og:type" content="article">
 <meta property="og:description" content="{% block card_description %}{% endblock %}">
 <meta property="og:updated_time" content="{{ item.created_unixtimestamp }}">
