@@ -791,6 +791,17 @@ body::after {
     rgba(255, 255, 255, 1)
   );
 }
+html {
+  margin: 0 10px;
+}
+#smallhead {
+  margin-right: -10px;
+  margin-left: -10px;
+}
+html div#smallhead #smallhead-inner {
+  padding-left: 25px;
+  padding-right: 10px;
+}
 """
 
 
