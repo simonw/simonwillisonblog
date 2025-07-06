@@ -133,6 +133,7 @@ def archive_item(request, year, month, day, slug):
         )
         if obj.is_draft:
             set_no_cache(response)
+        response["x-enable-card"] = "1"
         return response
 
     # If we get here, non of the views matched
@@ -796,10 +797,12 @@ body::after {
 def screenshot_card(request, path):
     # Fetch HTML for this path, to use as the version
     response = Client().get("/" + path)
-    if response.status_code == 200:
-        html_bytes = response.content
-    else:
+    # response must have x-enable-card header
+    if not response.headers.get("x-enable-card"):
+        raise Http404("Card not enabled")
+    if response.status_code != 200:
         raise Http404("Page not found")
+    html_bytes = response.content
     if not getattr(settings, "SCREENSHOT_SECRET", None):
         raise Http404("SCREENSHOT_SECRET is not set")
     screenshot_url = generate_screenshot_url(
