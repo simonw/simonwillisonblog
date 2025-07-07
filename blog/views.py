@@ -14,6 +14,7 @@ from django.core.paginator import (
 )
 from django.http import Http404, HttpResponsePermanentRedirect as Redirect, HttpResponse
 from django.test import Client
+from django.utils import timezone
 from .models import (
     Blogmark,
     Entry,
@@ -133,6 +134,10 @@ def archive_item(request, year, month, day, slug):
         )
         if obj.is_draft:
             set_no_cache(response)
+        else:
+            six_months = datetime.timedelta(days=180)
+            if obj.created < timezone.now() - six_months:
+                response["Cache-Control"] = "s-maxage={}".format(24 * 60 * 60)
         response["x-enable-card"] = "1"
         return response
 
