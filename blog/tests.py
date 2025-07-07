@@ -7,6 +7,8 @@ from .factories import (
     NoteFactory,
 )
 from blog.models import Tag, PreviousTagName
+from django.utils import timezone
+import datetime
 import json
 
 
@@ -72,6 +74,19 @@ class BlogTests(TransactionTestCase):
         response = self.client.get(note.get_absolute_url())
         self.assertTemplateUsed(response, "note.html")
         self.assertEqual(response.context["note"].pk, note.pk)
+
+    def test_cache_header_for_old_content(self):
+        old_date = timezone.now() - datetime.timedelta(days=181)
+        entry = EntryFactory(created=old_date)
+        response = self.client.get(entry.get_absolute_url())
+        assert response.headers["cache-control"] == "s-maxage=%d" % (
+            24 * 60 * 60
+        )
+
+    def test_no_cache_header_for_recent_content(self):
+        recent_entry = EntryFactory(created=timezone.now())
+        response = self.client.get(recent_entry.get_absolute_url())
+        assert "cache-control" not in response.headers
 
     def test_archive_year(self):
         quotation = QuotationFactory()
