@@ -811,6 +811,7 @@ html div#smallhead #smallhead-inner {
 
 
 def screenshot_card(request, path):
+    raise Http404("Card not enabled")
     # Fetch HTML for this path, to use as the version
     response = Client().get("/" + path)
     # response must have x-enable-card header
