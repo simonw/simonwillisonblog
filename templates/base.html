@@ -64,8 +64,24 @@ document.addEventListener('DOMContentLoaded', () => {
       if (js) {
         await import(js);
       }
-    }
   }
+}
+</script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    if (window.localStorage.getItem('ADMIN')) {
+      document.querySelectorAll('.edit-page-link').forEach(el => {
+        const url = el.getAttribute('data-admin-url');
+        if (url) {
+          const a = document.createElement('a');
+          a.href = url;
+          a.innerText = 'Edit this page';
+          el.appendChild(a);
+          el.style.display = 'block';
+        }
+      });
+    }
+  });
 </script>
 </body>
 </html>
