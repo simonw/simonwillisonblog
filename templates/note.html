@@ -18,6 +18,7 @@
 </div>
 
 <div class="entryFooter">Posted <a href="/{{ note.created|date:"Y/M/j/" }}">{{ note.created|date:"jS F Y" }}</a> at {{ note.created|date:"f A"|lower }}</div>
+<p class="edit-page-link" data-admin-url="{{ note.edit_url }}" style="display: none;"></p>
 {% endblock %}
 
 {% block secondary %}

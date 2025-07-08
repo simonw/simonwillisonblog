@@ -14,6 +14,7 @@
 </div>
 
 <div class="entryFooter">Posted <a href="/{{ quotation.created|date:"Y/M/j/" }}">{{ quotation.created|date:"jS F Y" }}</a> at {{ quotation.created|date:"f A"|lower }}</div>
+<p class="edit-page-link" data-admin-url="{{ quotation.edit_url }}" style="display: none;"></p>
 {% endblock %}
 
 {% block secondary %}
