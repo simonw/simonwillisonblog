@@ -1,6 +1,7 @@
 import time
 import json
 import re
+import calendar
 from django.db import models
 from django.db.models.functions import TruncYear, TruncMonth
 from django.contrib.postgres.search import SearchQuery, SearchRank
@@ -8,7 +9,6 @@ from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.http import HttpResponse, Http404
 from django.shortcuts import render
 from blog.models import Entry, Blogmark, Quotation, Note, Tag, load_mixed_objects
-from .views import MONTHS_3_REV_REV
 from spellchecker import SpellChecker
 import datetime
 
@@ -234,9 +234,11 @@ def search(request, q=None, return_context=False):
         "year": selected_year,
         "month": selected_month,
         "type": selected_type,
-        "month_name": MONTHS_3_REV_REV.get(
-            selected_month and int(selected_month) or "", ""
-        ).title(),
+        "month_name": (
+            calendar.month_name[int(selected_month)]
+            if selected_month.isdigit()
+            else ""
+        ),
         "from_date": from_date,
         "to_date": to_date,
     }
