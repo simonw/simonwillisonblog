@@ -392,3 +392,17 @@ class BlogTests(TransactionTestCase):
         self.assertFalse(any(info["tag"].tag == "tag1" for info in tags_info))
         latest = Tag.objects.get(tag="tag11").entry_set.order_by("-created")[0].title
         self.assertContains(response, latest)
+
+    def test_search_title_displays_full_month_name(self):
+        tag = Tag.objects.create(tag="llm-release")
+        entry = EntryFactory(
+            created=datetime.datetime(2025, 7, 1, tzinfo=datetime.timezone.utc)
+        )
+        entry.tags.add(tag)
+        response = self.client.get(
+            "/search/?tag=llm-release&year=2025&month=7"
+        )
+        self.assertContains(
+            response,
+            "Posts tagged llm-release in July, 2025",
+        )
