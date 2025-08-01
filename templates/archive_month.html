@@ -6,6 +6,19 @@
 
 <h2 class="archive-h2">{{ date|date:"F Y"}}</h2>
 
+<form action="/search/" method="GET">
+    <input type="search" class="search-input" name="q" value="" placeholder="Search {{ date|date:'F Y' }}" style="width: 80%">
+    <input type="hidden" name="year" value="{{ date|date:'Y' }}">
+    <input type="hidden" name="month" value="{{ date|date:'n' }}">
+    <input type="submit" class="search-submit" value="Search">
+</form>
+
+<p>{{ total|intcomma }} post{{ total|pluralize }}:
+    {% for t in type_counts %}
+        <a href="/search/?type={{ t.type }}&year={{ date|date:'Y' }}&month={{ date|date:'n' }}">{{ t.count }} {% if t.count == 1 %}{{ t.singular }}{% else %}{{ t.plural }}{% endif %}</a>{% if not forloop.last %}, {% endif %}
+    {% endfor %}
+</p>
+
 {% load blog_tags %}
 
 {% blog_mixed_list_with_dates items day_headers=1 day_links=1 %}

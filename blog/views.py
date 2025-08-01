@@ -340,34 +340,46 @@ def archive_year(request, year):
     )
 
 
+
 def archive_month(request, year, month):
     year = int(year)
     month = MONTHS_3_REV[month.lower()]
 
     items = []
-    from django.db import connection
+    type_counts = []
 
-    for model, content_type in (
-        (Entry, "entry"),
-        (Quotation, "quotation"),
-        (Blogmark, "blogmark"),
-        (Note, "note"),
+    for model, type_name, singular, plural in (
+        (Entry, "entry", "entry", "entries"),
+        (Blogmark, "blogmark", "link", "links"),
+        (Quotation, "quotation", "quote", "quotes"),
+        (Note, "note", "note", "notes"),
     ):
-        ids = model.objects.filter(
-            created__year=year, created__month=month, is_draft=False
-        ).values_list("id", flat=True)
-        items.extend(
-            [
-                {"type": content_type, "obj": obj}
-                for obj in list(
-                    model.objects.prefetch_related("tags").in_bulk(ids).values()
-                )
-            ]
+        ids = list(
+            model.objects.filter(
+                created__year=year, created__month=month, is_draft=False
+            ).values_list("id", flat=True)
         )
+        if ids:
+            items.extend(
+                [
+                    {"type": type_name, "obj": obj}
+                    for obj in list(
+                        model.objects.prefetch_related("tags").in_bulk(ids).values()
+                    )
+                ]
+            )
+            type_counts.append(
+                {
+                    "type": type_name,
+                    "singular": singular,
+                    "plural": plural,
+                    "count": len(ids),
+                }
+            )
     if not items:
         raise Http404
     items.sort(key=lambda x: x["obj"].created)
-    # Paginate it
+# Paginate it
     paginator = Paginator(items, min(1000, int(request.GET.get("size") or "30")))
     page_number = request.GET.get("page") or "1"
     if page_number == "last":
@@ -387,6 +399,7 @@ def archive_month(request, year, month):
             "total": paginator.count,
             "page": page,
             "date": datetime.date(year, month, 1),
+            "type_counts": type_counts,
         },
     )
 
