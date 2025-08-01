@@ -79,9 +79,7 @@ class BlogTests(TransactionTestCase):
         old_date = timezone.now() - datetime.timedelta(days=181)
         entry = EntryFactory(created=old_date)
         response = self.client.get(entry.get_absolute_url())
-        assert response.headers["cache-control"] == "s-maxage=%d" % (
-            24 * 60 * 60
-        )
+        assert response.headers["cache-control"] == "s-maxage=%d" % (24 * 60 * 60)
 
     def test_no_cache_header_for_recent_content(self):
         recent_entry = EntryFactory(created=timezone.now())
@@ -399,9 +397,7 @@ class BlogTests(TransactionTestCase):
             created=datetime.datetime(2025, 7, 1, tzinfo=datetime.timezone.utc)
         )
         entry.tags.add(tag)
-        response = self.client.get(
-            "/search/?tag=llm-release&year=2025&month=7"
-        )
+        response = self.client.get("/search/?tag=llm-release&year=2025&month=7")
         self.assertContains(
             response,
             "Posts tagged llm-release in July, 2025",
@@ -424,34 +420,36 @@ class BlogTests(TransactionTestCase):
             '<input type="hidden" name="month" value="7">',
         )
         self.assertContains(response, "4 posts:")
-        self.assertContains(response, '>2 entries</a>')
-        self.assertContains(response, '>1 link</a>')
-        self.assertContains(response, '>1 quote</a>')
+        self.assertContains(response, ">2 entries</a>")
+        self.assertContains(response, ">1 link</a>")
+        self.assertContains(response, ">1 quote</a>")
         self.assertContains(
             response,
-            '/search/?type=entry&year=2025&month=7',
+            "/search/?type=entry&year=2025&month=7",
         )
         self.assertContains(
             response,
-            '/search/?type=blogmark&year=2025&month=7',
+            "/search/?type=blogmark&year=2025&month=7",
         )
         self.assertContains(
             response,
-            '/search/?type=quotation&year=2025&month=7',
+            "/search/?type=quotation&year=2025&month=7",
         )
         summary = response.content.decode()
-        self.assertNotIn('note', summary)
+        self.assertNotIn("note", summary)
 
     def test_archive_month_includes_notes(self):
         created = datetime.datetime(2025, 7, 1, tzinfo=datetime.timezone.utc)
         # Add an entry outside July 2025 so the calendar works
-        EntryFactory(created=datetime.datetime(2024, 1, 1, tzinfo=datetime.timezone.utc))
+        EntryFactory(
+            created=datetime.datetime(2024, 1, 1, tzinfo=datetime.timezone.utc)
+        )
         NoteFactory(created=created)
         response = self.client.get("/2025/Jul/")
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "1 post:")
-        self.assertContains(response, '>1 note</a>')
+        self.assertContains(response, ">1 note</a>")
         self.assertContains(
             response,
-            '/search/?type=note&year=2025&month=7',
+            "/search/?type=note&year=2025&month=7",
         )

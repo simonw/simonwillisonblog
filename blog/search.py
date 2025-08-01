@@ -235,9 +235,7 @@ def search(request, q=None, return_context=False):
         "month": selected_month,
         "type": selected_type,
         "month_name": (
-            calendar.month_name[int(selected_month)]
-            if selected_month.isdigit()
-            else ""
+            calendar.month_name[int(selected_month)] if selected_month.isdigit() else ""
         ),
         "from_date": from_date,
         "to_date": to_date,

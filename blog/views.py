@@ -340,7 +340,6 @@ def archive_year(request, year):
     )
 
 
-
 def archive_month(request, year, month):
     year = int(year)
     month = MONTHS_3_REV[month.lower()]
@@ -379,7 +378,7 @@ def archive_month(request, year, month):
     if not items:
         raise Http404
     items.sort(key=lambda x: x["obj"].created)
-# Paginate it
+    # Paginate it
     paginator = Paginator(items, min(1000, int(request.GET.get("size") or "30")))
     page_number = request.GET.get("page") or "1"
     if page_number == "last":
