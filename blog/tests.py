@@ -445,9 +445,11 @@ class BlogTests(TransactionTestCase):
             created=datetime.datetime(2024, 1, 1, tzinfo=datetime.timezone.utc)
         )
         NoteFactory(created=created)
+        QuotationFactory(created=created)
+        BlogmarkFactory(created=created)
         response = self.client.get("/2025/Jul/")
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "1 post:")
+        self.assertContains(response, "3 posts:")
         self.assertContains(response, ">1 note</a>")
         self.assertContains(
             response,
