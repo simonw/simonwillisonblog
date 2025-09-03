@@ -79,7 +79,7 @@ class Blogmarks(Base):
         )
 
     def item_title(self, item):
-        return item.link_title
+        return item.title or item.link_title
 
 
 class Everything(Base):
@@ -120,7 +120,7 @@ class Everything(Base):
         if isinstance(item, Entry):
             return item.title
         elif isinstance(item, Blogmark):
-            return item.link_title
+            return item.title or item.link_title
         elif isinstance(item, Quotation):
             return "Quoting %s" % item.source
         elif isinstance(item, Note):

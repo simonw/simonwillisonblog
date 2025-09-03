@@ -1,6 +1,6 @@
 {% extends "item_base.html" %}
 
-{% block title %}{{ blogmark.link_title }}{% endblock %}
+{% block title %}{{ blogmark.title|default:blogmark.link_title }}{% endblock %}
 {% load entry_tags %}
 
 {% block extrahead %}
@@ -8,7 +8,7 @@
 <script async src="https://media.ethicalads.io/media/client/ethicalads.min.js"></script>
 {% endblock %}
 
-{% block card_title %}{{ blogmark.link_title|typography }}{% endblock %}
+{% block card_title %}{{ blogmark.title|default:blogmark.link_title|typography }}{% endblock %}
 {% block card_description %}{{ blogmark.body|striptags|truncatewords:30|force_escape }}{% endblock %}
 
 {% block item_content %}
