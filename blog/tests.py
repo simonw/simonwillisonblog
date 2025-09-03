@@ -10,6 +10,7 @@ from blog.models import Tag, PreviousTagName
 from django.utils import timezone
 import datetime
 import json
+import xml.etree.ElementTree as ET
 
 
 class BlogTests(TransactionTestCase):
@@ -337,6 +338,41 @@ class BlogTests(TransactionTestCase):
             '<meta property="og:description" content="Fun new &quot;live music model&quot; release"',
             html=False,
         )
+
+    def test_blogmark_title_used_for_page_and_feed(self):
+        blogmark_with_title = BlogmarkFactory(
+            link_title="Link Title", title="Custom Title"
+        )
+        blogmark_without_title = BlogmarkFactory(link_title="Another Link")
+
+        # Page title uses custom title if provided
+        response = self.client.get(blogmark_with_title.get_absolute_url())
+        self.assertContains(response, "<title>Custom Title</title>", html=False)
+
+        response2 = self.client.get(blogmark_without_title.get_absolute_url())
+        self.assertContains(
+            response2, "<title>Another Link</title>", html=False
+        )
+
+        # Atom feeds use title if present otherwise link_title
+        feed_response = self.client.get("/atom/links/")
+        root = ET.fromstring(feed_response.content)
+        ns = {"atom": "http://www.w3.org/2005/Atom"}
+        titles = [
+            e.find("atom:title", ns).text for e in root.findall("atom:entry", ns)
+        ]
+        self.assertIn("Custom Title", titles)
+        self.assertIn("Another Link", titles)
+        self.assertNotIn("Link Title", titles)
+
+        feed_response2 = self.client.get("/atom/everything/")
+        root2 = ET.fromstring(feed_response2.content)
+        titles2 = [
+            e.find("atom:title", ns).text for e in root2.findall("atom:entry", ns)
+        ]
+        self.assertIn("Custom Title", titles2)
+        self.assertIn("Another Link", titles2)
+        self.assertNotIn("Link Title", titles2)
 
     def test_og_description_escapes_quotes_entry(self):
         entry = EntryFactory(body='<p>Entry with "quotes" in it</p>')
