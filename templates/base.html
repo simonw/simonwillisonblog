@@ -41,7 +41,7 @@ document.addEventListener('DOMContentLoaded', () => {
       hashLink.style.opacity = 0.8;
       hashLink.setAttribute('href', url + '#' + id);
       hashLink.innerText = '#';
-      el.appendChild(document.createTextNode(' '));
+      el.appendChild(document.createTextNode('\u00A0'));
       el.appendChild(hashLink);
     }
   });
