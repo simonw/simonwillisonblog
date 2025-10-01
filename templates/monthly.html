@@ -1,0 +1,26 @@
+{% extends "smallhead.html" %}
+
+{% block title %}Monthly newsletter archive{% endblock %}
+
+{% block primary %}
+<h1>Monthly newsletter archive</h1>
+<p>
+  Welcome to the archive of my monthly newsletter. Each edition offers a
+  curated summary of the most important updates from my work and research.
+</p>
+{% if newsletters %}
+<ul>
+  {% for newsletter in newsletters %}
+  <li>
+    <a href="{% url 'monthly:detail' year=newsletter.sent_at|date:'Y' month=newsletter.sent_at|date:'m' %}">
+      {{ newsletter.sent_at|date:"F Y" }}: {{ newsletter.subject }}
+    </a>
+  </li>
+  {% endfor %}
+</ul>
+{% else %}
+<p>No newsletters have been published yet.</p>
+{% endif %}
+{% endblock %}
+
+{% block secondary %}{% endblock %}

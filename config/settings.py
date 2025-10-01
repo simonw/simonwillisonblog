@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     "django.contrib.humanize",
     "django_hosts",
     "blog",
+    "monthly",
     "redirects",
     "feedstats",
     "django_http_debug",

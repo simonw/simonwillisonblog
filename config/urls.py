@@ -117,6 +117,7 @@ def versions(request):
 
 
 urlpatterns = [
+    path("monthly/", include("monthly.urls")),
     re_path(r"^card/(.*$)$", blog_views.screenshot_card),
     re_path(r"^$", blog_views.index),
     re_path(r"^(\d{4})/$", blog_views.archive_year),

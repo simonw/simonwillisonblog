@@ -1,0 +1,14 @@
+{% extends "smallhead.html" %}
+
+{% block title %}{{ newsletter.subject }}{% endblock %}
+
+{% block primary %}
+<p><a href="{% url 'monthly:index' %}">Back to monthly newsletter archive</a></p>
+<h1>{{ newsletter.subject }}</h1>
+<p><strong>Sent:</strong> {{ newsletter.sent_at|date:"F j, Y" }}</p>
+<div class="newsletter-body">
+  {{ newsletter.body_html }}
+</div>
+{% endblock %}
+
+{% block secondary %}{% endblock %}
