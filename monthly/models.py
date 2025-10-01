@@ -1,4 +1,6 @@
 from django.db import models
+from django.utils.safestring import mark_safe
+from markdown import markdown
 
 
 class Newsletter(models.Model):
@@ -12,3 +14,7 @@ class Newsletter(models.Model):
 
     def __str__(self):
         return f"{self.subject} ({self.sent_at:%Y-%m-%d})"
+
+    @property
+    def body_html(self):
+        return mark_safe(markdown(self.body))

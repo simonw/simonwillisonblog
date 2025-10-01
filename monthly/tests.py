@@ -16,7 +16,7 @@ class MonthlyViewsTests(TestCase):
         )
         self.newsletter_new = Newsletter.objects.create(
             subject="Newer edition",
-            body="New body",
+            body="New **body**",
             sent_at=timezone.make_aware(datetime(2024, 2, 29, 12, 0, 0)),
         )
 
@@ -39,7 +39,7 @@ class MonthlyViewsTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context["newsletter"], self.newsletter_new)
         self.assertContains(response, "Newer edition")
-        self.assertContains(response, "New body")
+        self.assertContains(response, "<strong>body</strong>", html=True)
 
     def test_newsletter_detail_missing(self):
         response = self.client.get(
