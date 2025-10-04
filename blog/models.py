@@ -14,7 +14,7 @@ import re
 import arrow
 import datetime
 from markdown import markdown
-from xml.etree import ElementTree
+from bs4 import BeautifulSoup
 
 tag_re = re.compile("^[a-z0-9]+$")
 
@@ -224,6 +224,10 @@ class BaseModel(models.Model):
 class Entry(BaseModel):
     title = models.CharField(max_length=255)
     body = models.TextField()
+    use_markdown = models.BooleanField(
+        default=False,
+        help_text='Images can use the img element - set width="..." for a specific width and use class="blogmark-image" to center and add a drop shadow.',
+    )
     tweet_html = models.TextField(
         blank=True,
         null=True,
@@ -251,13 +255,13 @@ class Entry(BaseModel):
 
     def images(self):
         """Extracts images from entry.body"""
-        et = ElementTree.fromstring("<entry>%s</entry>" % self.body)
-        return [i.attrib for i in et.findall(".//img")]
+        soup = BeautifulSoup(str(self.rendered), "html.parser")
+        return [dict(img.attrs) for img in soup.find_all("img")]
 
     def index_components(self):
         return {
             "A": self.title,
-            "C": strip_tags(self.body),
+            "C": strip_tags(str(self.rendered)),
             "B": " ".join(self.tags.values_list("tag", flat=True)),
         }
 
@@ -286,13 +290,21 @@ class Entry(BaseModel):
         }
 
     def multi_paragraph(self):
-        return self.body.count("<p") > 1
+        return str(self.rendered).count("<p") > 1
 
     def __str__(self):
         return self.title
 
     class Meta(BaseModel.Meta):
         verbose_name_plural = "Entries"
+
+    @property
+    def rendered(self):
+        if self.use_markdown:
+            rendered = markdown(self.body or "")
+        else:
+            rendered = self.body or ""
+        return mark_safe(rendered)
 
 
 class LiveUpdate(models.Model):

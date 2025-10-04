@@ -113,6 +113,49 @@ class BlogTests(TransactionTestCase):
         """.strip(),
         )
 
+    def test_markdown_entry_renders_everywhere(self):
+        tag = Tag.objects.create(tag="markdown-test")
+        entry = EntryFactory(
+            title="Markdown Entry",
+            body="This is **markdown** text.",
+            use_markdown=True,
+        )
+        entry.tags.add(tag)
+
+        year = entry.created.year
+        month = entry.created.strftime("%b")
+        day = entry.created.day
+
+        paths = {
+            "/": True,
+            f"/{year}/": False,
+            f"/{year}/{month}/": True,
+            f"/{year}/{month}/{day}/": True,
+            entry.get_absolute_url(): True,
+            f"/tags/{tag.tag}/": True,
+            f"/search/?tag={tag.tag}": True,
+        }
+
+        for path, should_have_markup in paths.items():
+            response = self.client.get(path)
+            self.assertEqual(response.status_code, 200, msg=path)
+            if should_have_markup and "<strong>markdown</strong>" not in response.content.decode():
+                self.fail(f"{path} missing rendered markdown")
+
+        entries_feed = self.client.get("/atom/entries/")
+        self.assertEqual(entries_feed.status_code, 200)
+        self.assertIn(
+            "&lt;strong&gt;markdown&lt;/strong&gt;",
+            entries_feed.content.decode(),
+        )
+
+        everything_feed = self.client.get("/atom/everything/")
+        self.assertEqual(everything_feed.status_code, 200)
+        self.assertIn(
+            "&lt;strong&gt;markdown&lt;/strong&gt;",
+            everything_feed.content.decode(),
+        )
+
     def test_update_blogmark_runs_commit_hooks(self):
         # This was throwing errors on upgrade Django 2.2 to 2.2.1
         blogmark = BlogmarkFactory()
