@@ -3,7 +3,6 @@ from django.contrib.postgres.search import SearchQuery, SearchRank
 from django.db.models.functions import Length
 from django.db.models import F
 from django import forms
-from xml.etree import ElementTree
 from .models import (
     Entry,
     Tag,
@@ -44,10 +43,13 @@ class MyEntryForm(forms.ModelForm):
     def clean_body(self):
         # Ensure this is valid XML
         body = self.cleaned_data["body"]
-        try:
-            ElementTree.fromstring("<entry>%s</entry>" % body)
-        except Exception as e:
-            raise forms.ValidationError(str(e))
+        if not self.cleaned_data.get("use_markdown"):
+            from xml.etree import ElementTree
+
+            try:
+                ElementTree.fromstring("<entry>%s</entry>" % body)
+            except Exception as e:
+                raise forms.ValidationError(str(e))
         return body
 
 
