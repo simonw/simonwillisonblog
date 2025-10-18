@@ -20,7 +20,7 @@
     </div>
   {% endif %}
   <p>
-    {{ item.obj.body|split_cutoff|xhtml|remove_context_paragraph|first_paragraph|typography|xhtml2html }}
+    {{ item.obj.rendered|split_cutoff|xhtml|remove_context_paragraph|first_paragraph|typography|xhtml2html }}
     {% if item.obj.multi_paragraph %}<span style="font-size: 0.9em">[... <a href="{{ item.obj.get_absolute_url }}">{{ item.obj.body|wordcount|intcomma }} word{{ item.obj.body|wordcount|pluralize }}</a>]</span>{% endif %}
   </p>
   <div class="entryFooter">
