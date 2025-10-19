@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "django-sql-dashboard": {
+      "command": "python",
+      "args": [
+        "/home/user/simonwillisonblog/manage.py",
+        "run_mcp_server"
+      ],
+      "env": {
+        "DJANGO_SETTINGS_MODULE": "config.settings"
+      }
+    }
+  }
+}
