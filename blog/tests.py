@@ -646,8 +646,8 @@ class AdminFormValidationTests(TransactionTestCase):
         )
         self.assertTrue(form.is_valid())
 
-    def test_blogmark_form_plain_text_rejects_empty_html_link(self):
-        """Blogmark form without markdown should still reject <a href="">."""
+    def test_blogmark_form_plain_text_allows_empty_html_link(self):
+        """Blogmark form without markdown doesn't validate links (text is escaped)."""
         form = BlogmarkForm(
             data={
                 "link_url": "https://example.com",
@@ -657,12 +657,11 @@ class AdminFormValidationTests(TransactionTestCase):
                 "created": timezone.now(),
             }
         )
-        self.assertFalse(form.is_valid())
-        self.assertIn("commentary", form.errors["__all__"][0].lower())
+        # Plain text mode doesn't render HTML, so no validation needed
+        self.assertTrue(form.is_valid())
 
     def test_blogmark_form_plain_text_allows_markdown_syntax(self):
-        """Blogmark form without markdown should check markdown patterns too."""
-        # In plain text mode, we still check for markdown patterns
+        """Blogmark form without markdown doesn't validate markdown syntax."""
         form = BlogmarkForm(
             data={
                 "link_url": "https://example.com",
@@ -672,7 +671,7 @@ class AdminFormValidationTests(TransactionTestCase):
                 "created": timezone.now(),
             }
         )
-        # Plain text mode only checks HTML patterns, not markdown
+        # Plain text mode doesn't render markdown, so no validation needed
         self.assertTrue(form.is_valid())
 
     def test_blogmark_form_accepts_valid_plain_text(self):

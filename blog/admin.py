@@ -100,14 +100,11 @@ class BlogmarkForm(forms.ModelForm):
         commentary = cleaned_data.get("commentary", "")
         use_markdown = cleaned_data.get("use_markdown", False)
 
-        if commentary:
-            if use_markdown:
-                # Check for both HTML and Markdown empty links
-                validate_no_empty_links_html(commentary, "commentary")
-                validate_no_empty_links_markdown(commentary, "commentary")
-            else:
-                # Only check for HTML empty links in plain text mode
-                validate_no_empty_links_html(commentary, "commentary")
+        if commentary and use_markdown:
+            # Only check for empty links when markdown is enabled
+            # (plain text mode doesn't render links)
+            validate_no_empty_links_html(commentary, "commentary")
+            validate_no_empty_links_markdown(commentary, "commentary")
 
         return cleaned_data
 
