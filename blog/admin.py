@@ -64,6 +64,10 @@ class BaseAdmin(admin.ModelAdmin):
 
 
 class MyEntryForm(forms.ModelForm):
+    class Meta:
+        model = Entry
+        fields = "__all__"
+
     def clean_body(self):
         # Ensure this is valid XML
         body = self.cleaned_data["body"]
@@ -77,6 +81,10 @@ class MyEntryForm(forms.ModelForm):
 
 
 class QuotationForm(forms.ModelForm):
+    class Meta:
+        model = Quotation
+        fields = "__all__"
+
     def clean_quotation(self):
         quotation = self.cleaned_data["quotation"]
         # Check for both HTML and Markdown empty links
@@ -86,6 +94,10 @@ class QuotationForm(forms.ModelForm):
 
 
 class NoteForm(forms.ModelForm):
+    class Meta:
+        model = Note
+        fields = "__all__"
+
     def clean_body(self):
         body = self.cleaned_data["body"]
         # Check for both HTML and Markdown empty links
@@ -95,6 +107,10 @@ class NoteForm(forms.ModelForm):
 
 
 class BlogmarkForm(forms.ModelForm):
+    class Meta:
+        model = Blogmark
+        fields = "__all__"
+
     def clean(self):
         cleaned_data = super().clean()
         commentary = cleaned_data.get("commentary", "")
