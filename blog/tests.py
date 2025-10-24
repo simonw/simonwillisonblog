@@ -6,7 +6,8 @@ from .factories import (
     QuotationFactory,
     NoteFactory,
 )
-from blog.models import Tag, PreviousTagName
+from blog.models import Tag, PreviousTagName, Entry, Quotation, Note, Blogmark
+from blog.admin import MyEntryForm, QuotationForm, NoteForm, BlogmarkForm
 from django.utils import timezone
 import datetime
 import json
@@ -491,3 +492,222 @@ class BlogTests(TransactionTestCase):
             response,
             "/search/?type=note&year=2025&month=7",
         )
+
+
+class AdminFormValidationTests(TransactionTestCase):
+    """Tests for custom admin form validation to prevent empty links."""
+
+    def test_entry_form_rejects_empty_html_link_double_quotes(self):
+        """Entry form should reject <a href=""> in body."""
+        form = MyEntryForm(
+            data={
+                "title": "Test Entry",
+                "body": '<p>Check out <a href="">this link</a></p>',
+                "created": timezone.now(),
+            }
+        )
+        self.assertFalse(form.is_valid())
+        self.assertIn("body", form.errors)
+        self.assertIn("empty link", form.errors["body"][0].lower())
+
+    def test_entry_form_rejects_empty_html_link_single_quotes(self):
+        """Entry form should reject <a href=''> in body."""
+        form = MyEntryForm(
+            data={
+                "title": "Test Entry",
+                "body": "<p>Check out <a href=''>this link</a></p>",
+                "created": timezone.now(),
+            }
+        )
+        self.assertFalse(form.is_valid())
+        self.assertIn("body", form.errors)
+        self.assertIn("empty link", form.errors["body"][0].lower())
+
+    def test_entry_form_accepts_valid_html_link(self):
+        """Entry form should accept valid HTML links."""
+        form = MyEntryForm(
+            data={
+                "title": "Test Entry",
+                "body": '<p>Check out <a href="https://example.com">this link</a></p>',
+                "created": timezone.now(),
+            }
+        )
+        self.assertTrue(form.is_valid())
+
+    def test_quotation_form_rejects_empty_html_link(self):
+        """Quotation form should reject <a href=""> in quotation."""
+        form = QuotationForm(
+            data={
+                "quotation": 'A quote with <a href="">empty link</a>',
+                "source": "Someone",
+                "created": timezone.now(),
+            }
+        )
+        self.assertFalse(form.is_valid())
+        self.assertIn("quotation", form.errors)
+        self.assertIn("empty link", form.errors["quotation"][0].lower())
+
+    def test_quotation_form_rejects_empty_markdown_link(self):
+        """Quotation form should reject []() in quotation."""
+        form = QuotationForm(
+            data={
+                "quotation": "A quote with [empty link]()",
+                "source": "Someone",
+                "created": timezone.now(),
+            }
+        )
+        self.assertFalse(form.is_valid())
+        self.assertIn("quotation", form.errors)
+        self.assertIn("empty link", form.errors["quotation"][0].lower())
+
+    def test_quotation_form_accepts_valid_markdown_link(self):
+        """Quotation form should accept valid markdown links."""
+        form = QuotationForm(
+            data={
+                "quotation": "A quote with [valid link](https://example.com)",
+                "source": "Someone",
+                "created": timezone.now(),
+            }
+        )
+        self.assertTrue(form.is_valid())
+
+    def test_note_form_rejects_empty_html_link(self):
+        """Note form should reject <a href=""> in body."""
+        form = NoteForm(
+            data={
+                "body": 'A note with <a href="">empty link</a>',
+                "created": timezone.now(),
+            }
+        )
+        self.assertFalse(form.is_valid())
+        self.assertIn("body", form.errors)
+        self.assertIn("empty link", form.errors["body"][0].lower())
+
+    def test_note_form_rejects_empty_markdown_link(self):
+        """Note form should reject []() in body."""
+        form = NoteForm(
+            data={
+                "body": "A note with [empty link]()",
+                "created": timezone.now(),
+            }
+        )
+        self.assertFalse(form.is_valid())
+        self.assertIn("body", form.errors)
+        self.assertIn("empty link", form.errors["body"][0].lower())
+
+    def test_note_form_accepts_valid_links(self):
+        """Note form should accept valid links."""
+        form = NoteForm(
+            data={
+                "body": "A note with [valid link](https://example.com)",
+                "created": timezone.now(),
+            }
+        )
+        self.assertTrue(form.is_valid())
+
+    def test_blogmark_form_markdown_rejects_empty_html_link(self):
+        """Blogmark form with markdown should reject <a href="">."""
+        form = BlogmarkForm(
+            data={
+                "link_url": "https://example.com",
+                "link_title": "Example",
+                "commentary": 'Commentary with <a href="">empty link</a>',
+                "use_markdown": True,
+                "created": timezone.now(),
+            }
+        )
+        self.assertFalse(form.is_valid())
+        self.assertIn("commentary", form.errors["__all__"][0].lower())
+
+    def test_blogmark_form_markdown_rejects_empty_markdown_link(self):
+        """Blogmark form with markdown should reject []()."""
+        form = BlogmarkForm(
+            data={
+                "link_url": "https://example.com",
+                "link_title": "Example",
+                "commentary": "Commentary with [empty link]()",
+                "use_markdown": True,
+                "created": timezone.now(),
+            }
+        )
+        self.assertFalse(form.is_valid())
+        self.assertIn("commentary", form.errors["__all__"][0].lower())
+
+    def test_blogmark_form_markdown_accepts_valid_links(self):
+        """Blogmark form with markdown should accept valid links."""
+        form = BlogmarkForm(
+            data={
+                "link_url": "https://example.com",
+                "link_title": "Example",
+                "commentary": "Commentary with [valid link](https://example.com)",
+                "use_markdown": True,
+                "created": timezone.now(),
+            }
+        )
+        self.assertTrue(form.is_valid())
+
+    def test_blogmark_form_plain_text_rejects_empty_html_link(self):
+        """Blogmark form without markdown should still reject <a href="">."""
+        form = BlogmarkForm(
+            data={
+                "link_url": "https://example.com",
+                "link_title": "Example",
+                "commentary": 'Plain text with <a href="">empty link</a>',
+                "use_markdown": False,
+                "created": timezone.now(),
+            }
+        )
+        self.assertFalse(form.is_valid())
+        self.assertIn("commentary", form.errors["__all__"][0].lower())
+
+    def test_blogmark_form_plain_text_allows_markdown_syntax(self):
+        """Blogmark form without markdown should check markdown patterns too."""
+        # In plain text mode, we still check for markdown patterns
+        form = BlogmarkForm(
+            data={
+                "link_url": "https://example.com",
+                "link_title": "Example",
+                "commentary": "Plain text with []() which is not rendered as link",
+                "use_markdown": False,
+                "created": timezone.now(),
+            }
+        )
+        # Plain text mode only checks HTML patterns, not markdown
+        self.assertTrue(form.is_valid())
+
+    def test_blogmark_form_accepts_valid_plain_text(self):
+        """Blogmark form should accept plain text without links."""
+        form = BlogmarkForm(
+            data={
+                "link_url": "https://example.com",
+                "link_title": "Example",
+                "commentary": "Plain text commentary without any links",
+                "use_markdown": False,
+                "created": timezone.now(),
+            }
+        )
+        self.assertTrue(form.is_valid())
+
+    def test_entry_form_rejects_empty_link_with_whitespace(self):
+        """Entry form should reject <a href=" "> (with whitespace)."""
+        form = MyEntryForm(
+            data={
+                "title": "Test Entry",
+                "body": '<p>Check out <a href=" ">this link</a></p>',
+                "created": timezone.now(),
+            }
+        )
+        self.assertFalse(form.is_valid())
+        self.assertIn("body", form.errors)
+
+    def test_quotation_form_rejects_markdown_link_with_whitespace(self):
+        """Quotation form should reject []( ) (with whitespace)."""
+        form = QuotationForm(
+            data={
+                "quotation": "A quote with [link](  )",
+                "source": "Someone",
+                "created": timezone.now(),
+            }
+        )
+        self.assertFalse(form.is_valid())
+        self.assertIn("quotation", form.errors)

@@ -4,6 +4,7 @@ from django.db.models.functions import Length
 from django.db.models import F
 from django import forms
 from xml.etree import ElementTree
+import re
 from .models import (
     Entry,
     Tag,
@@ -15,6 +16,28 @@ from .models import (
     PreviousTagName,
     LiveUpdate,
 )
+
+
+def validate_no_empty_links_html(content, field_name="content"):
+    """Check for empty href attributes in HTML anchor tags."""
+    # Pattern matches: <a href="">, <a href=''>, <a href="" >, etc.
+    html_pattern = r'<a\s+[^>]*href=(["\'])\s*\1'
+    if re.search(html_pattern, content):
+        raise forms.ValidationError(
+            f'Found empty link in {field_name}: <a href="">. '
+            'Please provide a URL or remove the link.'
+        )
+
+
+def validate_no_empty_links_markdown(content, field_name="content"):
+    """Check for empty URLs in Markdown link syntax."""
+    # Pattern matches: [text](), [text]( ), etc.
+    markdown_pattern = r'\]\(\s*\)'
+    if re.search(markdown_pattern, content):
+        raise forms.ValidationError(
+            f'Found empty link in {field_name}: [text](). '
+            'Please provide a URL or remove the link.'
+        )
 
 
 class BaseAdmin(admin.ModelAdmin):
@@ -48,7 +71,45 @@ class MyEntryForm(forms.ModelForm):
             ElementTree.fromstring("<entry>%s</entry>" % body)
         except Exception as e:
             raise forms.ValidationError(str(e))
+        # Check for empty HTML links
+        validate_no_empty_links_html(body, "body")
         return body
+
+
+class QuotationForm(forms.ModelForm):
+    def clean_quotation(self):
+        quotation = self.cleaned_data["quotation"]
+        # Check for both HTML and Markdown empty links
+        validate_no_empty_links_html(quotation, "quotation")
+        validate_no_empty_links_markdown(quotation, "quotation")
+        return quotation
+
+
+class NoteForm(forms.ModelForm):
+    def clean_body(self):
+        body = self.cleaned_data["body"]
+        # Check for both HTML and Markdown empty links
+        validate_no_empty_links_html(body, "body")
+        validate_no_empty_links_markdown(body, "body")
+        return body
+
+
+class BlogmarkForm(forms.ModelForm):
+    def clean(self):
+        cleaned_data = super().clean()
+        commentary = cleaned_data.get("commentary", "")
+        use_markdown = cleaned_data.get("use_markdown", False)
+
+        if commentary:
+            if use_markdown:
+                # Check for both HTML and Markdown empty links
+                validate_no_empty_links_html(commentary, "commentary")
+                validate_no_empty_links_markdown(commentary, "commentary")
+            else:
+                # Only check for HTML empty links in plain text mode
+                validate_no_empty_links_html(commentary, "commentary")
+
+        return cleaned_data
 
 
 @admin.register(Entry)
@@ -66,6 +127,7 @@ class LiveUpdateAdmin(admin.ModelAdmin):
 
 @admin.register(Quotation)
 class QuotationAdmin(BaseAdmin):
+    form = QuotationForm
     search_fields = ("tags__tag", "quotation")
     list_display = ("__str__", "source", "created", "tag_summary", "is_draft")
     prepopulated_fields = {"slug": ("source",)}
@@ -73,12 +135,14 @@ class QuotationAdmin(BaseAdmin):
 
 @admin.register(Blogmark)
 class BlogmarkAdmin(BaseAdmin):
+    form = BlogmarkForm
     search_fields = ("tags__tag", "commentary")
     prepopulated_fields = {"slug": ("link_title",)}
 
 
 @admin.register(Note)
 class NoteAdmin(BaseAdmin):
+    form = NoteForm
     search_fields = ("tags__tag", "body")
     list_display = ("__str__", "created", "tag_summary", "is_draft")
 
