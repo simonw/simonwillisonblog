@@ -10,6 +10,39 @@
 {% load tag_cloud %}
 <p id="tagcloud">{% tag_cloud %}</p>
 
+<script>
+(function() {
+    const searchInput = document.querySelector('.search-input');
+    const tagCloud = document.getElementById('tagcloud');
+    const tags = tagCloud.querySelectorAll('.item-tag');
+
+    searchInput.addEventListener('input', function(e) {
+        const query = e.target.value.trim().toLowerCase();
+
+        // If search is empty, show all tags
+        if (!query) {
+            tags.forEach(tag => {
+                tag.style.display = '';
+            });
+            return;
+        }
+
+        // Split query on spaces to get individual search terms
+        const searchTerms = query.split(/\s+/).filter(term => term.length > 0);
+
+        // Filter tags
+        tags.forEach(tag => {
+            const tagText = tag.textContent.toLowerCase();
+
+            // Check if ALL search terms match the tag text
+            const matches = searchTerms.every(term => tagText.includes(term));
+
+            tag.style.display = matches ? '' : 'none';
+        });
+    });
+})();
+</script>
+
 {% endblock %}
 
 {% block secondary %}
