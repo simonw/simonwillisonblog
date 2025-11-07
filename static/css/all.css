@@ -110,6 +110,9 @@ body {
   line-height: 1.45;
   color: #000;
   background-color: #fdfdfd;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 strong {
   font-weight: bold;
@@ -169,6 +172,7 @@ div#ft {
   padding: 10px 0;
   clear: both;
   font-size: 0.85em;
+  margin-top: auto;
 }
 div#ft ul,
 div#ft li {
@@ -192,6 +196,7 @@ div#wrapper {
   margin: 0 auto;
   padding: 0 10px;
   overflow: hidden;
+  flex: 1;
 }
 div#primary {
   width: 560px;
