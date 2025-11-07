@@ -350,17 +350,13 @@ class BlogTests(TransactionTestCase):
         self.assertContains(response, "<title>Custom Title</title>", html=False)
 
         response2 = self.client.get(blogmark_without_title.get_absolute_url())
-        self.assertContains(
-            response2, "<title>Another Link</title>", html=False
-        )
+        self.assertContains(response2, "<title>Another Link</title>", html=False)
 
         # Atom feeds use title if present otherwise link_title
         feed_response = self.client.get("/atom/links/")
         root = ET.fromstring(feed_response.content)
         ns = {"atom": "http://www.w3.org/2005/Atom"}
-        titles = [
-            e.find("atom:title", ns).text for e in root.findall("atom:entry", ns)
-        ]
+        titles = [e.find("atom:title", ns).text for e in root.findall("atom:entry", ns)]
         self.assertIn("Custom Title", titles)
         self.assertIn("Another Link", titles)
         self.assertNotIn("Link Title", titles)

@@ -15,10 +15,9 @@ def monthly_index(request):
 def newsletter_detail(request, year, month):
     year = int(year)
     month = int(month)
-    newsletters = (
-        Newsletter.objects.filter(sent_at__year=year, sent_at__month=month)
-        .order_by("-sent_at")
-    )
+    newsletters = Newsletter.objects.filter(
+        sent_at__year=year, sent_at__month=month
+    ).order_by("-sent_at")
     newsletter = newsletters.first()
     if newsletter is None:
         raise Http404("Newsletter not found")
