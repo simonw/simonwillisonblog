@@ -30,12 +30,19 @@
         // Split query on spaces to get individual search terms
         const searchTerms = query.split(/\s+/).filter(term => term.length > 0);
 
+        // Build a regex that matches terms in order with anything in between
+        // Escape special regex characters in search terms
+        const escapedTerms = searchTerms.map(term =>
+            term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+        );
+        const pattern = new RegExp(escapedTerms.join('.*'), 'i');
+
         // Filter tags
         tags.forEach(tag => {
-            const tagText = tag.textContent.toLowerCase();
+            const tagText = tag.textContent;
 
-            // Check if ALL search terms match the tag text
-            const matches = searchTerms.every(term => tagText.includes(term));
+            // Check if tag text matches the pattern (terms in order)
+            const matches = pattern.test(tagText);
 
             tag.style.display = matches ? '' : 'none';
         });
