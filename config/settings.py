@@ -36,6 +36,9 @@ CLOUDFLARE_ZONE_ID = os.environ.get("CLOUDFLARE_ZONE_ID", "")
 # https://github.com/simonw/simonwillisonblog/issues/498
 SECURE_CROSS_ORIGIN_OPENER_POLICY = False
 
+# https://github.com/simonw/simonwillisonblog/issues/558
+SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
+
 # SESSION_COOKIE_DOMAIN
 if os.environ.get("SESSION_COOKIE_DOMAIN"):
     SESSION_COOKIE_DOMAIN = os.environ["SESSION_COOKIE_DOMAIN"]
