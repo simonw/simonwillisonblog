@@ -17,7 +17,7 @@ html5lib==1.1
 psycopg2-binary==2.9.10
 pytest==8.3.4
 raven>=3
-requests==2.32.3
+requests==2.32.4
 SQLAlchemy>=1.3.0
 whitenoise==6.8.2
 Markdown==3.7
