@@ -1,6 +1,7 @@
 from django.contrib.syndication.views import Feed
 from django.utils.dateformat import format as date_format
 from django.utils.feedgenerator import Atom1Feed
+from django.utils.safestring import mark_safe
 from django.http import HttpResponse
 from blog.models import Entry, Blogmark, Quotation, Note
 
@@ -63,7 +64,7 @@ class Entries(Base):
             'Subscribe to <a href="https://simonwillison.net/atom/everything/">/atom/everything/</a> '
             'to get all of my posts, or take a look at my <a href="https://simonwillison.net/about/#subscribe">other subscription options</a>.</em></p>'
         )
-        return item.body + note
+        return mark_safe(str(item.rendered) + note)
 
 
 class Blogmarks(Base):
