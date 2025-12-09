@@ -3,7 +3,7 @@
     "SessionStart": [
       {
         "type": "command",
-        "command": "pip install -q -r requirements.txt"
+        "command": "[ \"$CLAUDE_CODE_REMOTE\" = \"true\" ] && pip install -q -r requirements.txt || true"
       }
     ]
   }
