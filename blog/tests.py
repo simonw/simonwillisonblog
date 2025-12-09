@@ -616,8 +616,45 @@ class MergeTagsTests(TransactionTestCase):
         merge_record = TagMerge.objects.get(source_tag_name="merge-source")
         self.assertEqual(merge_record.destination_tag_name, "merge-dest")
         self.assertEqual(merge_record.destination_tag, dest_tag)
-        self.assertIn(entry.pk, merge_record.details["entries"])
-        self.assertIn(blogmark.pk, merge_record.details["blogmarks"])
+        self.assertIn(entry.pk, merge_record.details["entries"]["added"])
+        self.assertIn(blogmark.pk, merge_record.details["blogmarks"]["added"])
+
+    def test_merge_handles_items_already_tagged(self):
+        """Items that already have the destination tag are tracked separately."""
+        source_tag = Tag.objects.create(tag="old-tag")
+        dest_tag = Tag.objects.create(tag="new-tag")
+
+        # Entry has only source tag - will get destination added
+        entry_needs_tag = EntryFactory()
+        entry_needs_tag.tags.add(source_tag)
+
+        # Blogmark has both tags - destination won't be added
+        blogmark_has_both = BlogmarkFactory()
+        blogmark_has_both.tags.add(source_tag)
+        blogmark_has_both.tags.add(dest_tag)
+
+        self.client.login(username="staff", password="password")
+        response = self.client.post(
+            "/admin/merge-tags/",
+            {"source": "old-tag", "destination": "new-tag", "confirm": "yes"},
+        )
+        self.assertEqual(response.status_code, 200)
+
+        # Verify the success message differentiates
+        self.assertContains(response, "Added &#x27;new-tag&#x27; tag to 1 item(s)")
+        self.assertContains(response, "Removed &#x27;old-tag&#x27; from 1 item(s) that already had")
+
+        # Verify TagMerge record has correct structure
+        merge_record = TagMerge.objects.get(source_tag_name="old-tag")
+        self.assertIn(entry_needs_tag.pk, merge_record.details["entries"]["added"])
+        self.assertIn(blogmark_has_both.pk, merge_record.details["blogmarks"]["already_tagged"])
+
+        # Verify both items now have only dest_tag
+        entry_needs_tag.refresh_from_db()
+        blogmark_has_both.refresh_from_db()
+        self.assertIn(dest_tag, entry_needs_tag.tags.all())
+        self.assertIn(dest_tag, blogmark_has_both.tags.all())
+        self.assertFalse(Tag.objects.filter(tag="old-tag").exists())
 
     def test_merge_same_tag_error(self):
         """Merging a tag into itself should show an error."""

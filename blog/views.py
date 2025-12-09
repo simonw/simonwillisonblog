@@ -829,38 +829,50 @@ def merge_tags(request):
     # Handle POST request (perform the merge)
     if request.method == "POST" and source_tag and destination_tag and not error:
         if request.POST.get("confirm") == "yes":
-            # Collect all primary keys that will be affected
+            # Track items where tag was added vs just removed
             details = {
-                "entries": list(
-                    source_tag.entry_set.values_list("pk", flat=True)
-                ),
-                "blogmarks": list(
-                    source_tag.blogmark_set.values_list("pk", flat=True)
-                ),
-                "quotations": list(
-                    source_tag.quotation_set.values_list("pk", flat=True)
-                ),
-                "notes": list(
-                    source_tag.note_set.values_list("pk", flat=True)
-                ),
+                "entries": {"added": [], "already_tagged": []},
+                "blogmarks": {"added": [], "already_tagged": []},
+                "quotations": {"added": [], "already_tagged": []},
+                "notes": {"added": [], "already_tagged": []},
             }
 
             # Re-tag all content from source to destination
             for entry in Entry.objects.filter(tags=source_tag):
+                already_has_dest = destination_tag in entry.tags.all()
                 entry.tags.remove(source_tag)
-                entry.tags.add(destination_tag)
+                if already_has_dest:
+                    details["entries"]["already_tagged"].append(entry.pk)
+                else:
+                    entry.tags.add(destination_tag)
+                    details["entries"]["added"].append(entry.pk)
 
             for blogmark in Blogmark.objects.filter(tags=source_tag):
+                already_has_dest = destination_tag in blogmark.tags.all()
                 blogmark.tags.remove(source_tag)
-                blogmark.tags.add(destination_tag)
+                if already_has_dest:
+                    details["blogmarks"]["already_tagged"].append(blogmark.pk)
+                else:
+                    blogmark.tags.add(destination_tag)
+                    details["blogmarks"]["added"].append(blogmark.pk)
 
             for quotation in Quotation.objects.filter(tags=source_tag):
+                already_has_dest = destination_tag in quotation.tags.all()
                 quotation.tags.remove(source_tag)
-                quotation.tags.add(destination_tag)
+                if already_has_dest:
+                    details["quotations"]["already_tagged"].append(quotation.pk)
+                else:
+                    quotation.tags.add(destination_tag)
+                    details["quotations"]["added"].append(quotation.pk)
 
             for note in Note.objects.filter(tags=source_tag):
+                already_has_dest = destination_tag in note.tags.all()
                 note.tags.remove(source_tag)
-                note.tags.add(destination_tag)
+                if already_has_dest:
+                    details["notes"]["already_tagged"].append(note.pk)
+                else:
+                    note.tags.add(destination_tag)
+                    details["notes"]["added"].append(note.pk)
 
             # Create PreviousTagName for redirect
             PreviousTagName.objects.create(
@@ -875,31 +887,78 @@ def merge_tags(request):
                 details=details,
             )
 
+            # Calculate totals for success message
+            total_removed = sum(
+                len(details[k]["added"]) + len(details[k]["already_tagged"])
+                for k in details
+            )
+            total_added = sum(len(details[k]["added"]) for k in details)
+            total_already = sum(len(details[k]["already_tagged"]) for k in details)
+
             # Delete the source tag
             source_tag_name_for_message = source_tag.tag
             source_tag.delete()
 
-            success = (
+            success_parts = [
                 f"Successfully merged '{source_tag_name_for_message}' into "
                 f"'{destination_tag.tag}'. "
-                f"Affected: {len(details['entries'])} entries, "
-                f"{len(details['blogmarks'])} blogmarks, "
-                f"{len(details['quotations'])} quotations, "
-                f"{len(details['notes'])} notes."
-            )
+            ]
+            if total_added:
+                success_parts.append(
+                    f"Added '{destination_tag.tag}' tag to {total_added} item(s). "
+                )
+            if total_already:
+                success_parts.append(
+                    f"Removed '{source_tag_name_for_message}' from {total_already} item(s) "
+                    f"that already had '{destination_tag.tag}'."
+                )
+            if not total_added and not total_already:
+                success_parts.append("No items were affected.")
+
+            success = "".join(success_parts)
             source_tag = None
             destination_tag = None
 
     # Calculate counts for confirmation screen
     counts = None
     if source_tag and destination_tag:
+        # Count items with source tag that DON'T have destination tag (will be added)
+        # Count items with source tag that DO have destination tag (already tagged)
         counts = {
-            "entries": source_tag.entry_set.count(),
-            "blogmarks": source_tag.blogmark_set.count(),
-            "quotations": source_tag.quotation_set.count(),
-            "notes": source_tag.note_set.count(),
+            "entries": {
+                "total": source_tag.entry_set.count(),
+                "will_add": source_tag.entry_set.exclude(
+                    tags=destination_tag
+                ).count(),
+            },
+            "blogmarks": {
+                "total": source_tag.blogmark_set.count(),
+                "will_add": source_tag.blogmark_set.exclude(
+                    tags=destination_tag
+                ).count(),
+            },
+            "quotations": {
+                "total": source_tag.quotation_set.count(),
+                "will_add": source_tag.quotation_set.exclude(
+                    tags=destination_tag
+                ).count(),
+            },
+            "notes": {
+                "total": source_tag.note_set.count(),
+                "will_add": source_tag.note_set.exclude(
+                    tags=destination_tag
+                ).count(),
+            },
         }
-        counts["total"] = sum(counts.values())
+        for k in counts:
+            counts[k]["already_tagged"] = counts[k]["total"] - counts[k]["will_add"]
+        counts["total"] = sum(c["total"] for c in counts.values() if isinstance(c, dict))
+        counts["total_will_add"] = sum(
+            c["will_add"] for c in counts.values() if isinstance(c, dict)
+        )
+        counts["total_already_tagged"] = sum(
+            c["already_tagged"] for c in counts.values() if isinstance(c, dict)
+        )
 
     return render(
         request,
