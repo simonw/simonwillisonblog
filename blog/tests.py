@@ -675,3 +675,28 @@ class MergeTagsTests(TransactionTestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Source tag &#x27;nonexistent&#x27; not found")
+
+    def test_tag_merge_admin_change_page(self):
+        """The TagMerge admin change page should load without errors."""
+        # Create a superuser for admin access
+        superuser = User.objects.create_superuser(
+            username="admin", password="adminpass", email="admin@example.com"
+        )
+
+        # Create a TagMerge record directly
+        dest_tag = Tag.objects.create(tag="dest-tag")
+        merge_record = TagMerge.objects.create(
+            source_tag_name="source-tag",
+            destination_tag=dest_tag,
+            destination_tag_name="dest-tag",
+            details={
+                "entries": {"added": [1, 2], "already_tagged": []},
+                "blogmarks": {"added": [], "already_tagged": [3]},
+            },
+        )
+
+        self.client.login(username="admin", password="adminpass")
+        response = self.client.get(f"/admin/blog/tagmerge/{merge_record.pk}/change/")
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "source-tag")
+        self.assertContains(response, "dest-tag")
