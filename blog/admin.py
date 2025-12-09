@@ -156,7 +156,7 @@ class TagMergeAdmin(admin.ModelAdmin):
 
     def details_formatted(self, obj):
         """Display the details JSON in a formatted way."""
-        from django.utils.html import format_html
+        from django.utils.html import escape, mark_safe
 
         if not obj.details:
             return "-"
@@ -165,13 +165,14 @@ class TagMergeAdmin(admin.ModelAdmin):
         html_parts = ["<div style='font-family: monospace;'>"]
 
         for content_type, data in details.items():
+            escaped_type = escape(content_type)
             # Handle new format with added/already_tagged
             if isinstance(data, dict) and "added" in data:
                 added = data.get("added", [])
                 already = data.get("already_tagged", [])
                 total = len(added) + len(already)
                 if total:
-                    html_parts.append(f"<p><strong>{content_type}:</strong> {total} item(s)")
+                    html_parts.append(f"<p><strong>{escaped_type}:</strong> {total} item(s)")
                     if added:
                         html_parts.append(
                             f"<br><small>Tag added ({len(added)}): "
@@ -186,12 +187,12 @@ class TagMergeAdmin(admin.ModelAdmin):
             # Handle old format (list of pks) for backwards compatibility
             elif isinstance(data, list) and data:
                 html_parts.append(
-                    f"<p><strong>{content_type}:</strong> {len(data)} item(s)<br>"
+                    f"<p><strong>{escaped_type}:</strong> {len(data)} item(s)<br>"
                     f"<small>IDs: {', '.join(str(pk) for pk in data)}</small></p>"
                 )
 
         html_parts.append("</div>")
-        return format_html("".join(html_parts))
+        return mark_safe("".join(html_parts))
 
     details_formatted.short_description = "Merge Details"
 
