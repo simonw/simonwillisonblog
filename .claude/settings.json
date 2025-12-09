@@ -1,0 +1,10 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "type": "command",
+        "command": "[ \"$CLAUDE_CODE_REMOTE\" = \"true\" ] && pip install -q -r requirements.txt || true"
+      }
+    ]
+  }
+}
