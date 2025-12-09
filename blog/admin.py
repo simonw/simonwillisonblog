@@ -14,6 +14,7 @@ from .models import (
     Series,
     PreviousTagName,
     LiveUpdate,
+    TagMerge,
 )
 
 
@@ -136,3 +137,51 @@ admin.site.register(
 admin.site.register(
     PreviousTagName, raw_id_fields=("tag",), list_display=("previous_name", "tag")
 )
+
+
+@admin.register(TagMerge)
+class TagMergeAdmin(admin.ModelAdmin):
+    list_display = ("__str__", "source_tag_name", "destination_tag_name", "created")
+    list_filter = ("created",)
+    search_fields = ("source_tag_name", "destination_tag_name")
+    readonly_fields = (
+        "created",
+        "source_tag_name",
+        "destination_tag",
+        "destination_tag_name",
+        "details_formatted",
+    )
+    exclude = ("details",)
+    date_hierarchy = "created"
+
+    def details_formatted(self, obj):
+        """Display the details JSON in a formatted way."""
+        import json
+        from django.utils.html import format_html
+
+        if not obj.details:
+            return "-"
+
+        details = obj.details
+        html_parts = ["<div style='font-family: monospace;'>"]
+
+        for content_type, pks in details.items():
+            if pks:
+                html_parts.append(
+                    f"<p><strong>{content_type}:</strong> {len(pks)} item(s)<br>"
+                    f"<small>IDs: {', '.join(str(pk) for pk in pks)}</small></p>"
+                )
+
+        html_parts.append("</div>")
+        return format_html("".join(html_parts))
+
+    details_formatted.short_description = "Merge Details"
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False

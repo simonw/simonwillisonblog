@@ -1,0 +1,323 @@
+{% extends "item_base.html" %}
+
+{% block title %}Merge Tags{% endblock %}
+
+{% block extrahead %}
+{{ block.super }}
+<style>
+  .merge-container {
+    max-width: 600px;
+  }
+  .tag-input-container {
+    margin-bottom: 1em;
+    padding: 15px;
+    border: 1px solid #ddd;
+    background-color: #f9f9f9;
+    border-radius: 4px;
+  }
+  .tag-input-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+  }
+  .tag-input-row label {
+    width: 120px;
+    font-weight: bold;
+  }
+  .autocomplete-container {
+    position: relative;
+    flex-grow: 1;
+  }
+  .tag-input {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 1em;
+  }
+  .autocomplete-results {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    max-height: 200px;
+    overflow-y: auto;
+    background-color: white;
+    border: 1px solid #ccc;
+    border-radius: 0 0 4px 4px;
+    z-index: 10;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    display: none;
+  }
+  .autocomplete-result {
+    padding: 8px 10px;
+    cursor: pointer;
+    border-bottom: 1px solid #eee;
+  }
+  .autocomplete-result:hover {
+    background-color: #f0f0f0;
+  }
+  .autocomplete-result .count {
+    color: #666;
+    font-size: 0.9em;
+    margin-left: 5px;
+  }
+  .tag-button {
+    background-color: #733b96;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    cursor: pointer;
+    border-radius: 4px;
+    font-weight: bold;
+    font-size: 1em;
+  }
+  .tag-button:hover {
+    background-color: #5e2f7a;
+  }
+  .tag-button:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+  }
+  .confirmation-box {
+    margin: 20px 0;
+    padding: 20px;
+    border: 2px solid #733b96;
+    border-radius: 8px;
+    background-color: #f9f5fc;
+  }
+  .confirmation-box h3 {
+    margin-top: 0;
+    color: #733b96;
+  }
+  .counts-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 15px 0;
+  }
+  .counts-table th, .counts-table td {
+    padding: 8px 12px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+  }
+  .counts-table th {
+    background-color: #f0f0f0;
+  }
+  .counts-table .count {
+    font-weight: bold;
+    text-align: right;
+  }
+  .counts-table .total-row {
+    font-weight: bold;
+    background-color: #f0f0f0;
+  }
+  .warning-text {
+    color: #c00;
+    font-weight: bold;
+    margin: 15px 0;
+  }
+  .success-message {
+    padding: 15px;
+    background-color: #d4edda;
+    border: 1px solid #c3e6cb;
+    border-radius: 4px;
+    color: #155724;
+    margin-bottom: 20px;
+  }
+  .error-message {
+    padding: 15px;
+    background-color: #f8d7da;
+    border: 1px solid #f5c6cb;
+    border-radius: 4px;
+    color: #721c24;
+    margin-bottom: 20px;
+  }
+  .merge-arrow {
+    font-size: 1.5em;
+    color: #733b96;
+    margin: 0 10px;
+  }
+  .tag-preview {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 20px 0;
+    font-size: 1.2em;
+  }
+  .tag-name {
+    padding: 5px 15px;
+    background-color: #e9ecef;
+    border-radius: 4px;
+    font-family: monospace;
+  }
+  .help-text {
+    font-size: 0.9em;
+    color: #666;
+    margin-top: 5px;
+  }
+</style>
+{% endblock %}
+
+{% block item_content %}
+<div class="merge-container">
+<h2>Merge Tags</h2>
+
+<p>This tool merges one tag into another. All content tagged with the source tag will be re-tagged with the destination tag, and the source tag will be deleted. A redirect will be set up from the old tag URL to the new one.</p>
+
+{% if success %}
+<div class="success-message">
+  {{ success }}
+</div>
+{% endif %}
+
+{% if error %}
+<div class="error-message">
+  {{ error }}
+</div>
+{% endif %}
+
+<form method="GET" action="" id="select-form">
+  <div class="tag-input-container">
+    <div class="tag-input-row">
+      <label for="source-input">Source tag:</label>
+      <div class="autocomplete-container">
+        <input type="text" class="tag-input" id="source-input" name="source"
+               value="{{ source_tag_name }}" placeholder="Tag to merge FROM (will be deleted)">
+        <div class="autocomplete-results" id="source-results"></div>
+      </div>
+    </div>
+    <div class="tag-input-row">
+      <label for="destination-input">Destination tag:</label>
+      <div class="autocomplete-container">
+        <input type="text" class="tag-input" id="destination-input" name="destination"
+               value="{{ destination_tag_name }}" placeholder="Tag to merge INTO (will remain)">
+        <div class="autocomplete-results" id="destination-results"></div>
+      </div>
+    </div>
+    <div class="help-text">
+      Start typing to search for existing tags. The source tag will be merged into the destination tag and then deleted.
+    </div>
+    <div style="margin-top: 15px;">
+      <button type="submit" class="tag-button">Preview Merge</button>
+    </div>
+  </div>
+</form>
+
+{% if source_tag and destination_tag and counts %}
+<div class="confirmation-box">
+  <h3>Confirm Tag Merge</h3>
+
+  <div class="tag-preview">
+    <span class="tag-name">{{ source_tag.tag }}</span>
+    <span class="merge-arrow">&rarr;</span>
+    <span class="tag-name">{{ destination_tag.tag }}</span>
+  </div>
+
+  <p>The following content will be re-tagged from <strong>{{ source_tag.tag }}</strong> to <strong>{{ destination_tag.tag }}</strong>:</p>
+
+  <table class="counts-table">
+    <thead>
+      <tr>
+        <th>Content Type</th>
+        <th class="count">Count</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Entries</td>
+        <td class="count">{{ counts.entries }}</td>
+      </tr>
+      <tr>
+        <td>Blogmarks</td>
+        <td class="count">{{ counts.blogmarks }}</td>
+      </tr>
+      <tr>
+        <td>Quotations</td>
+        <td class="count">{{ counts.quotations }}</td>
+      </tr>
+      <tr>
+        <td>Notes</td>
+        <td class="count">{{ counts.notes }}</td>
+      </tr>
+      <tr class="total-row">
+        <td>Total</td>
+        <td class="count">{{ counts.total }}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p class="warning-text">
+    Warning: This action cannot be undone. The tag "{{ source_tag.tag }}" will be permanently deleted.
+  </p>
+
+  <form method="POST" action="">
+    {% csrf_token %}
+    <input type="hidden" name="source" value="{{ source_tag.tag }}">
+    <input type="hidden" name="destination" value="{{ destination_tag.tag }}">
+    <input type="hidden" name="confirm" value="yes">
+    <button type="submit" class="tag-button" onclick="return confirm('Are you sure you want to merge these tags? This cannot be undone.');">
+      Confirm Merge
+    </button>
+  </form>
+</div>
+{% endif %}
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  function setupAutocomplete(inputId, resultsId) {
+    const input = document.getElementById(inputId);
+    const results = document.getElementById(resultsId);
+    const container = input.closest('.autocomplete-container');
+
+    input.addEventListener('input', function() {
+      const query = this.value.trim();
+      if (query.length > 0) {
+        fetch(`/tags-autocomplete/?q=${encodeURIComponent(query)}`)
+          .then(response => response.json())
+          .then(data => {
+            results.innerHTML = '';
+            if (data.tags && data.tags.length > 0) {
+              results.style.display = 'block';
+              data.tags.forEach(tag => {
+                const resultItem = document.createElement('div');
+                resultItem.className = 'autocomplete-result';
+                resultItem.innerHTML = `${tag.tag} <span class="count">(${tag.count})</span>`;
+                resultItem.addEventListener('click', function() {
+                  input.value = tag.tag;
+                  results.style.display = 'none';
+                });
+                results.appendChild(resultItem);
+              });
+            } else {
+              results.style.display = 'none';
+            }
+          })
+          .catch(error => {
+            console.error('Error fetching tags:', error);
+          });
+      } else {
+        results.style.display = 'none';
+      }
+    });
+
+    // Close autocomplete when clicking outside
+    document.addEventListener('click', function(e) {
+      if (!container.contains(e.target)) {
+        results.style.display = 'none';
+      }
+    });
+
+    // Handle keyboard navigation
+    input.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        results.style.display = 'none';
+      }
+    });
+  }
+
+  setupAutocomplete('source-input', 'source-results');
+  setupAutocomplete('destination-input', 'destination-results');
+});
+</script>
+{% endblock %}

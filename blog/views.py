@@ -25,6 +25,7 @@ from .models import (
     Series,
     Tag,
     PreviousTagName,
+    TagMerge,
 )
 import hashlib
 import hmac
@@ -787,6 +788,132 @@ def api_add_tag(request):
     obj.tags.add(tag)
 
     return JsonResponse({"success": True, "tag": tag_name})
+
+
+@staff_member_required
+@never_cache
+def merge_tags(request):
+    """
+    Admin-only view for merging two tags.
+    Shows a confirmation screen with counts before merging.
+    """
+    source_tag = None
+    destination_tag = None
+    error = None
+    success = None
+
+    source_tag_name = request.GET.get("source") or request.POST.get("source")
+    destination_tag_name = request.GET.get("destination") or request.POST.get(
+        "destination"
+    )
+
+    # Look up the tags if specified
+    if source_tag_name:
+        try:
+            source_tag = Tag.objects.get(tag=source_tag_name)
+        except Tag.DoesNotExist:
+            error = f"Source tag '{source_tag_name}' not found"
+
+    if destination_tag_name:
+        try:
+            destination_tag = Tag.objects.get(tag=destination_tag_name)
+        except Tag.DoesNotExist:
+            error = f"Destination tag '{destination_tag_name}' not found"
+
+    # Validate that they're different
+    if source_tag and destination_tag and source_tag.pk == destination_tag.pk:
+        error = "Source and destination tags must be different"
+        source_tag = None
+        destination_tag = None
+
+    # Handle POST request (perform the merge)
+    if request.method == "POST" and source_tag and destination_tag and not error:
+        if request.POST.get("confirm") == "yes":
+            # Collect all primary keys that will be affected
+            details = {
+                "entries": list(
+                    source_tag.entry_set.values_list("pk", flat=True)
+                ),
+                "blogmarks": list(
+                    source_tag.blogmark_set.values_list("pk", flat=True)
+                ),
+                "quotations": list(
+                    source_tag.quotation_set.values_list("pk", flat=True)
+                ),
+                "notes": list(
+                    source_tag.note_set.values_list("pk", flat=True)
+                ),
+            }
+
+            # Re-tag all content from source to destination
+            for entry in Entry.objects.filter(tags=source_tag):
+                entry.tags.remove(source_tag)
+                entry.tags.add(destination_tag)
+
+            for blogmark in Blogmark.objects.filter(tags=source_tag):
+                blogmark.tags.remove(source_tag)
+                blogmark.tags.add(destination_tag)
+
+            for quotation in Quotation.objects.filter(tags=source_tag):
+                quotation.tags.remove(source_tag)
+                quotation.tags.add(destination_tag)
+
+            for note in Note.objects.filter(tags=source_tag):
+                note.tags.remove(source_tag)
+                note.tags.add(destination_tag)
+
+            # Create PreviousTagName for redirect
+            PreviousTagName.objects.create(
+                tag=destination_tag, previous_name=source_tag.tag
+            )
+
+            # Record the merge
+            TagMerge.objects.create(
+                source_tag_name=source_tag.tag,
+                destination_tag=destination_tag,
+                destination_tag_name=destination_tag.tag,
+                details=details,
+            )
+
+            # Delete the source tag
+            source_tag_name_for_message = source_tag.tag
+            source_tag.delete()
+
+            success = (
+                f"Successfully merged '{source_tag_name_for_message}' into "
+                f"'{destination_tag.tag}'. "
+                f"Affected: {len(details['entries'])} entries, "
+                f"{len(details['blogmarks'])} blogmarks, "
+                f"{len(details['quotations'])} quotations, "
+                f"{len(details['notes'])} notes."
+            )
+            source_tag = None
+            destination_tag = None
+
+    # Calculate counts for confirmation screen
+    counts = None
+    if source_tag and destination_tag:
+        counts = {
+            "entries": source_tag.entry_set.count(),
+            "blogmarks": source_tag.blogmark_set.count(),
+            "quotations": source_tag.quotation_set.count(),
+            "notes": source_tag.note_set.count(),
+        }
+        counts["total"] = sum(counts.values())
+
+    return render(
+        request,
+        "merge_tags.html",
+        {
+            "source_tag": source_tag,
+            "destination_tag": destination_tag,
+            "source_tag_name": source_tag_name or "",
+            "destination_tag_name": destination_tag_name or "",
+            "counts": counts,
+            "error": error,
+            "success": success,
+        },
+    )
 
 
 # Hide vertical scrollbar, add fade at bottom of viewport
