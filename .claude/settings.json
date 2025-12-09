@@ -1,0 +1,10 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "type": "command",
+        "command": "pip install -q -r requirements.txt"
+      }
+    ]
+  }
+}
