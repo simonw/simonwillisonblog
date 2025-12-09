@@ -156,7 +156,6 @@ class TagMergeAdmin(admin.ModelAdmin):
 
     def details_formatted(self, obj):
         """Display the details JSON in a formatted way."""
-        import json
         from django.utils.html import format_html
 
         if not obj.details:
@@ -165,11 +164,30 @@ class TagMergeAdmin(admin.ModelAdmin):
         details = obj.details
         html_parts = ["<div style='font-family: monospace;'>"]
 
-        for content_type, pks in details.items():
-            if pks:
+        for content_type, data in details.items():
+            # Handle new format with added/already_tagged
+            if isinstance(data, dict) and "added" in data:
+                added = data.get("added", [])
+                already = data.get("already_tagged", [])
+                total = len(added) + len(already)
+                if total:
+                    html_parts.append(f"<p><strong>{content_type}:</strong> {total} item(s)")
+                    if added:
+                        html_parts.append(
+                            f"<br><small>Tag added ({len(added)}): "
+                            f"{', '.join(str(pk) for pk in added)}</small>"
+                        )
+                    if already:
+                        html_parts.append(
+                            f"<br><small>Already tagged ({len(already)}): "
+                            f"{', '.join(str(pk) for pk in already)}</small>"
+                        )
+                    html_parts.append("</p>")
+            # Handle old format (list of pks) for backwards compatibility
+            elif isinstance(data, list) and data:
                 html_parts.append(
-                    f"<p><strong>{content_type}:</strong> {len(pks)} item(s)<br>"
-                    f"<small>IDs: {', '.join(str(pk) for pk in pks)}</small></p>"
+                    f"<p><strong>{content_type}:</strong> {len(data)} item(s)<br>"
+                    f"<small>IDs: {', '.join(str(pk) for pk in data)}</small></p>"
                 )
 
         html_parts.append("</div>")

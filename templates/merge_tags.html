@@ -213,34 +213,46 @@
     <span class="tag-name">{{ destination_tag.tag }}</span>
   </div>
 
-  <p>The following content will be re-tagged from <strong>{{ source_tag.tag }}</strong> to <strong>{{ destination_tag.tag }}</strong>:</p>
+  <p>The following content tagged with <strong>{{ source_tag.tag }}</strong> will have that tag removed:</p>
 
   <table class="counts-table">
     <thead>
       <tr>
         <th>Content Type</th>
-        <th class="count">Count</th>
+        <th class="count">Will add<br><small>{{ destination_tag.tag }}</small></th>
+        <th class="count">Already has<br><small>{{ destination_tag.tag }}</small></th>
+        <th class="count">Total</th>
       </tr>
     </thead>
     <tbody>
       <tr>
         <td>Entries</td>
-        <td class="count">{{ counts.entries }}</td>
+        <td class="count">{{ counts.entries.will_add }}</td>
+        <td class="count">{{ counts.entries.already_tagged }}</td>
+        <td class="count">{{ counts.entries.total }}</td>
       </tr>
       <tr>
         <td>Blogmarks</td>
-        <td class="count">{{ counts.blogmarks }}</td>
+        <td class="count">{{ counts.blogmarks.will_add }}</td>
+        <td class="count">{{ counts.blogmarks.already_tagged }}</td>
+        <td class="count">{{ counts.blogmarks.total }}</td>
       </tr>
       <tr>
         <td>Quotations</td>
-        <td class="count">{{ counts.quotations }}</td>
+        <td class="count">{{ counts.quotations.will_add }}</td>
+        <td class="count">{{ counts.quotations.already_tagged }}</td>
+        <td class="count">{{ counts.quotations.total }}</td>
       </tr>
       <tr>
         <td>Notes</td>
-        <td class="count">{{ counts.notes }}</td>
+        <td class="count">{{ counts.notes.will_add }}</td>
+        <td class="count">{{ counts.notes.already_tagged }}</td>
+        <td class="count">{{ counts.notes.total }}</td>
       </tr>
       <tr class="total-row">
         <td>Total</td>
+        <td class="count">{{ counts.total_will_add }}</td>
+        <td class="count">{{ counts.total_already_tagged }}</td>
         <td class="count">{{ counts.total }}</td>
       </tr>
     </tbody>
