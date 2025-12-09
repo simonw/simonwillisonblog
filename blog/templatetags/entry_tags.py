@@ -1,14 +1,11 @@
 from django import template
 from django.utils.html import conditional_escape
 from django.utils.safestring import mark_safe
-from xml.etree import ElementTree
+from bs4 import BeautifulSoup, NavigableString, Comment
 import re
 import datetime
 
 register = template.Library()
-entry_stripper = re.compile("^<entry>(.*?)</entry>$", re.DOTALL)
-
-
 @register.filter
 def xhtml(xhtml):
     return XhtmlString(xhtml, contains_markup=True)
@@ -17,32 +14,38 @@ def xhtml(xhtml):
 class XhtmlString(object):
     def __init__(self, value, contains_markup=False):
         if isinstance(value, XhtmlString):
-            self.et = value.et
+            self.soup = value.soup
         else:
+            if value is None:
+                value = ""
             if not contains_markup:
                 # Handle strings like "this & that"
                 value = conditional_escape(value)
-            self.et = ElementTree.fromstring("<entry>%s</entry>" % value)
+            self.soup = BeautifulSoup(f"<entry>{value}</entry>", "html.parser")
+        self.et = self.soup.find("entry")
 
     def __str__(self):
-        m = entry_stripper.match(ElementTree.tostring(self.et, "unicode"))
-        if m:
-            return mark_safe(m.group(1))
-        else:
-            return ""  # If we end up with <entry />
+        if not self.et:
+            return ""
+        return mark_safe("".join(str(content) for content in self.et.contents))
 
 
 @register.filter
 def resize_images_to_fit_width(value, arg):
     max_width = int(arg)
     x = XhtmlString(value)
-    for img in x.et.findall(".//img"):
-        width = int(img.get("width", 0))
-        height = int(img.get("height", 0))
-        if width > max_width:
+    if not x.et:
+        return x
+    for img in x.et.find_all("img"):
+        try:
+            width = int(img.get("width", 0))
+            height = int(img.get("height", 0))
+        except (TypeError, ValueError):
+            continue
+        if width > max_width and height:
             # Scale down
-            img.set("width", str(max_width))
-            img.set("height", str(int(float(max_width) / width * height)))
+            img["width"] = str(max_width)
+            img["height"] = str(int(float(max_width) / width * height))
     return x
 
 
@@ -64,23 +67,27 @@ def split_cutoff(xhtml):
 @register.filter
 def remove_context_paragraph(xhtml):
     x = XhtmlString(xhtml)
+    if not x.et:
+        return x
     p = x.et.find("p")
     if p is None:
         return x
-    xhtml = ElementTree.tostring(p, "unicode")
+    xhtml = str(p)
     if xhtml.startswith("<p><em>My answer to") or xhtml.startswith(
         '<p class="context">'
     ):
-        x.et.remove(p)
+        p.decompose()
     return x
 
 
 @register.filter
 def first_paragraph(xhtml):
     x = XhtmlString(xhtml)
+    if not x.et:
+        return mark_safe("<p>%s</p>" % xhtml)
     p = x.et.find("p")
     if p is not None:
-        return mark_safe(ElementTree.tostring(p, "unicode"))
+        return mark_safe(str(p))
     else:
         return mark_safe("<p>%s</p>" % xhtml)
 
@@ -104,9 +111,11 @@ def ends_with_punctuation(value):
 @register.filter
 def strip_p_ids(xhtml):
     x = XhtmlString(xhtml)
-    for p in x.et.findall(".//p"):
-        if "id" in p.attrib:
-            del p.attrib["id"]
+    if not x.et:
+        return x
+    for p in x.et.find_all("p"):
+        if "id" in p.attrs:
+            del p.attrs["id"]
     return x
 
 
@@ -120,16 +129,24 @@ def break_up_long_words(xhtml, length):
 
 
 def do_break_long_words(et, length):
-    """Pass an ElementTree instance; breaks up long words in it"""
-    if et.text:
-        et.text = do_break_long_words_string(et.text, length)
-    for child in et:
-        do_break_long_words(child, length)
-    if et.tail:
-        et.tail = do_break_long_words_string(et.tail, length)
+    """Pass a BeautifulSoup Tag instance; breaks up long words in it"""
+    if et is None:
+        return
+    for node in list(_iter_text_nodes(et)):
+        new_text = do_break_long_words_string(str(node), length)
+        if new_text != str(node):
+            node.replace_with(new_text)
 
 
 whitespace_re = re.compile(r"(\s+)")
+
+
+def _iter_text_nodes(tag):
+    if tag is None:
+        return []
+    for node in tag.descendants:
+        if isinstance(node, NavigableString) and not isinstance(node, Comment):
+            yield node
 
 
 def do_break_long_words_string(s, length):
@@ -167,15 +184,15 @@ def strip_wrapping_p(xhtml):
 
 
 def do_typography(et):
-    # Designed to be called recursively on ElementTree objects
-    if et.tag not in ("pre", "code"):
-        # Don't do et.text or children for those tags; just do et.tail
-        if et.text:
-            et.text = do_typography_string(et.text)
-        for child in et:
-            do_typography(child)
-    if et.tail:
-        et.tail = do_typography_string(et.tail)
+    if et is None:
+        return
+    for node in list(_iter_text_nodes(et)):
+        parent = node.parent
+        if parent and parent.name in ("pre", "code"):
+            continue
+        new_text = do_typography_string(str(node))
+        if new_text != str(node):
+            node.replace_with(new_text)
 
 
 LEFT_DOUBLE_QUOTATION_MARK = "\u201c"
