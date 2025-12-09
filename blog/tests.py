@@ -1,4 +1,5 @@
 from django.test import TransactionTestCase
+from django.contrib.auth.models import User
 from blog.templatetags.entry_tags import do_typography_string
 from .factories import (
     EntryFactory,
@@ -6,7 +7,7 @@ from .factories import (
     QuotationFactory,
     NoteFactory,
 )
-from blog.models import Tag, PreviousTagName
+from blog.models import Tag, PreviousTagName, TagMerge
 from django.utils import timezone
 import datetime
 import json
@@ -487,3 +488,153 @@ class BlogTests(TransactionTestCase):
             response,
             "/search/?type=note&year=2025&month=7",
         )
+
+
+class MergeTagsTests(TransactionTestCase):
+    def setUp(self):
+        self.staff_user = User.objects.create_user(
+            username="staff", password="password", is_staff=True
+        )
+        self.regular_user = User.objects.create_user(
+            username="regular", password="password", is_staff=False
+        )
+
+    def test_merge_tags_requires_staff(self):
+        """Non-staff users should be redirected to login."""
+        response = self.client.get("/admin/merge-tags/")
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("/admin/login/", response.url)
+
+        self.client.login(username="regular", password="password")
+        response = self.client.get("/admin/merge-tags/")
+        self.assertEqual(response.status_code, 302)
+
+    def test_merge_tags_page_loads_for_staff(self):
+        """Staff users can access the merge tags page."""
+        self.client.login(username="staff", password="password")
+        response = self.client.get("/admin/merge-tags/")
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Merge Tags")
+
+    def test_merge_tags_shows_confirmation(self):
+        """Selecting two tags shows a confirmation screen with counts."""
+        source_tag = Tag.objects.create(tag="source-tag")
+        dest_tag = Tag.objects.create(tag="dest-tag")
+
+        entry = EntryFactory()
+        entry.tags.add(source_tag)
+        blogmark = BlogmarkFactory()
+        blogmark.tags.add(source_tag)
+
+        self.client.login(username="staff", password="password")
+        response = self.client.get(
+            "/admin/merge-tags/?source=source-tag&destination=dest-tag"
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Confirm Tag Merge")
+        self.assertContains(response, "source-tag")
+        self.assertContains(response, "dest-tag")
+
+    def test_merge_tags_performs_merge(self):
+        """Merging tags re-tags content and deletes the source tag."""
+        source_tag = Tag.objects.create(tag="old-tag")
+        dest_tag = Tag.objects.create(tag="new-tag")
+
+        entry = EntryFactory()
+        entry.tags.add(source_tag)
+        blogmark = BlogmarkFactory()
+        blogmark.tags.add(source_tag)
+        quotation = QuotationFactory()
+        quotation.tags.add(source_tag)
+        note = NoteFactory()
+        note.tags.add(source_tag)
+
+        self.client.login(username="staff", password="password")
+        response = self.client.post(
+            "/admin/merge-tags/",
+            {"source": "old-tag", "destination": "new-tag", "confirm": "yes"},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Successfully merged")
+
+        # Verify source tag was deleted
+        self.assertFalse(Tag.objects.filter(tag="old-tag").exists())
+
+        # Verify content is now tagged with destination tag
+        entry.refresh_from_db()
+        blogmark.refresh_from_db()
+        quotation.refresh_from_db()
+        note.refresh_from_db()
+
+        self.assertIn(dest_tag, entry.tags.all())
+        self.assertIn(dest_tag, blogmark.tags.all())
+        self.assertIn(dest_tag, quotation.tags.all())
+        self.assertIn(dest_tag, note.tags.all())
+
+        self.assertNotIn(source_tag, entry.tags.all())
+
+    def test_merge_creates_previous_tag_name(self):
+        """Merging tags creates a PreviousTagName for redirects."""
+        source_tag = Tag.objects.create(tag="redirect-from")
+        dest_tag = Tag.objects.create(tag="redirect-to")
+
+        entry = EntryFactory()
+        entry.tags.add(source_tag)
+
+        self.client.login(username="staff", password="password")
+        self.client.post(
+            "/admin/merge-tags/",
+            {"source": "redirect-from", "destination": "redirect-to", "confirm": "yes"},
+        )
+
+        # Verify PreviousTagName was created
+        previous = PreviousTagName.objects.get(previous_name="redirect-from")
+        self.assertEqual(previous.tag.tag, "redirect-to")
+
+        # Verify redirect works
+        response = self.client.get("/tags/redirect-from/")
+        self.assertEqual(response.status_code, 301)
+        self.assertEqual(response.url, "/tags/redirect-to/")
+
+    def test_merge_creates_tag_merge_record(self):
+        """Merging tags creates a TagMerge record with details."""
+        source_tag = Tag.objects.create(tag="merge-source")
+        dest_tag = Tag.objects.create(tag="merge-dest")
+
+        entry = EntryFactory()
+        entry.tags.add(source_tag)
+        blogmark = BlogmarkFactory()
+        blogmark.tags.add(source_tag)
+
+        self.client.login(username="staff", password="password")
+        self.client.post(
+            "/admin/merge-tags/",
+            {"source": "merge-source", "destination": "merge-dest", "confirm": "yes"},
+        )
+
+        # Verify TagMerge record was created
+        merge_record = TagMerge.objects.get(source_tag_name="merge-source")
+        self.assertEqual(merge_record.destination_tag_name, "merge-dest")
+        self.assertEqual(merge_record.destination_tag, dest_tag)
+        self.assertIn(entry.pk, merge_record.details["entries"])
+        self.assertIn(blogmark.pk, merge_record.details["blogmarks"])
+
+    def test_merge_same_tag_error(self):
+        """Merging a tag into itself should show an error."""
+        tag = Tag.objects.create(tag="same-tag")
+
+        self.client.login(username="staff", password="password")
+        response = self.client.get("/admin/merge-tags/?source=same-tag&destination=same-tag")
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Source and destination tags must be different")
+
+    def test_merge_nonexistent_tag_error(self):
+        """Merging with a nonexistent tag should show an error."""
+        Tag.objects.create(tag="existing-tag")
+
+        self.client.login(username="staff", password="password")
+        response = self.client.get(
+            "/admin/merge-tags/?source=nonexistent&destination=existing-tag"
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Source tag &#x27;nonexistent&#x27; not found")

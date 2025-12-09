@@ -162,6 +162,36 @@ class PreviousTagName(models.Model):
         return self.previous_name
 
 
+class TagMerge(models.Model):
+    """Records the details of a tag merge operation."""
+
+    created = models.DateTimeField(auto_now_add=True)
+    source_tag_name = models.SlugField(
+        help_text="The tag that was merged (and deleted)"
+    )
+    destination_tag = models.ForeignKey(
+        Tag,
+        on_delete=models.SET_NULL,
+        null=True,
+        help_text="The tag that items were merged into",
+    )
+    destination_tag_name = models.SlugField(
+        help_text="Name of destination tag at time of merge"
+    )
+    details = JSONField(
+        default=dict,
+        help_text="JSON with affected primary keys for each content type",
+    )
+
+    def __str__(self):
+        return f"{self.source_tag_name} → {self.destination_tag_name} ({self.created.strftime('%Y-%m-%d %H:%M')})"
+
+    class Meta:
+        verbose_name = "Tag Merge"
+        verbose_name_plural = "Tag Merges"
+        ordering = ("-created",)
+
+
 class Series(models.Model):
     created = models.DateTimeField(default=datetime.datetime.utcnow)
     slug = models.SlugField(max_length=64, unique=True)

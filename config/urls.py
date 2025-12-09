@@ -167,6 +167,7 @@ urlpatterns = [
     re_path(r"^write/$", blog_views.write),
     #  (r'^about/$', blog_views.about),
     path("admin/bulk-tag/", blog_views.bulk_tag, name="bulk_tag"),
+    path("admin/merge-tags/", blog_views.merge_tags, name="merge_tags"),
     path("api/add-tag/", blog_views.api_add_tag, name="api_add_tag"),
     re_path(r"^admin/", admin.site.urls),
     re_path(r"^static/", static_redirect),
