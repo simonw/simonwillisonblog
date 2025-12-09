@@ -8,9 +8,25 @@ This project uses Django's built-in test framework with PostgreSQL.
 
 ### Prerequisites
 
-1. Python 3.13
+1. Python 3.12+ (Django 6.0 requirement)
 2. PostgreSQL database running
 3. Dependencies installed: `pip install -r requirements.txt`
+
+### Setting up Python 3.12 with uv
+
+If your system doesn't have Python 3.12+, use `uv` to install it:
+
+```bash
+# Install Python 3.12
+uv python install 3.12
+
+# Create a virtual environment with Python 3.12
+uv venv --python 3.12 .venv312
+
+# Activate and install dependencies
+source .venv312/bin/activate
+uv pip install -r requirements.txt
+```
 
 ### Database Setup
 
