@@ -45,10 +45,38 @@ class MyEntryForm(forms.ModelForm):
     def clean_body(self):
         # Ensure this is valid XML
         body = self.cleaned_data["body"]
+        wrapped = "<entry>%s</entry>" % body
         try:
-            ElementTree.fromstring("<entry>%s</entry>" % body)
-        except Exception as e:
-            raise forms.ValidationError(str(e))
+            ElementTree.fromstring(wrapped)
+        except ElementTree.ParseError as e:
+            msg = str(e)
+            # ParseError format: "message: line X, column Y"
+            import re
+
+            match = re.search(r"line (\d+), column (\d+)", msg)
+            if match:
+                line_no = int(match.group(1))
+                col_no = int(match.group(2))
+                lines = wrapped.split("\n")
+                if 0 < line_no <= len(lines):
+                    problem_line = lines[line_no - 1]
+                    # Show context around the error (60 chars either side)
+                    start = max(0, col_no - 60)
+                    end = min(len(problem_line), col_no + 60)
+                    snippet = problem_line[start:end]
+                    pointer_pos = min(col_no - start - 1, len(snippet) - 1)
+                    pointer = " " * pointer_pos + "^"
+                    # Check for common issues
+                    hints = []
+                    # Check for unescaped & near the error
+                    nearby = problem_line[max(0, col_no - 10) : col_no + 10]
+                    if "&" in nearby and "&amp;" not in nearby:
+                        hints.append("Hint: Found '&' near error - use '&amp;' in URLs")
+                    error_parts = [msg, "", "Context:", snippet, pointer]
+                    if hints:
+                        error_parts.extend(["", *hints])
+                    raise forms.ValidationError("\n".join(error_parts))
+            raise forms.ValidationError(msg)
         return body
 
 
@@ -172,7 +200,9 @@ class TagMergeAdmin(admin.ModelAdmin):
                 already = data.get("already_tagged", [])
                 total = len(added) + len(already)
                 if total:
-                    html_parts.append(f"<p><strong>{escaped_type}:</strong> {total} item(s)")
+                    html_parts.append(
+                        f"<p><strong>{escaped_type}:</strong> {total} item(s)"
+                    )
                     if added:
                         html_parts.append(
                             f"<br><small>Tag added ({len(added)}): "
