@@ -1,20 +1,21 @@
 {% extends "admin/index.html" %}
 
 {% block content %}
-{{ block.super }}
-
-<div id="admin-tools" style="margin-top: 20px; padding: 15px; background: #f8f8f8; border: 1px solid #ddd; border-radius: 4px;">
-    <h2 style="margin-top: 0;">Tools</h2>
-    <ul style="list-style: none; padding: 0; margin: 0;">
-        <li style="list-style: none; margin-bottom: 8px;">
-            <a href="/admin/bulk-tag/">Bulk Tag Tool</a> - Add tags to multiple items at once
-        </li>
-        <li style="list-style: none; margin-bottom: 8px;">
-            <a href="/admin/merge-tags/">Merge Tags</a> - Merge multiple tags into one
-        </li>
-        <li style="list-style: none; margin-bottom: 8px;">
-            <a href="/dashboard/">SQL Dashboard</a> - Run SQL queries against the database
-        </li>
-    </ul>
+<div id="content-main" class="app-list">
+  {% include "admin/app_list.html" with app_list=app_list show_changelinks=True %}
+  <div class="module" style="margin-top: 20px;">
+      <h2>Tools</h2>
+      <ul style="list-style: none; padding: 8px 0 0 8px; margin: 0;">
+          <li style="margin-bottom: 8px; list-style: none;">
+              <a href="/admin/bulk-tag/">Bulk Tag Tool</a> - Add tags to multiple items at once
+          </li>
+          <li style="margin-bottom: 8px; list-style: none;">
+              <a href="/admin/merge-tags/">Merge Tags</a> - Merge multiple tags into one
+          </li>
+          <li style="margin-bottom: 8px; list-style: none;">
+              <a href="/dashboard/">SQL Dashboard</a> - Run SQL queries against the database
+          </li>
+      </ul>
+  </div>
 </div>
 {% endblock %}
