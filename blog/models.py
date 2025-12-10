@@ -646,31 +646,24 @@ def load_mixed_objects(dicts):
 
 
 # Monkey-patch the auto-generated ManyToMany through models for tags to provide
-# meaningful __str__ representations with clickable admin links. This improves
-# the Django admin delete confirmation page for tags.
-from django.utils.html import format_html
+# meaningful __str__ representations. This improves the Django admin delete
+# confirmation page for tags by showing readable titles instead of object IDs.
 
 
-def _make_tag_through_str(field_name, admin_url_name, display_fn):
-    """Create a __str__ method for a tag through model with admin link."""
+def _make_tag_through_str(field_name, display_fn):
+    """Create __str__ method for a tag through model."""
 
     def __str__(self):
         obj = getattr(self, field_name)
-        return format_html(
-            '{}: <a href="/admin/blog/{}/{}/change/">{}</a>',
-            field_name.title(),
-            admin_url_name,
-            obj.pk,
-            display_fn(obj),
-        )
+        return f"{field_name.title()}: {display_fn(obj)}"
 
     return __str__
 
 
-for model, field_name, admin_url_name, display_fn in [
-    (Entry, "entry", "entry", lambda o: o.title),
-    (Blogmark, "blogmark", "blogmark", lambda o: o.link_title),
-    (Quotation, "quotation", "quotation", lambda o: o.source),
-    (Note, "note", "note", lambda o: o.body[:50] + "..." if len(o.body) > 50 else o.body),
+for model, field_name, display_fn in [
+    (Entry, "entry", lambda o: o.title),
+    (Blogmark, "blogmark", lambda o: o.link_title),
+    (Quotation, "quotation", lambda o: o.source),
+    (Note, "note", lambda o: o.body[:50] + "..." if len(o.body) > 50 else o.body),
 ]:
-    model.tags.through.__str__ = _make_tag_through_str(field_name, admin_url_name, display_fn)
+    model.tags.through.__str__ = _make_tag_through_str(field_name, display_fn)

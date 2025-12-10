@@ -36,10 +36,6 @@ sudo -u postgres createdb test_db 2>/dev/null || true
 # Set database URL
 export DATABASE_URL=postgres://postgres:postgres@localhost/test_db
 
-# Run migrations (idempotent)
-echo "Running migrations..."
-python manage.py migrate --noinput
-
 # Run tests
 echo "Running tests..."
 python manage.py test "$@"

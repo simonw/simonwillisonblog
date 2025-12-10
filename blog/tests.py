@@ -706,7 +706,7 @@ class TagThroughModelStrTests(TransactionTestCase):
     """Tests for the monkey-patched __str__ methods on tag through models."""
 
     def test_entry_tag_through_str(self):
-        """Entry tag through model __str__ includes title and admin link."""
+        """Entry tag through model __str__ returns plain text (no HTML)."""
         from blog.models import Entry
 
         tag = Tag.objects.create(tag="test-tag")
@@ -716,13 +716,11 @@ class TagThroughModelStrTests(TransactionTestCase):
         through_obj = Entry.tags.through.objects.get(entry=entry, tag=tag)
         str_repr = str(through_obj)
 
-        self.assertIn("Entry:", str_repr)
-        self.assertIn("My Test Entry Title", str_repr)
-        self.assertIn(f"/admin/blog/entry/{entry.pk}/change/", str_repr)
-        self.assertIn("<a href=", str_repr)
+        self.assertEqual(str_repr, "Entry: My Test Entry Title")
+        self.assertNotIn("<a href=", str_repr)
 
     def test_blogmark_tag_through_str(self):
-        """Blogmark tag through model __str__ includes link_title and admin link."""
+        """Blogmark tag through model __str__ returns plain text."""
         from blog.models import Blogmark
 
         tag = Tag.objects.create(tag="test-tag")
@@ -732,12 +730,11 @@ class TagThroughModelStrTests(TransactionTestCase):
         through_obj = Blogmark.tags.through.objects.get(blogmark=blogmark, tag=tag)
         str_repr = str(through_obj)
 
-        self.assertIn("Blogmark:", str_repr)
-        self.assertIn("Interesting Article", str_repr)
-        self.assertIn(f"/admin/blog/blogmark/{blogmark.pk}/change/", str_repr)
+        self.assertEqual(str_repr, "Blogmark: Interesting Article")
+        self.assertNotIn("<a href=", str_repr)
 
     def test_quotation_tag_through_str(self):
-        """Quotation tag through model __str__ includes source and admin link."""
+        """Quotation tag through model __str__ returns plain text."""
         from blog.models import Quotation
 
         tag = Tag.objects.create(tag="test-tag")
@@ -747,12 +744,11 @@ class TagThroughModelStrTests(TransactionTestCase):
         through_obj = Quotation.tags.through.objects.get(quotation=quotation, tag=tag)
         str_repr = str(through_obj)
 
-        self.assertIn("Quotation:", str_repr)
-        self.assertIn("Famous Person", str_repr)
-        self.assertIn(f"/admin/blog/quotation/{quotation.pk}/change/", str_repr)
+        self.assertEqual(str_repr, "Quotation: Famous Person")
+        self.assertNotIn("<a href=", str_repr)
 
     def test_note_tag_through_str(self):
-        """Note tag through model __str__ includes truncated body and admin link."""
+        """Note tag through model __str__ returns plain text."""
         from blog.models import Note
 
         tag = Tag.objects.create(tag="test-tag")
@@ -762,9 +758,8 @@ class TagThroughModelStrTests(TransactionTestCase):
         through_obj = Note.tags.through.objects.get(note=note, tag=tag)
         str_repr = str(through_obj)
 
-        self.assertIn("Note:", str_repr)
-        self.assertIn("This is a short note", str_repr)
-        self.assertIn(f"/admin/blog/note/{note.pk}/change/", str_repr)
+        self.assertEqual(str_repr, "Note: This is a short note")
+        self.assertNotIn("<a href=", str_repr)
 
     def test_note_tag_through_str_truncates_long_body(self):
         """Note tag through model __str__ truncates long body to 50 chars."""
@@ -785,7 +780,7 @@ class TagThroughModelStrTests(TransactionTestCase):
 
 
 class TagAdminDeleteTests(TransactionTestCase):
-    """Tests for the tag admin delete confirmation page."""
+    """Tests for the tag admin delete confirmation page showing readable titles."""
 
     def setUp(self):
         self.superuser = User.objects.create_superuser(
@@ -794,7 +789,7 @@ class TagAdminDeleteTests(TransactionTestCase):
         self.client.login(username="admin", password="adminpass")
 
     def test_tag_delete_confirmation_shows_entry_titles(self):
-        """Tag delete confirmation page shows entry titles with admin links."""
+        """Tag delete confirmation page shows entry titles instead of object IDs."""
         tag = Tag.objects.create(tag="delete-me")
         entry = EntryFactory(title="Entry To Be Affected")
         entry.tags.add(tag)
@@ -804,10 +799,10 @@ class TagAdminDeleteTests(TransactionTestCase):
 
         # Should show the entry title, not just "Entry_tags object (123)"
         self.assertContains(response, "Entry To Be Affected")
-        self.assertContains(response, f"/admin/blog/entry/{entry.pk}/change/")
+        self.assertNotContains(response, "Entry_tags object")
 
     def test_tag_delete_confirmation_shows_blogmark_titles(self):
-        """Tag delete confirmation page shows blogmark titles with admin links."""
+        """Tag delete confirmation page shows blogmark link titles."""
         tag = Tag.objects.create(tag="delete-me")
         blogmark = BlogmarkFactory(link_title="Blogmark Link Title")
         blogmark.tags.add(tag)
@@ -816,10 +811,10 @@ class TagAdminDeleteTests(TransactionTestCase):
         self.assertEqual(response.status_code, 200)
 
         self.assertContains(response, "Blogmark Link Title")
-        self.assertContains(response, f"/admin/blog/blogmark/{blogmark.pk}/change/")
+        self.assertNotContains(response, "Blogmark_tags object")
 
     def test_tag_delete_confirmation_shows_quotation_sources(self):
-        """Tag delete confirmation page shows quotation sources with admin links."""
+        """Tag delete confirmation page shows quotation sources."""
         tag = Tag.objects.create(tag="delete-me")
         quotation = QuotationFactory(source="Quotation Source Name")
         quotation.tags.add(tag)
@@ -828,10 +823,10 @@ class TagAdminDeleteTests(TransactionTestCase):
         self.assertEqual(response.status_code, 200)
 
         self.assertContains(response, "Quotation Source Name")
-        self.assertContains(response, f"/admin/blog/quotation/{quotation.pk}/change/")
+        self.assertNotContains(response, "Quotation_tags object")
 
     def test_tag_delete_confirmation_shows_note_body(self):
-        """Tag delete confirmation page shows note body with admin links."""
+        """Tag delete confirmation page shows note body content."""
         tag = Tag.objects.create(tag="delete-me")
         note = NoteFactory(body="Note body content here")
         note.tags.add(tag)
@@ -840,10 +835,10 @@ class TagAdminDeleteTests(TransactionTestCase):
         self.assertEqual(response.status_code, 200)
 
         self.assertContains(response, "Note body content here")
-        self.assertContains(response, f"/admin/blog/note/{note.pk}/change/")
+        self.assertNotContains(response, "Note_tags object")
 
     def test_tag_delete_confirmation_shows_multiple_content_types(self):
-        """Tag delete confirmation shows all content types with proper titles."""
+        """Tag delete confirmation shows all content types with readable titles."""
         tag = Tag.objects.create(tag="multi-content-tag")
 
         entry = EntryFactory(title="Test Entry")
@@ -864,9 +859,3 @@ class TagAdminDeleteTests(TransactionTestCase):
         self.assertContains(response, "Test Blogmark")
         self.assertContains(response, "Test Quotation")
         self.assertContains(response, "Test Note")
-
-        # All admin links should be present
-        self.assertContains(response, f"/admin/blog/entry/{entry.pk}/change/")
-        self.assertContains(response, f"/admin/blog/blogmark/{blogmark.pk}/change/")
-        self.assertContains(response, f"/admin/blog/quotation/{quotation.pk}/change/")
-        self.assertContains(response, f"/admin/blog/note/{note.pk}/change/")
