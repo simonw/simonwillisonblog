@@ -700,3 +700,173 @@ class MergeTagsTests(TransactionTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "source-tag")
         self.assertContains(response, "dest-tag")
+
+
+class TagThroughModelStrTests(TransactionTestCase):
+    """Tests for the monkey-patched __str__ methods on tag through models."""
+
+    def test_entry_tag_through_str(self):
+        """Entry tag through model __str__ includes title and admin link."""
+        from blog.models import Entry
+
+        tag = Tag.objects.create(tag="test-tag")
+        entry = EntryFactory(title="My Test Entry Title")
+        entry.tags.add(tag)
+
+        through_obj = Entry.tags.through.objects.get(entry=entry, tag=tag)
+        str_repr = str(through_obj)
+
+        self.assertIn("Entry:", str_repr)
+        self.assertIn("My Test Entry Title", str_repr)
+        self.assertIn(f"/admin/blog/entry/{entry.pk}/change/", str_repr)
+        self.assertIn("<a href=", str_repr)
+
+    def test_blogmark_tag_through_str(self):
+        """Blogmark tag through model __str__ includes link_title and admin link."""
+        from blog.models import Blogmark
+
+        tag = Tag.objects.create(tag="test-tag")
+        blogmark = BlogmarkFactory(link_title="Interesting Article")
+        blogmark.tags.add(tag)
+
+        through_obj = Blogmark.tags.through.objects.get(blogmark=blogmark, tag=tag)
+        str_repr = str(through_obj)
+
+        self.assertIn("Blogmark:", str_repr)
+        self.assertIn("Interesting Article", str_repr)
+        self.assertIn(f"/admin/blog/blogmark/{blogmark.pk}/change/", str_repr)
+
+    def test_quotation_tag_through_str(self):
+        """Quotation tag through model __str__ includes source and admin link."""
+        from blog.models import Quotation
+
+        tag = Tag.objects.create(tag="test-tag")
+        quotation = QuotationFactory(source="Famous Person")
+        quotation.tags.add(tag)
+
+        through_obj = Quotation.tags.through.objects.get(quotation=quotation, tag=tag)
+        str_repr = str(through_obj)
+
+        self.assertIn("Quotation:", str_repr)
+        self.assertIn("Famous Person", str_repr)
+        self.assertIn(f"/admin/blog/quotation/{quotation.pk}/change/", str_repr)
+
+    def test_note_tag_through_str(self):
+        """Note tag through model __str__ includes truncated body and admin link."""
+        from blog.models import Note
+
+        tag = Tag.objects.create(tag="test-tag")
+        note = NoteFactory(body="This is a short note")
+        note.tags.add(tag)
+
+        through_obj = Note.tags.through.objects.get(note=note, tag=tag)
+        str_repr = str(through_obj)
+
+        self.assertIn("Note:", str_repr)
+        self.assertIn("This is a short note", str_repr)
+        self.assertIn(f"/admin/blog/note/{note.pk}/change/", str_repr)
+
+    def test_note_tag_through_str_truncates_long_body(self):
+        """Note tag through model __str__ truncates long body to 50 chars."""
+        from blog.models import Note
+
+        tag = Tag.objects.create(tag="test-tag")
+        long_body = "A" * 100  # 100 character body
+        note = NoteFactory(body=long_body)
+        note.tags.add(tag)
+
+        through_obj = Note.tags.through.objects.get(note=note, tag=tag)
+        str_repr = str(through_obj)
+
+        # Should have first 50 chars + "..."
+        self.assertIn("A" * 50 + "...", str_repr)
+        # Should not have the full 100 chars
+        self.assertNotIn("A" * 100, str_repr)
+
+
+class TagAdminDeleteTests(TransactionTestCase):
+    """Tests for the tag admin delete confirmation page."""
+
+    def setUp(self):
+        self.superuser = User.objects.create_superuser(
+            username="admin", password="adminpass", email="admin@example.com"
+        )
+        self.client.login(username="admin", password="adminpass")
+
+    def test_tag_delete_confirmation_shows_entry_titles(self):
+        """Tag delete confirmation page shows entry titles with admin links."""
+        tag = Tag.objects.create(tag="delete-me")
+        entry = EntryFactory(title="Entry To Be Affected")
+        entry.tags.add(tag)
+
+        response = self.client.get(f"/admin/blog/tag/{tag.pk}/delete/")
+        self.assertEqual(response.status_code, 200)
+
+        # Should show the entry title, not just "Entry_tags object (123)"
+        self.assertContains(response, "Entry To Be Affected")
+        self.assertContains(response, f"/admin/blog/entry/{entry.pk}/change/")
+
+    def test_tag_delete_confirmation_shows_blogmark_titles(self):
+        """Tag delete confirmation page shows blogmark titles with admin links."""
+        tag = Tag.objects.create(tag="delete-me")
+        blogmark = BlogmarkFactory(link_title="Blogmark Link Title")
+        blogmark.tags.add(tag)
+
+        response = self.client.get(f"/admin/blog/tag/{tag.pk}/delete/")
+        self.assertEqual(response.status_code, 200)
+
+        self.assertContains(response, "Blogmark Link Title")
+        self.assertContains(response, f"/admin/blog/blogmark/{blogmark.pk}/change/")
+
+    def test_tag_delete_confirmation_shows_quotation_sources(self):
+        """Tag delete confirmation page shows quotation sources with admin links."""
+        tag = Tag.objects.create(tag="delete-me")
+        quotation = QuotationFactory(source="Quotation Source Name")
+        quotation.tags.add(tag)
+
+        response = self.client.get(f"/admin/blog/tag/{tag.pk}/delete/")
+        self.assertEqual(response.status_code, 200)
+
+        self.assertContains(response, "Quotation Source Name")
+        self.assertContains(response, f"/admin/blog/quotation/{quotation.pk}/change/")
+
+    def test_tag_delete_confirmation_shows_note_body(self):
+        """Tag delete confirmation page shows note body with admin links."""
+        tag = Tag.objects.create(tag="delete-me")
+        note = NoteFactory(body="Note body content here")
+        note.tags.add(tag)
+
+        response = self.client.get(f"/admin/blog/tag/{tag.pk}/delete/")
+        self.assertEqual(response.status_code, 200)
+
+        self.assertContains(response, "Note body content here")
+        self.assertContains(response, f"/admin/blog/note/{note.pk}/change/")
+
+    def test_tag_delete_confirmation_shows_multiple_content_types(self):
+        """Tag delete confirmation shows all content types with proper titles."""
+        tag = Tag.objects.create(tag="multi-content-tag")
+
+        entry = EntryFactory(title="Test Entry")
+        blogmark = BlogmarkFactory(link_title="Test Blogmark")
+        quotation = QuotationFactory(source="Test Quotation")
+        note = NoteFactory(body="Test Note")
+
+        entry.tags.add(tag)
+        blogmark.tags.add(tag)
+        quotation.tags.add(tag)
+        note.tags.add(tag)
+
+        response = self.client.get(f"/admin/blog/tag/{tag.pk}/delete/")
+        self.assertEqual(response.status_code, 200)
+
+        # All content should be shown with meaningful titles
+        self.assertContains(response, "Test Entry")
+        self.assertContains(response, "Test Blogmark")
+        self.assertContains(response, "Test Quotation")
+        self.assertContains(response, "Test Note")
+
+        # All admin links should be present
+        self.assertContains(response, f"/admin/blog/entry/{entry.pk}/change/")
+        self.assertContains(response, f"/admin/blog/blogmark/{blogmark.pk}/change/")
+        self.assertContains(response, f"/admin/blog/quotation/{quotation.pk}/change/")
+        self.assertContains(response, f"/admin/blog/note/{note.pk}/change/")
