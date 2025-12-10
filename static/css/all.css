@@ -55,6 +55,92 @@
   --color-help-border: green;
 }
 
+/* [[[cog
+# Dark theme CSS variables - defined once, used twice
+# Note: avoid CSS comments inside this string as they break the outer cog comment
+dark_theme_vars = [
+    ("", [
+        ("--color-bg", "#1a1a2e"),
+        ("--color-text", "#e8e8e8"),
+        ("--color-text-muted", "#a0a0a0"),
+        ("--color-link", "#7eb8ff"),
+        ("--color-link-underline", "#5a9fd4"),
+        ("--color-link-visited", "#c9a0dc"),
+        ("--color-border", "#444"),
+        ("--color-border-dark", "#888"),
+    ]),
+    ("Purple theme colors - darker variants", [
+        ("--color-purple-gradient-start", "rgb(100, 67, 114)"),
+        ("--color-purple-gradient-mid", "rgb(62, 47, 84)"),
+        ("--color-purple-gradient-end", "rgb(65, 44, 85)"),
+        ("--color-purple-accent", "rgb(100, 56, 127)"),
+        ("--color-purple-light", "#2d2640"),
+        ("--color-purple-hover", "#3d3355"),
+        ("--color-purple-border", "#6a4580"),
+        ("--color-purple-blockquote", "#6a4a7a40"),
+    ]),
+    ("Code syntax highlighting - dark theme", [
+        ("--color-code-bg", "#161b22"),
+        ("--color-code-comment", "#8b949e"),
+        ("--color-code-constant", "#79c0ff"),
+        ("--color-code-entity", "#d2a8ff"),
+        ("--color-code-variable", "#c9d1d9"),
+        ("--color-code-tag", "#7ee787"),
+        ("--color-code-keyword", "#ff7b72"),
+        ("--color-code-string", "#a5d6ff"),
+        ("--color-code-value", "#ffa657"),
+    ]),
+    ("Quote mark color for dark theme", [
+        ("--color-quote-mark", "%23b19cd9"),
+    ]),
+    ("Tag styles", [
+        ("--color-tag-bg", "#2d2640"),
+        ("--color-tag-text", "#e8e8e8"),
+        ("--color-tag-border", "#555"),
+        ("--color-tag-count", "#a0a0a0"),
+    ]),
+    ("Search/form", [
+        ("--color-search-border", "#8a5ab0"),
+        ("--color-search-bg", "#5a3a76"),
+        ("--color-selected-tag-bg", "rgba(140, 90, 180, 0.35)"),
+    ]),
+    ("Comments", [
+        ("--color-comment-warning-bg", "rgb(80, 50, 100)"),
+        ("--color-comment-warning-border", "rgb(100, 56, 127)"),
+    ]),
+    ("Misc", [
+        ("--color-shadow", "rgba(0, 0, 0, 0.4)"),
+        ("--color-help-bg", "rgb(40, 80, 40)"),
+        ("--color-help-border", "#4a8a4a"),
+    ]),
+]
+
+comment_start = "/" + "*"
+comment_end = "*" + "/"
+
+def output_vars(indent="  "):
+    first_section = True
+    for comment, variables in dark_theme_vars:
+        if not first_section:
+            cog.outl("")
+        first_section = False
+        if comment:
+            cog.outl(f"{indent}{comment_start} {comment} {comment_end}")
+        for name, value in variables:
+            cog.outl(f"{indent}{name}: {value};")
+
+cog.outl(f"{comment_start} Dark theme {comment_end}")
+cog.outl("[data-theme=\"dark\"] {")
+output_vars("  ")
+cog.outl("}")
+cog.outl("")
+cog.outl(f"{comment_start} Auto dark theme based on system preference (only when no explicit theme is set) {comment_end}")
+cog.outl("@media (prefers-color-scheme: dark) {")
+cog.outl("  :root:not([data-theme]) {")
+output_vars("    ")
+cog.outl("  }")
+cog.outl("}")
+]]] */
 /* Dark theme */
 [data-theme="dark"] {
   --color-bg: #1a1a2e;
@@ -123,6 +209,7 @@
     --color-border: #444;
     --color-border-dark: #888;
 
+    /* Purple theme colors - darker variants */
     --color-purple-gradient-start: rgb(100, 67, 114);
     --color-purple-gradient-mid: rgb(62, 47, 84);
     --color-purple-gradient-end: rgb(65, 44, 85);
@@ -132,6 +219,7 @@
     --color-purple-border: #6a4580;
     --color-purple-blockquote: #6a4a7a40;
 
+    /* Code syntax highlighting - dark theme */
     --color-code-bg: #161b22;
     --color-code-comment: #8b949e;
     --color-code-constant: #79c0ff;
@@ -142,25 +230,31 @@
     --color-code-string: #a5d6ff;
     --color-code-value: #ffa657;
 
+    /* Quote mark color for dark theme */
     --color-quote-mark: %23b19cd9;
 
+    /* Tag styles */
     --color-tag-bg: #2d2640;
     --color-tag-text: #e8e8e8;
     --color-tag-border: #555;
     --color-tag-count: #a0a0a0;
 
+    /* Search/form */
     --color-search-border: #8a5ab0;
     --color-search-bg: #5a3a76;
     --color-selected-tag-bg: rgba(140, 90, 180, 0.35);
 
+    /* Comments */
     --color-comment-warning-bg: rgb(80, 50, 100);
     --color-comment-warning-border: rgb(100, 56, 127);
 
+    /* Misc */
     --color-shadow: rgba(0, 0, 0, 0.4);
     --color-help-bg: rgb(40, 80, 40);
     --color-help-border: #4a8a4a;
   }
 }
+/*[[[end]]]*/
 
 body,
 div,
