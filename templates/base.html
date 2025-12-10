@@ -1,15 +1,6 @@
 <!DOCTYPE html>{% load static %}
 <html lang="en-gb">
 <head>
-<script>
-// Apply theme immediately to prevent flash
-(function() {
-  const theme = localStorage.getItem('theme');
-  if (theme === 'light' || theme === 'dark') {
-    document.documentElement.setAttribute('data-theme', theme);
-  }
-})();
-</script>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 {% block rel_canonical %}<link rel="canonical" href="https://simonwillison.net{{ request.path }}">{% endblock %}
@@ -22,7 +13,14 @@
 <meta name="author" content="Simon Willison">
 <meta property="og:site_name" content="Simon Willison’s Weblog">
 {% block extrahead %}{% endblock %}
-
+<script>
+(function() { // Apply theme immediately to prevent flash
+  const theme = localStorage.getItem('theme');
+  if (theme === 'light' || theme === 'dark') {
+    document.documentElement.setAttribute('data-theme', theme);
+  }
+})();
+</script>
 </head>
 <body{% block body_class %}{% endblock %}>
 {% block body %}{% endblock %}
