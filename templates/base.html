@@ -2,10 +2,10 @@
 <html lang="en-gb">
 <head>
 <script>
-// Apply theme immediately to prevent flash
+// Apply theme immediately to prevent flash (default is light)
 (function() {
   const theme = localStorage.getItem('theme');
-  if (theme === 'light' || theme === 'dark') {
+  if (theme === 'dark' || theme === 'auto') {
     document.documentElement.setAttribute('data-theme', theme);
   }
 })();
@@ -110,13 +110,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const iconLight = document.getElementById('icon-light');
   const iconDark = document.getElementById('icon-dark');
 
-  // Theme states: 'auto' (default), 'light', 'dark'
+  // Theme states: 'light' (default), 'dark', 'auto'
   function getTheme() {
-    return localStorage.getItem('theme') || 'auto';
+    return localStorage.getItem('theme') || 'light';
   }
 
   function setTheme(theme) {
-    if (theme === 'auto') {
+    if (theme === 'light') {
       localStorage.removeItem('theme');
       document.documentElement.removeAttribute('data-theme');
     } else {
@@ -133,17 +133,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Update aria-label for accessibility
     const labels = {
-      'auto': 'Theme: Auto (system preference). Click to switch to light.',
       'light': 'Theme: Light. Click to switch to dark.',
-      'dark': 'Theme: Dark. Click to switch to auto.'
+      'dark': 'Theme: Dark. Click to switch to auto (system preference).',
+      'auto': 'Theme: Auto (system preference). Click to switch to light.'
     };
     toggle.setAttribute('aria-label', labels[theme]);
   }
 
-  // Cycle through themes: auto -> light -> dark -> auto
+  // Cycle through themes: light -> dark -> auto -> light
   function cycleTheme() {
     const current = getTheme();
-    const next = current === 'auto' ? 'light' : current === 'light' ? 'dark' : 'auto';
+    const next = current === 'light' ? 'dark' : current === 'dark' ? 'auto' : 'light';
     setTheme(next);
   }
 

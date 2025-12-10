@@ -111,9 +111,9 @@
   --color-help-border: #4a8a4a;
 }
 
-/* Auto dark theme based on system preference (only when no explicit theme is set) */
+/* Auto dark theme based on system preference (only when user selects auto mode) */
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme]) {
+  [data-theme="auto"] {
     --color-bg: #1a1a2e;
     --color-text: #e8e8e8;
     --color-text-muted: #a0a0a0;
