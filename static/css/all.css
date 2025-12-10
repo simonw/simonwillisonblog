@@ -1,3 +1,167 @@
+/* Theme CSS Custom Properties */
+:root {
+  /* Light theme colors (default) */
+  --color-bg: #fdfdfd;
+  --color-text: #000;
+  --color-text-muted: #666;
+  --color-link: #0303bb;
+  --color-link-underline: rgb(0, 0, 238);
+  --color-link-visited: #636;
+  --color-border: #ccc;
+  --color-border-dark: #666;
+
+  /* Purple theme colors */
+  --color-purple-gradient-start: rgb(154, 103, 175);
+  --color-purple-gradient-mid: rgb(96, 72, 129);
+  --color-purple-gradient-end: rgb(100, 67, 130);
+  --color-purple-accent: rgb(129, 72, 163);
+  --color-purple-light: #ede3f1;
+  --color-purple-hover: #dabaea;
+  --color-purple-border: #8a55a8;
+  --color-purple-blockquote: #9e6bb52e;
+
+  /* Code syntax highlighting */
+  --color-code-bg: transparent;
+  --color-code-comment: #6a737d;
+  --color-code-constant: #005cc5;
+  --color-code-entity: #6f42c1;
+  --color-code-variable: #24292e;
+  --color-code-tag: #22863a;
+  --color-code-keyword: #d73a49;
+  --color-code-string: #032f62;
+  --color-code-value: #e36209;
+
+  /* Quote mark color */
+  --color-quote-mark: %238A2BE2;
+
+  /* Tag styles */
+  --color-tag-bg: #ede3f1;
+  --color-tag-text: black;
+  --color-tag-border: #bbb;
+  --color-tag-count: #666;
+
+  /* Search/form */
+  --color-search-border: #733b96;
+  --color-search-bg: #733b96;
+  --color-selected-tag-bg: rgba(115, 60, 150, 0.28);
+
+  /* Comments */
+  --color-comment-warning-bg: rgb(221, 163, 255);
+  --color-comment-warning-border: rgb(129, 72, 163);
+
+  /* Misc */
+  --color-shadow: rgba(0, 0, 0, 0.1);
+  --color-help-bg: rgb(190, 255, 190);
+  --color-help-border: green;
+}
+
+/* Dark theme */
+[data-theme="dark"] {
+  --color-bg: #1a1a2e;
+  --color-text: #e8e8e8;
+  --color-text-muted: #a0a0a0;
+  --color-link: #7eb8ff;
+  --color-link-underline: #5a9fd4;
+  --color-link-visited: #c9a0dc;
+  --color-border: #444;
+  --color-border-dark: #888;
+
+  /* Purple theme colors - darker variants */
+  --color-purple-gradient-start: rgb(100, 67, 114);
+  --color-purple-gradient-mid: rgb(62, 47, 84);
+  --color-purple-gradient-end: rgb(65, 44, 85);
+  --color-purple-accent: rgb(100, 56, 127);
+  --color-purple-light: #2d2640;
+  --color-purple-hover: #3d3355;
+  --color-purple-border: #6a4580;
+  --color-purple-blockquote: #6a4a7a40;
+
+  /* Code syntax highlighting - dark theme */
+  --color-code-bg: #161b22;
+  --color-code-comment: #8b949e;
+  --color-code-constant: #79c0ff;
+  --color-code-entity: #d2a8ff;
+  --color-code-variable: #c9d1d9;
+  --color-code-tag: #7ee787;
+  --color-code-keyword: #ff7b72;
+  --color-code-string: #a5d6ff;
+  --color-code-value: #ffa657;
+
+  /* Quote mark color for dark theme */
+  --color-quote-mark: %23b19cd9;
+
+  /* Tag styles */
+  --color-tag-bg: #2d2640;
+  --color-tag-text: #e8e8e8;
+  --color-tag-border: #555;
+  --color-tag-count: #a0a0a0;
+
+  /* Search/form */
+  --color-search-border: #8a5ab0;
+  --color-search-bg: #5a3a76;
+  --color-selected-tag-bg: rgba(140, 90, 180, 0.35);
+
+  /* Comments */
+  --color-comment-warning-bg: rgb(80, 50, 100);
+  --color-comment-warning-border: rgb(100, 56, 127);
+
+  /* Misc */
+  --color-shadow: rgba(0, 0, 0, 0.4);
+  --color-help-bg: rgb(40, 80, 40);
+  --color-help-border: #4a8a4a;
+}
+
+/* Auto dark theme based on system preference (only when no explicit theme is set) */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    --color-bg: #1a1a2e;
+    --color-text: #e8e8e8;
+    --color-text-muted: #a0a0a0;
+    --color-link: #7eb8ff;
+    --color-link-underline: #5a9fd4;
+    --color-link-visited: #c9a0dc;
+    --color-border: #444;
+    --color-border-dark: #888;
+
+    --color-purple-gradient-start: rgb(100, 67, 114);
+    --color-purple-gradient-mid: rgb(62, 47, 84);
+    --color-purple-gradient-end: rgb(65, 44, 85);
+    --color-purple-accent: rgb(100, 56, 127);
+    --color-purple-light: #2d2640;
+    --color-purple-hover: #3d3355;
+    --color-purple-border: #6a4580;
+    --color-purple-blockquote: #6a4a7a40;
+
+    --color-code-bg: #161b22;
+    --color-code-comment: #8b949e;
+    --color-code-constant: #79c0ff;
+    --color-code-entity: #d2a8ff;
+    --color-code-variable: #c9d1d9;
+    --color-code-tag: #7ee787;
+    --color-code-keyword: #ff7b72;
+    --color-code-string: #a5d6ff;
+    --color-code-value: #ffa657;
+
+    --color-quote-mark: %23b19cd9;
+
+    --color-tag-bg: #2d2640;
+    --color-tag-text: #e8e8e8;
+    --color-tag-border: #555;
+    --color-tag-count: #a0a0a0;
+
+    --color-search-border: #8a5ab0;
+    --color-search-bg: #5a3a76;
+    --color-selected-tag-bg: rgba(140, 90, 180, 0.35);
+
+    --color-comment-warning-bg: rgb(80, 50, 100);
+    --color-comment-warning-border: rgb(100, 56, 127);
+
+    --color-shadow: rgba(0, 0, 0, 0.4);
+    --color-help-bg: rgb(40, 80, 40);
+    --color-help-border: #4a8a4a;
+  }
+}
+
 body,
 div,
 dl,
@@ -73,21 +237,21 @@ pre {
   margin-bottom: 1.6em;
 }
 a:link {
-  color: #0303bb;
+  color: var(--color-link);
   text-decoration: none;
   border: none;
-  border-bottom: 1px solid rgb(0, 0, 238);
+  border-bottom: 1px solid var(--color-link-underline);
 }
 
 .blogmark-image {
   display: block;
   margin: 1em auto;
-  box-shadow: 0px 0px 6px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0px 0px 6px 3px var(--color-shadow);
 }
 
 a:visited {
-  color: #636;
-  border-color: #636;
+  color: var(--color-link-visited);
+  border-color: var(--color-link-visited);
 }
 
 a:link:focus,
@@ -108,8 +272,8 @@ a.a-img:link:active {
 body {
   font-family: "Helvetica Neue", helvetica, sans-serif;
   line-height: 1.45;
-  color: #000;
-  background-color: #fdfdfd;
+  color: var(--color-text);
+  background-color: var(--color-bg);
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -163,9 +327,9 @@ div#sidead {
 div#ft {
   background: linear-gradient(
     to bottom,
-    rgb(154, 103, 175) 0%,
-    rgb(96, 72, 129) 49%,
-    rgb(100, 67, 130) 100%
+    var(--color-purple-gradient-start) 0%,
+    var(--color-purple-gradient-mid) 49%,
+    var(--color-purple-gradient-end) 100%
   );
   text-align: center;
   margin: 15px 0 0.4em 0;
@@ -189,7 +353,7 @@ p#previouslyhosted {
   clear: both;
   padding: 0.5em 0 0.5em 35px;
   font-size: 0.8em;
-  color: #666;
+  color: var(--color-text-muted);
 }
 div#wrapper {
   width: 940px;
@@ -207,7 +371,7 @@ div#primary blockquote,
 .item-link blockquote,
 div#primary .quote blockquote blockquote {
   margin: 1em 0;
-  border-left: 0.75em solid #9e6bb52e;
+  border-left: 0.75em solid var(--color-purple-blockquote);
   padding-left: 0.75em;
 }
 div#primary blockquote blockquote,
@@ -336,11 +500,11 @@ div.entry table th,
 div.blogmark table th,
 div.note table th {
   font-weight: bold;
-  border-bottom: 1px solid #666;
+  border-bottom: 1px solid var(--color-border-dark);
 }
 div.entry span.textago {
   font-family: helvetica, sans-serif;
-  color: #666;
+  color: var(--color-text-muted);
   font-size: 0.75em;
   font-weight: normal;
   white-space: nowrap;
@@ -409,11 +573,11 @@ div.entry iframe {
 div.entry div.entryFooter {
   font-size: 0.9em;
   margin-top: 1em;
-  border-top: 1px solid #8a55a8;
+  border-top: 1px solid var(--color-purple-border);
   padding-top: 0.5em;
 }
 div.entry p.mobile-date {
-  color: #666;
+  color: var(--color-text-muted);
   margin-bottom: 0.5em;
   margin-top: -0.5em;
   display: none;
@@ -436,9 +600,9 @@ div#bigheadcontainer {
 div#band {
   background: linear-gradient(
     to bottom,
-    rgb(154, 103, 175) 0%,
-    rgb(96, 72, 129) 49%,
-    rgb(100, 67, 130) 100%
+    var(--color-purple-gradient-start) 0%,
+    var(--color-purple-gradient-mid) 49%,
+    var(--color-purple-gradient-end) 100%
   );
   color: white;
   margin-bottom: -1.55em;
@@ -446,7 +610,7 @@ div#band {
   height: 1.55em;
 }
 div#secondary div.day {
-  border-bottom: 1px solid #ccc;
+  border-bottom: 1px solid var(--color-border);
   clear: both;
 }
 div#searchbox {
@@ -456,10 +620,12 @@ div#searchbox {
   left: 485px;
 }
 div#searchbox input.text {
-  border: 1px solid purple;
+  border: 1px solid var(--color-search-border);
   vertical-align: middle;
   width: 150px;
   padding: 1px 1px 2px 1px;
+  background-color: var(--color-bg);
+  color: var(--color-text);
 }
 div#searchbox input.image {
   vertical-align: middle;
@@ -491,9 +657,9 @@ div#smallhead {
   text-align: left;
   background: linear-gradient(
     to bottom,
-    rgb(154, 103, 175) 0%,
-    rgb(96, 72, 129) 49%,
-    rgb(100, 67, 130) 100%
+    var(--color-purple-gradient-start) 0%,
+    var(--color-purple-gradient-mid) 49%,
+    var(--color-purple-gradient-end) 100%
   );
   color: white;
 }
@@ -559,8 +725,8 @@ h2.band {
 }
 p#commentwarning {
   padding: 0.4em;
-  border: 1px dotted rgb(129, 72, 163);
-  background-color: rgb(221, 163, 255);
+  border: 1px dotted var(--color-comment-warning-border);
+  background-color: var(--color-comment-warning-bg);
 }
 div#comment-wrapper {
   width: 940px;
@@ -610,7 +776,7 @@ div#comments p.commentFooter {
   position: relative;
   top: 5px;
   margin: 10px 0 0 45px;
-  color: #666;
+  color: var(--color-text-muted);
 }
 div#comments ol li {
   background-image: url(/static/css/img/comment-top-grey.gif);
@@ -642,16 +808,16 @@ div#comments ol li.simon div.comment {
 }
 div#comments p.commentFooter a:link,
 div#comments p.commentFooter a:visited {
-  color: black;
+  color: var(--color-text);
 }
 div#comments p.commentFooter a:hover,
 div#comments p.commentFooter a:active {
-  color: #666;
+  color: var(--color-text-muted);
 }
 div.commentpreview {
   font-size: 0.9em;
   padding: 0.5em;
-  border: 2px solid #ccc;
+  border: 2px solid var(--color-border);
   margin-bottom: 1em;
 }
 div#addcomment {
@@ -670,20 +836,24 @@ div#addcomment p.formrow label {
   width: 70px;
 }
 div#addcomment input.text {
-  border: 1px solid purple;
+  border: 1px solid var(--color-search-border);
   font-size: 1.05em;
   float: left;
   width: 206px;
+  background-color: var(--color-bg);
+  color: var(--color-text);
 }
 div#addcomment textarea {
-  border: 1px solid purple;
+  border: 1px solid var(--color-search-border);
   padding: 3px;
   width: 270px;
+  background-color: var(--color-bg);
+  color: var(--color-text);
 }
 body form.commentpreview ul.errorlist li {
   list-style-type: none;
   margin: 0;
-  background-color: rgb(129, 72, 163);
+  background-color: var(--color-purple-accent);
   color: white;
   padding: 3px 3px 1px 3px;
 }
@@ -701,7 +871,7 @@ form.commentpreview ul li {
   margin: 0 0 0 4em;
 }
 table.monthcalendar {
-  border: 1px solid #ccc;
+  border: 1px solid var(--color-border);
   width: 241px;
   margin-left: 1px;
   margin-bottom: 25px;
@@ -720,7 +890,7 @@ table.monthcalendar caption a.nextprev {
 table.monthcalendar td,
 table.monthcalendar th {
   font-size: 0.9em;
-  border: 1px solid #ccc;
+  border: 1px solid var(--color-border);
   text-align: center;
   width: 14.28%;
 }
@@ -755,7 +925,7 @@ div#primary div.photoset p.meta {
 div#primary div.segment {
   clear: both;
   padding: 0 0 0.75em 0;
-  border-bottom: 1px solid #ccc;
+  border-bottom: 1px solid var(--color-border);
   margin-bottom: 0.75em;
 }
 div#primary div.blogmark {
@@ -820,7 +990,7 @@ div#primary div.note p:not(.date-and-tags) {
 }
 
 ul#searchorder {
-  border-bottom: 1px solid black;
+  border-bottom: 1px solid var(--color-text);
   margin: 0 0 0.5em 0;
   padding: 0;
   height: 1em;
@@ -828,7 +998,7 @@ ul#searchorder {
 ul#searchorder li {
   display: block;
   float: left;
-  border: 1px solid black;
+  border: 1px solid var(--color-text);
   margin: 0 0 0 1em;
   line-height: 1em;
   position: relative;
@@ -836,7 +1006,7 @@ ul#searchorder li {
   padding-top: 1px;
 }
 ul#searchorder li.selected {
-  border-bottom: 1px solid white;
+  border-bottom: 1px solid var(--color-bg);
 }
 ul#searchorder a {
   line-height: 1em;
@@ -863,28 +1033,28 @@ div.paginator {
 }
 .paginate-pages {
   padding: 2px 3px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--color-border);
 }
 .paginate-first,
 .paginate-last {
   padding: 2px 6px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--color-border);
   font-weight: bold;
 }
 .paginate-previous,
 .paginate-next {
   padding: 2px 3px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--color-border);
 }
 .paginate-link {
   padding: 2px 4px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--color-border);
 }
 .paginate-current {
   padding: 2px 4px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--color-border);
   font-weight: bold;
-  background-color: rgb(129, 72, 163);
+  background-color: var(--color-purple-accent);
   color: white;
 }
 p#tagcloud {
@@ -926,8 +1096,8 @@ div#wrapper div.wide {
 }
 div.help {
   font-size: 0.9em;
-  border: 1px solid green;
-  background-color: rgb(190, 255, 190);
+  border: 1px solid var(--color-help-border);
+  background-color: var(--color-help-bg);
   padding: 0.5em 45px 0 0.8em;
   background-image: url(/static/css/img/questionmark.png);
   background-repeat: no-repeat;
@@ -939,16 +1109,18 @@ div.help p {
 
 .search-input,
 .search-submit {
-  border: 1px solid #733b96;
+  border: 1px solid var(--color-search-border);
   padding: 4px;
   box-sizing: border-box;
   font-size: 16px;
 }
 .search-input {
   width: 80%;
+  background-color: var(--color-bg);
+  color: var(--color-text);
 }
 .search-submit {
-  background-color: #733b96;
+  background-color: var(--color-search-bg);
   color: white;
   cursor: pointer;
 }
@@ -957,11 +1129,11 @@ div p.search-selections {
   font-size: 0.8em;
 }
 a.selected-tag {
-  border: 1px solid #666;
+  border: 1px solid var(--color-border-dark);
   text-decoration: none;
   padding: 2px 5px;
-  background-color: rgba(115, 60, 150, 0.28);
-  color: black;
+  background-color: var(--color-selected-tag-bg);
+  color: var(--color-text);
 }
 div p.search-selections .filters {
   padding-right: 0.6em;
@@ -1062,30 +1234,30 @@ h3.blog-mixed-list-year {
  */
 
 .pl-c /* comment, punctuation.definition.comment, string.comment */ {
-  color: #6a737d;
+  color: var(--color-code-comment);
 }
 
 .pl-c1 /* constant, entity.name.constant, variable.other.constant, variable.language, support, meta.property-name, support.constant, support.variable, meta.module-reference, markup.raw, meta.diff.header, meta.output */,
 .pl-s .pl-v /* string variable */ {
-  color: #005cc5;
+  color: var(--color-code-constant);
 }
 
 .pl-e /* entity */,
 .pl-en /* entity.name */ {
-  color: #6f42c1;
+  color: var(--color-code-entity);
 }
 
 .pl-smi /* variable.parameter.function, storage.modifier.package, storage.modifier.import, storage.type.java, variable.other */,
 .pl-s .pl-s1 /* string source */ {
-  color: #24292e;
+  color: var(--color-code-variable);
 }
 
 .pl-ent /* entity.name.tag, markup.quote */ {
-  color: #22863a;
+  color: var(--color-code-tag);
 }
 
 .pl-k /* keyword, storage, storage.type */ {
-  color: #d73a49;
+  color: var(--color-code-keyword);
 }
 
 .pl-s /* string */,
@@ -1095,12 +1267,12 @@ h3.blog-mixed-list-year {
 .pl-sr .pl-cce /* string.regexp constant.character.escape */,
 .pl-sr .pl-sre /* string.regexp source.ruby.embedded */,
 .pl-sr .pl-sra /* string.regexp string.regexp.arbitrary-repitition */ {
-  color: #032f62;
+  color: var(--color-code-string);
 }
 
 .pl-v /* variable */,
 .pl-smw /* sublimelinter.mark.warning */ {
-  color: #e36209;
+  color: var(--color-code-value);
 }
 
 .pl-bu /* invalid.broken, invalid.deprecated, invalid.unimplemented, message.error, brackethighlighter.unmatched, sublimelinter.mark.error */ {
@@ -1230,24 +1402,24 @@ body.homepage .hide-on-homepage {
 /* Tag styles */
 a.item-tag {
   display: inline-block;
-  background-color: #ede3f1;
+  background-color: var(--color-tag-bg);
   padding: 4px 10px;
   border-radius: 5px;
-  border: 1px solid #bbb;
-  border-bottom: 1px solid #bbb;
+  border: 1px solid var(--color-tag-border);
+  border-bottom: 1px solid var(--color-tag-border);
   text-decoration: none;
-  color: black;
+  color: var(--color-tag-text);
   margin-right: 0.3em;
   margin-bottom: 0.5em;
 }
 a.item-tag:hover {
-  background-color: #dabaea;
+  background-color: var(--color-purple-hover);
 }
 #bighead a.item-tag {
   padding: 0px 8px;
 }
 .item-tag span {
-  color: #666;
+  color: var(--color-tag-count);
   font-size: 0.6em;
   vertical-align: middle;
 }
@@ -1294,4 +1466,26 @@ div.ea-placement a:link {
 
 .tag-description {
   margin-bottom: 1em;
+}
+
+/* Theme toggle button */
+#theme-toggle {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0 0.5em;
+  color: white;
+  opacity: 0.8;
+  transition: opacity 0.2s;
+  vertical-align: middle;
+  display: inline-flex;
+  align-items: center;
+}
+#theme-toggle:hover {
+  opacity: 1;
+}
+#theme-toggle svg {
+  width: 18px;
+  height: 18px;
+  fill: currentColor;
 }
