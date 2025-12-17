@@ -65,22 +65,23 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 <script type="module">
-  const config = [
-    {"tag": "lite-youtube", "js": "/static/lite-yt-embed.js", "css": "/static/lite-yt-embed.css"}
-  ];
-  for (const {tag, js, css} of config) {
-    if (document.querySelector(tag)) {
-      if (css) {
-        document.head.appendChild(
-          Object.assign(document.createElement('link'), {
-            rel: 'stylesheet',
-            href: css
-          })
-        );
-      }
-      if (js) {
-        await import(js);
-      }
+const config = [
+  {"tag": "lite-youtube", "js": "/static/lite-yt-embed.js", "css": "/static/lite-yt-embed.css"},
+  {"tag": "image-gallery", "js": "/static/image-gallery.js", "css": null}
+];
+for (const {tag, js, css} of config) {
+  if (document.querySelector(tag)) {
+    if (css) {
+      document.head.appendChild(
+        Object.assign(document.createElement('link'), {
+          rel: 'stylesheet',
+          href: css
+        })
+      );
+    }
+    if (js) {
+      await import(js);
+    }
   }
 }
 </script>
