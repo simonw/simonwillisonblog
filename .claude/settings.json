@@ -2,8 +2,13 @@
   "hooks": {
     "SessionStart": [
       {
-        "type": "command",
-        "command": "[ \"$CLAUDE_CODE_REMOTE\" = \"true\" ] && uv python install 3.12 && uv venv --python 3.12 .venv312 && . .venv312/bin/activate && uv pip install -q -r requirements.txt || true"
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ \"$CLAUDE_CODE_REMOTE\" = \"true\" ] && uv python install 3.12 && uv venv --python 3.12 .venv312 && . .venv312/bin/activate && uv pip install -q -r requirements.txt || true"
+          }
+        ]
       }
     ]
   }
