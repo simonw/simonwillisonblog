@@ -671,6 +671,13 @@ for model, field_name, admin_url_name, display_fn in [
     (Entry, "entry", "entry", lambda o: o.title),
     (Blogmark, "blogmark", "blogmark", lambda o: o.link_title),
     (Quotation, "quotation", "quotation", lambda o: o.source),
-    (Note, "note", "note", lambda o: o.body[:50] + "..." if len(o.body) > 50 else o.body),
+    (
+        Note,
+        "note",
+        "note",
+        lambda o: o.body[:50] + "..." if len(o.body) > 50 else o.body,
+    ),
 ]:
-    model.tags.through.__str__ = _make_tag_through_str(field_name, admin_url_name, display_fn)
+    model.tags.through.__str__ = _make_tag_through_str(
+        field_name, admin_url_name, display_fn
+    )

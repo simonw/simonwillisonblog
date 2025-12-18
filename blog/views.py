@@ -927,9 +927,7 @@ def merge_tags(request):
         counts = {
             "entries": {
                 "total": source_tag.entry_set.count(),
-                "will_add": source_tag.entry_set.exclude(
-                    tags=destination_tag
-                ).count(),
+                "will_add": source_tag.entry_set.exclude(tags=destination_tag).count(),
             },
             "blogmarks": {
                 "total": source_tag.blogmark_set.count(),
@@ -945,14 +943,14 @@ def merge_tags(request):
             },
             "notes": {
                 "total": source_tag.note_set.count(),
-                "will_add": source_tag.note_set.exclude(
-                    tags=destination_tag
-                ).count(),
+                "will_add": source_tag.note_set.exclude(tags=destination_tag).count(),
             },
         }
         for k in counts:
             counts[k]["already_tagged"] = counts[k]["total"] - counts[k]["will_add"]
-        counts["total"] = sum(c["total"] for c in counts.values() if isinstance(c, dict))
+        counts["total"] = sum(
+            c["total"] for c in counts.values() if isinstance(c, dict)
+        )
         counts["total_will_add"] = sum(
             c["will_add"] for c in counts.values() if isinstance(c, dict)
         )

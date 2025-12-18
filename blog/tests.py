@@ -642,12 +642,16 @@ class MergeTagsTests(TransactionTestCase):
 
         # Verify the success message differentiates
         self.assertContains(response, "Added &#x27;new-tag&#x27; tag to 1 item(s)")
-        self.assertContains(response, "Removed &#x27;old-tag&#x27; from 1 item(s) that already had")
+        self.assertContains(
+            response, "Removed &#x27;old-tag&#x27; from 1 item(s) that already had"
+        )
 
         # Verify TagMerge record has correct structure
         merge_record = TagMerge.objects.get(source_tag_name="old-tag")
         self.assertIn(entry_needs_tag.pk, merge_record.details["entries"]["added"])
-        self.assertIn(blogmark_has_both.pk, merge_record.details["blogmarks"]["already_tagged"])
+        self.assertIn(
+            blogmark_has_both.pk, merge_record.details["blogmarks"]["already_tagged"]
+        )
 
         # Verify both items now have only dest_tag
         entry_needs_tag.refresh_from_db()
@@ -661,7 +665,9 @@ class MergeTagsTests(TransactionTestCase):
         tag = Tag.objects.create(tag="same-tag")
 
         self.client.login(username="staff", password="password")
-        response = self.client.get("/admin/merge-tags/?source=same-tag&destination=same-tag")
+        response = self.client.get(
+            "/admin/merge-tags/?source=same-tag&destination=same-tag"
+        )
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Source and destination tags must be different")
 

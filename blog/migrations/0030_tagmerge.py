@@ -30,7 +30,9 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "destination_tag_name",
-                    models.SlugField(help_text="Name of destination tag at time of merge"),
+                    models.SlugField(
+                        help_text="Name of destination tag at time of merge"
+                    ),
                 ),
                 (
                     "details",
