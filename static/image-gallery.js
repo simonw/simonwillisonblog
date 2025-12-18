@@ -1,8 +1,10 @@
-
 class ImageGallery extends HTMLElement {
     constructor() {
         super();
         this.attachShadow({ mode: 'open' });
+        this.currentIndex = 0;
+        // Bind the keydown handler so we can add/remove it properly
+        this.handleKeyDown = this.handleKeyDown.bind(this);
     }
 
     static get observedAttributes() {
@@ -15,19 +17,56 @@ class ImageGallery extends HTMLElement {
 
     connectedCallback() {
         this.render();
+        window.addEventListener('keydown', this.handleKeyDown);
+    }
+
+    disconnectedCallback() {
+        window.removeEventListener('keydown', this.handleKeyDown);
+    }
+
+    // Helper to get the list of image elements from the slot
+    getImages() {
+        const slot = this.shadowRoot.querySelector('#gallery-slot');
+        return slot.assignedElements().filter(el => el.tagName === 'IMG');
     }
 
     handleImageClick(e) {
         const img = e.target.closest('img');
         if (!img) return;
 
+        const images = this.getImages();
+        this.currentIndex = images.indexOf(img);
+        
+        this.updateModalContent();
+        this.shadowRoot.querySelector('dialog').showModal();
+    }
+
+    handleKeyDown(e) {
         const dialog = this.shadowRoot.querySelector('dialog');
-        const modalImg = dialog.querySelector('.modal-img');
+        // Only trigger if the modal is currently open
+        if (!dialog.open) return;
+
+        const images = this.getImages();
+        if (images.length <= 1) return;
+
+        if (e.key === 'ArrowRight') {
+            this.currentIndex = (this.currentIndex + 1) % images.length;
+            this.updateModalContent();
+        } else if (e.key === 'ArrowLeft') {
+            this.currentIndex = (this.currentIndex - 1 + images.length) % images.length;
+            this.updateModalContent();
+        }
+    }
+
+    updateModalContent() {
+        const images = this.getImages();
+        const activeImg = images[this.currentIndex];
+        const modalImg = this.shadowRoot.querySelector('.modal-img');
         
-        modalImg.src = img.dataset.fullsize;
-        modalImg.alt = img.alt;
-        
-        dialog.showModal();
+        if (activeImg && modalImg) {
+            modalImg.src = activeImg.dataset.fullsize || activeImg.src;
+            modalImg.alt = activeImg.alt;
+        }
     }
 
     render() {
@@ -56,7 +95,6 @@ class ImageGallery extends HTMLElement {
                 background: transparent;
                 max-width: 95vw;
                 max-height: 95vh;
-                /* Removes the focus ring from the dialog element itself in some browsers */
                 outline: none;
             }
 
@@ -75,6 +113,7 @@ class ImageGallery extends HTMLElement {
                 max-width: 100%;
                 max-height: 95vh;
                 display: block;
+                user-select: none;
             }
 
             .close-btn {
@@ -92,18 +131,12 @@ class ImageGallery extends HTMLElement {
                 height: 44px;
                 opacity: 0.6;
                 text-shadow: 0 0 10px rgba(0,0,0,0.5);
-                
-                /* Remove border/outline on focus */
                 outline: none;
+                z-index: 10;
             }
 
-            /* Explicitly ensure no focus ring appears on the button */
-            .close-btn:focus, 
-            .close-btn:active,
-            .close-btn:focus-visible {
-                outline: none;
-                border: none;
-                box-shadow: none;
+            .close-btn:hover {
+                opacity: 1;
             }
         </style>
 
@@ -128,21 +161,20 @@ class ImageGallery extends HTMLElement {
     }
 
     setupImages() {
-        const slot = this.shadowRoot.querySelector('#gallery-slot');
-        const images = slot.assignedElements();
+        const images = this.getImages();
 
         images.forEach(img => {
-            if (img.tagName === 'IMG') {
-                if (!img.dataset.fullsize) {
-                    img.dataset.fullsize = img.src;
-                }
-                if (img.dataset.thumb) {
-                    img.src = img.dataset.thumb;
-                }
-                img.onclick = (e) => this.handleImageClick(e);
+            if (!img.dataset.fullsize) {
+                img.dataset.fullsize = img.src;
             }
+            if (img.dataset.thumb) {
+                img.src = img.dataset.thumb;
+            }
+            // Use addEventListener instead of onclick to avoid overwriting other scripts
+            img.onclick = (e) => this.handleImageClick(e);
         });
     }
 }
 
 customElements.define('image-gallery', ImageGallery);
+
