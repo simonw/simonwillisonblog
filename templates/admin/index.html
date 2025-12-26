@@ -15,7 +15,26 @@
           <li style="margin-bottom: 8px; list-style: none;">
               <a href="/dashboard/">SQL Dashboard</a> - Run SQL queries against the database
           </li>
+          <li style="margin-bottom: 8px; list-style: none;">
+              <label style="cursor: pointer;">
+                  <input type="checkbox" id="admin-edit-links-toggle" style="margin-right: 6px;">
+                  Show "Edit" links on public pages
+              </label>
+          </li>
       </ul>
   </div>
 </div>
+<script>
+(function() {
+    const toggle = document.getElementById('admin-edit-links-toggle');
+    toggle.checked = !!localStorage.getItem('ADMIN');
+    toggle.addEventListener('change', function() {
+        if (this.checked) {
+            localStorage.setItem('ADMIN', '1');
+        } else {
+            localStorage.removeItem('ADMIN');
+        }
+    });
+})();
+</script>
 {% endblock %}
