@@ -1583,3 +1583,26 @@ div.ea-placement a:link {
   height: 18px;
   fill: currentColor;
 }
+
+/* Edit page link */
+.edit-page-link {
+  margin-top: 0.5em;
+}
+a.edit-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.8em;
+  padding: 3px 8px;
+  background-color: var(--color-purple-light);
+  border: 1px solid var(--color-purple-border);
+  border-radius: 4px;
+  color: var(--color-text);
+  text-decoration: none;
+}
+a.edit-link:hover {
+  background-color: var(--color-purple-hover);
+}
+a.edit-link svg {
+  flex-shrink: 0;
+}
