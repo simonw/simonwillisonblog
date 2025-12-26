@@ -1585,7 +1585,7 @@ div.ea-placement a:link {
 }
 
 /* Edit page link */
-.edit-page-link {
+body div .edit-page-link {
   margin-top: 0.5em;
 }
 a.edit-link {
