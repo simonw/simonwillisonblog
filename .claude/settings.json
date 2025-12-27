@@ -7,9 +7,16 @@
           {
             "type": "command",
             "command": "[ \"$CLAUDE_CODE_REMOTE\" = \"true\" ] && uv python install 3.12 && uv venv --python 3.12 .venv312 && . .venv312/bin/activate && uv pip install -q -r requirements.txt || true"
+          },
+          {
+            "type": "command",
+            "command": "[ \"$CLAUDE_CODE_REMOTE\" = \"true\" ] && service postgresql start && sed -i 's/local\\s\\+all\\s\\+all\\s\\+peer/local all all trust/' /etc/postgresql/*/main/pg_hba.conf && service postgresql restart && su - postgres -c 'createdb simonwillisonblog 2>/dev/null' || true"
           }
         ]
       }
     ]
+  },
+  "env": {
+    "DATABASE_URL": "postgres:///simonwillisonblog"
   }
 }
