@@ -1606,3 +1606,25 @@ a.edit-link:hover {
 a.edit-link svg {
   flex-shrink: 0;
 }
+a.random-post-link {
+  float: right;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.85em;
+  padding: 4px 10px;
+  margin-top: 0.3em;
+  margin-right: 0.75em;
+  background-color: var(--color-purple-light);
+  border: 1px solid var(--color-purple-border);
+  border-radius: 4px;
+  color: var(--color-text);
+  text-decoration: none;
+}
+a.random-post-link:hover {
+  background-color: var(--color-purple-hover);
+  border-bottom: 1px solid var(--color-purple-border);
+}
+a.random-post-link svg {
+  flex-shrink: 0;
+}
