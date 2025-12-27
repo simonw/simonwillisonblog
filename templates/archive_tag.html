@@ -35,7 +35,7 @@
    </svg>
    </a>
     {% if total > 5 %}
-    <a class="random-post-link" href="/random/{{ tags.0 }}/">
+    <a class="random-post-link" href="/random/{{ tags.0 }}/" id="random-tag-link" data-tag="{{ tags.0 }}">
         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="16 3 21 3 21 8"></polyline>
             <line x1="4" y1="20" x2="21" y2="3"></line>
@@ -45,6 +45,14 @@
         </svg>
         Random
     </a>
+    <script>
+    document.getElementById('random-tag-link').addEventListener('click', function() {
+        localStorage.setItem('random_tag', JSON.stringify({
+            tag: this.dataset.tag,
+            timestamp: Date.now()
+        }));
+    });
+    </script>
     {% endif %}
 {% endif %}
 <h2 class="archive-h2">{{ total|intcomma }} post{{ total|pluralize }} tagged “{{ tags|join:"” and “" }}”</h2>
