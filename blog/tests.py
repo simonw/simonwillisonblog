@@ -876,3 +876,104 @@ class TagAdminDeleteTests(TransactionTestCase):
         self.assertContains(response, f"/admin/blog/blogmark/{blogmark.pk}/change/")
         self.assertContains(response, f"/admin/blog/quotation/{quotation.pk}/change/")
         self.assertContains(response, f"/admin/blog/note/{note.pk}/change/")
+
+
+class RandomTagRedirectTests(TransactionTestCase):
+    """Tests for the /random/TAG/ endpoint."""
+
+    def test_random_tag_redirect_returns_all_types(self):
+        """
+        Test that /random/TAG/ can return all four content types.
+        Creates one of each type with the same tag and loops until
+        all four types have been returned, or fails after 1000 tries.
+        """
+        tag = Tag.objects.create(tag="random-test-tag")
+
+        entry = EntryFactory(title="Random Test Entry")
+        entry.tags.add(tag)
+
+        blogmark = BlogmarkFactory(link_title="Random Test Blogmark")
+        blogmark.tags.add(tag)
+
+        quotation = QuotationFactory(source="Random Test Quotation")
+        quotation.tags.add(tag)
+
+        note = NoteFactory(body="Random Test Note")
+        note.tags.add(tag)
+
+        # Track which content types we've seen
+        seen_types = set()
+        expected_urls = {
+            entry.get_absolute_url(): "entry",
+            blogmark.get_absolute_url(): "blogmark",
+            quotation.get_absolute_url(): "quotation",
+            note.get_absolute_url(): "note",
+        }
+
+        max_iterations = 1000
+        for i in range(max_iterations):
+            response = self.client.get("/random/random-test-tag/")
+            self.assertEqual(response.status_code, 302)
+
+            # Get the redirect URL
+            redirect_url = response.url
+
+            # Figure out which type this is
+            if redirect_url in expected_urls:
+                seen_types.add(expected_urls[redirect_url])
+
+            # Check if we've seen all types
+            if len(seen_types) == 4:
+                break
+        else:
+            self.fail(
+                f"Did not see all 4 content types after {max_iterations} iterations. "
+                f"Only saw: {seen_types}"
+            )
+
+    def test_random_tag_redirect_has_no_cache_headers(self):
+        """Test that /random/TAG/ returns no-cache headers."""
+        tag = Tag.objects.create(tag="cache-test-tag")
+        entry = EntryFactory()
+        entry.tags.add(tag)
+
+        response = self.client.get("/random/cache-test-tag/")
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(
+            response.headers["Cache-Control"],
+            "private, no-cache, no-store, must-revalidate",
+        )
+        self.assertEqual(response.headers["Pragma"], "no-cache")
+        self.assertEqual(response.headers["Expires"], "0")
+
+    def test_random_tag_redirect_404_for_nonexistent_tag(self):
+        """Test that /random/TAG/ returns 404 for nonexistent tag."""
+        response = self.client.get("/random/nonexistent-tag/")
+        self.assertEqual(response.status_code, 404)
+
+    def test_random_tag_redirect_404_for_empty_tag(self):
+        """Test that /random/TAG/ returns 404 for tag with no items."""
+        tag = Tag.objects.create(tag="empty-tag")
+        response = self.client.get("/random/empty-tag/")
+        self.assertEqual(response.status_code, 404)
+
+    def test_random_tag_redirect_excludes_drafts(self):
+        """Test that /random/TAG/ excludes draft items."""
+        tag = Tag.objects.create(tag="draft-test-tag")
+
+        # Create draft items only
+        draft_entry = EntryFactory(is_draft=True)
+        draft_entry.tags.add(tag)
+
+        # Should get 404 since only draft items exist
+        response = self.client.get("/random/draft-test-tag/")
+        self.assertEqual(response.status_code, 404)
+
+        # Now add a published item
+        published_entry = EntryFactory(is_draft=False)
+        published_entry.tags.add(tag)
+
+        # Should redirect to the published item
+        response = self.client.get("/random/draft-test-tag/")
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, published_entry.get_absolute_url())
