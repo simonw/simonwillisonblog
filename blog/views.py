@@ -725,6 +725,69 @@ def redirect_note(request, pk):
     return Redirect(get_object_or_404(Note, pk=pk).get_absolute_url())
 
 
+def random_tag_redirect(request, tag):
+    """
+    Redirect to a random item (entry, blogmark, quotation, or note) with the given tag.
+    Uses no-cache headers so Cloudflare doesn't cache the redirect.
+    """
+    from django.db import connection
+
+    tag_obj = get_object_or_404(Tag, tag=tag)
+
+    # Use a CTE to efficiently select one random item from all content types
+    # This avoids loading all items into memory for tags with thousands of items
+    sql = """
+    WITH all_items AS (
+        SELECT id AS pk, 'entry' AS type FROM blog_entry
+        WHERE is_draft = false AND id IN (
+            SELECT entry_id FROM blog_entry_tags WHERE tag_id = %s
+        )
+        UNION ALL
+        SELECT id AS pk, 'blogmark' AS type FROM blog_blogmark
+        WHERE is_draft = false AND id IN (
+            SELECT blogmark_id FROM blog_blogmark_tags WHERE tag_id = %s
+        )
+        UNION ALL
+        SELECT id AS pk, 'quotation' AS type FROM blog_quotation
+        WHERE is_draft = false AND id IN (
+            SELECT quotation_id FROM blog_quotation_tags WHERE tag_id = %s
+        )
+        UNION ALL
+        SELECT id AS pk, 'note' AS type FROM blog_note
+        WHERE is_draft = false AND id IN (
+            SELECT note_id FROM blog_note_tags WHERE tag_id = %s
+        )
+    )
+    SELECT pk, type FROM all_items ORDER BY RANDOM() LIMIT 1
+    """
+
+    with connection.cursor() as cursor:
+        cursor.execute(sql, [tag_obj.pk, tag_obj.pk, tag_obj.pk, tag_obj.pk])
+        row = cursor.fetchone()
+
+    if not row:
+        raise Http404("No items found with this tag")
+
+    item_pk, item_type = row
+
+    # Load the actual object
+    model_map = {
+        "entry": Entry,
+        "blogmark": Blogmark,
+        "quotation": Quotation,
+        "note": Note,
+    }
+    model = model_map[item_type]
+    obj = get_object_or_404(model, pk=item_pk)
+
+    # Redirect with no-cache headers
+    from django.http import HttpResponseRedirect
+
+    response = HttpResponseRedirect(obj.get_absolute_url())
+    set_no_cache(response)
+    return response
+
+
 def about(request):
     return render(request, "about.html")
 
