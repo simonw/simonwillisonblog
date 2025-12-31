@@ -1,3 +1,5 @@
+import re
+
 from django.contrib import admin
 from django.contrib.postgres.search import SearchQuery, SearchRank
 from django.db.models.functions import Length
@@ -45,14 +47,17 @@ class MyEntryForm(forms.ModelForm):
     def clean_body(self):
         # Ensure this is valid XML
         body = self.cleaned_data["body"]
+
+        # Check for empty href attributes
+        if 'href=""' in body:
+            raise forms.ValidationError("Empty href attribute found (href=\"\")")
+
         wrapped = "<entry>%s</entry>" % body
         try:
             ElementTree.fromstring(wrapped)
         except ElementTree.ParseError as e:
             msg = str(e)
             # ParseError format: "message: line X, column Y"
-            import re
-
             match = re.search(r"line (\d+), column (\d+)", msg)
             if match:
                 line_no = int(match.group(1))
@@ -80,6 +85,39 @@ class MyEntryForm(forms.ModelForm):
         return body
 
 
+# Pattern to match empty markdown links like [text]()
+EMPTY_MARKDOWN_LINK_RE = re.compile(r"\[[^\]]+\]\(\s*\)")
+
+
+def validate_no_empty_markdown_links(value, field_name):
+    """Check for empty markdown links like [text]()."""
+    match = EMPTY_MARKDOWN_LINK_RE.search(value)
+    if match:
+        raise forms.ValidationError(
+            f"Empty markdown link found: {match.group(0)}"
+        )
+    return value
+
+
+class QuotationForm(forms.ModelForm):
+    def clean_quotation(self):
+        return validate_no_empty_markdown_links(
+            self.cleaned_data["quotation"], "quotation"
+        )
+
+
+class BlogmarkForm(forms.ModelForm):
+    def clean_commentary(self):
+        return validate_no_empty_markdown_links(
+            self.cleaned_data["commentary"], "commentary"
+        )
+
+
+class NoteForm(forms.ModelForm):
+    def clean_body(self):
+        return validate_no_empty_markdown_links(self.cleaned_data["body"], "body")
+
+
 @admin.register(Entry)
 class EntryAdmin(BaseAdmin):
     form = MyEntryForm
@@ -95,6 +133,7 @@ class LiveUpdateAdmin(admin.ModelAdmin):
 
 @admin.register(Quotation)
 class QuotationAdmin(BaseAdmin):
+    form = QuotationForm
     search_fields = ("tags__tag", "quotation")
     list_display = ("__str__", "source", "created", "tag_summary", "is_draft")
     prepopulated_fields = {"slug": ("source",)}
@@ -102,12 +141,14 @@ class QuotationAdmin(BaseAdmin):
 
 @admin.register(Blogmark)
 class BlogmarkAdmin(BaseAdmin):
+    form = BlogmarkForm
     search_fields = ("tags__tag", "commentary")
     prepopulated_fields = {"slug": ("link_title",)}
 
 
 @admin.register(Note)
 class NoteAdmin(BaseAdmin):
+    form = NoteForm
     search_fields = ("tags__tag", "body")
     list_display = ("__str__", "created", "tag_summary", "is_draft")
 
