@@ -1250,7 +1250,34 @@ h3.blog-mixed-list-year {
   display: none;
 }
 
-@media (max-width: 964px) {
+/* Fluid layout for medium screens - keeps sidebar but allows shrinking */
+@media (max-width: 940px) and (min-width: 801px) {
+  div#wrapper {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0 15px;
+  }
+  body.smallhead div#wrapper {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 15px;
+  }
+  div#smallhead #smallhead-inner {
+    width: 100%;
+    box-sizing: border-box;
+    padding-left: 15px;
+    padding-right: 15px;
+  }
+  div#bighead {
+    width: 100%;
+    box-sizing: border-box;
+  }
+  div#primary {
+    width: calc(100% - 315px); /* 280px sidebar + 35px margin */
+  }
+}
+
+@media (max-width: 800px) {
   div.entry {
     max-width: 680px;
   }
