@@ -57,7 +57,7 @@
 {% with entry.previous_by_created as previous_entry %}{% if previous_entry %}
 <p><strong>Previous:</strong> <a href="{{ previous_entry.get_absolute_url }}">{{ previous_entry.title }}</a></p>
 {% endif %}{% endwith %}
-<div data-ea-publisher="simonwillisonnet" data-ea-type="image"></div>
+<div class="adaptive-css" data-ea-publisher="simonwillisonnet" data-ea-type="image"></div>
 {% include "_sponsor_promo.html" %}
 </div>
 
