@@ -310,6 +310,14 @@ def search(request, q=None, return_context=False):
         return render(request, "search.html", context)
 
 
+def type_listing(request, type_name):
+    request.GET = request.GET.copy()
+    request.GET["type"] = type_name
+    context = search(request, return_context=True)
+    context["fixed_type"] = True
+    return render(request, "search.html", context)
+
+
 def tools_search_tags(request):
     q = request.GET.get("q", "").strip()
     results = []

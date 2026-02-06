@@ -490,6 +490,96 @@ class BlogTests(TransactionTestCase):
         )
 
 
+class TypeListingTests(TransactionTestCase):
+    def test_entries_page(self):
+        entry = EntryFactory()
+        BlogmarkFactory()
+        response = self.client.get("/entries/")
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Entries")
+        self.assertEqual(response.context["selected"]["type"], "entry")
+        self.assertTrue(response.context["fixed_type"])
+
+    def test_blogmarks_page(self):
+        BlogmarkFactory()
+        EntryFactory()
+        response = self.client.get("/blogmarks/")
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Blogmarks")
+        self.assertEqual(response.context["selected"]["type"], "blogmark")
+
+    def test_quotations_page(self):
+        QuotationFactory()
+        response = self.client.get("/quotations/")
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Quotations")
+        self.assertEqual(response.context["selected"]["type"], "quotation")
+
+    def test_notes_page(self):
+        NoteFactory()
+        response = self.client.get("/notes/")
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Notes")
+        self.assertEqual(response.context["selected"]["type"], "note")
+
+    def test_pagination(self):
+        for _ in range(35):
+            EntryFactory()
+        response = self.client.get("/entries/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.context["results"]), 30)
+        response2 = self.client.get("/entries/?page=2")
+        self.assertEqual(response2.status_code, 200)
+        self.assertEqual(len(response2.context["results"]), 5)
+
+    def test_search_within_type(self):
+        EntryFactory(title="Unique findable title")
+        EntryFactory(title="Other entry")
+        response = self.client.get("/entries/?q=findable")
+        self.assertEqual(response.status_code, 200)
+
+    def test_tag_filtering(self):
+        tag = Tag.objects.create(tag="test-listing")
+        entry = EntryFactory()
+        entry.tags.add(tag)
+        EntryFactory()  # no tag
+        response = self.client.get("/entries/?tag=test-listing")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["total"], 1)
+
+    def test_type_facet_hidden(self):
+        EntryFactory()
+        response = self.client.get("/entries/")
+        self.assertNotContains(response, 'id="facet-types"')
+
+    def test_type_pill_hidden(self):
+        EntryFactory()
+        response = self.client.get("/entries/")
+        self.assertNotContains(response, "Type: entry")
+
+    def test_pagination_no_type_in_query_string(self):
+        for _ in range(35):
+            EntryFactory()
+        response = self.client.get("/entries/")
+        self.assertContains(response, "?page=2")
+        # Pagination links should not include type=entry
+        self.assertNotContains(response, "?type=entry&amp;page=")
+        self.assertNotContains(response, "?page=2&amp;type=entry")
+
+    def test_form_action_points_to_search(self):
+        EntryFactory()
+        response = self.client.get("/entries/")
+        self.assertContains(response, 'action="/search/"')
+
+    def test_year_facet_links_to_search(self):
+        EntryFactory()
+        response = self.client.get("/entries/")
+        content = response.content.decode()
+        # Year facet links should go to /search/ with type=entry
+        self.assertIn("/search/?", content)
+        self.assertIn("type=entry", content)
+
+
 class MergeTagsTests(TransactionTestCase):
     def setUp(self):
         self.staff_user = User.objects.create_user(

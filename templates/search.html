@@ -8,7 +8,7 @@
 {% load blog_tags %}
 <h2>{{ title }}</h2>
 
-<form action="{{ request.path }}" method="GET">
+<form action="{% if fixed_type %}/search/{% else %}{{ request.path }}{% endif %}" method="GET">
     <input type="search" class="search-input" name="q" value="{{ q }}" style="width: 80%" autocomplete="off">
     <input type="submit" class="search-submit" value="Search">
     {% if selected %}
@@ -27,7 +27,7 @@
 <p class="search-selections">
     {% if selected %}<span class="filters">
         Filters:
-        {% if selected.type %}
+        {% if selected.type and not fixed_type %}
             <a class="selected-tag" href="{% remove_qsarg "type" selected.type %}">Type: {{ selected.type }} <strong>&#x00D7;</strong></a>
         {% endif %}
         {% if selected.year %}
@@ -68,7 +68,7 @@
 
 {% block secondary %}
 <div class="metabox">
-    {% if type_counts %}
+    {% if type_counts and not fixed_type %}
         <h3 id="facet-types">Types</h3>
         <ul>
             {% for t in type_counts %}

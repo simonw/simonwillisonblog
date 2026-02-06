@@ -55,6 +55,14 @@ def page_href(context, page):
     if page == 1 and "page" in query_dict:
         del query_dict["page"]
     query_dict["page"] = str(page)
+    if context.get("fixed_type") and "type" in query_dict:
+        del query_dict["type"]
+    return "?" + query_dict.urlencode()
+
+
+def _search_prefix(context, query_dict):
+    if context.get("fixed_type"):
+        return "/search/?" + query_dict.urlencode()
     return "?" + query_dict.urlencode()
 
 
@@ -67,21 +75,21 @@ def add_qsarg(context, name, value):
     # https://github.com/simonw/simonwillisonblog/issues/239
     if "page" in query_dict:
         query_dict.pop("page")
-    return "?" + query_dict.urlencode()
+    return _search_prefix(context, query_dict)
 
 
 @register.simple_tag(takes_context=True)
 def remove_qsarg(context, name, value):
     query_dict = context["request"].GET.copy()
     query_dict.setlist(name, [v for v in query_dict.getlist(name) if v != value])
-    return "?" + query_dict.urlencode()
+    return _search_prefix(context, query_dict)
 
 
 @register.simple_tag(takes_context=True)
 def replace_qsarg(context, name, value):
     query_dict = context["request"].GET.copy()
     query_dict[name] = value
-    return "?" + query_dict.urlencode()
+    return _search_prefix(context, query_dict)
 
 
 @register.filter
