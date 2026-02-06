@@ -136,7 +136,8 @@ cog.outl("}")
 cog.outl("")
 cog.outl(f"{comment_start} Auto dark theme based on system preference (only when no explicit theme is set) {comment_end}")
 cog.outl("@media (prefers-color-scheme: dark) {")
-cog.outl("  :root:not([data-theme]) {")
+cog.outl("  :root:not([data-theme]),")
+cog.outl("  :root[data-theme='auto'] {")
 output_vars("    ")
 cog.outl("  }")
 cog.outl("}")
@@ -199,7 +200,8 @@ cog.outl("}")
 
 /* Auto dark theme based on system preference (only when no explicit theme is set) */
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme]) {
+  :root:not([data-theme]),
+  :root[data-theme='auto'] {
     --color-bg: #1a1a2e;
     --color-text: #e8e8e8;
     --color-text-muted: #a0a0a0;
