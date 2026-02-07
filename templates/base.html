@@ -28,6 +28,7 @@
 {% block footer %}
 <div id="ft">
     <ul>
+      <li><a href="/about/#disclosures">Disclosures</a></li>
       <li><a href="/about/#about-site">Colophon</a></li>
       <li>&copy;</li>{% for year in years_with_content %}
       <li><a href="/{{ year|date:"Y" }}/">{{ year|date:"Y" }}</a></li>{% endfor %}
