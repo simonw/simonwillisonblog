@@ -174,6 +174,8 @@ urlpatterns = [
     re_path(r"^series/(.*?).atom$", blog_views.archive_series_atom),
     re_path(r"^atom/entries/$", count_subscribers(feeds.Entries().__call__)),
     re_path(r"^atom/links/$", count_subscribers(feeds.Blogmarks().__call__)),
+    re_path(r"^atom/quotations/$", count_subscribers(feeds.Quotations().__call__)),
+    re_path(r"^atom/notes/$", count_subscribers(feeds.Notes().__call__)),
     re_path(r"^atom/everything/$", count_subscribers(feeds.Everything().__call__)),
     re_path(r"^sitemap\.xml$", feeds.sitemap),
     path("tools/", blog_views.tools),

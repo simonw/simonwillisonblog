@@ -310,11 +310,20 @@ def search(request, q=None, return_context=False):
         return render(request, "search.html", context)
 
 
+FEED_URLS = {
+    "entry": "/atom/entries/",
+    "blogmark": "/atom/links/",
+    "quotation": "/atom/quotations/",
+    "note": "/atom/notes/",
+}
+
+
 def type_listing(request, type_name):
     request.GET = request.GET.copy()
     request.GET["type"] = type_name
     context = search(request, return_context=True)
     context["fixed_type"] = True
+    context["feed_url"] = FEED_URLS.get(type_name)
     return render(request, "search.html", context)
 
 

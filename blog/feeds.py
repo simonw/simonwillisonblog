@@ -82,6 +82,41 @@ class Blogmarks(Base):
         return item.title or item.link_title
 
 
+class Quotations(Base):
+    title = "Simon Willison's Weblog: Quotations"
+    description_template = "feeds/quotation.html"
+    ga_source = "quotations"
+
+    def items(self):
+        return (
+            Quotation.objects.filter(is_draft=False)
+            .prefetch_related("tags")
+            .order_by("-created")[:15]
+        )
+
+    def item_title(self, item):
+        return "Quoting %s" % item.source
+
+
+class Notes(Base):
+    title = "Simon Willison's Weblog: Notes"
+    description_template = "feeds/note.html"
+    ga_source = "notes"
+
+    def items(self):
+        return (
+            Note.objects.filter(is_draft=False)
+            .prefetch_related("tags")
+            .order_by("-created")[:15]
+        )
+
+    def item_title(self, item):
+        if item.title:
+            return item.title
+        else:
+            return "Note on {}".format(date_format(item.created, "jS F Y"))
+
+
 class Everything(Base):
     title = "Simon Willison's Weblog"
     description_template = "feeds/everything.html"
