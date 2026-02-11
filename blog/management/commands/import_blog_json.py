@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import Any
+
 from django.core.management.base import BaseCommand
 from datetime import timezone
 from blog.models import (
@@ -50,9 +54,10 @@ class Command(BaseCommand):
             created = parser.parse(item["datetime"]).replace(tzinfo=timezone.utc)
             was_created = False
             slug = item["slug"][:64].strip("-")
+            klass: type[Entry] | type[Quotation] | type[Blogmark]
             if item["type"] == "entry":
                 klass = Entry
-                kwargs = dict(
+                create_kwargs: dict[str, Any] = dict(
                     body=item["body"],
                     title=item["title"],
                     created=created,
@@ -61,7 +66,7 @@ class Command(BaseCommand):
                 )
             elif item["type"] == "quotation":
                 klass = Quotation
-                kwargs = dict(
+                create_kwargs = dict(
                     quotation=item["quotation"],
                     source=item["source"],
                     source_url=item["source_url"],
@@ -71,7 +76,7 @@ class Command(BaseCommand):
                 )
             elif item["type"] == "blogmark":
                 klass = Blogmark
-                kwargs = dict(
+                create_kwargs = dict(
                     slug=slug,
                     link_url=item["link_url"],
                     link_title=item["link_title"],
@@ -85,10 +90,10 @@ class Command(BaseCommand):
                 assert False, "type should be known, %s" % item["type"]
             if item.get("import_ref"):
                 obj, was_created = klass.objects.update_or_create(
-                    import_ref=item["import_ref"], defaults=kwargs
+                    import_ref=item["import_ref"], defaults=create_kwargs
                 )
             else:
-                obj = klass.objects.create(**kwargs)
+                obj = klass.objects.create(**create_kwargs)
             tags = [Tag.objects.get_or_create(tag=tag)[0] for tag in item["tags"]]
             if tag_with_tag:
                 tags.append(tag_with_tag)

@@ -1,4 +1,8 @@
 # coding=utf8
+from __future__ import annotations
+
+from typing import Any
+
 from django.shortcuts import render, get_object_or_404
 from django.http import JsonResponse
 from django.contrib.admin.views.decorators import staff_member_required
@@ -103,7 +107,7 @@ def archive_item(request, year, month, day, slug):
             content_type
         )
 
-        updates = []
+        updates: list[Any] = []
         if isinstance(obj, Entry):
             updates = list(obj.updates.order_by("created"))
             for update in updates:
@@ -123,7 +127,7 @@ def archive_item(request, year, month, day, slug):
             {
                 content_type: obj,
                 "content_type": content_type,
-                "object_id": obj.id,
+                "object_id": obj.pk,
                 "previously_hosted": previously_hosted,
                 "item": obj,
                 "recent_articles": Entry.objects.filter(is_draft=False)
@@ -175,8 +179,8 @@ def index(request):
     )
 
     # Now load the entries, blogmarks, quotations
-    items = []
-    to_load = {}
+    items: list[dict[str, Any]] = []
+    to_load: dict[str, list[Any]] = {}
     for item in recent:
         to_load.setdefault(item["content_type"], []).append(item["id"])
     for content_type, model in (
@@ -209,7 +213,7 @@ def index(request):
 
 def entry_updates(request, entry_id):
     entry = get_object_or_404(Entry, pk=entry_id)
-    updates = list(entry.updates.order_by("created"))
+    updates: list[Any] = list(entry.updates.order_by("created"))
     for update in updates:
         update.created_str = (
             str(update.created.astimezone(pytz.timezone("America/Los_Angeles")).time())
@@ -252,21 +256,21 @@ def entry_updates_json(request, entry_id):
     return response
 
 
-def find_current_tags(num=5):
+def find_current_tags(num: int = 5) -> list[Tag]:
     """Returns num random tags from top 30 in recent 400 taggings"""
     last_400_tags = list(
-        Tag.quotation_set.through.objects.annotate(
+        Tag.quotation_set.through.objects.annotate(  # type: ignore[misc]
             created=models.F("quotation__created")
         )
         .values("tag__tag", "created")
         .union(
-            Tag.entry_set.through.objects.annotate(
+            Tag.entry_set.through.objects.annotate(  # type: ignore[misc]
                 created=models.F("entry__created")
             ).values("tag__tag", "created"),
-            Tag.blogmark_set.through.objects.annotate(
+            Tag.blogmark_set.through.objects.annotate(  # type: ignore[misc]
                 created=models.F("blogmark__created")
             ).values("tag__tag", "created"),
-            Tag.note_set.through.objects.annotate(
+            Tag.note_set.through.objects.annotate(  # type: ignore[misc]
                 created=models.F("note__created")
             ).values("tag__tag", "created"),
         )
@@ -378,7 +382,7 @@ def archive_month(request, year, month):
             )
     if not items:
         raise Http404
-    items.sort(key=lambda x: x["obj"].created)
+    items.sort(key=lambda x: x["obj"].created)  # type: ignore[attr-defined]
     # Paginate it
     paginator = Paginator(items, min(1000, int(request.GET.get("size") or "30")))
     page_number = request.GET.get("page") or "1"
@@ -408,7 +412,7 @@ def archive_day(request, year, month, day):
     if day.startswith("0"):
         day = day.lstrip("0")
         return Redirect("/%s/%s/%s/" % (year, month, day))
-    context = {}
+    context: dict[str, Any] = {}
     context["date"] = datetime.date(int(year), MONTHS_3_REV[month.lower()], int(day))
     items = []  # Array of {'type': , 'obj': }
     count = 0
@@ -462,7 +466,7 @@ def tag_index(request):
 def top_tags(request):
     """Display recent headlines for the 10 most popular tags."""
     tags = (
-        Tag.objects.annotate(
+        Tag.objects.annotate(  # type: ignore[no-redef]
             entry_count=models.Count(
                 "entry", filter=models.Q(entry__is_draft=False), distinct=True
             ),
@@ -558,7 +562,7 @@ def archive_tag(request, tags, atom=False):
         )
     if not items:
         raise Http404
-    items.sort(key=lambda x: x["obj"].created, reverse=True)
+    items.sort(key=lambda x: x["obj"].created, reverse=True)  # type: ignore[attr-defined]
     # Paginate it
     paginator = Paginator(items, min(1000, int(request.GET.get("size") or "30")))
     page_number = request.GET.get("page") or "1"
@@ -645,7 +649,7 @@ def write(request):
 @staff_member_required
 def tools(request):
     if request.POST.get("purge_all"):
-        cf = cloudflare.CloudFlare(
+        cf = cloudflare.CloudFlare(  # type: ignore[attr-defined]
             email=settings.CLOUDFLARE_EMAIL, token=settings.CLOUDFLARE_TOKEN
         )
         cf.zones.purge_cache.delete(
@@ -830,12 +834,13 @@ def api_add_tag(request):
         return JsonResponse({"error": "Missing required parameters"}, status=400)
 
     # Get the object
-    model = {
+    models_map: dict[str, type[Entry] | type[Blogmark] | type[Quotation] | type[Note]] = {
         "entry": Entry,
         "blogmark": Blogmark,
         "quotation": Quotation,
         "note": Note,
-    }.get(content_type)
+    }
+    model = models_map.get(content_type)
     if not model:
         return JsonResponse({"error": "Invalid content type"}, status=400)
 
@@ -893,7 +898,7 @@ def merge_tags(request):
     if request.method == "POST" and source_tag and destination_tag and not error:
         if request.POST.get("confirm") == "yes":
             # Track items where tag was added vs just removed
-            details = {
+            details: dict[str, dict[str, list[Any]]] = {
                 "entries": {"added": [], "already_tagged": []},
                 "blogmarks": {"added": [], "already_tagged": []},
                 "quotations": {"added": [], "already_tagged": []},
@@ -983,7 +988,7 @@ def merge_tags(request):
             destination_tag = None
 
     # Calculate counts for confirmation screen
-    counts = None
+    counts: dict[str, Any] | None = None
     if source_tag and destination_tag:
         # Count items with source tag that DON'T have destination tag (will be added)
         # Count items with source tag that DO have destination tag (already tagged)

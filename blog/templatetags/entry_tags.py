@@ -15,6 +15,8 @@ def xhtml(xhtml):
 
 
 class XhtmlString(object):
+    et: ElementTree.Element
+
     def __init__(self, value, contains_markup=False):
         if isinstance(value, XhtmlString):
             self.et = value.et

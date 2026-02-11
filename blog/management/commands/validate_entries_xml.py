@@ -9,7 +9,7 @@ class Command(BaseCommand):
     def handle(self, *args, **kwargs):
         for entry in Entry.objects.all():
             try:
-                ElementTree.fromstring("<entry>%s</entry>" % entry.body.encode("utf8"))
+                ElementTree.fromstring("<entry>%s</entry>" % entry.body)
             except Exception as e:
                 print(e)
                 print(entry.title)
