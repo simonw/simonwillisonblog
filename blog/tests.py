@@ -436,6 +436,52 @@ class BlogTests(TransactionTestCase):
             "Posts tagged llm-release in July, 2025",
         )
 
+    def test_quotations_feed(self):
+        quotation = QuotationFactory(source="Test Source")
+        response = self.client.get("/atom/quotations/")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("application/xml", response["Content-Type"])
+        self.assertContains(response, "Quotations")
+        self.assertContains(response, "Test Source")
+
+    def test_notes_feed(self):
+        note = NoteFactory(body="Test note body content")
+        response = self.client.get("/atom/notes/")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("application/xml", response["Content-Type"])
+        self.assertContains(response, "Notes")
+        self.assertContains(response, "Test note body content")
+
+    def test_draft_items_not_in_quotations_feed(self):
+        draft_quotation = QuotationFactory(is_draft=True, source="draftquotationsource")
+        response = self.client.get("/atom/quotations/")
+        self.assertNotContains(response, "draftquotationsource")
+        draft_quotation.is_draft = False
+        draft_quotation.save()
+        response2 = self.client.get("/atom/quotations/")
+        self.assertContains(response2, "draftquotationsource")
+
+    def test_draft_items_not_in_notes_feed(self):
+        draft_note = NoteFactory(is_draft=True, body="draftnotebody")
+        response = self.client.get("/atom/notes/")
+        self.assertNotContains(response, "draftnotebody")
+        draft_note.is_draft = False
+        draft_note.save()
+        response2 = self.client.get("/atom/notes/")
+        self.assertContains(response2, "draftnotebody")
+
+    def test_quotations_feed_has_cors_and_cache_headers(self):
+        QuotationFactory()
+        response = self.client.get("/atom/quotations/")
+        self.assertEqual(response["Access-Control-Allow-Origin"], "*")
+        self.assertIn("s-maxage", response["Cache-Control"])
+
+    def test_notes_feed_has_cors_and_cache_headers(self):
+        NoteFactory()
+        response = self.client.get("/atom/notes/")
+        self.assertEqual(response["Access-Control-Allow-Origin"], "*")
+        self.assertIn("s-maxage", response["Cache-Control"])
+
     def test_archive_month_shows_search_and_counts(self):
         created = datetime.datetime(2025, 7, 1, tzinfo=datetime.timezone.utc)
         EntryFactory(created=created)
@@ -578,6 +624,30 @@ class TypeListingTests(TransactionTestCase):
         # Year facet links should go to /search/ with type=entry
         self.assertIn("/search/?", content)
         self.assertIn("type=entry", content)
+
+    def test_entries_page_has_feed_icon(self):
+        EntryFactory()
+        response = self.client.get("/entries/")
+        self.assertContains(response, "/atom/entries/")
+        self.assertContains(response, "Atom feed")
+
+    def test_blogmarks_page_has_feed_icon(self):
+        BlogmarkFactory()
+        response = self.client.get("/blogmarks/")
+        self.assertContains(response, "/atom/links/")
+        self.assertContains(response, "Atom feed")
+
+    def test_quotations_page_has_feed_icon(self):
+        QuotationFactory()
+        response = self.client.get("/quotations/")
+        self.assertContains(response, "/atom/quotations/")
+        self.assertContains(response, "Atom feed")
+
+    def test_notes_page_has_feed_icon(self):
+        NoteFactory()
+        response = self.client.get("/notes/")
+        self.assertContains(response, "/atom/notes/")
+        self.assertContains(response, "Atom feed")
 
 
 class MergeTagsTests(TransactionTestCase):
