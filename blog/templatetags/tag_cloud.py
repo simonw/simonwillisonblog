@@ -52,7 +52,7 @@ def tag_cloud_for_tags(tags):
 
 def _tag_cloud_helper(tags):
     # Count them all up
-    tag_counts = {}
+    tag_counts: dict[str, int] = {}
     for tag in tags:
         try:
             tag_counts[tag] += 1

@@ -109,7 +109,7 @@ class BlogmarkAdmin(BaseAdmin):
 @admin.register(Note)
 class NoteAdmin(BaseAdmin):
     search_fields = ("tags__tag", "body")
-    list_display = ("__str__", "created", "tag_summary", "is_draft")
+    list_display = ("__str__", "created", "tag_summary", "is_draft")  # type: ignore[assignment]
 
 
 @admin.register(Tag)
@@ -184,7 +184,8 @@ class TagMergeAdmin(admin.ModelAdmin):
 
     def details_formatted(self, obj):
         """Display the details JSON in a formatted way."""
-        from django.utils.html import escape, mark_safe
+        from django.utils.html import escape
+        from django.utils.safestring import mark_safe
 
         if not obj.details:
             return "-"
@@ -224,7 +225,7 @@ class TagMergeAdmin(admin.ModelAdmin):
         html_parts.append("</div>")
         return mark_safe("".join(html_parts))
 
-    details_formatted.short_description = "Merge Details"
+    details_formatted.short_description = "Merge Details"  # type: ignore[attr-defined]
 
     def has_add_permission(self, request):
         return False

@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import Any
+
 from django.shortcuts import render
 from django.db.models import CharField, Value
 import datetime
@@ -34,8 +38,8 @@ def index(request):
     )
 
     # Now load the entries, blogmarks, quotations
-    items = []
-    to_load = {}
+    items: list[dict[str, Any]] = []
+    to_load: dict[str, list[Any]] = {}
     for item in recent:
         to_load.setdefault(item["content_type"], []).append(item["id"])
     for content_type, model in (

@@ -9,6 +9,7 @@ class Base(Feed):
     feed_type = Atom1Feed
     link = "/"
     author_name = "Simon Willison"
+    ga_source = ""
 
     def __call__(self, request, *args, **kwargs):
         response = super(Base, self).__call__(request, *args, **kwargs)
@@ -39,7 +40,7 @@ class Base(Feed):
 
     def get_feed(self, obj, request):
         feedgen = super().get_feed(obj, request)
-        feedgen.content_type = "application/xml; charset=utf-8"
+        feedgen.content_type = "application/xml; charset=utf-8"  # type: ignore[attr-defined]
         return feedgen
 
 

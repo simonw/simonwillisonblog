@@ -26,7 +26,7 @@ if settings.DEBUG:
     try:
         import debug_toolbar
 
-        urlpatterns = [
+        urlpatterns = [  # type: ignore[assignment]
             re_path(r"^__debug__/", include(debug_toolbar.urls))
         ] + urlpatterns
     except ImportError:

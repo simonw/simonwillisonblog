@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import Any
+
 from django.db import models
 from django.db.models import Sum, Subquery, OuterRef, IntegerField
 from django.utils.dates import MONTHS_3
@@ -56,8 +60,8 @@ class Tag(models.Model):
     def note_count(self):
         return self.note_set.filter(is_draft=False).count()
 
-    def total_count(self):
-        entry_count = Subquery(
+    def total_count(self) -> int:
+        entry_subq = Subquery(
             Entry.objects.filter(is_draft=False, tags=OuterRef("pk"))
             .values("tags")
             .annotate(count=Count("id"))
@@ -65,7 +69,7 @@ class Tag(models.Model):
             output_field=IntegerField(),
         )
 
-        blogmark_count = Subquery(
+        blogmark_subq = Subquery(
             Blogmark.objects.filter(is_draft=False, tags=OuterRef("pk"))
             .values("tags")
             .annotate(count=Count("id"))
@@ -73,7 +77,7 @@ class Tag(models.Model):
             output_field=IntegerField(),
         )
 
-        quotation_count = Subquery(
+        quotation_subq = Subquery(
             Quotation.objects.filter(is_draft=False, tags=OuterRef("pk"))
             .values("tags")
             .annotate(count=Count("id"))
@@ -81,7 +85,7 @@ class Tag(models.Model):
             output_field=IntegerField(),
         )
 
-        note_count = Subquery(
+        note_subq = Subquery(
             Note.objects.filter(is_draft=False, tags=OuterRef("pk"))
             .values("tags")
             .annotate(count=Count("id"))
@@ -92,18 +96,18 @@ class Tag(models.Model):
         result = (
             Tag.objects.filter(pk=self.pk)
             .annotate(
-                total_count=Sum(
-                    Coalesce(entry_count, 0)
-                    + Coalesce(blogmark_count, 0)
-                    + Coalesce(quotation_count, 0)
-                    + Coalesce(note_count, 0)
+                computed_total=Sum(
+                    Coalesce(entry_subq, 0)
+                    + Coalesce(blogmark_subq, 0)
+                    + Coalesce(quotation_subq, 0)
+                    + Coalesce(note_subq, 0)
                 )
             )
-            .values("total_count")
+            .values("computed_total")
             .first()
         )
 
-        return result["total_count"] if result else 0
+        return result["computed_total"] if result else 0
 
     def all_types_queryset(self):
         entries = (
@@ -131,7 +135,7 @@ class Tag(models.Model):
     def get_related_tags(self, limit=10):
         """Get all items tagged with this, look at /their/ tags, order by count"""
         if not hasattr(self, "_related_tags"):
-            counts = Counter()
+            counts: Counter[str | None] = Counter()
             for klass, collection in (
                 (Entry, "entry_set"),
                 (Blogmark, "blogmark_set"),
@@ -142,10 +146,10 @@ class Tag(models.Model):
                     pk__in=getattr(self, collection).all()
                 ).values_list("tags__tag", flat=True)
                 counts.update(t for t in qs if t != self.tag)
-            tag_names = [p[0] for p in counts.most_common(limit)]
+            tag_names = [p[0] for p in counts.most_common(limit) if p[0] is not None]
             tags_by_name = {t.tag: t for t in Tag.objects.filter(tag__in=tag_names)}
             # Need a list in the correct order
-            self._related_tags = [tags_by_name[name] for name in tag_names]
+            self._related_tags = [tags_by_name[name] for name in tag_names if name in tags_by_name]
         return self._related_tags
 
     def rename_tag(self, new_name):
@@ -243,7 +247,7 @@ class BaseModel(models.Model):
         )
 
     def edit_url(self):
-        return "/admin/blog/%s/%d/" % (self.__class__.__name__.lower(), self.id)
+        return "/admin/blog/%s/%d/" % (self.__class__.__name__.lower(), self.pk)
 
     class Meta:
         abstract = True
@@ -292,6 +296,7 @@ class Entry(BaseModel):
         }
 
     def series_info(self):
+        assert self.series is not None
         entries = list(self.series.entries_ordest_first().defer("body"))
         has_next = False
         start = 1
@@ -547,17 +552,18 @@ class Comment(models.Model):
     visible_on_site = models.BooleanField(default=True, db_index=True)
     spam_reason = models.TextField()
 
-    def get_absolute_url(self):
+    def get_absolute_url(self) -> str:
+        item: Any = self.item
         return "/%d/%s/%d/%s/#c%d" % (
-            self.item.created.year,
-            MONTHS_3[self.item.created.month].title(),
-            self.item.created.day,
-            self.item.slug,
-            self.id,
+            item.created.year,
+            MONTHS_3[item.created.month].title(),
+            item.created.day,
+            item.slug,
+            self.pk,
         )
 
     def edit_url(self):
-        return "/admin/blog/comment/%d/" % self.id
+        return "/admin/blog/comment/%d/" % self.pk
 
     def __str__(self):
         return '%s on "%s"' % (self.name, self.item)
@@ -568,24 +574,25 @@ class Comment(models.Model):
             escape(self.body[:200]),
         )
 
-    admin_summary.allow_tags = True
-    admin_summary.short_description = "Comment"
+    admin_summary.allow_tags = True  # type: ignore[attr-defined]
+    admin_summary.short_description = "Comment"  # type: ignore[attr-defined]
 
     def on_link(self):
+        item: Any = self.item
         return '<a href="%s">%s</a>(<a href="%s">#</a>)' % (
-            self.item.get_absolute_url(),
+            item.get_absolute_url(),
             self.content_type.name.title(),
             self.get_absolute_url(),
         )
 
-    on_link.allow_tags = True
-    on_link.short_description = "On"
+    on_link.allow_tags = True  # type: ignore[attr-defined]
+    on_link.short_description = "On"  # type: ignore[attr-defined]
 
     def ip_link(self):
         return '<a href="/admin/blog/comment/?ip__exact=%s">%s</a>' % (self.ip, self.ip)
 
-    ip_link.allow_tags = True
-    ip_link.short_description = "IP"
+    ip_link.allow_tags = True  # type: ignore[attr-defined]
+    ip_link.short_description = "IP"  # type: ignore[attr-defined]
 
     def spam_status_options(self):
         bits = []
@@ -606,37 +613,37 @@ class Comment(models.Model):
         bits.append("</form>")
         return "".join(bits)
 
-    spam_status_options.allow_tags = True
-    spam_status_options.short_description = "Spam status"
+    spam_status_options.allow_tags = True  # type: ignore[attr-defined]
+    spam_status_options.short_description = "Spam status"  # type: ignore[attr-defined]
 
     class Meta:
         ordering = ("-created",)
         get_latest_by = "created"
 
 
-def load_mixed_objects(dicts):
+def load_mixed_objects(dicts: Any) -> list[Any]:
     """
     Takes a list of dictionaries, each of which must at least have a 'type'
     and a 'pk' key. Returns a list of ORM objects of those various types.
 
     Each returned ORM object has a .original_dict attribute populated.
     """
-    to_fetch = {}
+    to_fetch: dict[str, set[Any]] = {}
     for d in dicts:
         to_fetch.setdefault(d["type"], set()).add(d["pk"])
-    fetched = {}
+    fetched: dict[tuple[str, Any], Any] = {}
     for key, model in (
         ("blogmark", Blogmark),
         ("entry", Entry),
         ("quotation", Quotation),
         ("note", Note),
     ):
-        ids = to_fetch.get(key) or []
+        ids: set[Any] | list[Any] = to_fetch.get(key) or []
         objects = model.objects.prefetch_related("tags").filter(pk__in=ids)
         for obj in objects:
             fetched[(key, obj.pk)] = obj
     # Build list in same order as dicts argument
-    to_return = []
+    to_return: list[Any] = []
     for d in dicts:
         item = fetched.get((d["type"], d["pk"])) or None
         if item:
@@ -667,7 +674,7 @@ def _make_tag_through_str(field_name, admin_url_name, display_fn):
     return __str__
 
 
-for model, field_name, admin_url_name, display_fn in [
+for _model, _field_name, _admin_url_name, _display_fn in [
     (Entry, "entry", "entry", lambda o: o.title),
     (Blogmark, "blogmark", "blogmark", lambda o: o.link_title),
     (Quotation, "quotation", "quotation", lambda o: o.source),
@@ -678,6 +685,6 @@ for model, field_name, admin_url_name, display_fn in [
         lambda o: o.body[:50] + "..." if len(o.body) > 50 else o.body,
     ),
 ]:
-    model.tags.through.__str__ = _make_tag_through_str(
-        field_name, admin_url_name, display_fn
+    _model.tags.through.__str__ = _make_tag_through_str(  # type: ignore[method-assign]
+        _field_name, _admin_url_name, _display_fn
     )

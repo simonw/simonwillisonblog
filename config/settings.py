@@ -160,12 +160,12 @@ if "DATABASE_URL" in os.environ:
     # Parse database configuration from $DATABASE_URL
     DATABASES["default"] = dj_database_url.config()
     DATABASES["dashboard"] = dj_database_url.config()
-    DATABASES["dashboard"]["OPTIONS"] = {
+    DATABASES["dashboard"]["OPTIONS"] = {  # type: ignore[index]
         "options": "-c default_transaction_read_only=on -c statement_timeout=3000"
     }
 
 if "DISABLE_AUTOCOMMIT" in os.environ:
-    DATABASES["default"]["AUTOCOMMIT"] = False
+    DATABASES["default"]["AUTOCOMMIT"] = False  # type: ignore[index]
 
 # Honor the 'X-Forwarded-Proto' header for request.is_secure()
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")

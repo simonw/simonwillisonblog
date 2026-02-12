@@ -81,7 +81,7 @@ def tags_autocomplete(request):
             .order_by("-is_exact_match", "-count", Length("tag"))[:5]
         )
     else:
-        tags = Tag.objects.none()
+        tags = Tag.objects.none()  # type: ignore[assignment]
 
     if request.GET.get("debug"):
         return HttpResponse(

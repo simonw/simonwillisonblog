@@ -66,8 +66,10 @@ MODELS_TO_CHECK = (  # Name, model, score
 
 
 def make_empty_day_dict(date):
-    d = dict([(key, []) for key, _1, _2, _3 in MODELS_TO_CHECK])
-    d.update({"day": date, "populated": False, "display": True})
+    d: dict = dict([(key, []) for key, _1, _2, _3 in MODELS_TO_CHECK])
+    d["day"] = date
+    d["populated"] = False
+    d["display"] = True
     return d
 
 

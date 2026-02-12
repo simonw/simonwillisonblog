@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import Any
+
 import time
 import json
 import re
@@ -113,17 +117,17 @@ def search(request, q=None, return_context=False):
         return qs.order_by()
 
     # Start with a .none() queryset just so we can union stuff onto it
-    qs = Entry.objects.annotate(
+    qs: Any = Entry.objects.annotate(
         type=models.Value("empty", output_field=models.CharField())
     )
     if search_q:
         qs = qs.annotate(rank=rank_annotation)
     qs = qs.values(*values).none()
 
-    type_counts_raw = {}
-    tag_counts_raw = {}
-    year_counts_raw = {}
-    month_counts_raw = {}
+    type_counts_raw: dict[str, int] = {}
+    tag_counts_raw: dict[str, int] = {}
+    year_counts_raw: dict[Any, int] = {}
+    month_counts_raw: dict[Any, int] = {}
 
     for klass, type_name in (
         (Entry, "entry"),
@@ -182,7 +186,7 @@ def search(request, q=None, return_context=False):
     db_sort = {"relevance": "-rank", "date": "-created"}[sort]
     qs = qs.order_by(db_sort)
 
-    type_counts = sorted(
+    type_counts: list[dict[str, Any]] = sorted(
         [
             {"type": type_name, "n": value}
             for type_name, value in list(type_counts_raw.items())
@@ -190,13 +194,16 @@ def search(request, q=None, return_context=False):
         key=lambda t: t["n"],
         reverse=True,
     )
+    tag_counts_list: list[dict[str, Any]] = [
+        {"tag": tag, "n": value} for tag, value in list(tag_counts_raw.items())
+    ]
     tag_counts = sorted(
-        [{"tag": tag, "n": value} for tag, value in list(tag_counts_raw.items())],
+        tag_counts_list,
         key=lambda t: t["n"],
         reverse=True,
     )[:40]
 
-    year_counts = sorted(
+    year_counts: list[dict[str, Any]] = sorted(
         [{"year": year, "n": value} for year, value in list(year_counts_raw.items())],
         key=lambda t: t["year"],
     )
@@ -249,7 +256,7 @@ def search(request, q=None, return_context=False):
         "blogmark": "Blogmarks",
         "entry": "Entries",
         "note": "Notes",
-    }.get(selected.get("type")) or "Posts"
+    }.get(str(selected.get("type", ""))) or "Posts"
     title = noun
 
     if search_q:
