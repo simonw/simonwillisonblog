@@ -131,7 +131,17 @@
             {% endif %}
         {% endfor %}
     {% endif %}
+    {% for param, value in id_filter_params.items %}
+        <input type="hidden" name="{{ param }}" value="{{ value }}">
+    {% endfor %}
 </form>
+
+{% if id_filter_type_names %}
+<p class="id-filter-notice">
+    Filtered to specific {{ id_filter_type_names|join:", " }}
+    <a href="{% remove_id_filters %}" title="Clear filter">&#x00D7;</a>
+</p>
+{% endif %}
 
 {% if total %}
     <div class="tag-input-container">

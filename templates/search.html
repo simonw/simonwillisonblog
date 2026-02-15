@@ -45,7 +45,17 @@
             {% endif %}
         {% endfor %}
     {% endif %}
+    {% for param, value in id_filter_params.items %}
+        <input type="hidden" name="{{ param }}" value="{{ value }}">
+    {% endfor %}
 </form>
+
+{% if id_filter_type_names %}
+<p class="id-filter-notice">
+    Filtered to specific {{ id_filter_type_names|join:", " }}
+    <a href="{% remove_id_filters %}" title="Clear filter">&#x00D7;</a>
+</p>
+{% endif %}
 
 <p class="search-selections">
     {% if selected %}<span class="filters">
@@ -73,13 +83,13 @@
 <div id="autocomplete-tags" aria-live="polite"></div>
 
 {% if total %}
-    {% if selected or q %}
+    {% if selected or q or id_filters %}
         {% include "_pagination.html" with page_total=total %}
         {% blog_mixed_list_with_dates results %}
         {% include "_pagination.html" %}
     {% endif %}
 {% else %}
-    {% if selected or q %}
+    {% if selected or q or id_filters %}
         <p><strong>No results found</strong></p>
         {% if suggestion and num_corrected_results %}
             <p style="margin: 1em 0">Suggestion: <a href="/search/?q={{ suggestion }}">{{ suggestion }}</a> ({{ num_corrected_results }} result{{ num_corrected_results|pluralize }})</p>
