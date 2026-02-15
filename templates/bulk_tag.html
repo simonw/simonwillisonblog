@@ -162,13 +162,13 @@
         </div>
     </div>
 
-    {% if selected or q %}
+    {% if selected or q or id_filters %}
         {% include "_pagination.html" with page_total=total %}
         {{ block.super }}
         {% include "_pagination.html" %}
     {% endif %}
 {% else %}
-    {% if selected or q %}
+    {% if selected or q or id_filters %}
         <p><strong>No results found</strong></p>
         {% if suggestion and num_corrected_results %}
             <p style="margin: 1em 0">Suggestion: <a href="/admin/bulk-tag/?q={{ suggestion }}">{{ suggestion }}</a> ({{ num_corrected_results }} result{{ num_corrected_results|pluralize }})</p>
