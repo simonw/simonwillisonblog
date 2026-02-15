@@ -83,6 +83,26 @@ def search(request, q=None, return_context=False):
     selected_year = request.GET.get("year", "")
     selected_month = request.GET.get("month", "")
 
+    # Parse ID filters: entries=1,2,3&notes=4,5&quotations=6&blogmarks=7,8
+    id_filter_param_map = {
+        "entries": "entry",
+        "blogmarks": "blogmark",
+        "quotations": "quotation",
+        "notes": "note",
+    }
+    id_filters = {}  # type_name -> set of int IDs
+    for param, type_name in id_filter_param_map.items():
+        raw = request.GET.get(param, "").strip()
+        if raw:
+            ids = set()
+            for part in raw.split(","):
+                part = part.strip()
+                if part.isdigit():
+                    ids.add(int(part))
+            if ids:
+                id_filters[type_name] = ids
+    has_id_filters = bool(id_filters)
+
     values = ["pk", "type", "created"]
     if search_q:
         values.append("rank")
@@ -133,7 +153,13 @@ def search(request, q=None, return_context=False):
     ):
         if selected_type and selected_type != type_name:
             continue
+        # If ID filters are active, skip types not mentioned
+        if has_id_filters and type_name not in id_filters:
+            continue
         klass_qs = make_queryset(klass, type_name)
+        # Apply ID filter for this type
+        if type_name in id_filters:
+            klass_qs = klass_qs.filter(pk__in=id_filters[type_name])
         type_count = klass_qs.count()
         if type_count:
             type_counts_raw[type_name] = type_count
@@ -285,6 +311,25 @@ def search(request, q=None, return_context=False):
         corrected_context = search(request, suggestion, return_context=True)
         num_corrected_results = corrected_context["total"]
 
+    # Build id_filter_params for template (preserving raw values)
+    id_filter_params = {}
+    for param in id_filter_param_map:
+        raw = request.GET.get(param, "").strip()
+        if raw:
+            id_filter_params[param] = raw
+
+    # Build human-readable list of filtered types
+    id_filter_type_names = []
+    type_display_names = {
+        "entry": "entries",
+        "blogmark": "blogmarks",
+        "quotation": "quotations",
+        "note": "notes",
+    }
+    for type_name in ("entry", "blogmark", "quotation", "note"):
+        if type_name in id_filters:
+            id_filter_type_names.append(type_display_names[type_name])
+
     context = {
         "q": q,
         "sort": sort,
@@ -302,6 +347,9 @@ def search(request, q=None, return_context=False):
         "selected": selected,
         "suggestion": suggestion,
         "num_corrected_results": num_corrected_results,
+        "id_filters": id_filters,
+        "id_filter_params": id_filter_params,
+        "id_filter_type_names": id_filter_type_names,
     }
 
     if return_context:

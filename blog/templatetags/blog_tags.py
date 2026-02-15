@@ -92,6 +92,14 @@ def replace_qsarg(context, name, value):
     return _search_prefix(context, query_dict)
 
 
+@register.simple_tag(takes_context=True)
+def remove_id_filters(context):
+    query_dict = context["request"].GET.copy()
+    for param in ("entries", "blogmarks", "quotations", "notes"):
+        query_dict.pop(param, None)
+    return _search_prefix(context, query_dict)
+
+
 @register.filter
 def markdownify(text):
     """

@@ -1137,3 +1137,158 @@ class RandomTagRedirectTests(TransactionTestCase):
         response = self.client.get("/random/draft-test-tag/")
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, published_entry.get_absolute_url())
+
+
+class BulkTagIdFilterTests(TransactionTestCase):
+    """Tests for filtering search/bulk-tag results by specific IDs."""
+
+    def setUp(self):
+        self.staff_user = User.objects.create_user(
+            username="staff", password="password", is_staff=True
+        )
+        self.client.login(username="staff", password="password")
+
+        # Create test data
+        self.entry1 = EntryFactory(title="Entry One")
+        self.entry2 = EntryFactory(title="Entry Two")
+        self.entry3 = EntryFactory(title="Entry Three")
+
+        self.note1 = NoteFactory(body="Note One")
+        self.note2 = NoteFactory(body="Note Two")
+
+        self.quotation1 = QuotationFactory(source="Quotation One")
+        self.quotation2 = QuotationFactory(source="Quotation Two")
+
+        self.blogmark1 = BlogmarkFactory(link_title="Blogmark One")
+        self.blogmark2 = BlogmarkFactory(link_title="Blogmark Two")
+
+    def test_filter_entries_by_id(self):
+        """Filtering by entries= should only show those entries."""
+        ids = f"{self.entry1.pk},{self.entry3.pk}"
+        response = self.client.get(f"/admin/bulk-tag/?entries={ids}")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["total"], 2)
+        result_types = {r["type"] for r in response.context["results"]}
+        self.assertEqual(result_types, {"entry"})
+        result_pks = {r["obj"].pk for r in response.context["results"]}
+        self.assertIn(self.entry1.pk, result_pks)
+        self.assertIn(self.entry3.pk, result_pks)
+        self.assertNotIn(self.entry2.pk, result_pks)
+
+    def test_filter_notes_by_id(self):
+        """Filtering by notes= should only show those notes."""
+        ids = f"{self.note1.pk}"
+        response = self.client.get(f"/admin/bulk-tag/?notes={ids}")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["total"], 1)
+        result_pks = {r["obj"].pk for r in response.context["results"]}
+        self.assertIn(self.note1.pk, result_pks)
+        self.assertNotIn(self.note2.pk, result_pks)
+
+    def test_filter_multiple_types_by_id(self):
+        """Filtering by entries= and notes= should show both types."""
+        response = self.client.get(
+            f"/admin/bulk-tag/?entries={self.entry1.pk}&notes={self.note2.pk}"
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["total"], 2)
+        result_types = {r["type"] for r in response.context["results"]}
+        self.assertEqual(result_types, {"entry", "note"})
+
+    def test_filter_all_four_types_by_id(self):
+        """Filtering by all four type params should show all specified items."""
+        response = self.client.get(
+            f"/admin/bulk-tag/?entries={self.entry1.pk}"
+            f"&notes={self.note1.pk}"
+            f"&quotations={self.quotation1.pk}"
+            f"&blogmarks={self.blogmark1.pk}"
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["total"], 4)
+        result_types = {r["type"] for r in response.context["results"]}
+        self.assertEqual(result_types, {"entry", "note", "quotation", "blogmark"})
+
+    def test_id_filter_combined_with_search_query(self):
+        """ID filters combined with q= should search within filtered items."""
+        entry_a = EntryFactory(title="Unique findable alpha term")
+        entry_b = EntryFactory(title="Something else entirely")
+        response = self.client.get(
+            f"/admin/bulk-tag/?entries={entry_a.pk},{entry_b.pk}&q=alpha"
+        )
+        self.assertEqual(response.status_code, 200)
+        # Only entry_a should match because q=alpha filters within the ID set
+        self.assertEqual(response.context["total"], 1)
+        self.assertEqual(response.context["results"][0]["obj"].pk, entry_a.pk)
+
+    def test_id_filter_shows_filter_message(self):
+        """When filtering by IDs, a message should appear indicating active filters."""
+        response = self.client.get(
+            f"/admin/bulk-tag/?entries={self.entry1.pk}&notes={self.note1.pk}"
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Filtered to specific entries, notes")
+
+    def test_id_filter_message_shows_only_active_types(self):
+        """Filter message should only list the types being filtered."""
+        response = self.client.get(
+            f"/admin/bulk-tag/?entries={self.entry1.pk}"
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Filtered to specific entries")
+        self.assertNotContains(response, "notes")
+        self.assertNotContains(response, "quotations")
+        self.assertNotContains(response, "blogmarks")
+
+    def test_id_filter_message_has_clear_link(self):
+        """Filter message should include a way to clear the filter."""
+        response = self.client.get(
+            f"/admin/bulk-tag/?entries={self.entry1.pk}"
+        )
+        self.assertEqual(response.status_code, 200)
+        # Should contain × (cross icon) to clear filters
+        self.assertContains(response, "&#x00D7;")
+
+    def test_id_filter_works_on_search_page(self):
+        """ID filtering should also work on /search/."""
+        response = self.client.get(
+            f"/search/?entries={self.entry1.pk},{self.entry2.pk}"
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["total"], 2)
+        result_pks = {r["obj"].pk for r in response.context["results"]}
+        self.assertIn(self.entry1.pk, result_pks)
+        self.assertIn(self.entry2.pk, result_pks)
+        self.assertNotIn(self.entry3.pk, result_pks)
+
+    def test_id_filter_excludes_unspecified_types(self):
+        """When ID filters are active, types not mentioned should be excluded."""
+        response = self.client.get(
+            f"/admin/bulk-tag/?entries={self.entry1.pk}"
+        )
+        self.assertEqual(response.status_code, 200)
+        # Should only have entry results, no notes/blogmarks/quotations
+        result_types = {r["type"] for r in response.context["results"]}
+        self.assertEqual(result_types, {"entry"})
+
+    def test_id_filter_invalid_ids_ignored(self):
+        """Invalid (non-numeric) IDs should be ignored."""
+        response = self.client.get(
+            f"/admin/bulk-tag/?entries={self.entry1.pk},abc,999999"
+        )
+        self.assertEqual(response.status_code, 200)
+        # Only the valid existing entry should be found
+        self.assertEqual(response.context["total"], 1)
+
+    def test_id_filter_preserves_hidden_fields_in_form(self):
+        """ID filter params should be preserved as hidden form fields."""
+        response = self.client.get(
+            f"/admin/bulk-tag/?entries={self.entry1.pk},{self.entry2.pk}&notes={self.note1.pk}"
+        )
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode()
+        self.assertIn(
+            f'name="entries" value="{self.entry1.pk},{self.entry2.pk}"', content
+        )
+        self.assertIn(
+            f'name="notes" value="{self.note1.pk}"', content
+        )
