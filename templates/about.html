@@ -12,7 +12,9 @@
 </div>
 <script>
 (function() {
-  if (new URLSearchParams(window.location.search).get('sponsor-preview') !== '1') return;
+  var hasScheme = localStorage.getItem('sponsoredBannerScheme');
+  var hasParam = new URLSearchParams(window.location.search).get('sponsor-preview') === '1';
+  if (!hasScheme && !hasParam) return;
   var picker = document.getElementById('banner-scheme-picker');
   picker.style.display = '';
   var banner = document.getElementById('sponsored-banner');
