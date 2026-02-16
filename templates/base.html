@@ -15,10 +15,8 @@
 {% block extrahead %}{% endblock %}
 <script>
 (function() { // Apply theme immediately to prevent flash
-  const theme = localStorage.getItem('theme');
-  if (theme === 'light' || theme === 'dark') {
-    document.documentElement.setAttribute('data-theme', theme);
-  }
+  const theme = localStorage.getItem('theme') || 'auto';
+  document.documentElement.setAttribute('data-theme', theme);
 })();
 </script>
 </head>
@@ -160,13 +158,8 @@ for (const {tag, js, css} of config) {
   }
 
   function setTheme(theme) {
-    if (theme === 'auto') {
-      localStorage.removeItem('theme');
-      document.documentElement.removeAttribute('data-theme');
-    } else {
-      localStorage.setItem('theme', theme);
-      document.documentElement.setAttribute('data-theme', theme);
-    }
+    localStorage.setItem('theme', theme);
+    document.documentElement.setAttribute('data-theme', theme);
     updateIcon(theme);
   }
 
