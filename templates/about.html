@@ -5,6 +5,65 @@
 {% block rel_canonical %}{% endblock %}
 
 {% block item_content %}{% load blog_tags %}
+<div id="banner-scheme-picker" style="display:none; background: #f5f3f0; border: 1px solid #ddd; border-radius: 6px; padding: 12px 16px; margin-bottom: 20px;">
+  <strong style="font-size: 0.9em;">Sponsored banner color scheme:</strong>
+  <div style="display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap;">
+  </div>
+</div>
+<script>
+(function() {
+  if (new URLSearchParams(window.location.search).get('sponsor-preview') !== '1') return;
+  var picker = document.getElementById('banner-scheme-picker');
+  picker.style.display = '';
+  var banner = document.getElementById('sponsored-banner');
+  if (banner) banner.style.display = '';
+  var schemes = window.__bannerSchemes;
+  if (!schemes) return;
+  var labels = {warm:'Warm', lavender:'Lavender', sage:'Sage', slate:'Slate', gold:'Gold', rose:'Rose', ocean:'Ocean', copper:'Copper', plum:'Plum', mint:'Mint', sky:'Sky', moss:'Moss'};
+  var container = document.querySelector('#banner-scheme-picker div');
+  var current = localStorage.getItem('sponsoredBannerScheme');
+  function clearOutlines() {
+    container.querySelectorAll('button').forEach(function(b) {
+      b.style.outline = 'none';
+      b.style.outlineOffset = '';
+    });
+  }
+  Object.keys(labels).forEach(function(key) {
+    var s = schemes[key];
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.textContent = labels[key];
+    btn.setAttribute('data-scheme', key);
+    btn.style.cssText = 'border: 2px solid ' + s.border + '; background: ' + s.bg + '; color: ' + s.label + '; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 0.85em; font-weight: bold;';
+    if (key === current) {
+      btn.style.outline = '3px solid #555';
+      btn.style.outlineOffset = '1px';
+    }
+    btn.addEventListener('click', function() {
+      localStorage.setItem('sponsoredBannerScheme', key);
+      if (banner) { banner.style.display = ''; }
+      window.__applyBannerScheme(key);
+      clearOutlines();
+      btn.style.outline = '3px solid #555';
+      btn.style.outlineOffset = '1px';
+    });
+    container.appendChild(btn);
+  });
+  var clearBtn = document.createElement('button');
+  clearBtn.type = 'button';
+  clearBtn.textContent = 'Clear';
+  clearBtn.style.cssText = 'border: 2px solid #bbb; background: #fff; color: #666; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 0.85em; font-weight: bold;';
+  clearBtn.addEventListener('click', function() {
+    localStorage.removeItem('sponsoredBannerScheme');
+    if (banner) { banner.style.display = 'none'; }
+    clearOutlines();
+  });
+  container.appendChild(clearBtn);
+  if (current && schemes[current]) {
+    window.__applyBannerScheme(current);
+  }
+})();
+</script>
 <div data-permalink-context="/about/">
 <h2>About me</h2>
 

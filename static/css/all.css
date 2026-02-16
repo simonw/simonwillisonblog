@@ -691,6 +691,40 @@ div#bighead h1 {
 div#bigheadcontainer {
   position: relative;
 }
+#sponsored-banner {
+  background-color: #e8ddd0;
+  border-top: 1px solid #d4c7b8;
+  border-bottom: 1px solid #d4c7b8;
+  padding: 8px 10px;
+  font-size: 0.85em;
+  line-height: 1.4;
+  color: #6b5d50;
+}
+#sponsored-banner-inner {
+  width: 940px;
+  margin: 0 auto;
+}
+#sponsored-banner .sponsored-label {
+  font-weight: bold;
+  color: #5a4a3a;
+}
+#sponsored-banner strong {
+  color: #5a4a3a;
+}
+#sponsored-banner a {
+  color: #5a4a3a;
+  text-decoration: underline;
+}
+#sponsored-banner a:hover {
+  color: #3a2a1a;
+}
+@media (max-width: 940px) {
+  #sponsored-banner-inner {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0 15px;
+  }
+}
 div#band {
   background: linear-gradient(
     to bottom,
