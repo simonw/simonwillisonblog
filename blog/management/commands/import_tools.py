@@ -36,7 +36,7 @@ class Command(BaseCommand):
             defaults = {
                 "beat_type": "tool",
                 "title": tool["title"],
-                "url": "https://tools.simonwillison.net{}".format(tool["url"]),
+                "url": "https://tools.simonwillison.net/colophon#{}".format(tool["filename"]),
                 "slug": tool["slug"][:64],
                 "created": parse_datetime(tool["created"]),
                 "commentary": truncate(tool.get("description") or ""),
