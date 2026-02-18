@@ -33,3 +33,12 @@ class QuotationFactory(BaseFactory):
 class NoteFactory(BaseFactory):
     class Meta:
         model = "blog.Note"
+
+
+class BeatFactory(BaseFactory):
+    class Meta:
+        model = "blog.Beat"
+
+    beat_type = "release"
+    title = factory.Faker("sentence")
+    url = factory.Faker("uri")
