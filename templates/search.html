@@ -69,6 +69,9 @@
         {% if selected.month %}
             <a class="selected-tag" href="{% remove_qsarg "month" selected.month %}">Month: {{ selected.month_name }} <strong>&#x00D7;</strong></a>
         {% endif %}
+        {% if selected.beat %}
+            <a class="selected-tag" href="{% remove_qsarg "beat" selected.beat %}">Beat: {{ selected.beat_label }} <strong>&#x00D7;</strong></a>
+        {% endif %}
         {% for tag in selected.tags %}
             <a class="selected-tag" href="{% remove_qsarg "tag" tag %}">{{ tag }} <strong>&#x00D7;</strong></a>
         {% endfor %}
@@ -106,6 +109,14 @@
         <ul>
             {% for t in type_counts %}
                 <li><a href="{% add_qsarg "type" t.type %}">{{ t.type }}</a> {{ t.n|intcomma }}</a></li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+    {% if beat_type_counts %}
+        <h3 id="facet-beat-types">Beats</h3>
+        <ul>
+            {% for t in beat_type_counts %}
+                <li><a href="{% add_qsarg "beat" t.beat_type %}">{{ t.label }}</a> {{ t.n|intcomma }}</a></li>
             {% endfor %}
         </ul>
     {% endif %}
