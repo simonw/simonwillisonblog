@@ -23,11 +23,13 @@
   </div><!-- #bigheadcontainer -->
 </div><!-- #bighead -->
 
-<div id="sponsored-banner" style="display:none">
+{% if sponsor_message %}
+<div id="sponsored-banner" class="sponsor-scheme-{{ sponsor_message.color_scheme }}" style="display:none">
   <div id="sponsored-banner-inner">
-    <strong class="sponsored-label">Sponsored by:</strong> Example Sponsor — This is a placeholder for a sponsored message. <a href="https://example.com/" rel="sponsored noopener" target="_blank">Learn more</a>
+    <strong class="sponsored-label">Sponsored by:</strong> {{ sponsor_message.name }} &mdash; {{ sponsor_message.message }} <a href="{{ sponsor_message.learn_more_url }}" rel="sponsored noopener" target="_blank">Learn more</a>
   </div>
 </div>
+{% endif %}
 
 <div id="band">&nbsp;</div>
 

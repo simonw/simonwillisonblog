@@ -728,6 +728,43 @@ div#bigheadcontainer {
 #sponsored-banner a:hover {
   color: #3a2a1a;
 }
+/* Sponsor banner color schemes */
+#sponsored-banner.sponsor-scheme-warm { background-color: #e8ddd0; border-top-color: #d4c7b8; border-bottom-color: #d4c7b8; color: #6b5d50; }
+#sponsored-banner.sponsor-scheme-warm .sponsored-label, #sponsored-banner.sponsor-scheme-warm strong { color: #5a4a3a; }
+#sponsored-banner.sponsor-scheme-warm a { color: #5a4a3a; }
+#sponsored-banner.sponsor-scheme-lavender { background-color: #e5daea; border-top-color: #cbb8d4; border-bottom-color: #cbb8d4; color: #5a3d6e; }
+#sponsored-banner.sponsor-scheme-lavender .sponsored-label, #sponsored-banner.sponsor-scheme-lavender strong { color: #4a2d5e; }
+#sponsored-banner.sponsor-scheme-lavender a { color: #4a2d5e; }
+#sponsored-banner.sponsor-scheme-sage { background-color: #dde8d8; border-top-color: #bbd4b3; border-bottom-color: #bbd4b3; color: #4a5e44; }
+#sponsored-banner.sponsor-scheme-sage .sponsored-label, #sponsored-banner.sponsor-scheme-sage strong { color: #3a4e34; }
+#sponsored-banner.sponsor-scheme-sage a { color: #3a4e34; }
+#sponsored-banner.sponsor-scheme-slate { background-color: #dde1e8; border-top-color: #c0c6d2; border-bottom-color: #c0c6d2; color: #4a5060; }
+#sponsored-banner.sponsor-scheme-slate .sponsored-label, #sponsored-banner.sponsor-scheme-slate strong { color: #3a4050; }
+#sponsored-banner.sponsor-scheme-slate a { color: #3a4050; }
+#sponsored-banner.sponsor-scheme-gold { background-color: #ede3c8; border-top-color: #d9cda4; border-bottom-color: #d9cda4; color: #6b5a30; }
+#sponsored-banner.sponsor-scheme-gold .sponsored-label, #sponsored-banner.sponsor-scheme-gold strong { color: #5a4a20; }
+#sponsored-banner.sponsor-scheme-gold a { color: #5a4a20; }
+#sponsored-banner.sponsor-scheme-rose { background-color: #eadcdf; border-top-color: #d6c0c6; border-bottom-color: #d6c0c6; color: #6b4a52; }
+#sponsored-banner.sponsor-scheme-rose .sponsored-label, #sponsored-banner.sponsor-scheme-rose strong { color: #5a3a42; }
+#sponsored-banner.sponsor-scheme-rose a { color: #5a3a42; }
+#sponsored-banner.sponsor-scheme-ocean { background-color: #d0e4e8; border-top-color: #b0cdd4; border-bottom-color: #b0cdd4; color: #3a555e; }
+#sponsored-banner.sponsor-scheme-ocean .sponsored-label, #sponsored-banner.sponsor-scheme-ocean strong { color: #2a454e; }
+#sponsored-banner.sponsor-scheme-ocean a { color: #2a454e; }
+#sponsored-banner.sponsor-scheme-copper { background-color: #e8d8d0; border-top-color: #d4beb2; border-bottom-color: #d4beb2; color: #6b4a3a; }
+#sponsored-banner.sponsor-scheme-copper .sponsored-label, #sponsored-banner.sponsor-scheme-copper strong { color: #5a3a2a; }
+#sponsored-banner.sponsor-scheme-copper a { color: #5a3a2a; }
+#sponsored-banner.sponsor-scheme-plum { background-color: #ddd0e5; border-top-color: #c0aed0; border-bottom-color: #c0aed0; color: #4e3560; }
+#sponsored-banner.sponsor-scheme-plum .sponsored-label, #sponsored-banner.sponsor-scheme-plum strong { color: #3e2550; }
+#sponsored-banner.sponsor-scheme-plum a { color: #3e2550; }
+#sponsored-banner.sponsor-scheme-mint { background-color: #d2e8dc; border-top-color: #b2d4c0; border-bottom-color: #b2d4c0; color: #3a5845; }
+#sponsored-banner.sponsor-scheme-mint .sponsored-label, #sponsored-banner.sponsor-scheme-mint strong { color: #2a4835; }
+#sponsored-banner.sponsor-scheme-mint a { color: #2a4835; }
+#sponsored-banner.sponsor-scheme-sky { background-color: #d4e2ee; border-top-color: #b4c8dc; border-bottom-color: #b4c8dc; color: #3a506b; }
+#sponsored-banner.sponsor-scheme-sky .sponsored-label, #sponsored-banner.sponsor-scheme-sky strong { color: #2a405b; }
+#sponsored-banner.sponsor-scheme-sky a { color: #2a405b; }
+#sponsored-banner.sponsor-scheme-moss { background-color: #dde0d0; border-top-color: #c2c8b0; border-bottom-color: #c2c8b0; color: #505840; }
+#sponsored-banner.sponsor-scheme-moss .sponsored-label, #sponsored-banner.sponsor-scheme-moss strong { color: #404830; }
+#sponsored-banner.sponsor-scheme-moss a { color: #404830; }
 @media (max-width: 940px) and (min-width: 801px) {
   #sponsored-banner-inner {
     width: 100%;

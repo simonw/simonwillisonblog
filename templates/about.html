@@ -22,6 +22,20 @@
   var schemes = window.__bannerSchemes;
   if (!schemes) return;
   var labels = {warm:'Warm', lavender:'Lavender', sage:'Sage', slate:'Slate', gold:'Gold', rose:'Rose', ocean:'Ocean', copper:'Copper', plum:'Plum', mint:'Mint', sky:'Sky', moss:'Moss'};
+  var btnColors = {
+    warm:    {bg: '#e8ddd0', border: '#d4c7b8', label: '#5a4a3a'},
+    lavender:{bg: '#e5daea', border: '#cbb8d4', label: '#4a2d5e'},
+    sage:    {bg: '#dde8d8', border: '#bbd4b3', label: '#3a4e34'},
+    slate:   {bg: '#dde1e8', border: '#c0c6d2', label: '#3a4050'},
+    gold:    {bg: '#ede3c8', border: '#d9cda4', label: '#5a4a20'},
+    rose:    {bg: '#eadcdf', border: '#d6c0c6', label: '#5a3a42'},
+    ocean:   {bg: '#d0e4e8', border: '#b0cdd4', label: '#2a454e'},
+    copper:  {bg: '#e8d8d0', border: '#d4beb2', label: '#5a3a2a'},
+    plum:    {bg: '#ddd0e5', border: '#c0aed0', label: '#3e2550'},
+    mint:    {bg: '#d2e8dc', border: '#b2d4c0', label: '#2a4835'},
+    sky:     {bg: '#d4e2ee', border: '#b4c8dc', label: '#2a405b'},
+    moss:    {bg: '#dde0d0', border: '#c2c8b0', label: '#404830'}
+  };
   var container = document.querySelector('#banner-scheme-picker div');
   var current = localStorage.getItem('sponsoredBannerScheme');
   function clearOutlines() {
@@ -30,13 +44,13 @@
       b.style.outlineOffset = '';
     });
   }
-  Object.keys(labels).forEach(function(key) {
-    var s = schemes[key];
+  schemes.forEach(function(key) {
+    var c = btnColors[key];
     var btn = document.createElement('button');
     btn.type = 'button';
     btn.textContent = labels[key];
     btn.setAttribute('data-scheme', key);
-    btn.style.cssText = 'border: 2px solid ' + s.border + '; background: ' + s.bg + '; color: ' + s.label + '; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 0.85em; font-weight: bold;';
+    btn.style.cssText = 'border: 2px solid ' + c.border + '; background: ' + c.bg + '; color: ' + c.label + '; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 0.85em; font-weight: bold;';
     if (key === current) {
       btn.style.outline = '3px solid #555';
       btn.style.outlineOffset = '1px';
@@ -61,7 +75,7 @@
     clearOutlines();
   });
   container.appendChild(clearBtn);
-  if (current && schemes[current]) {
+  if (current && schemes.indexOf(current) !== -1) {
     window.__applyBannerScheme(current);
   }
 })();
