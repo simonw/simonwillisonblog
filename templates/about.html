@@ -66,6 +66,29 @@
   }
 })();
 </script>
+<div id="beats-toggle" style="display:none; background: #f5f3f0; border: 1px solid #ddd; border-radius: 6px; padding: 12px 16px; margin-bottom: 20px;">
+  <label style="cursor: pointer; font-size: 0.9em;">
+    <input type="checkbox" id="beats-checkbox" style="margin-right: 6px;">
+    <strong>Show beats on timeline</strong>
+  </label>
+</div>
+<script>
+(function() {
+  var show = new URLSearchParams(window.location.search).get('beats') === '1' || localStorage.getItem('show_beats');
+  if (!show) return;
+  var toggle = document.getElementById('beats-toggle');
+  toggle.style.display = '';
+  var checkbox = document.getElementById('beats-checkbox');
+  checkbox.checked = !!localStorage.getItem('show_beats');
+  checkbox.addEventListener('change', function() {
+    if (this.checked) {
+      localStorage.setItem('show_beats', '1');
+    } else {
+      localStorage.removeItem('show_beats');
+    }
+  });
+})();
+</script>
 <div data-permalink-context="/about/">
 <h2>About me</h2>
 
