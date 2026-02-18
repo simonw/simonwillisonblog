@@ -2,7 +2,7 @@ from django.contrib.syndication.views import Feed
 from django.utils.dateformat import format as date_format
 from django.utils.feedgenerator import Atom1Feed
 from django.http import HttpResponse
-from blog.models import Entry, Blogmark, Quotation, Note
+from blog.models import Beat, Entry, Blogmark, Quotation, Note
 
 
 class Base(Feed):
@@ -117,6 +117,30 @@ class Notes(Base):
             return "Note on {}".format(date_format(item.created, "jS F Y"))
 
 
+class Beats(Base):
+    title = "Simon Willison's Weblog: Beats"
+    ga_source = "beats"
+
+    def items(self):
+        return (
+            Beat.objects.filter(is_draft=False)
+            .prefetch_related("tags")
+            .order_by("-created")[:15]
+        )
+
+    def item_title(self, item):
+        return item.title
+
+    def item_description(self, item):
+        desc = f'<p><a href="{item.url}">{item.title}</a></p>'
+        if item.commentary:
+            desc += f"<p>{item.commentary}</p>"
+        return desc
+
+    def item_link(self, item):
+        return item.url
+
+
 class Everything(Base):
     title = "Simon Willison's Weblog"
     description_template = "feeds/everything.html"
@@ -146,7 +170,10 @@ class Everything(Base):
             .order_by("-created")[:30]
         )
         combined = (
-            last_30_blogmarks + last_30_entries + last_30_quotations + last_30_notes
+            last_30_blogmarks
+            + last_30_entries
+            + last_30_quotations
+            + last_30_notes
         )
         combined.sort(key=lambda e: e.created, reverse=True)
         return combined[:30]
@@ -163,6 +190,8 @@ class Everything(Base):
                 return item.title
             else:
                 return "Note on {}".format(date_format(item.created, "jS F Y"))
+        elif isinstance(item, Beat):
+            return item.title
         else:
             return "Unknown item type"
 
@@ -194,7 +223,7 @@ def sitemap(request):
         '<?xml version="1.0" encoding="UTF-8"?>'
         '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
     ]
-    for klass in (Entry, Blogmark, Quotation, Note):
+    for klass in (Entry, Blogmark, Quotation, Note, Beat):
         for obj in klass.objects.exclude(is_draft=True).only("slug", "created"):
             xml.append(
                 "<url><loc>https://simonwillison.net%s</loc></url>"

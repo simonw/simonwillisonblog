@@ -69,6 +69,9 @@
         {% if selected.month %}
             <a class="selected-tag" href="{% remove_qsarg "month" selected.month %}">Month: {{ selected.month_name }} <strong>&#x00D7;</strong></a>
         {% endif %}
+        {% if selected.beat %}
+            <a class="selected-tag" href="{% remove_qsarg "beat" selected.beat %}">Beat: {{ selected.beat_label }} <strong>&#x00D7;</strong></a>
+        {% endif %}
         {% for tag in selected.tags %}
             <a class="selected-tag" href="{% remove_qsarg "tag" tag %}">{{ tag }} <strong>&#x00D7;</strong></a>
         {% endfor %}
@@ -105,9 +108,19 @@
         <h3 id="facet-types">Types</h3>
         <ul>
             {% for t in type_counts %}
-                <li><a href="{% add_qsarg "type" t.type %}">{{ t.type }}</a> {{ t.n|intcomma }}</a></li>
+                <li{% if t.type == "beat" %} class="beat-facet" style="display:none"{% endif %}><a href="{% add_qsarg "type" t.type %}">{{ t.type }}</a> {{ t.n|intcomma }}</a></li>
             {% endfor %}
         </ul>
+    {% endif %}
+    {% if beat_type_counts %}
+        <div class="beat-facet" style="display:none">
+        <h3 id="facet-beat-types">Beats</h3>
+        <ul>
+            {% for t in beat_type_counts %}
+                <li><a href="{% add_qsarg "beat" t.beat_type %}">{{ t.label }}</a> {{ t.n|intcomma }}</a></li>
+            {% endfor %}
+        </ul>
+        </div>
     {% endif %}
     {% if year_counts %}
         <h3 id="facet-years">Years</h3>
@@ -134,6 +147,11 @@
         </ul>
     {% endif %}
 </div>
+<script>
+if (localStorage.getItem('show_beats')) {
+  document.querySelectorAll('.beat-facet').forEach(function(el) { el.style.display = ''; });
+}
+</script>
 <script>
 function debounce(func, wait) {
   let timeout;

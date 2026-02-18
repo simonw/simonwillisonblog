@@ -131,6 +131,7 @@ urlpatterns = [
     re_path(r"^b/(\d+)/?$", blog_views.redirect_blogmark),
     re_path(r"^q/(\d+)/?$", blog_views.redirect_quotation),
     re_path(r"^n/(\d+)/?$", blog_views.redirect_note),
+    re_path(r"^beat/(\d+)/?$", blog_views.redirect_beat),
     # Ancient URL pattern still getting hits
     re_path(r"^/?archive/(\d{4})/(\d{2})/(\d{2})/$", blog_views.archive_day_redirect),
     re_path(
@@ -162,6 +163,7 @@ urlpatterns = [
         name="quotations",
     ),
     path("notes/", search_views.type_listing, {"type_name": "note"}, name="notes"),
+    path("beats/", search_views.type_listing, {"type_name": "beat"}, name="beats"),
     re_path(r"^about/$", blog_views.about),
     path("top-tags/", blog_views.top_tags),
     re_path(r"^tags/$", blog_views.tag_index),
@@ -176,6 +178,7 @@ urlpatterns = [
     re_path(r"^atom/links/$", count_subscribers(feeds.Blogmarks().__call__)),
     re_path(r"^atom/quotations/$", count_subscribers(feeds.Quotations().__call__)),
     re_path(r"^atom/notes/$", count_subscribers(feeds.Notes().__call__)),
+    re_path(r"^atom/beats/$", count_subscribers(feeds.Beats().__call__)),
     re_path(r"^atom/everything/$", count_subscribers(feeds.Everything().__call__)),
     re_path(r"^sitemap\.xml$", feeds.sitemap),
     path("tools/", blog_views.tools),
@@ -185,7 +188,9 @@ urlpatterns = [
     #  (r'^about/$', blog_views.about),
     path("admin/bulk-tag/", blog_views.bulk_tag, name="bulk_tag"),
     path("admin/merge-tags/", blog_views.merge_tags, name="merge_tags"),
+    path("admin/importers/", blog_views.importers, name="importers"),
     path("api/add-tag/", blog_views.api_add_tag, name="api_add_tag"),
+    path("api/run-importer/", blog_views.api_run_importer, name="api_run_importer"),
     re_path(r"^admin/", admin.site.urls),
     re_path(r"^static/", static_redirect),
     path("dashboard/", include(django_sql_dashboard.urls)),

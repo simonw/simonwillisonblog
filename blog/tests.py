@@ -6,6 +6,7 @@ from .factories import (
     BlogmarkFactory,
     QuotationFactory,
     NoteFactory,
+    BeatFactory,
 )
 from blog.models import Tag, PreviousTagName, TagMerge
 from django.utils import timezone
@@ -206,13 +207,14 @@ class BlogTests(TransactionTestCase):
         assert counts == {
             "tags": [
                 {
-                    "id": 1,
+                    "id": testing.id,
                     "tag": "testing",
                     "description": "",
                     "total_entry": 1,
                     "total_blogmark": 1,
                     "total_quotation": 1,
                     "total_note": 1,
+                    "total_beat": 0,
                     "is_exact_match": 1,
                     "count": 4,
                 }
@@ -248,13 +250,14 @@ class BlogTests(TransactionTestCase):
         assert counts2 == {
             "tags": [
                 {
-                    "id": 1,
+                    "id": testing.id,
                     "tag": "testing",
                     "description": "",
                     "total_entry": 2,
                     "total_blogmark": 2,
                     "total_quotation": 2,
                     "total_note": 2,
+                    "total_beat": 0,
                     "is_exact_match": 1,
                     "count": 8,
                 }
@@ -1292,3 +1295,369 @@ class BulkTagIdFilterTests(TransactionTestCase):
         self.assertIn(
             f'name="notes" value="{self.note1.pk}"', content
         )
+
+
+class BeatTests(TransactionTestCase):
+    def test_beat_on_homepage(self):
+        """Beat should appear on the homepage in the mixed timeline."""
+        beat = BeatFactory(title="llm-anthropic 0.24", beat_type="release")
+        response = self.client.get("/")
+        self.assertContains(response, "llm-anthropic 0.24")
+
+    def test_beat_on_homepage_with_beat_label(self):
+        """Beat should render with the correct beat-label CSS class."""
+        beat = BeatFactory(title="Test Release Beat", beat_type="release")
+        response = self.client.get("/")
+        self.assertContains(response, 'class="beat-label release"')
+        self.assertContains(response, "Release")
+
+    def test_beat_til_update_label(self):
+        """TIL update beat should render with compound badge."""
+        beat = BeatFactory(
+            title="Using the LLM Python API",
+            beat_type="til_update",
+            commentary="Added async streaming",
+        )
+        response = self.client.get("/")
+        self.assertContains(response, 'class="beat-label til-update"')
+        self.assertContains(response, "til-update-suffix")
+        self.assertContains(response, "Added async streaming")
+
+    def test_beat_commentary_optional(self):
+        """Beat without commentary should not render beat-commit span."""
+        beat = BeatFactory(title="Test Release", beat_type="release", commentary="")
+        response = self.client.get("/")
+        self.assertContains(response, "Test Release")
+        self.assertNotContains(response, "beat-commit")
+
+    def test_beat_commentary_shown(self):
+        """Beat with commentary should render beat-commit span."""
+        beat = BeatFactory(
+            title="Some TIL",
+            beat_type="til_update",
+            commentary="Updated section on async",
+        )
+        response = self.client.get("/")
+        self.assertContains(response, "beat-commit")
+        self.assertContains(response, "Updated section on async")
+
+    def test_beat_on_archive_month(self):
+        """Beat should appear on month archive pages."""
+        EntryFactory(
+            created=datetime.datetime(2024, 1, 1, tzinfo=datetime.timezone.utc)
+        )
+        beat = BeatFactory(
+            title="Archive Beat",
+            beat_type="tool",
+            created=datetime.datetime(2025, 7, 15, tzinfo=datetime.timezone.utc),
+        )
+        response = self.client.get("/2025/Jul/")
+        self.assertContains(response, "Archive Beat")
+
+    def test_beat_on_archive_day(self):
+        """Beat should appear on day archive pages."""
+        EntryFactory(
+            created=datetime.datetime(2024, 1, 1, tzinfo=datetime.timezone.utc)
+        )
+        beat = BeatFactory(
+            title="Day Beat",
+            beat_type="research",
+            created=datetime.datetime(2025, 7, 15, tzinfo=datetime.timezone.utc),
+        )
+        response = self.client.get("/2025/Jul/15/")
+        self.assertContains(response, "Day Beat")
+
+    def test_beat_on_tag_page(self):
+        """Beat should appear on tag pages."""
+        tag = Tag.objects.create(tag="cloudflare")
+        beat = BeatFactory(title="Tagged Beat", beat_type="til_new")
+        beat.tags.add(tag)
+        response = self.client.get("/tags/cloudflare/")
+        self.assertContains(response, "Tagged Beat")
+
+    def test_beat_in_search(self):
+        """Beat should appear in search results."""
+        beat = BeatFactory(title="Searchable Beat Title", beat_type="release")
+        response = self.client.get("/search/?type=beat")
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Searchable Beat Title")
+
+    def test_beat_detail_page(self):
+        """Beat should have its own detail page at the standard URL pattern."""
+        EntryFactory()  # Needed for calendar widget
+        beat = BeatFactory(title="Detail Beat", beat_type="release")
+        response = self.client.get(beat.get_absolute_url())
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Detail Beat")
+
+    def test_beat_draft_not_on_homepage(self):
+        """Draft beats should not appear on the homepage."""
+        beat = BeatFactory(title="draftbeat", beat_type="release", is_draft=True)
+        response = self.client.get("/")
+        self.assertNotContains(response, "draftbeat")
+
+    def test_beat_draft_detail_page_has_warning(self):
+        """Draft beats should show a draft warning on their detail page."""
+        EntryFactory()  # Needed for calendar widget
+        beat = BeatFactory(title="Draft Beat Detail", beat_type="release", is_draft=True)
+        response = self.client.get(beat.get_absolute_url())
+        self.assertContains(response, "This is a draft post")
+
+    def test_beat_excluded_from_everything_feed(self):
+        """Beat should not appear in the everything Atom feed."""
+        beat = BeatFactory(title="Feed Beat Title", beat_type="release")
+        response = self.client.get("/atom/everything/")
+        self.assertNotContains(response, "Feed Beat Title")
+
+    def test_beat_redirect_by_id(self):
+        """Beat should have a /beat/{id} redirect URL."""
+        beat = BeatFactory(title="Redirect Beat", beat_type="release")
+        response = self.client.get(f"/beat/{beat.pk}")
+        self.assertEqual(response.status_code, 301)
+        self.assertEqual(response.url, beat.get_absolute_url())
+
+    def test_beats_listing_page(self):
+        """Beats should have a /beats/ listing page."""
+        beat = BeatFactory(title="Listed Beat", beat_type="release")
+        response = self.client.get("/beats/")
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Listed Beat")
+
+    def test_beat_css_loaded(self):
+        """Beat CSS classes should be in the stylesheet."""
+        beat = BeatFactory(title="CSS Beat", beat_type="release")
+        response = self.client.get("/")
+        self.assertContains(response, "beat-label")
+
+    def test_beat_all_types_render(self):
+        """All beat types should render with their correct label."""
+        for beat_type, display in [
+            ("release", "Release"),
+            ("til_new", "TIL"),
+            ("research", "Research"),
+            ("tool", "Tool"),
+        ]:
+            beat = BeatFactory(title=f"Type {beat_type}", beat_type=beat_type)
+        response = self.client.get("/")
+        self.assertContains(response, 'class="beat-label release"')
+        self.assertContains(response, 'class="beat-label til-new"')
+        self.assertContains(response, 'class="beat-label research"')
+        self.assertContains(response, 'class="beat-label tool"')
+
+    def test_beat_in_archive_month_type_counts(self):
+        """Beat should appear in archive month type counts."""
+        EntryFactory(
+            created=datetime.datetime(2024, 1, 1, tzinfo=datetime.timezone.utc)
+        )
+        created = datetime.datetime(2025, 7, 1, tzinfo=datetime.timezone.utc)
+        BeatFactory(created=created, beat_type="release")
+        EntryFactory(created=created)
+        response = self.client.get("/2025/Jul/")
+        self.assertContains(response, "beat")
+
+
+class ImporterViewTests(TransactionTestCase):
+    def setUp(self):
+        self.admin = User.objects.create_superuser("admin", "a@b.com", "password")
+
+    def test_importers_page_requires_login(self):
+        response = self.client.get("/admin/importers/")
+        assert response.status_code == 302
+
+    def test_importers_page_renders(self):
+        self.client.login(username="admin", password="password")
+        response = self.client.get("/admin/importers/")
+        assert response.status_code == 200
+        self.assertContains(response, "Beat Importers")
+        self.assertContains(response, "Releases")
+        self.assertContains(response, "Research")
+        self.assertContains(response, "TILs")
+        self.assertContains(response, "Tools")
+        # Source URLs should be shown as links
+        self.assertContains(response, "releases_cache.json")
+        self.assertContains(response, "tools.json")
+
+    def test_api_run_importer_requires_login(self):
+        response = self.client.post(
+            "/api/run-importer/",
+            json.dumps({"importer": "releases"}),
+            content_type="application/json",
+        )
+        assert response.status_code == 302
+
+    def test_api_run_importer_requires_post(self):
+        self.client.login(username="admin", password="password")
+        response = self.client.get("/api/run-importer/")
+        assert response.status_code == 405
+
+    def test_api_run_importer_rejects_unknown(self):
+        self.client.login(username="admin", password="password")
+        response = self.client.post(
+            "/api/run-importer/",
+            json.dumps({"importer": "nonexistent"}),
+            content_type="application/json",
+        )
+        assert response.status_code == 400
+        data = json.loads(response.content)
+        assert data["error"] == "Unknown importer"
+
+    def test_api_run_importer_rejects_invalid_json(self):
+        self.client.login(username="admin", password="password")
+        response = self.client.post(
+            "/api/run-importer/",
+            "not json",
+            content_type="application/json",
+        )
+        assert response.status_code == 400
+
+    def test_api_run_importer_releases(self):
+        from unittest.mock import patch, MagicMock
+
+        mock_response = MagicMock()
+        mock_response.json.return_value = {
+            "my-repo": {
+                "release": "1.0",
+                "published_at": "2025-01-15T10:00:00Z",
+                "url": "https://github.com/simonw/my-repo/releases/tag/1.0",
+                "description": "First release",
+            }
+        }
+        mock_response.raise_for_status = MagicMock()
+
+        self.client.login(username="admin", password="password")
+        with patch("blog.importers.httpx.get", return_value=mock_response):
+            response = self.client.post(
+                "/api/run-importer/",
+                json.dumps({"importer": "releases"}),
+                content_type="application/json",
+            )
+        assert response.status_code == 200
+        data = json.loads(response.content)
+        assert data["created"] == 1
+        assert data["total"] == 1
+        assert "my-repo 1.0" in data["items_html"]
+        assert 'class="beat-label release"' in data["items_html"]
+
+    def test_api_run_importer_tools(self):
+        from unittest.mock import patch, MagicMock
+
+        mock_response = MagicMock()
+        mock_response.json.return_value = [
+            {
+                "filename": "test-tool.html",
+                "title": "Test Tool",
+                "slug": "test-tool",
+                "created": "2025-03-01T12:00:00Z",
+                "description": "A test tool",
+            }
+        ]
+        mock_response.raise_for_status = MagicMock()
+
+        self.client.login(username="admin", password="password")
+        with patch("blog.importers.httpx.get", return_value=mock_response):
+            response = self.client.post(
+                "/api/run-importer/",
+                json.dumps({"importer": "tools"}),
+                content_type="application/json",
+            )
+        assert response.status_code == 200
+        data = json.loads(response.content)
+        assert data["created"] == 1
+        assert "Test Tool" in data["items_html"]
+
+    def test_api_run_importer_shows_max_10_items(self):
+        from unittest.mock import patch, MagicMock
+
+        releases = {}
+        for i in range(15):
+            releases["repo-{}".format(i)] = {
+                "release": "1.0",
+                "published_at": "2025-01-{}T10:00:00Z".format(15 + i),
+                "url": "https://github.com/simonw/repo-{}/releases/tag/1.0".format(i),
+                "description": "",
+            }
+
+        mock_response = MagicMock()
+        mock_response.json.return_value = releases
+        mock_response.raise_for_status = MagicMock()
+
+        self.client.login(username="admin", password="password")
+        with patch("blog.importers.httpx.get", return_value=mock_response):
+            response = self.client.post(
+                "/api/run-importer/",
+                json.dumps({"importer": "releases"}),
+                content_type="application/json",
+            )
+        assert response.status_code == 200
+        data = json.loads(response.content)
+        assert data["created"] == 15
+        assert data["total"] == 15
+        # items_html should only contain 10 items
+        assert data["items_html"].count('class="beat segment"') == 10
+
+    def test_api_run_importer_skips_unchanged(self):
+        from unittest.mock import patch, MagicMock
+
+        tool_data = [
+            {
+                "filename": "test-tool.html",
+                "title": "Test Tool",
+                "slug": "test-tool",
+                "created": "2025-03-01T12:00:00Z",
+                "description": "A test tool",
+            }
+        ]
+
+        mock_response = MagicMock()
+        mock_response.json.return_value = tool_data
+        mock_response.raise_for_status = MagicMock()
+
+        self.client.login(username="admin", password="password")
+
+        # First run: creates the tool
+        with patch("blog.importers.httpx.get", return_value=mock_response):
+            response = self.client.post(
+                "/api/run-importer/",
+                json.dumps({"importer": "tools"}),
+                content_type="application/json",
+            )
+        data = json.loads(response.content)
+        assert data["created"] == 1
+        assert data["updated"] == 0
+        assert data["skipped"] == 0
+
+        # Second run with same data: should skip
+        with patch("blog.importers.httpx.get", return_value=mock_response):
+            response = self.client.post(
+                "/api/run-importer/",
+                json.dumps({"importer": "tools"}),
+                content_type="application/json",
+            )
+        data = json.loads(response.content)
+        assert data["created"] == 0
+        assert data["updated"] == 0
+        assert data["skipped"] == 1
+        assert data["total"] == 0  # no items to display
+
+        # Third run with changed data: should update
+        tool_data[0]["description"] = "Updated description"
+        mock_response2 = MagicMock()
+        mock_response2.json.return_value = tool_data
+        mock_response2.raise_for_status = MagicMock()
+        with patch("blog.importers.httpx.get", return_value=mock_response2):
+            response = self.client.post(
+                "/api/run-importer/",
+                json.dumps({"importer": "tools"}),
+                content_type="application/json",
+            )
+        data = json.loads(response.content)
+        assert data["created"] == 0
+        assert data["updated"] == 1
+        assert data["skipped"] == 0
+        assert data["total"] == 1
+
+    def test_admin_index_has_importers_link(self):
+        self.client.login(username="admin", password="password")
+        response = self.client.get("/admin/")
+        self.assertContains(response, "/admin/importers/")
+        self.assertContains(response, "Beat Importers")

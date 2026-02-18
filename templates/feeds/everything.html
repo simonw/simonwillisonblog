@@ -9,4 +9,10 @@
     {% include "feeds/quotation.html" %}
 {% elif obj.is_note %}
     {% include "feeds/note.html" %}
+{% elif obj.is_beat %}
+    <p><strong>{{ obj.get_beat_type_display }}:</strong> <a href="{{ obj.url }}">{{ obj.title }}</a></p>
+    {% if obj.commentary %}<p>{{ obj.commentary }}</p>{% endif %}
+    {% if obj.tags.count %}
+        <p>Tags: {% for tag in obj.tags.all %}<a href="https://simonwillison.net/tags/{{ tag.tag }}">{{ tag.tag }}</a>{% if not forloop.last %}, {% endif %}{% endfor %}</p>
+    {% endif %}
 {% endif %}

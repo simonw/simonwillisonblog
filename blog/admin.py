@@ -5,6 +5,7 @@ from django.db.models import F
 from django import forms
 from xml.etree import ElementTree
 from .models import (
+    Beat,
     Entry,
     Tag,
     Quotation,
@@ -110,6 +111,14 @@ class BlogmarkAdmin(BaseAdmin):
 class NoteAdmin(BaseAdmin):
     search_fields = ("tags__tag", "body")
     list_display = ("__str__", "created", "tag_summary", "is_draft")
+
+
+@admin.register(Beat)
+class BeatAdmin(BaseAdmin):
+    search_fields = ("tags__tag", "title", "commentary")
+    prepopulated_fields = {"slug": ("title",)}
+    list_display = ("__str__", "beat_type", "created", "tag_summary", "is_draft")
+    list_filter = ("created", "is_draft", "beat_type")
 
 
 @admin.register(Tag)

@@ -1,11 +1,15 @@
+import itertools
+
 import factory
 import factory.django
 import factory.fuzzy
 from datetime import timezone
 
+_global_slug_counter = itertools.count()
+
 
 class BaseFactory(factory.django.DjangoModelFactory):
-    slug = factory.Sequence(lambda n: "slug%d" % n)
+    slug = factory.LazyFunction(lambda: "slug%d" % next(_global_slug_counter))
     created = factory.Faker("past_datetime", tzinfo=timezone.utc)
 
 
@@ -33,3 +37,12 @@ class QuotationFactory(BaseFactory):
 class NoteFactory(BaseFactory):
     class Meta:
         model = "blog.Note"
+
+
+class BeatFactory(BaseFactory):
+    class Meta:
+        model = "blog.Beat"
+
+    beat_type = "release"
+    title = factory.Faker("sentence")
+    url = factory.Faker("uri")

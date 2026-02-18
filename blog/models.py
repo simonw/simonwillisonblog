@@ -56,6 +56,9 @@ class Tag(models.Model):
     def note_count(self):
         return self.note_set.filter(is_draft=False).count()
 
+    def beat_count(self):
+        return self.beat_set.filter(is_draft=False).count()
+
     def total_count(self):
         entry_count = Subquery(
             Entry.objects.filter(is_draft=False, tags=OuterRef("pk"))
@@ -89,6 +92,14 @@ class Tag(models.Model):
             output_field=IntegerField(),
         )
 
+        beat_count = Subquery(
+            Beat.objects.filter(is_draft=False, tags=OuterRef("pk"))
+            .values("tags")
+            .annotate(count=Count("id"))
+            .values("count"),
+            output_field=IntegerField(),
+        )
+
         result = (
             Tag.objects.filter(pk=self.pk)
             .annotate(
@@ -97,6 +108,7 @@ class Tag(models.Model):
                     + Coalesce(blogmark_count, 0)
                     + Coalesce(quotation_count, 0)
                     + Coalesce(note_count, 0)
+                    + Coalesce(beat_count, 0)
                 )
             )
             .values("total_count")
@@ -126,7 +138,12 @@ class Tag(models.Model):
             .annotate(type=models.Value("note", output_field=models.CharField()))
             .values("pk", "created", "type")
         )
-        return entries.union(blogmarks, quotations, notes).order_by("-created")
+        beats = (
+            self.beat_set.all()
+            .annotate(type=models.Value("beat", output_field=models.CharField()))
+            .values("pk", "created", "type")
+        )
+        return entries.union(blogmarks, quotations, notes, beats).order_by("-created")
 
     def get_related_tags(self, limit=10):
         """Get all items tagged with this, look at /their/ tags, order by count"""
@@ -137,6 +154,7 @@ class Tag(models.Model):
                 (Blogmark, "blogmark_set"),
                 (Quotation, "quotation_set"),
                 (Note, "note_set"),
+                (Beat, "beat_set"),
             ):
                 qs = klass.objects.filter(
                     pk__in=getattr(self, collection).all()
@@ -449,6 +467,52 @@ class Note(BaseModel):
         verbose_name_plural = "Notes"
 
 
+class Beat(BaseModel):
+    """
+    A slim timeline event pointing at something external (or internal by URL).
+    Inherits: created, slug, tags (M2M), metadata (JSON), is_draft,
+              search_document, card_image, series FK.
+    """
+
+    class BeatType(models.TextChoices):
+        RELEASE = "release", "Release"
+        TIL_NEW = "til_new", "TIL"
+        TIL_UPDATE = "til_update", "TIL updated"
+        RESEARCH = "research", "Research"
+        TOOL = "tool", "Tool"
+
+    beat_type = models.CharField(
+        max_length=20, choices=BeatType.choices, db_index=True
+    )
+
+    # The linked title — what appears as the clickable text in the timeline
+    title = models.CharField(max_length=500)
+
+    # Where it points
+    url = models.URLField(max_length=1000)
+
+    # Optional one-liner on the same row as the title.
+    commentary = models.CharField(max_length=500, blank=True)
+
+    is_beat = True
+
+    def index_components(self):
+        return {
+            "A": self.title,
+            "B": " ".join(self.tags.values_list("tag", flat=True)),
+            "C": self.commentary,
+        }
+
+    def __str__(self):
+        return f"{self.get_beat_type_display()}: {self.title}"
+
+    class Meta(BaseModel.Meta):
+        ordering = ["-created"]
+        indexes = BaseModel.Meta.indexes + [
+            models.Index(fields=["beat_type", "created"]),
+        ]
+
+
 class Photo(models.Model):
     flickr_id = models.CharField(max_length=32)
     server = models.CharField(max_length=8)
@@ -630,6 +694,7 @@ def load_mixed_objects(dicts):
         ("entry", Entry),
         ("quotation", Quotation),
         ("note", Note),
+        ("beat", Beat),
     ):
         ids = to_fetch.get(key) or []
         objects = model.objects.prefetch_related("tags").filter(pk__in=ids)
@@ -677,6 +742,7 @@ for model, field_name, admin_url_name, display_fn in [
         "note",
         lambda o: o.body[:50] + "..." if len(o.body) > 50 else o.body,
     ),
+    (Beat, "beat", "beat", lambda o: o.title),
 ]:
     model.tags.through.__str__ = _make_tag_through_str(
         field_name, admin_url_name, display_fn

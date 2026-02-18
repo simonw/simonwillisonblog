@@ -8,7 +8,7 @@ from django.contrib.postgres.search import SearchQuery, SearchRank
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.http import HttpResponse, Http404
 from django.shortcuts import render
-from blog.models import Entry, Blogmark, Quotation, Note, Tag, load_mixed_objects
+from blog.models import Beat, Entry, Blogmark, Quotation, Note, Tag, load_mixed_objects
 from spellchecker import SpellChecker
 import datetime
 
@@ -82,6 +82,7 @@ def search(request, q=None, return_context=False):
     selected_type = request.GET.get("type", "")
     selected_year = request.GET.get("year", "")
     selected_month = request.GET.get("month", "")
+    selected_beat = request.GET.get("beat", "")
 
     # Parse ID filters: entries=1,2,3&notes=4,5&quotations=6&blogmarks=7,8
     id_filter_param_map = {
@@ -89,6 +90,7 @@ def search(request, q=None, return_context=False):
         "blogmarks": "blogmark",
         "quotations": "quotation",
         "notes": "note",
+        "beats": "beat",
     }
     id_filters = {}  # type_name -> set of int IDs
     for param, type_name in id_filter_param_map.items():
@@ -126,6 +128,8 @@ def search(request, q=None, return_context=False):
         if search_q:
             qs = qs.filter(search_document=query)
             qs = qs.annotate(rank=rank_annotation)
+        if selected_beat and type_name == "beat":
+            qs = qs.filter(beat_type=selected_beat)
         for tag in selected_tags:
             qs = qs.filter(tags__tag=tag)
         for exclude_tag in excluded_tags:
@@ -144,12 +148,14 @@ def search(request, q=None, return_context=False):
     tag_counts_raw = {}
     year_counts_raw = {}
     month_counts_raw = {}
+    beat_type_counts_raw = {}
 
     for klass, type_name in (
         (Entry, "entry"),
         (Blogmark, "blogmark"),
         (Quotation, "quotation"),
         (Note, "note"),
+        (Beat, "beat"),
     ):
         if selected_type and selected_type != type_name:
             continue
@@ -188,6 +194,16 @@ def search(request, q=None, return_context=False):
             ):
                 month_counts_raw[row["month"]] = (
                     month_counts_raw.get(row["month"], 0) + row["n"]
+                )
+        # Only do beat_type counts if type=beat is selected
+        if selected_type == "beat" and type_name == "beat":
+            for row in (
+                klass_qs.order_by()
+                .values("beat_type")
+                .annotate(n=models.Count("pk"))
+            ):
+                beat_type_counts_raw[row["beat_type"]] = (
+                    beat_type_counts_raw.get(row["beat_type"], 0) + row["n"]
                 )
         qs = qs.union(klass_qs.values(*values))
 
@@ -235,6 +251,16 @@ def search(request, q=None, return_context=False):
         key=lambda t: t["month"],
     )
 
+    beat_type_labels = dict(Beat.BeatType.choices)
+    beat_type_counts = sorted(
+        [
+            {"beat_type": bt, "label": beat_type_labels.get(bt, bt), "n": value}
+            for bt, value in list(beat_type_counts_raw.items())
+        ],
+        key=lambda t: t["n"],
+        reverse=True,
+    )
+
     paginator = Paginator(qs, 30)
     page_number = request.GET.get("page") or "1"
     try:
@@ -260,6 +286,8 @@ def search(request, q=None, return_context=False):
         "year": selected_year,
         "month": selected_month,
         "type": selected_type,
+        "beat": selected_beat,
+        "beat_label": beat_type_labels.get(selected_beat, selected_beat) if selected_beat else "",
         "month_name": (
             calendar.month_name[int(selected_month)] if selected_month.isdigit() else ""
         ),
@@ -275,6 +303,7 @@ def search(request, q=None, return_context=False):
         "blogmark": "Blogmarks",
         "entry": "Entries",
         "note": "Notes",
+        "beat": "Beats",
     }.get(selected.get("type")) or "Posts"
     title = noun
 
@@ -325,8 +354,9 @@ def search(request, q=None, return_context=False):
         "blogmark": "blogmarks",
         "quotation": "quotations",
         "note": "notes",
+        "beat": "beats",
     }
-    for type_name in ("entry", "blogmark", "quotation", "note"):
+    for type_name in ("entry", "blogmark", "quotation", "note", "beat"):
         if type_name in id_filters:
             id_filter_type_names.append(type_display_names[type_name])
 
@@ -342,6 +372,7 @@ def search(request, q=None, return_context=False):
         "tag_counts": tag_counts,
         "year_counts": year_counts,
         "month_counts": month_counts,
+        "beat_type_counts": beat_type_counts,
         "selected_tags": selected_tags,
         "excluded_tags": excluded_tags,
         "selected": selected,
@@ -363,6 +394,7 @@ FEED_URLS = {
     "blogmark": "/atom/links/",
     "quotation": "/atom/quotations/",
     "note": "/atom/notes/",
+    "beat": "/atom/beats/",
 }
 
 

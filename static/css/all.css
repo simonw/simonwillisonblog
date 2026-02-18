@@ -1738,3 +1738,139 @@ a.random-tag-nav:hover {
 a.random-tag-nav svg {
   flex-shrink: 0;
 }
+
+/* ── Beat component ─────────────────────────────────────
+   Two-row slim timeline entry. Row 1: label + title + optional
+   commit message, all on one line, truncating with ellipsis.
+   Row 2: muted metadata (date, context, tags).
+   ──────────────────────────────────────────────────── */
+
+div.beat {
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+
+.beat-row1 {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.beat-row2 {
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.beat-label {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  padding: 1px 7px;
+  border-radius: 3px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  position: relative;
+  top: -1px;
+}
+
+.beat-title {
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.beat-title a {
+  font-weight: 600;
+}
+
+.beat-commit {
+  color: var(--color-text-muted);
+  font-size: 0.9em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-shrink: 2;
+  min-width: 0;
+}
+
+.beat-meta {
+  font-size: 0.8em;
+  color: var(--color-text-muted);
+}
+
+.beat-meta a {
+  color: var(--color-text-muted);
+  border-color: transparent;
+}
+
+.beat-meta a:hover {
+  color: var(--color-text);
+}
+
+/* ── Label colours by beat type ── */
+
+.beat-label.release {
+  background: var(--color-purple-light);
+  color: var(--color-purple-accent);
+  border: 1px solid #8a55a8;
+}
+
+.beat-label.til-new {
+  background: #e6f9f0;
+  color: #1a7a4a;
+  border: 1px solid #a8dfc4;
+}
+
+.beat-label.til-update {
+  background: #e6f9f0;
+  color: #1a7a4a;
+  border: 1px solid #a8dfc4;
+  padding-right: 0;
+  overflow: hidden;
+}
+.beat-label.til-update .til-update-suffix {
+  display: inline-block;
+  padding: 0 7px;
+  margin-left: 5px;
+  background: #c8eedd;
+  color: #1a7a4a;
+  opacity: 0.75;
+  font-weight: 500;
+  font-style: italic;
+  letter-spacing: 0.02em;
+  text-transform: none;
+}
+
+.beat-label.research {
+  background: #fff8e1;
+  color: #8a6200;
+  border: 1px solid #f0d080;
+}
+
+.beat-label.tool {
+  background: #fce8f3;
+  color: #9c1f6e;
+  border: 1px solid #f0a8d8;
+}
+
+/* ── Dark mode overrides for beats ── */
+
+[data-theme="dark"] .beat-label.release    { background: var(--color-purple-light); color: var(--color-purple-accent); border-color: var(--color-purple-border); }
+[data-theme="dark"] .beat-label.til-new         { background: #0d2e1c; color: #4dbb7a; border-color: #1f5c38; }
+[data-theme="dark"] .beat-label.til-update      { background: #0d2e1c; color: #4dbb7a; border-color: #1f5c38; }
+[data-theme="dark"] .beat-label.til-update .til-update-suffix { background: #0a2218; color: #4dbb7a; }
+[data-theme="dark"] .beat-label.research        { background: #2a2000; color: #c8a830; border-color: #5a4800; }
+[data-theme="dark"] .beat-label.tool            { background: #2a0a1e; color: #e060b0; border-color: #6a1a4e; }
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) .beat-label.release    { background: var(--color-purple-light); color: var(--color-purple-accent); border-color: var(--color-purple-border); }
+  :root:not([data-theme]) .beat-label.til-new         { background: #0d2e1c; color: #4dbb7a; border-color: #1f5c38; }
+  :root:not([data-theme]) .beat-label.til-update      { background: #0d2e1c; color: #4dbb7a; border-color: #1f5c38; }
+  :root:not([data-theme]) .beat-label.til-update .til-update-suffix { background: #0a2218; color: #4dbb7a; }
+  :root:not([data-theme]) .beat-label.research        { background: #2a2000; color: #c8a830; border-color: #5a4800; }
+  :root:not([data-theme]) .beat-label.tool            { background: #2a0a1e; color: #e060b0; border-color: #6a1a4e; }
+}

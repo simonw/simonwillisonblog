@@ -239,6 +239,15 @@ document.addEventListener('DOMContentLoaded', function() {
                     entryFooter.appendChild(tagButton);
                 }
             }
+        } else if (contentType === 'beat') {
+            const row1 = segment.querySelector('.beat-row1');
+            if (row1) {
+                row1.insertBefore(checkbox, row1.firstChild);
+            }
+            const row2 = segment.querySelector('.beat-row2');
+            if (row2) {
+                row2.appendChild(tagButton);
+            }
         } else {
             const firstPara = segment.querySelector('p');
             if (firstPara) {

@@ -241,5 +241,10 @@ for (const {tag, js, css} of config) {
   toggle.addEventListener('click', cycleTheme);
 })();
 </script>
+<script>
+if (localStorage.getItem('show_beats')) {
+  document.querySelectorAll('.beat.segment').forEach(function(el) { el.style.display = ''; });
+}
+</script>
 </body>
 </html>
