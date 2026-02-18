@@ -1,9 +1,10 @@
 import itertools
+from datetime import timedelta, timezone
 
 import factory
 import factory.django
 import factory.fuzzy
-from datetime import timezone
+from django.utils import timezone as django_timezone
 
 _global_slug_counter = itertools.count()
 
@@ -46,3 +47,23 @@ class BeatFactory(BaseFactory):
     beat_type = "release"
     title = factory.Faker("sentence")
     url = factory.Faker("uri")
+
+
+class SponsorMessageFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = "blog.SponsorMessage"
+
+    name = factory.Faker("company")
+    message = factory.Faker("sentence")
+    learn_more_url = factory.Faker("uri")
+    display_from = factory.LazyFunction(
+        lambda: django_timezone.now() - timedelta(days=1)
+    )
+    display_until = factory.LazyFunction(
+        lambda: django_timezone.now() + timedelta(days=30)
+    )
+    is_active = True
+    color_scheme = factory.fuzzy.FuzzyChoice(
+        ["warm", "lavender", "sage", "slate", "gold", "rose",
+         "ocean", "copper", "plum", "mint", "sky", "moss"]
+    )

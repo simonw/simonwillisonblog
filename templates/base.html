@@ -23,39 +23,16 @@
 </script>
 <script>
 (function() {
-  var schemes = {
-    warm:    {bg: '#e8ddd0', border: '#d4c7b8', text: '#6b5d50', label: '#5a4a3a', link: '#5a4a3a'},
-    lavender:{bg: '#e5daea', border: '#cbb8d4', text: '#5a3d6e', label: '#4a2d5e', link: '#4a2d5e'},
-    sage:    {bg: '#dde8d8', border: '#bbd4b3', text: '#4a5e44', label: '#3a4e34', link: '#3a4e34'},
-    slate:   {bg: '#dde1e8', border: '#c0c6d2', text: '#4a5060', label: '#3a4050', link: '#3a4050'},
-    gold:    {bg: '#ede3c8', border: '#d9cda4', text: '#6b5a30', label: '#5a4a20', link: '#5a4a20'},
-    rose:    {bg: '#eadcdf', border: '#d6c0c6', text: '#6b4a52', label: '#5a3a42', link: '#5a3a42'},
-    ocean:   {bg: '#d0e4e8', border: '#b0cdd4', text: '#3a555e', label: '#2a454e', link: '#2a454e'},
-    copper:  {bg: '#e8d8d0', border: '#d4beb2', text: '#6b4a3a', label: '#5a3a2a', link: '#5a3a2a'},
-    plum:    {bg: '#ddd0e5', border: '#c0aed0', text: '#4e3560', label: '#3e2550', link: '#3e2550'},
-    mint:    {bg: '#d2e8dc', border: '#b2d4c0', text: '#3a5845', label: '#2a4835', link: '#2a4835'},
-    sky:     {bg: '#d4e2ee', border: '#b4c8dc', text: '#3a506b', label: '#2a405b', link: '#2a405b'},
-    moss:    {bg: '#dde0d0', border: '#c2c8b0', text: '#505840', label: '#404830', link: '#404830'}
-  };
-  window.__bannerSchemes = schemes;
+  var schemeNames = ['warm','lavender','sage','slate','gold','rose','ocean','copper','plum','mint','sky','moss'];
+  window.__bannerSchemes = schemeNames;
   window.__applyBannerScheme = function(name) {
-    var s = schemes[name];
-    if (!s) return;
     var el = document.getElementById('sponsored-banner');
     if (!el) return;
-    el.style.backgroundColor = s.bg;
-    el.style.borderTopColor = s.border;
-    el.style.borderBottomColor = s.border;
-    el.style.color = s.text;
-    var lbl = el.querySelector('.sponsored-label');
-    if (lbl) lbl.style.color = s.label;
-    var strong = el.querySelector('strong');
-    if (strong) strong.style.color = s.label;
-    var links = el.querySelectorAll('a');
-    links.forEach(function(a) { a.style.color = s.link; });
+    schemeNames.forEach(function(s) { el.classList.remove('sponsor-scheme-' + s); });
+    el.classList.add('sponsor-scheme-' + name);
   };
   var saved = localStorage.getItem('sponsoredBannerScheme');
-  if (saved && schemes[saved]) {
+  if (saved && schemeNames.indexOf(saved) !== -1) {
     document.addEventListener('DOMContentLoaded', function() {
       var el = document.getElementById('sponsored-banner');
       if (el) {

@@ -1,12 +1,32 @@
-from blog.models import Entry, Blogmark, Quotation, Note
+from blog.models import Entry, Blogmark, Quotation, Note, SponsorMessage
 from django.conf import settings
 from django.core.cache import cache
+from django.utils import timezone
 
 
 def all(request):
     return {
         "years_with_content": years_with_content(),
+        "sponsor_message": current_sponsor_message(),
     }
+
+
+def current_sponsor_message():
+    cache_key = "current-sponsor-message"
+    message = cache.get(cache_key)
+    if message is None:
+        now = timezone.now()
+        message = (
+            SponsorMessage.objects.filter(
+                is_active=True,
+                display_from__lte=now,
+                display_until__gte=now,
+            )
+            .order_by("-pk")
+            .first()
+        ) or False  # False as sentinel since None means cache miss
+        cache.set(cache_key, message, 60)
+    return message if message is not False else None
 
 
 def years_with_content():

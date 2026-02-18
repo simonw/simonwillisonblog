@@ -7,10 +7,12 @@ from .factories import (
     QuotationFactory,
     NoteFactory,
     BeatFactory,
+    SponsorMessageFactory,
 )
 from blog.models import Tag, PreviousTagName, TagMerge
 from django.utils import timezone
 import datetime
+from datetime import timedelta
 import json
 import xml.etree.ElementTree as ET
 
@@ -1677,3 +1679,68 @@ class ImporterViewTests(TransactionTestCase):
         response = self.client.get("/admin/")
         self.assertContains(response, "/admin/importers/")
         self.assertContains(response, "Beat Importers")
+
+
+class SponsorMessageTests(TransactionTestCase):
+    def setUp(self):
+        from django.core.cache import cache
+        cache.clear()
+
+    def test_no_sponsor_message_no_banner(self):
+        EntryFactory()
+        response = self.client.get("/")
+        self.assertNotContains(response, 'id="sponsored-banner"')
+
+    def test_active_sponsor_message_shows_banner(self):
+        SponsorMessageFactory(
+            name="Acme Corp",
+            message="Build faster with Acme.",
+            learn_more_url="https://acme.example.com/",
+            color_scheme="ocean",
+        )
+        EntryFactory()
+        response = self.client.get("/")
+        self.assertContains(response, "Acme Corp")
+        self.assertContains(response, "Build faster with Acme.")
+        self.assertContains(response, "https://acme.example.com/")
+        self.assertContains(response, "sponsor-scheme-ocean")
+
+    def test_inactive_sponsor_message_hidden(self):
+        SponsorMessageFactory(is_active=False, name="Hidden Sponsor")
+        EntryFactory()
+        response = self.client.get("/")
+        self.assertNotContains(response, "Hidden Sponsor")
+
+    def test_expired_sponsor_message_hidden(self):
+        SponsorMessageFactory(
+            name="Expired Sponsor",
+            display_from=timezone.now() - timedelta(days=30),
+            display_until=timezone.now() - timedelta(days=1),
+        )
+        EntryFactory()
+        response = self.client.get("/")
+        self.assertNotContains(response, "Expired Sponsor")
+
+    def test_future_sponsor_message_hidden(self):
+        SponsorMessageFactory(
+            name="Future Sponsor",
+            display_from=timezone.now() + timedelta(days=1),
+            display_until=timezone.now() + timedelta(days=30),
+        )
+        EntryFactory()
+        response = self.client.get("/")
+        self.assertNotContains(response, "Future Sponsor")
+
+    def test_highest_pk_selected(self):
+        SponsorMessageFactory(name="First Sponsor", color_scheme="warm")
+        SponsorMessageFactory(name="Second Sponsor", color_scheme="sage")
+        EntryFactory()
+        response = self.client.get("/")
+        self.assertContains(response, "Second Sponsor")
+        self.assertNotContains(response, "First Sponsor")
+
+    def test_banner_on_smallhead_pages(self):
+        SponsorMessageFactory(name="Detail Sponsor")
+        entry = EntryFactory()
+        response = self.client.get(entry.get_absolute_url())
+        self.assertContains(response, "Detail Sponsor")

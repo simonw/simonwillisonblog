@@ -235,6 +235,38 @@ class Series(models.Model):
         verbose_name_plural = "Series"
 
 
+class SponsorMessage(models.Model):
+    COLOR_SCHEME_CHOICES = [
+        ("warm", "Warm"),
+        ("lavender", "Lavender"),
+        ("sage", "Sage"),
+        ("slate", "Slate"),
+        ("gold", "Gold"),
+        ("rose", "Rose"),
+        ("ocean", "Ocean"),
+        ("copper", "Copper"),
+        ("plum", "Plum"),
+        ("mint", "Mint"),
+        ("sky", "Sky"),
+        ("moss", "Moss"),
+    ]
+
+    name = models.TextField()
+    message = models.TextField()
+    learn_more_url = models.URLField()
+    display_from = models.DateTimeField()
+    display_until = models.DateTimeField()
+    is_active = models.BooleanField(default=False)
+    notes = models.TextField(blank=True, default="")
+    color_scheme = models.TextField(choices=COLOR_SCHEME_CHOICES)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        ordering = ["-pk"]
+
+
 class BaseModel(models.Model):
     created = models.DateTimeField(default=datetime.datetime.utcnow)
     tags = models.ManyToManyField(Tag, blank=True)

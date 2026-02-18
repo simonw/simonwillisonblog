@@ -16,6 +16,7 @@ from .models import (
     PreviousTagName,
     LiveUpdate,
     TagMerge,
+    SponsorMessage,
 )
 
 
@@ -243,3 +244,10 @@ class TagMergeAdmin(admin.ModelAdmin):
 
     def has_delete_permission(self, request, obj=None):
         return False
+
+
+@admin.register(SponsorMessage)
+class SponsorMessageAdmin(admin.ModelAdmin):
+    list_display = ("name", "is_active", "display_from", "display_until", "color_scheme")
+    list_filter = ("is_active", "color_scheme")
+    search_fields = ("name", "message", "notes")
