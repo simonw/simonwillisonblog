@@ -1403,11 +1403,11 @@ class BeatTests(TransactionTestCase):
         response = self.client.get(beat.get_absolute_url())
         self.assertContains(response, "This is a draft post")
 
-    def test_beat_in_everything_feed(self):
-        """Beat should appear in the everything Atom feed."""
+    def test_beat_excluded_from_everything_feed(self):
+        """Beat should not appear in the everything Atom feed."""
         beat = BeatFactory(title="Feed Beat Title", beat_type="release")
         response = self.client.get("/atom/everything/")
-        self.assertContains(response, "Feed Beat Title")
+        self.assertNotContains(response, "Feed Beat Title")
 
     def test_beat_redirect_by_id(self):
         """Beat should have a /beat/{id} redirect URL."""
