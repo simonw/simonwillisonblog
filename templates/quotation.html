@@ -7,6 +7,7 @@
 
 {% load entry_tags %}
 {% block item_content %}
+<p class="mobile-date-eyebrow">{{ quotation.created|date:"jS F Y" }}</p>
 <div class="quote">
 {% include "_draft_warning.html" %}
 <blockquote{% if quotation.source_url %} cite="{{ quotation.source_url }}"{% endif %}>{{ quotation.body }}</blockquote>
@@ -19,6 +20,8 @@
 
 {% block secondary %}
 <div class="metabox">
+<p class="this-is">This is a <strong>quotation</strong> by Simon Willison, posted on <a href="/{{ quotation.created|date:"Y/M/j/" }}">{{ quotation.created|date:"jS F Y" }}</a>.</p>
+
 {% include "_tags.html" with obj=quotation %}
 </div> <!-- .metabox -->
 {% endblock %}

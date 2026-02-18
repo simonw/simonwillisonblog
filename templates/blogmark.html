@@ -12,6 +12,7 @@
 {% block card_description %}{{ blogmark.body|striptags|truncatewords:30|force_escape }}{% endblock %}
 
 {% block item_content %}
+<p class="mobile-date-eyebrow">{{ blogmark.created|date:"jS F Y" }}</p>
 {% include "_draft_warning.html" %}
 <p><strong><a href="{{ blogmark.link_url }}">{{ blogmark.link_title }}</a></strong>{% if blogmark.via_url %} (<a href="{{ blogmark.via_url }}" title="{{ blogmark.via_title }}">via</a>){% endif %}{% if not blogmark.via_url and not blogmark.link_title|ends_with_punctuation %}.{% endif %} {% if not blogmark.use_markdown %}{{ blogmark.commentary|typography|linebreaks|strip_wrapping_p }}{% else %}{{ blogmark.body|strip_wrapping_p }}{% endif %}</p>
 
@@ -21,6 +22,7 @@
 
 {% block secondary %}
 <div class="metabox">
+<p class="this-is">This is a <strong>link post</strong> by Simon Willison, posted on <a href="/{{ blogmark.created|date:"Y/M/j/" }}">{{ blogmark.created|date:"jS F Y" }}</a>.</p>
 
 {% include "_tags.html" with obj=blogmark %}
 

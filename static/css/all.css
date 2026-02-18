@@ -676,6 +676,15 @@ div.entry p.mobile-date {
   margin-top: -0.5em;
   display: none;
 }
+div.entry p.mobile-date-eyebrow {
+  font-size: 0.8em;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+  margin-bottom: 0.8em;
+  margin-top: -0.3em;
+  display: none;
+}
 div#bighead {
   width: 940px;
   margin: 0 auto;
@@ -1333,6 +1342,9 @@ h3.blog-mixed-list-year {
     max-width: 680px;
   }
   div.entry p.mobile-date {
+    display: block;
+  }
+  div.entry p.mobile-date-eyebrow {
     display: block;
   }
   #primary .elsewhere-in-primary {

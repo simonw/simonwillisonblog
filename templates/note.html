@@ -12,6 +12,7 @@
 
 {% load entry_tags %}
 {% block item_content %}
+<p class="mobile-date-eyebrow">{{ note.created|date:"jS F Y" }}</p>
 <div class="note">
 {% include "_draft_warning.html" %}
 {{ note.body_rendered }}
@@ -23,6 +24,8 @@
 
 {% block secondary %}
 <div class="metabox">
+<p class="this-is">This is a <strong>note</strong> by Simon Willison, posted on <a href="/{{ note.created|date:"Y/M/j/" }}">{{ note.created|date:"jS F Y" }}</a>.</p>
+
 {% include "_tags.html" with obj=note %}
 
 <div data-ea-publisher="simonwillisonnet" data-ea-type="text"></div>
