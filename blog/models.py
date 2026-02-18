@@ -480,7 +480,6 @@ class Beat(BaseModel):
         TIL_UPDATE = "til_update", "TIL updated"
         RESEARCH = "research", "Research"
         TOOL = "tool", "Tool"
-        PLAYBOOK_UPDATE = "playbook_update", "Playbook update"
 
     beat_type = models.CharField(
         max_length=20, choices=BeatType.choices, db_index=True

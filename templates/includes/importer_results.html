@@ -11,8 +11,6 @@
       <span class="beat-label research">Research</span>
     {% elif item.beat_type == "tool" %}
       <span class="beat-label tool">Tool</span>
-    {% elif item.beat_type == "playbook_update" %}
-      <span class="beat-label playbook-update">Playbook update</span>
     {% endif %}
     <span class="beat-title"><a href="{{ item.url }}">{{ item.title }}</a></span>
     {% if item.commentary %}<span class="beat-commit">&mdash; {{ item.commentary }}</span>{% endif %}

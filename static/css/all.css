@@ -1857,12 +1857,6 @@ div.beat {
   border: 1px solid #f0a8d8;
 }
 
-.beat-label.playbook-update {
-  background: #e8f0fe;
-  color: #1a56db;
-  border: 1px solid #93b4f0;
-}
-
 /* ── Dark mode overrides for beats ── */
 
 [data-theme="dark"] .beat-label.release    { background: var(--color-purple-light); color: var(--color-purple-accent); border-color: var(--color-purple-border); }
@@ -1871,7 +1865,6 @@ div.beat {
 [data-theme="dark"] .beat-label.til-update .til-update-suffix { background: #0a2218; color: #4dbb7a; }
 [data-theme="dark"] .beat-label.research        { background: #2a2000; color: #c8a830; border-color: #5a4800; }
 [data-theme="dark"] .beat-label.tool            { background: #2a0a1e; color: #e060b0; border-color: #6a1a4e; }
-[data-theme="dark"] .beat-label.playbook-update { background: #0d1a2e; color: #6aa0e0; border-color: #1a3a6a; }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme]) .beat-label.release    { background: var(--color-purple-light); color: var(--color-purple-accent); border-color: var(--color-purple-border); }
@@ -1880,5 +1873,4 @@ div.beat {
   :root:not([data-theme]) .beat-label.til-update .til-update-suffix { background: #0a2218; color: #4dbb7a; }
   :root:not([data-theme]) .beat-label.research        { background: #2a2000; color: #c8a830; border-color: #5a4800; }
   :root:not([data-theme]) .beat-label.tool            { background: #2a0a1e; color: #e060b0; border-color: #6a1a4e; }
-  :root:not([data-theme]) .beat-label.playbook-update { background: #0d1a2e; color: #6aa0e0; border-color: #1a3a6a; }
 }
