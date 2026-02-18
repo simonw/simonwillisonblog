@@ -16,6 +16,7 @@ from django.http import Http404, HttpResponsePermanentRedirect as Redirect, Http
 from django.test import Client
 from django.utils import timezone
 from .models import (
+    Beat,
     Blogmark,
     Entry,
     Quotation,
@@ -75,6 +76,7 @@ def archive_item(request, year, month, day, slug):
         ("entry", Entry),
         ("quotation", Quotation),
         ("note", Note),
+        ("beat", Beat),
     ):
         try:
             obj = get_object_or_404(
@@ -171,6 +173,12 @@ def index(request):
             .values("content_type", "id", "created")
             .order_by()
         )
+        .union(
+            Beat.objects.filter(is_draft=False)
+            .annotate(content_type=Value("beat", output_field=CharField()))
+            .values("content_type", "id", "created")
+            .order_by()
+        )
         .order_by("-created")[:30]
     )
 
@@ -184,6 +192,7 @@ def index(request):
         ("blogmark", Blogmark),
         ("quotation", Quotation),
         ("note", Note),
+        ("beat", Beat),
     ):
         if content_type not in to_load:
             continue
@@ -269,6 +278,9 @@ def find_current_tags(num=5):
             Tag.note_set.through.objects.annotate(
                 created=models.F("note__created")
             ).values("tag__tag", "created"),
+            Tag.beat_set.through.objects.annotate(
+                created=models.F("beat__created")
+            ).values("tag__tag", "created"),
         )
         .order_by("-created")[:400]
     )
@@ -353,6 +365,7 @@ def archive_month(request, year, month):
         (Blogmark, "blogmark", "link", "links"),
         (Quotation, "quotation", "quote", "quotes"),
         (Note, "note", "note", "notes"),
+        (Beat, "beat", "beat", "beats"),
     ):
         ids = list(
             model.objects.filter(
@@ -417,6 +430,7 @@ def archive_day(request, year, month, day):
         ("entry", Entry),
         ("quotation", Quotation),
         ("note", Note),
+        ("beat", Beat),
     ):
         filt = model.objects.filter(
             created__year=int(year),
@@ -475,12 +489,16 @@ def top_tags(request):
             note_count=models.Count(
                 "note", filter=models.Q(note__is_draft=False), distinct=True
             ),
+            beat_count=models.Count(
+                "beat", filter=models.Q(beat__is_draft=False), distinct=True
+            ),
         )
         .annotate(
             total=models.F("entry_count")
             + models.F("blogmark_count")
             + models.F("quotation_count")
             + models.F("note_count")
+            + models.F("beat_count")
         )
         .order_by("-total")[:10]
     )
@@ -536,6 +554,7 @@ def archive_tag(request, tags, atom=False):
         (Quotation, "quotation"),
         (Blogmark, "blogmark"),
         (Note, "note"),
+        (Beat, "beat"),
     ):
         cursor.execute(
             INTERSECTION_SQL
@@ -725,6 +744,10 @@ def redirect_note(request, pk):
     return Redirect(get_object_or_404(Note, pk=pk).get_absolute_url())
 
 
+def redirect_beat(request, pk):
+    return Redirect(get_object_or_404(Beat, pk=pk).get_absolute_url())
+
+
 def random_tag_redirect(request, tag):
     """
     Redirect to a random item (entry, blogmark, quotation, or note) with the given tag.
@@ -757,12 +780,17 @@ def random_tag_redirect(request, tag):
         WHERE is_draft = false AND id IN (
             SELECT note_id FROM blog_note_tags WHERE tag_id = %s
         )
+        UNION ALL
+        SELECT id AS pk, 'beat' AS type FROM blog_beat
+        WHERE is_draft = false AND id IN (
+            SELECT beat_id FROM blog_beat_tags WHERE tag_id = %s
+        )
     )
     SELECT pk, type FROM all_items ORDER BY RANDOM() LIMIT 1
     """
 
     with connection.cursor() as cursor:
-        cursor.execute(sql, [tag_obj.pk, tag_obj.pk, tag_obj.pk, tag_obj.pk])
+        cursor.execute(sql, [tag_obj.pk, tag_obj.pk, tag_obj.pk, tag_obj.pk, tag_obj.pk])
         row = cursor.fetchone()
 
     if not row:
@@ -776,6 +804,7 @@ def random_tag_redirect(request, tag):
         "blogmark": Blogmark,
         "quotation": Quotation,
         "note": Note,
+        "beat": Beat,
     }
     model = model_map[item_type]
     obj = get_object_or_404(model, pk=item_pk)
@@ -835,6 +864,7 @@ def api_add_tag(request):
         "blogmark": Blogmark,
         "quotation": Quotation,
         "note": Note,
+        "beat": Beat,
     }.get(content_type)
     if not model:
         return JsonResponse({"error": "Invalid content type"}, status=400)

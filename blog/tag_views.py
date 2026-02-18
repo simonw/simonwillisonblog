@@ -54,7 +54,16 @@ def tags_autocomplete(request):
             .annotate(
                 count=Count(
                     "note", filter=Q(note__is_draft=False), distinct=True
-                )  # <-- Use 'note' model name
+                )
+            )
+            .values("count")
+        )
+        beat_count = (
+            Tag.objects.filter(id=OuterRef("pk"))
+            .annotate(
+                count=Count(
+                    "beat", filter=Q(beat__is_draft=False), distinct=True
+                )
             )
             .values("count")
         )
@@ -66,6 +75,7 @@ def tags_autocomplete(request):
                 total_blogmark=Subquery(blogmark_count),
                 total_quotation=Subquery(quotation_count),
                 total_note=Subquery(note_count),
+                total_beat=Subquery(beat_count),
                 is_exact_match=Case(
                     When(tag__iexact=query, then=Value(1)),
                     default=Value(0),
@@ -77,6 +87,7 @@ def tags_autocomplete(request):
                 + F("total_blogmark")
                 + F("total_quotation")
                 + F("total_note")
+                + F("total_beat")
             )
             .order_by("-is_exact_match", "-count", Length("tag"))[:5]
         )

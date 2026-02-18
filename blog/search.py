@@ -8,7 +8,7 @@ from django.contrib.postgres.search import SearchQuery, SearchRank
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.http import HttpResponse, Http404
 from django.shortcuts import render
-from blog.models import Entry, Blogmark, Quotation, Note, Tag, load_mixed_objects
+from blog.models import Beat, Entry, Blogmark, Quotation, Note, Tag, load_mixed_objects
 from spellchecker import SpellChecker
 import datetime
 
@@ -89,6 +89,7 @@ def search(request, q=None, return_context=False):
         "blogmarks": "blogmark",
         "quotations": "quotation",
         "notes": "note",
+        "beats": "beat",
     }
     id_filters = {}  # type_name -> set of int IDs
     for param, type_name in id_filter_param_map.items():
@@ -150,6 +151,7 @@ def search(request, q=None, return_context=False):
         (Blogmark, "blogmark"),
         (Quotation, "quotation"),
         (Note, "note"),
+        (Beat, "beat"),
     ):
         if selected_type and selected_type != type_name:
             continue
@@ -275,6 +277,7 @@ def search(request, q=None, return_context=False):
         "blogmark": "Blogmarks",
         "entry": "Entries",
         "note": "Notes",
+        "beat": "Beats",
     }.get(selected.get("type")) or "Posts"
     title = noun
 
@@ -325,8 +328,9 @@ def search(request, q=None, return_context=False):
         "blogmark": "blogmarks",
         "quotation": "quotations",
         "note": "notes",
+        "beat": "beats",
     }
-    for type_name in ("entry", "blogmark", "quotation", "note"):
+    for type_name in ("entry", "blogmark", "quotation", "note", "beat"):
         if type_name in id_filters:
             id_filter_type_names.append(type_display_names[type_name])
 
@@ -363,6 +367,7 @@ FEED_URLS = {
     "blogmark": "/atom/links/",
     "quotation": "/atom/quotations/",
     "note": "/atom/notes/",
+    "beat": "/atom/beats/",
 }
 
 
