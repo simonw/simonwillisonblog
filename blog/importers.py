@@ -34,34 +34,36 @@ def _create_or_update(import_ref, defaults):
 def import_releases(url):
     response = httpx.get(url)
     response.raise_for_status()
-    releases = response.json()
+    repos = response.json()
 
     created_count = 0
     skipped_count = 0
     items = []
 
-    for repo_name, info in releases.items():
-        version = info["release"]
-        import_ref = "release:{}:{}".format(repo_name, version)
+    for repo_name, info in repos.items():
+        description = info.get("description") or ""
+        for release in info.get("releases", []):
+            version = release["release"]
+            import_ref = "release:{}:{}".format(repo_name, version)
 
-        if Beat.objects.filter(import_ref=import_ref).exists():
-            skipped_count += 1
-            continue
+            if Beat.objects.filter(import_ref=import_ref).exists():
+                skipped_count += 1
+                continue
 
-        title = "{} {}".format(repo_name, version)
-        created = parse_datetime(info["published_at"])
+            title = "{} {}".format(repo_name, version)
+            created = parse_datetime(release["published_at"])
 
-        beat = Beat.objects.create(
-            beat_type="release",
-            title=title,
-            url=info["url"],
-            slug=unique_slug(repo_name, created, import_ref),
-            created=created,
-            import_ref=import_ref,
-            commentary=info.get("description") or "",
-        )
-        items.append(beat)
-        created_count += 1
+            beat = Beat.objects.create(
+                beat_type="release",
+                title=title,
+                url=release["url"],
+                slug=unique_slug(repo_name, created, import_ref),
+                created=created,
+                import_ref=import_ref,
+                commentary=description,
+            )
+            items.append(beat)
+            created_count += 1
 
     return {"created": created_count, "skipped": skipped_count, "items": items}
 

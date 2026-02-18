@@ -1516,10 +1516,18 @@ class ImporterViewTests(TransactionTestCase):
         mock_response = MagicMock()
         mock_response.json.return_value = {
             "my-repo": {
-                "release": "1.0",
-                "published_at": "2025-01-15T10:00:00Z",
-                "url": "https://github.com/simonw/my-repo/releases/tag/1.0",
                 "description": "First release",
+                "repo": "my-repo",
+                "repo_url": "https://github.com/simonw/my-repo",
+                "total_releases": 1,
+                "releases": [
+                    {
+                        "release": "1.0",
+                        "published_at": "2025-01-15T10:00:00Z",
+                        "published_day": "2025-01-15",
+                        "url": "https://github.com/simonw/my-repo/releases/tag/1.0",
+                    }
+                ],
             }
         }
         mock_response.raise_for_status = MagicMock()
@@ -1571,10 +1579,18 @@ class ImporterViewTests(TransactionTestCase):
         releases = {}
         for i in range(15):
             releases["repo-{}".format(i)] = {
-                "release": "1.0",
-                "published_at": "2025-01-{}T10:00:00Z".format(15 + i),
-                "url": "https://github.com/simonw/repo-{}/releases/tag/1.0".format(i),
                 "description": "",
+                "repo": "repo-{}".format(i),
+                "repo_url": "https://github.com/simonw/repo-{}".format(i),
+                "total_releases": 1,
+                "releases": [
+                    {
+                        "release": "1.0",
+                        "published_at": "2025-01-{}T10:00:00Z".format(15 + i),
+                        "published_day": "2025-01-{}".format(15 + i),
+                        "url": "https://github.com/simonw/repo-{}/releases/tag/1.0".format(i),
+                    }
+                ],
             }
 
         mock_response = MagicMock()
