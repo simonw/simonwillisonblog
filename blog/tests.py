@@ -207,7 +207,7 @@ class BlogTests(TransactionTestCase):
         assert counts == {
             "tags": [
                 {
-                    "id": 1,
+                    "id": testing.id,
                     "tag": "testing",
                     "description": "",
                     "total_entry": 1,
@@ -250,7 +250,7 @@ class BlogTests(TransactionTestCase):
         assert counts2 == {
             "tags": [
                 {
-                    "id": 1,
+                    "id": testing.id,
                     "tag": "testing",
                     "description": "",
                     "total_entry": 2,
