@@ -3,6 +3,7 @@ from dateutil.parser import parse as parse_datetime
 from django.core.management.base import BaseCommand
 
 from blog.models import Beat
+from ._beat_utils import unique_slug
 
 
 class Command(BaseCommand):
@@ -29,13 +30,14 @@ class Command(BaseCommand):
                 continue
 
             title = "{} {}".format(repo_name, version)
+            created = parse_datetime(info["published_at"])
 
             Beat.objects.create(
                 beat_type="release",
                 title=title,
                 url=info["url"],
-                slug=repo_name[:64],
-                created=parse_datetime(info["published_at"]),
+                slug=unique_slug(repo_name, created, import_ref),
+                created=created,
                 import_ref=import_ref,
                 commentary=info.get("description") or "",
             )

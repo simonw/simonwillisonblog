@@ -3,16 +3,7 @@ from dateutil.parser import parse as parse_datetime
 from django.core.management.base import BaseCommand
 
 from blog.models import Beat
-
-
-def truncate(text, max_length=500):
-    if not text or len(text) <= max_length:
-        return text or ""
-    truncated = text[: max_length - 1]
-    last_period = truncated.rfind(". ")
-    if last_period > max_length // 2:
-        return truncated[: last_period + 1]
-    return truncated.rsplit(" ", 1)[0] + "\u2026"
+from ._beat_utils import truncate, unique_slug
 
 
 class Command(BaseCommand):
@@ -48,12 +39,13 @@ class Command(BaseCommand):
                 first_line = lines[0] if lines else ""
             commentary = truncate(first_line)
 
+            created = parse_datetime(til["created_utc"])
             defaults = {
                 "beat_type": "til_new",
                 "title": til["title"],
                 "url": til_url,
-                "slug": slug[:64],
-                "created": parse_datetime(til["created_utc"]),
+                "slug": unique_slug(slug, created, import_ref),
+                "created": created,
                 "commentary": commentary,
             }
 

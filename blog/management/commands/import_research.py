@@ -5,16 +5,7 @@ import httpx
 from django.core.management.base import BaseCommand
 
 from blog.models import Beat
-
-
-def truncate(text, max_length=500):
-    if not text or len(text) <= max_length:
-        return text or ""
-    truncated = text[: max_length - 1]
-    last_period = truncated.rfind(". ")
-    if last_period > max_length // 2:
-        return truncated[: last_period + 1]
-    return truncated.rsplit(" ", 1)[0] + "\u2026"
+from ._beat_utils import truncate, unique_slug
 
 
 class Command(BaseCommand):
@@ -63,7 +54,7 @@ class Command(BaseCommand):
                 "beat_type": "research",
                 "title": title,
                 "url": project_url,
-                "slug": title[:64],
+                "slug": unique_slug(title, created, import_ref),
                 "created": created,
                 "commentary": commentary,
             }
