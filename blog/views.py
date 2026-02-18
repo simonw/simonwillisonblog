@@ -1066,6 +1066,85 @@ def merge_tags(request):
     )
 
 
+IMPORTERS = {
+    "releases": {
+        "name": "Releases",
+        "description": "Import latest releases from releases_cache.json",
+        "url": "https://raw.githubusercontent.com/simonw/simonw/refs/heads/main/releases_cache.json",
+    },
+    "research": {
+        "name": "Research",
+        "description": "Import research projects from README.md",
+        "url": "https://raw.githubusercontent.com/simonw/research/refs/heads/main/README.md",
+    },
+    "tils": {
+        "name": "TILs",
+        "description": "Import TILs from til.simonwillison.net",
+        "url": (
+            "https://til.simonwillison.net/tils.json?sql=select+path%2C+topic%2C+title"
+            "%2C+url%2C+body%2C+html%2C+created%2C+created_utc%2C+updated%2C+updated_utc"
+            "%2C+shot_hash%2C+slug%2C+summary+from+til+order+by+updated_utc&_size=1000&_shape=array"
+        ),
+    },
+    "tools": {
+        "name": "Tools",
+        "description": "Import tools from tools.simonwillison.net",
+        "url": "https://tools.simonwillison.net/tools.json",
+    },
+}
+
+
+@staff_member_required
+@never_cache
+def importers(request):
+    return render(request, "importers.html", {"importers": IMPORTERS})
+
+
+@require_POST
+@staff_member_required
+def api_run_importer(request):
+    import json as json_module
+    from django.template.loader import render_to_string
+    from blog.importers import import_releases, import_research, import_tils, import_tools
+
+    try:
+        body = json_module.loads(request.body)
+    except (json_module.JSONDecodeError, ValueError):
+        return JsonResponse({"error": "Invalid JSON"}, status=400)
+
+    importer_name = body.get("importer")
+    if importer_name not in IMPORTERS:
+        return JsonResponse({"error": "Unknown importer"}, status=400)
+
+    importer_funcs = {
+        "releases": import_releases,
+        "research": import_research,
+        "tils": import_tils,
+        "tools": import_tools,
+    }
+
+    try:
+        result = importer_funcs[importer_name](IMPORTERS[importer_name]["url"])
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
+
+    items = result["items"]
+    total = len(items)
+    display_items = items[:10]
+
+    items_html = render_to_string(
+        "includes/importer_results.html", {"items": display_items}
+    )
+
+    return JsonResponse({
+        "created": result.get("created", 0),
+        "updated": result.get("updated", 0),
+        "skipped": result.get("skipped", 0),
+        "total": total,
+        "items_html": items_html,
+    })
+
+
 # Hide vertical scrollbar, add fade at bottom of viewport
 SCREENSHOT_EXTRA_CSS = """
 ::-webkit-scrollbar {

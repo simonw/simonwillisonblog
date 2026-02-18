@@ -1,0 +1,74 @@
+{% extends "item_base.html" %}
+
+{% block title %}Beat Importers{% endblock %}
+
+{% block rel_canonical %}{% endblock %}
+
+{% block item_content %}
+<h2>Beat Importers</h2>
+
+{% for key, importer in importers.items %}
+<div class="importer-section" id="importer-{{ key }}" style="margin-bottom: 2em; padding: 1em; border: 1px solid #ddd; border-radius: 6px;">
+  <h3>{{ importer.name }}</h3>
+  <p>{{ importer.description }}</p>
+  <p style="font-size: 0.85em; word-break: break-all;">Source: <a href="{{ importer.url }}">{{ importer.url }}</a></p>
+  <button class="run-import-btn" data-importer="{{ key }}" style="padding: 0.4em 1em; cursor: pointer;">Run Import</button>
+  <div class="importer-status" style="margin-top: 0.5em;"></div>
+  <div class="importer-results" style="margin-top: 0.5em;"></div>
+</div>
+{% endfor %}
+
+<script>
+document.querySelectorAll('.run-import-btn').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    var importer = btn.dataset.importer;
+    var section = btn.closest('.importer-section');
+    var statusEl = section.querySelector('.importer-status');
+    var resultsEl = section.querySelector('.importer-results');
+
+    btn.disabled = true;
+    btn.textContent = 'Running...';
+    statusEl.textContent = '';
+    resultsEl.innerHTML = '';
+
+    fetch('/api/run-importer/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': document.cookie.match(/csrftoken=([^;]+)/)[1]
+      },
+      body: JSON.stringify({importer: importer})
+    })
+    .then(function(response) { return response.json().then(function(data) { return {ok: response.ok, data: data}; }); })
+    .then(function(result) {
+      btn.disabled = false;
+      btn.textContent = 'Run Import';
+
+      if (!result.ok) {
+        statusEl.innerHTML = '<strong style="color: red;">Error:</strong> ' + (result.data.error || 'Unknown error');
+        return;
+      }
+
+      var data = result.data;
+      var parts = [];
+      if (data.created) parts.push('Created ' + data.created);
+      if (data.updated) parts.push('Updated ' + data.updated);
+      if (data.skipped) parts.push('Skipped ' + data.skipped);
+      statusEl.innerHTML = '<strong>' + (parts.join(', ') || 'No changes') + '</strong>';
+
+      if (data.items_html) {
+        resultsEl.innerHTML = data.items_html;
+      }
+      if (data.total > 10) {
+        resultsEl.innerHTML += '<p>... and ' + (data.total - 10) + ' more</p>';
+      }
+    })
+    .catch(function(err) {
+      btn.disabled = false;
+      btn.textContent = 'Run Import';
+      statusEl.innerHTML = '<strong style="color: red;">Error:</strong> ' + err.message;
+    });
+  });
+});
+</script>
+{% endblock %}

@@ -1,9 +1,6 @@
-import httpx
-from dateutil.parser import parse as parse_datetime
 from django.core.management.base import BaseCommand
 
-from blog.models import Beat
-from ._beat_utils import truncate, unique_slug
+from blog.importers import import_tools
 
 
 class Command(BaseCommand):
@@ -13,34 +10,9 @@ class Command(BaseCommand):
         parser.add_argument("url", help="URL to a JSON array of tool objects")
 
     def handle(self, *args, **options):
-        url = options["url"]
-        response = httpx.get(url)
-        response.raise_for_status()
-        tools = response.json()
-
-        created_count = 0
-        updated_count = 0
-
-        for tool in tools:
-            import_ref = "tool:{}".format(tool["filename"])
-            created = parse_datetime(tool["created"])
-            defaults = {
-                "beat_type": "tool",
-                "title": tool["title"],
-                "url": "https://tools.simonwillison.net/colophon#{}".format(tool["filename"]),
-                "slug": unique_slug(tool["slug"], created, import_ref),
-                "created": created,
-                "commentary": truncate(tool.get("description") or ""),
-            }
-
-            _, was_created = Beat.objects.update_or_create(
-                import_ref=import_ref, defaults=defaults
-            )
-            if was_created:
-                created_count += 1
-            else:
-                updated_count += 1
-
+        result = import_tools(options["url"])
         self.stdout.write(
-            "Created {}, updated {}".format(created_count, updated_count)
+            "Created {}, updated {}, skipped {}".format(
+                result["created"], result["updated"], result["skipped"]
+            )
         )

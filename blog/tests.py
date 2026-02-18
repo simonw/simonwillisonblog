@@ -1454,3 +1454,210 @@ class BeatTests(TransactionTestCase):
         EntryFactory(created=created)
         response = self.client.get("/2025/Jul/")
         self.assertContains(response, "beat")
+
+
+class ImporterViewTests(TransactionTestCase):
+    def setUp(self):
+        self.admin = User.objects.create_superuser("admin", "a@b.com", "password")
+
+    def test_importers_page_requires_login(self):
+        response = self.client.get("/admin/importers/")
+        assert response.status_code == 302
+
+    def test_importers_page_renders(self):
+        self.client.login(username="admin", password="password")
+        response = self.client.get("/admin/importers/")
+        assert response.status_code == 200
+        self.assertContains(response, "Beat Importers")
+        self.assertContains(response, "Releases")
+        self.assertContains(response, "Research")
+        self.assertContains(response, "TILs")
+        self.assertContains(response, "Tools")
+        # Source URLs should be shown as links
+        self.assertContains(response, "releases_cache.json")
+        self.assertContains(response, "tools.json")
+
+    def test_api_run_importer_requires_login(self):
+        response = self.client.post(
+            "/api/run-importer/",
+            json.dumps({"importer": "releases"}),
+            content_type="application/json",
+        )
+        assert response.status_code == 302
+
+    def test_api_run_importer_requires_post(self):
+        self.client.login(username="admin", password="password")
+        response = self.client.get("/api/run-importer/")
+        assert response.status_code == 405
+
+    def test_api_run_importer_rejects_unknown(self):
+        self.client.login(username="admin", password="password")
+        response = self.client.post(
+            "/api/run-importer/",
+            json.dumps({"importer": "nonexistent"}),
+            content_type="application/json",
+        )
+        assert response.status_code == 400
+        data = json.loads(response.content)
+        assert data["error"] == "Unknown importer"
+
+    def test_api_run_importer_rejects_invalid_json(self):
+        self.client.login(username="admin", password="password")
+        response = self.client.post(
+            "/api/run-importer/",
+            "not json",
+            content_type="application/json",
+        )
+        assert response.status_code == 400
+
+    def test_api_run_importer_releases(self):
+        from unittest.mock import patch, MagicMock
+
+        mock_response = MagicMock()
+        mock_response.json.return_value = {
+            "my-repo": {
+                "release": "1.0",
+                "published_at": "2025-01-15T10:00:00Z",
+                "url": "https://github.com/simonw/my-repo/releases/tag/1.0",
+                "description": "First release",
+            }
+        }
+        mock_response.raise_for_status = MagicMock()
+
+        self.client.login(username="admin", password="password")
+        with patch("blog.importers.httpx.get", return_value=mock_response):
+            response = self.client.post(
+                "/api/run-importer/",
+                json.dumps({"importer": "releases"}),
+                content_type="application/json",
+            )
+        assert response.status_code == 200
+        data = json.loads(response.content)
+        assert data["created"] == 1
+        assert data["total"] == 1
+        assert "my-repo 1.0" in data["items_html"]
+        assert 'class="beat-label release"' in data["items_html"]
+
+    def test_api_run_importer_tools(self):
+        from unittest.mock import patch, MagicMock
+
+        mock_response = MagicMock()
+        mock_response.json.return_value = [
+            {
+                "filename": "test-tool.html",
+                "title": "Test Tool",
+                "slug": "test-tool",
+                "created": "2025-03-01T12:00:00Z",
+                "description": "A test tool",
+            }
+        ]
+        mock_response.raise_for_status = MagicMock()
+
+        self.client.login(username="admin", password="password")
+        with patch("blog.importers.httpx.get", return_value=mock_response):
+            response = self.client.post(
+                "/api/run-importer/",
+                json.dumps({"importer": "tools"}),
+                content_type="application/json",
+            )
+        assert response.status_code == 200
+        data = json.loads(response.content)
+        assert data["created"] == 1
+        assert "Test Tool" in data["items_html"]
+
+    def test_api_run_importer_shows_max_10_items(self):
+        from unittest.mock import patch, MagicMock
+
+        releases = {}
+        for i in range(15):
+            releases["repo-{}".format(i)] = {
+                "release": "1.0",
+                "published_at": "2025-01-{}T10:00:00Z".format(15 + i),
+                "url": "https://github.com/simonw/repo-{}/releases/tag/1.0".format(i),
+                "description": "",
+            }
+
+        mock_response = MagicMock()
+        mock_response.json.return_value = releases
+        mock_response.raise_for_status = MagicMock()
+
+        self.client.login(username="admin", password="password")
+        with patch("blog.importers.httpx.get", return_value=mock_response):
+            response = self.client.post(
+                "/api/run-importer/",
+                json.dumps({"importer": "releases"}),
+                content_type="application/json",
+            )
+        assert response.status_code == 200
+        data = json.loads(response.content)
+        assert data["created"] == 15
+        assert data["total"] == 15
+        # items_html should only contain 10 items
+        assert data["items_html"].count('class="beat segment"') == 10
+
+    def test_api_run_importer_skips_unchanged(self):
+        from unittest.mock import patch, MagicMock
+
+        tool_data = [
+            {
+                "filename": "test-tool.html",
+                "title": "Test Tool",
+                "slug": "test-tool",
+                "created": "2025-03-01T12:00:00Z",
+                "description": "A test tool",
+            }
+        ]
+
+        mock_response = MagicMock()
+        mock_response.json.return_value = tool_data
+        mock_response.raise_for_status = MagicMock()
+
+        self.client.login(username="admin", password="password")
+
+        # First run: creates the tool
+        with patch("blog.importers.httpx.get", return_value=mock_response):
+            response = self.client.post(
+                "/api/run-importer/",
+                json.dumps({"importer": "tools"}),
+                content_type="application/json",
+            )
+        data = json.loads(response.content)
+        assert data["created"] == 1
+        assert data["updated"] == 0
+        assert data["skipped"] == 0
+
+        # Second run with same data: should skip
+        with patch("blog.importers.httpx.get", return_value=mock_response):
+            response = self.client.post(
+                "/api/run-importer/",
+                json.dumps({"importer": "tools"}),
+                content_type="application/json",
+            )
+        data = json.loads(response.content)
+        assert data["created"] == 0
+        assert data["updated"] == 0
+        assert data["skipped"] == 1
+        assert data["total"] == 0  # no items to display
+
+        # Third run with changed data: should update
+        tool_data[0]["description"] = "Updated description"
+        mock_response2 = MagicMock()
+        mock_response2.json.return_value = tool_data
+        mock_response2.raise_for_status = MagicMock()
+        with patch("blog.importers.httpx.get", return_value=mock_response2):
+            response = self.client.post(
+                "/api/run-importer/",
+                json.dumps({"importer": "tools"}),
+                content_type="application/json",
+            )
+        data = json.loads(response.content)
+        assert data["created"] == 0
+        assert data["updated"] == 1
+        assert data["skipped"] == 0
+        assert data["total"] == 1
+
+    def test_admin_index_has_importers_link(self):
+        self.client.login(username="admin", password="password")
+        response = self.client.get("/admin/")
+        self.assertContains(response, "/admin/importers/")
+        self.assertContains(response, "Beat Importers")
