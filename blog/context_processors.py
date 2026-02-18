@@ -12,21 +12,16 @@ def all(request):
 
 
 def current_sponsor_message():
-    cache_key = "current-sponsor-message"
-    message = cache.get(cache_key)
-    if message is None:
-        now = timezone.now()
-        message = (
-            SponsorMessage.objects.filter(
-                is_active=True,
-                display_from__lte=now,
-                display_until__gte=now,
-            )
-            .order_by("-pk")
-            .first()
-        ) or False  # False as sentinel since None means cache miss
-        cache.set(cache_key, message, 60)
-    return message if message is not False else None
+    now = timezone.now()
+    return (
+        SponsorMessage.objects.filter(
+            is_active=True,
+            display_from__lte=now,
+            display_until__gte=now,
+        )
+        .order_by("-pk")
+        .first()
+    )
 
 
 def years_with_content():

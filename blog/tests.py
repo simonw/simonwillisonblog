@@ -1682,10 +1682,6 @@ class ImporterViewTests(TransactionTestCase):
 
 
 class SponsorMessageTests(TransactionTestCase):
-    def setUp(self):
-        from django.core.cache import cache
-        cache.clear()
-
     def test_no_sponsor_message_no_banner(self):
         EntryFactory()
         response = self.client.get("/")
