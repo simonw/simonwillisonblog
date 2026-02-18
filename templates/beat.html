@@ -1,0 +1,43 @@
+{% extends "item_base.html" %}
+
+{% block title %}{{ beat.get_beat_type_display }}: {{ beat.title }}{% endblock %}
+
+{% block extrahead %}
+{{ block.super }}
+<script async src="https://media.ethicalads.io/media/client/ethicalads.min.js"></script>
+{% endblock %}
+
+{% block card_title %}{{ beat.get_beat_type_display }}: {{ beat.title }}{% endblock %}
+{% block card_description %}{{ beat.commentary|default:beat.title|truncatewords:30|force_escape }}{% endblock %}
+
+{% load entry_tags %}
+{% block item_content %}
+<p class="mobile-date-eyebrow">{{ beat.created|date:"jS F Y" }}</p>
+<div class="beat">
+{% include "_draft_warning.html" %}
+<div class="beat-row1">
+  {% if beat.beat_type == "til_update" %}
+    <span class="beat-label til-update">TIL<span class="til-update-suffix">(updated)</span></span>
+  {% else %}
+    <span class="beat-label {{ beat.beat_type|cut:"_" }}">{{ beat.get_beat_type_display }}</span>
+  {% endif %}
+  <span class="beat-title"><a href="{{ beat.url }}">{{ beat.title }}</a></span>
+  {% if beat.commentary %}<span class="beat-commit">&mdash; {{ beat.commentary }}</span>{% endif %}
+</div>
+</div>
+
+<div class="entryFooter">Posted <a href="/{{ beat.created|date:"Y/M/j/" }}">{{ beat.created|date:"jS F Y" }}</a> at {{ beat.created|date:"f A"|lower }}</div>
+<p class="edit-page-link" data-admin-url="{{ beat.edit_url }}" style="display: none;"></p>
+{% endblock %}
+
+{% block secondary %}
+<div class="metabox">
+<p class="this-is">This is a <strong>beat</strong> by Simon Willison, posted on <a href="/{{ beat.created|date:"Y/M/j/" }}">{{ beat.created|date:"jS F Y" }}</a>.</p>
+
+{% include "_tags.html" with obj=beat %}
+
+<div data-ea-publisher="simonwillisonnet" data-ea-type="text"></div>
+{% include "_sponsor_promo.html" %}
+
+</div> <!-- .metabox -->
+{% endblock %}
