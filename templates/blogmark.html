@@ -5,7 +5,7 @@
 
 {% block extrahead %}
 {{ block.super }}
-<script async src="https://media.ethicalads.io/media/client/ethicalads.min.js"></script>
+{% if not sponsor_message %}<script async src="https://media.ethicalads.io/media/client/ethicalads.min.js"></script>{% endif %}
 {% endblock %}
 
 {% block card_title %}{{ blogmark.title|default:blogmark.link_title|typography }}{% endblock %}
@@ -26,7 +26,7 @@
 
 {% include "_tags.html" with obj=blogmark %}
 
-<div data-ea-publisher="simonwillisonnet" data-ea-type="text"></div>
+{% if not sponsor_message %}<div data-ea-publisher="simonwillisonnet" data-ea-type="text"></div>{% endif %}
 {% include "_sponsor_promo.html" %}
   
 </div> <!-- .metabox -->

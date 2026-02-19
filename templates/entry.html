@@ -5,7 +5,7 @@
 {% block extrahead %}
 {{ block.super }}
 {{ entry.extra_head_html|default:""|safe }}
-<script async src="https://media.ethicalads.io/media/client/ethicalads.min.js"></script>
+{% if not sponsor_message %}<script async src="https://media.ethicalads.io/media/client/ethicalads.min.js"></script>{% endif %}
 {% endblock %}
 
 {% block card_title %}{{ entry.title|typography }}{% endblock %}
@@ -57,7 +57,7 @@
 {% with entry.previous_by_created as previous_entry %}{% if previous_entry %}
 <p><strong>Previous:</strong> <a href="{{ previous_entry.get_absolute_url }}">{{ previous_entry.title }}</a></p>
 {% endif %}{% endwith %}
-<div data-ea-publisher="simonwillisonnet" data-ea-type="image"></div>
+{% if not sponsor_message %}<div data-ea-publisher="simonwillisonnet" data-ea-type="image"></div>{% endif %}
 {% include "_sponsor_promo.html" %}
 </div>
 
