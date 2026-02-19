@@ -1893,6 +1893,11 @@ div.beat {
   color: #9c1f6e;
   border: 1px solid #f0a8d8;
 }
+.beat-label.museum {
+  background: #e0f2f1;
+  color: #00695c;
+  border: 1px solid #80cbc4;
+}
 
 /* ── Dark mode overrides for beats ── */
 
@@ -1902,6 +1907,7 @@ div.beat {
 [data-theme="dark"] .beat-label.til-update .til-update-suffix { background: #0a2218; color: #4dbb7a; }
 [data-theme="dark"] .beat-label.research        { background: #2a2000; color: #c8a830; border-color: #5a4800; }
 [data-theme="dark"] .beat-label.tool            { background: #2a0a1e; color: #e060b0; border-color: #6a1a4e; }
+[data-theme="dark"] .beat-label.museum          { background: #0a2622; color: #4db6ac; border-color: #1a5c52; }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme]) .beat-label.release    { background: var(--color-purple-light); color: var(--color-purple-accent); border-color: var(--color-purple-border); }
@@ -1910,4 +1916,5 @@ div.beat {
   :root:not([data-theme]) .beat-label.til-update .til-update-suffix { background: #0a2218; color: #4dbb7a; }
   :root:not([data-theme]) .beat-label.research        { background: #2a2000; color: #c8a830; border-color: #5a4800; }
   :root:not([data-theme]) .beat-label.tool            { background: #2a0a1e; color: #e060b0; border-color: #6a1a4e; }
+  :root:not([data-theme]) .beat-label.museum          { background: #0a2622; color: #4db6ac; border-color: #1a5c52; }
 }

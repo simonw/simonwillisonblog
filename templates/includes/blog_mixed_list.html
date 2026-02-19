@@ -71,6 +71,8 @@
       <span class="beat-label research">Research</span>
     {% elif item.obj.beat_type == "tool" %}
       <span class="beat-label tool">Tool</span>
+    {% elif item.obj.beat_type == "museum" %}
+      <span class="beat-label museum">Museum</span>
     {% endif %}
     <span class="beat-title"><a href="{{ item.obj.url }}">{{ item.obj.title }}</a></span>
     {% if item.obj.commentary %}<span class="beat-commit">&mdash; {{ item.obj.commentary }}</span>{% endif %}

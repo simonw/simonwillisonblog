@@ -1177,6 +1177,11 @@ IMPORTERS = {
         "description": "Import tools from tools.simonwillison.net",
         "url": "https://tools.simonwillison.net/tools.json",
     },
+    "museums": {
+        "name": "Museums",
+        "description": "Import museums from museums.yaml",
+        "url": "https://raw.githubusercontent.com/simonw/museums/refs/heads/main/museums.yaml",
+    },
 }
 
 
@@ -1192,6 +1197,7 @@ def api_run_importer(request):
     import json as json_module
     from django.template.loader import render_to_string
     from blog.importers import (
+        import_museums,
         import_releases,
         import_research,
         import_tils,
@@ -1212,6 +1218,7 @@ def api_run_importer(request):
         "research": import_research,
         "tils": import_tils,
         "tools": import_tools,
+        "museums": import_museums,
     }
 
     try:

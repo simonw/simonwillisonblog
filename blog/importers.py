@@ -2,6 +2,7 @@ import re
 from datetime import datetime, timezone
 
 import httpx
+import yaml
 from dateutil.parser import parse as parse_datetime
 
 from blog.models import Beat
@@ -201,6 +202,57 @@ def import_tools(url):
             "slug": unique_slug(tool["slug"], created, import_ref),
             "created": created,
             "commentary": truncate(tool.get("description") or ""),
+        }
+
+        beat, status = _create_or_update(import_ref, defaults)
+        if status == "created":
+            created_count += 1
+            items.append(beat)
+        elif status == "updated":
+            updated_count += 1
+            items.append(beat)
+        else:
+            skipped_count += 1
+
+    return {
+        "created": created_count,
+        "updated": updated_count,
+        "skipped": skipped_count,
+        "items": items,
+    }
+
+
+def import_museums(url):
+    response = httpx.get(url)
+    response.raise_for_status()
+    museums = yaml.safe_load(response.text)
+
+    created_count = 0
+    updated_count = 0
+    skipped_count = 0
+    items = []
+
+    for museum in museums:
+        museum_id = museum["id"]
+        import_ref = "museum:{}".format(museum_id)
+        museum_url = museum.get("url") or ""
+        if not museum_url:
+            continue
+
+        name = museum["name"]
+        description = truncate(museum.get("description") or "")
+        address = museum.get("address") or ""
+
+        slug = re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")
+        created = datetime(2024, 1, 1, tzinfo=timezone.utc)
+
+        defaults = {
+            "beat_type": "museum",
+            "title": name,
+            "url": museum_url,
+            "slug": unique_slug(slug, created, import_ref),
+            "created": created,
+            "commentary": address,
         }
 
         beat, status = _create_or_update(import_ref, defaults)

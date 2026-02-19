@@ -560,6 +560,7 @@ class Beat(BaseModel):
         TIL_UPDATE = "til_update", "TIL updated"
         RESEARCH = "research", "Research"
         TOOL = "tool", "Tool"
+        MUSEUM = "museum", "Museum"
 
     beat_type = models.CharField(max_length=20, choices=BeatType.choices, db_index=True)
 
