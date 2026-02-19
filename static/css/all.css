@@ -815,7 +815,7 @@ div#searchbox input.image {
 h2.overband,
 div#primary h2.overband {
   color: white;
-  padding: calc(0.4em + 1px) 0 0.25em 0;
+  padding: calc(0.4em + 2px) 0 0.25em 0;
   margin: 0;
   line-height: 1em;
   margin-bottom: 1.2em;
