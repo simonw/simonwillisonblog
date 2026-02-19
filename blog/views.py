@@ -1179,8 +1179,8 @@ IMPORTERS = {
     },
     "museums": {
         "name": "Museums",
-        "description": "Import museums from museums.yaml",
-        "url": "https://raw.githubusercontent.com/simonw/museums/refs/heads/main/museums.yaml",
+        "description": "Import museums from niche-museums.com",
+        "url": "https://www.niche-museums.com/museums.json",
     },
 }
 

@@ -2,7 +2,7 @@ import re
 from datetime import datetime, timezone
 
 import httpx
-import yaml
+import json
 from dateutil.parser import parse as parse_datetime
 
 from blog.models import Beat
@@ -225,7 +225,7 @@ def import_tools(url):
 def import_museums(url):
     response = httpx.get(url)
     response.raise_for_status()
-    museums = yaml.safe_load(response.text)
+    museums = json.loads(response.text)
 
     created_count = 0
     updated_count = 0
@@ -233,18 +233,18 @@ def import_museums(url):
     items = []
 
     for museum in museums:
-        museum_id = museum["id"]
-        import_ref = "museum:{}".format(museum_id)
         museum_url = museum.get("url") or ""
         if not museum_url:
             continue
 
+        museum_id = museum_url.rstrip("/").split("/")[-1]
+        import_ref = "museum:{}".format(museum_id)
+
         name = museum["name"]
-        description = truncate(museum.get("description") or "")
         address = museum.get("address") or ""
 
         slug = re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")
-        created = datetime(2024, 1, 1, tzinfo=timezone.utc)
+        created = datetime.fromisoformat(museum["created"])
 
         defaults = {
             "beat_type": "museum",

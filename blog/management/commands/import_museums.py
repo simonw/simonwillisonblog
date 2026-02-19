@@ -4,10 +4,10 @@ from blog.importers import import_museums
 
 
 class Command(BaseCommand):
-    help = "Import museums from a YAML URL as Beat objects with beat_type='museum'"
+    help = "Import museums from a JSON URL as Beat objects with beat_type='museum'"
 
     def add_arguments(self, parser):
-        parser.add_argument("url", help="URL to a museums.yaml file")
+        parser.add_argument("url", help="URL to a museums.json file")
 
     def handle(self, *args, **options):
         result = import_museums(options["url"])

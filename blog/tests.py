@@ -1475,7 +1475,7 @@ class ImporterViewTests(TransactionTestCase):
         # Source URLs should be shown as links
         self.assertContains(response, "releases_cache.json")
         self.assertContains(response, "tools.json")
-        self.assertContains(response, "museums.yaml")
+        self.assertContains(response, "museums.json")
 
     def test_api_run_importer_requires_login(self):
         response = self.client.post(
@@ -1677,21 +1677,25 @@ class ImporterViewTests(TransactionTestCase):
     def test_api_run_importer_museums(self):
         from unittest.mock import patch, MagicMock
 
-        yaml_text = """
-- id: 1
-  name: Musée Mécanique
-  url: http://museemecaniquesf.com/
-  address: Pier 45, Fishermans Wharf, San Francisco, CA 94133
-  description: A collection of antique arcade games.
-- id: 2
-  name: Bigfoot Discovery Museum
-  url: https://www.bigfootdiscoveryproject.com/
-  address: 5497 Highway 9, Felton, CA 95018
-  description: Dedicated to the search for Bigfoot.
-"""
+        json_text = json.dumps([
+            {
+                "name": "Musée Mécanique",
+                "url": "https://www.niche-museums.com/1",
+                "address": "Pier 45, Fishermans Wharf, San Francisco, CA 94133",
+                "description": "A collection of antique arcade games.",
+                "created": "2019-10-23T21:32:12-07:00",
+            },
+            {
+                "name": "Bigfoot Discovery Museum",
+                "url": "https://www.niche-museums.com/2",
+                "address": "5497 Highway 9, Felton, CA 95018",
+                "description": "Dedicated to the search for Bigfoot.",
+                "created": "2019-10-23T21:32:12-07:00",
+            },
+        ])
 
         mock_response = MagicMock()
-        mock_response.text = yaml_text
+        mock_response.text = json_text
         mock_response.raise_for_status = MagicMock()
 
         self.client.login(username="admin", password="password")
@@ -1711,20 +1715,24 @@ class ImporterViewTests(TransactionTestCase):
     def test_api_run_importer_museums_skips_no_url(self):
         from unittest.mock import patch, MagicMock
 
-        yaml_text = """
-- id: 1
-  name: Museum Without URL
-  address: Somewhere
-  description: No URL provided.
-- id: 2
-  name: Museum With URL
-  url: http://example.com/
-  address: Elsewhere
-  description: Has a URL.
-"""
+        json_text = json.dumps([
+            {
+                "name": "Museum Without URL",
+                "address": "Somewhere",
+                "description": "No URL provided.",
+                "created": "2019-10-23T21:32:12-07:00",
+            },
+            {
+                "name": "Museum With URL",
+                "url": "https://www.niche-museums.com/2",
+                "address": "Elsewhere",
+                "description": "Has a URL.",
+                "created": "2019-10-23T21:32:12-07:00",
+            },
+        ])
 
         mock_response = MagicMock()
-        mock_response.text = yaml_text
+        mock_response.text = json_text
         mock_response.raise_for_status = MagicMock()
 
         self.client.login(username="admin", password="password")
@@ -1741,16 +1749,18 @@ class ImporterViewTests(TransactionTestCase):
     def test_api_run_importer_museums_skips_unchanged(self):
         from unittest.mock import patch, MagicMock
 
-        yaml_text = """
-- id: 1
-  name: Test Museum
-  url: http://example.com/
-  address: 123 Main St
-  description: A test museum.
-"""
+        json_text = json.dumps([
+            {
+                "name": "Test Museum",
+                "url": "https://www.niche-museums.com/1",
+                "address": "123 Main St",
+                "description": "A test museum.",
+                "created": "2019-10-23T21:32:12-07:00",
+            },
+        ])
 
         mock_response = MagicMock()
-        mock_response.text = yaml_text
+        mock_response.text = json_text
         mock_response.raise_for_status = MagicMock()
 
         self.client.login(username="admin", password="password")
