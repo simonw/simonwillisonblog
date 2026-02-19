@@ -108,12 +108,12 @@
         <h3 id="facet-types">Types</h3>
         <ul>
             {% for t in type_counts %}
-                <li{% if t.type == "beat" %} class="beat-facet" style="display:none"{% endif %}><a href="{% add_qsarg "type" t.type %}">{{ t.type }}</a> {{ t.n|intcomma }}</a></li>
+                <li><a href="{% add_qsarg "type" t.type %}">{{ t.type }}</a> {{ t.n|intcomma }}</a></li>
             {% endfor %}
         </ul>
     {% endif %}
     {% if beat_type_counts %}
-        <div class="beat-facet" style="display:none">
+        <div>
         <h3 id="facet-beat-types">Beats</h3>
         <ul>
             {% for t in beat_type_counts %}
@@ -147,11 +147,6 @@
         </ul>
     {% endif %}
 </div>
-<script>
-if (localStorage.getItem('show_beats')) {
-  document.querySelectorAll('.beat-facet').forEach(function(el) { el.style.display = ''; });
-}
-</script>
 <script>
 function debounce(func, wait) {
   let timeout;
