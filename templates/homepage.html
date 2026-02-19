@@ -13,7 +13,7 @@
 {% endblock %}
 
 {% block primary %}
-<h2 class="overband"><span class="overband-nav"><a href="/entries/">Entries</a> <a href="/blogmarks/">Links</a> <a href="/quotations/">Quotes</a> <a href="/notes/">Notes</a></span></h2>
+<h2 class="overband"><span class="overband-nav"><a href="/entries/">Entries</a> <a href="/blogmarks/">Links</a> <a href="/quotations/">Quotes</a> <a href="/notes/">Notes</a>{% if has_guides %} <a href="/guides/">Guides</a>{% endif %}</span></h2>
 
 {% load blog_tags %}
 {% blog_mixed_list_with_dates items day_headers=1 %}

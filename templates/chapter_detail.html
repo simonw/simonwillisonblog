@@ -1,0 +1,28 @@
+{% extends "smallhead.html" %}
+{% block title %}{{ chapter.title }} - {{ guide.title }} - Simon Willison's Weblog{% endblock %}
+{% block primary %}
+
+{% if chapter.is_draft %}<p class="draft-warning">This chapter is a draft.</p>{% endif %}
+{% if guide.is_draft %}<p class="draft-warning">This guide is a draft.</p>{% endif %}
+
+<p style="margin-bottom: 1em"><a href="/guides/">Guides</a> &gt; <a href="{{ guide.get_absolute_url }}">{{ guide.title }}</a></p>
+
+<h2 class="archive-h2">{{ chapter.title }}</h2>
+
+<div class="note">{{ chapter.body_rendered }}</div>
+
+<div style="margin-top: 2em; display: flex; justify-content: space-between;">
+  <div>
+    {% if previous_chapter %}
+      &larr; <a href="{{ previous_chapter.get_absolute_url }}">{{ previous_chapter.title }}</a>
+    {% endif %}
+  </div>
+  <div>
+    {% if next_chapter %}
+      <a href="{{ next_chapter.get_absolute_url }}">{{ next_chapter.title }}</a> &rarr;
+    {% endif %}
+  </div>
+</div>
+
+<p class="edit-page-link" data-admin-url="{{ chapter.edit_url }}" style="display: none;"></p>
+{% endblock %}

@@ -18,7 +18,9 @@ from django.utils import timezone
 from .models import (
     Beat,
     Blogmark,
+    Chapter,
     Entry,
+    Guide,
     Quotation,
     Note,
     Photo,
@@ -210,6 +212,7 @@ def index(request):
             .only("id", "slug", "created", "title", "extra_head_html")
             .prefetch_related("tags")[0:40],
             "current_tags": find_current_tags(5),
+            "has_guides": Guide.objects.filter(is_draft=False).exists(),
         },
     )
     response["Cache-Control"] = "s-maxage=200"
@@ -652,6 +655,87 @@ def archive_series_atom(request, slug):
 
     series = get_object_or_404(Series, slug=slug)
     return SeriesFeed(series)(request)
+
+
+def guide_index(request):
+    return render(
+        request,
+        "guide_index.html",
+        {
+            "guides": Guide.objects.filter(is_draft=False)
+            .annotate(
+                num_chapters=models.Count(
+                    "chapters", filter=models.Q(chapters__is_draft=False)
+                )
+            )
+            .prefetch_related(
+                models.Prefetch(
+                    "chapters",
+                    queryset=Chapter.objects.filter(is_draft=False).order_by(
+                        "order", "created"
+                    ),
+                    to_attr="visible_chapters",
+                )
+            ),
+        },
+    )
+
+
+def guide_detail(request, slug):
+    if request.user.is_staff:
+        guide = get_object_or_404(Guide, slug=slug)
+    else:
+        guide = get_object_or_404(Guide, slug=slug, is_draft=False)
+    chapters = guide.chapters.filter(is_draft=False).order_by("order", "created")
+    if request.user.is_staff:
+        chapters = guide.chapters.order_by("order", "created")
+    return render(
+        request,
+        "guide_detail.html",
+        {
+            "guide": guide,
+            "chapters": chapters,
+        },
+    )
+
+
+def chapter_detail(request, guide_slug, chapter_slug):
+    if request.user.is_staff:
+        guide = get_object_or_404(Guide, slug=guide_slug)
+        chapter = get_object_or_404(Chapter, guide=guide, slug=chapter_slug)
+    else:
+        guide = get_object_or_404(Guide, slug=guide_slug, is_draft=False)
+        chapter = get_object_or_404(
+            Chapter, guide=guide, slug=chapter_slug, is_draft=False
+        )
+    all_chapters = list(
+        guide.chapters.filter(is_draft=False).order_by("order", "created")
+    )
+    if request.user.is_staff:
+        all_chapters = list(guide.chapters.order_by("order", "created"))
+    current_index = None
+    for i, ch in enumerate(all_chapters):
+        if ch.pk == chapter.pk:
+            current_index = i
+            break
+    previous_chapter = (
+        all_chapters[current_index - 1] if current_index and current_index > 0 else None
+    )
+    next_chapter = (
+        all_chapters[current_index + 1]
+        if current_index is not None and current_index < len(all_chapters) - 1
+        else None
+    )
+    return render(
+        request,
+        "chapter_detail.html",
+        {
+            "guide": guide,
+            "chapter": chapter,
+            "previous_chapter": previous_chapter,
+            "next_chapter": next_chapter,
+        },
+    )
 
 
 @never_cache

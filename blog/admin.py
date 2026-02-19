@@ -6,7 +6,9 @@ from django import forms
 from xml.etree import ElementTree
 from .models import (
     Beat,
+    Chapter,
     Entry,
+    Guide,
     Tag,
     Quotation,
     Blogmark,
@@ -170,6 +172,27 @@ admin.site.register(
         "slug",
     ),
 )
+
+
+class ChapterInline(admin.TabularInline):
+    model = Chapter
+    fields = ("order", "title", "slug", "is_draft")
+    prepopulated_fields = {"slug": ("title",)}
+    extra = 1
+
+
+@admin.register(Guide)
+class GuideAdmin(admin.ModelAdmin):
+    list_display = ("title", "slug", "is_draft")
+    prepopulated_fields = {"slug": ("title",)}
+    inlines = [ChapterInline]
+
+
+@admin.register(Chapter)
+class ChapterAdmin(admin.ModelAdmin):
+    list_display = ("title", "guide", "order", "is_draft")
+    list_filter = ("guide", "is_draft")
+    prepopulated_fields = {"slug": ("title",)}
 
 
 admin.site.register(

@@ -2,8 +2,10 @@ from django.test import TransactionTestCase
 from django.contrib.auth.models import User
 from blog.templatetags.entry_tags import do_typography_string
 from .factories import (
+    ChapterFactory,
     EntryFactory,
     BlogmarkFactory,
+    GuideFactory,
     QuotationFactory,
     NoteFactory,
     BeatFactory,
@@ -1740,3 +1742,132 @@ class SponsorMessageTests(TransactionTestCase):
         entry = EntryFactory()
         response = self.client.get(entry.get_absolute_url())
         self.assertContains(response, "Detail Sponsor")
+
+
+class GuideTests(TransactionTestCase):
+    def test_guide_index(self):
+        guide = GuideFactory(title="Test Guide", description="A test guide")
+        ChapterFactory(guide=guide, title="Chapter 1", order=1)
+        ChapterFactory(guide=guide, title="Chapter 2", order=2)
+        response = self.client.get("/guides/")
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Test Guide")
+        self.assertContains(response, "2 chapters")
+
+    def test_guide_index_hides_drafts(self):
+        GuideFactory(title="Published Guide")
+        GuideFactory(title="Draft Guide", is_draft=True)
+        response = self.client.get("/guides/")
+        self.assertContains(response, "Published Guide")
+        self.assertNotContains(response, "Draft Guide")
+
+    def test_guide_detail(self):
+        guide = GuideFactory(
+            title="My Guide", slug="my-guide", description="Guide desc"
+        )
+        ch1 = ChapterFactory(guide=guide, title="First Chapter", slug="first", order=1)
+        ch2 = ChapterFactory(
+            guide=guide, title="Second Chapter", slug="second", order=2
+        )
+        response = self.client.get("/guides/my-guide/")
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "My Guide")
+        self.assertContains(response, "First Chapter")
+        self.assertContains(response, "Second Chapter")
+
+    def test_guide_detail_hides_draft_chapters(self):
+        guide = GuideFactory(slug="g1")
+        ChapterFactory(guide=guide, title="Visible Chapter", slug="visible", order=1)
+        ChapterFactory(
+            guide=guide, title="Draft Chapter", slug="draft", order=2, is_draft=True
+        )
+        response = self.client.get("/guides/g1/")
+        self.assertContains(response, "Visible Chapter")
+        self.assertNotContains(response, "Draft Chapter")
+
+    def test_draft_guide_404_for_anonymous(self):
+        GuideFactory(slug="draft-guide", is_draft=True)
+        response = self.client.get("/guides/draft-guide/")
+        self.assertEqual(response.status_code, 404)
+
+    def test_draft_guide_visible_for_staff(self):
+        User.objects.create_superuser("admin", "admin@example.com", "password")
+        self.client.login(username="admin", password="password")
+        GuideFactory(slug="draft-guide", title="Secret Guide", is_draft=True)
+        response = self.client.get("/guides/draft-guide/")
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Secret Guide")
+
+    def test_chapter_detail(self):
+        guide = GuideFactory(slug="g2")
+        ChapterFactory(
+            guide=guide,
+            title="My Chapter",
+            slug="my-chapter",
+            body="**bold text**",
+            order=1,
+        )
+        response = self.client.get("/guides/g2/my-chapter/")
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "My Chapter")
+        self.assertContains(response, "<strong>bold text</strong>")
+
+    def test_draft_chapter_404_for_anonymous(self):
+        guide = GuideFactory(slug="g3")
+        ChapterFactory(guide=guide, slug="draft-ch", is_draft=True)
+        response = self.client.get("/guides/g3/draft-ch/")
+        self.assertEqual(response.status_code, 404)
+
+    def test_draft_chapter_visible_for_staff(self):
+        User.objects.create_superuser("admin", "admin@example.com", "password")
+        self.client.login(username="admin", password="password")
+        guide = GuideFactory(slug="g4")
+        ChapterFactory(guide=guide, slug="draft-ch", title="Draft Ch", is_draft=True)
+        response = self.client.get("/guides/g4/draft-ch/")
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Draft Ch")
+
+    def test_chapter_ordering(self):
+        guide = GuideFactory(slug="g5")
+        ChapterFactory(guide=guide, title="Second", slug="second", order=2)
+        ChapterFactory(guide=guide, title="First", slug="first", order=1)
+        ChapterFactory(guide=guide, title="Third", slug="third", order=3)
+        response = self.client.get("/guides/g5/")
+        content = response.content.decode()
+        first_pos = content.index("First")
+        second_pos = content.index("Second")
+        third_pos = content.index("Third")
+        self.assertLess(first_pos, second_pos)
+        self.assertLess(second_pos, third_pos)
+
+    def test_chapter_navigation(self):
+        guide = GuideFactory(slug="g6")
+        ChapterFactory(guide=guide, title="Ch 1", slug="ch-1", order=1)
+        ChapterFactory(guide=guide, title="Ch 2", slug="ch-2", order=2)
+        ChapterFactory(guide=guide, title="Ch 3", slug="ch-3", order=3)
+        # First chapter: no previous, has next
+        response = self.client.get("/guides/g6/ch-1/")
+        self.assertNotContains(response, "Ch 0")
+        self.assertContains(response, "Ch 2")
+        # Middle chapter: has both
+        response = self.client.get("/guides/g6/ch-2/")
+        self.assertContains(response, "Ch 1")
+        self.assertContains(response, "Ch 3")
+        # Last chapter: has previous, no next
+        response = self.client.get("/guides/g6/ch-3/")
+        self.assertContains(response, "Ch 2")
+
+    def test_chapter_in_draft_guide_404(self):
+        guide = GuideFactory(slug="draft-g", is_draft=True)
+        ChapterFactory(guide=guide, slug="ch1")
+        response = self.client.get("/guides/draft-g/ch1/")
+        self.assertEqual(response.status_code, 404)
+
+    def test_guide_get_absolute_url(self):
+        guide = GuideFactory(slug="test-guide")
+        self.assertEqual(guide.get_absolute_url(), "/guides/test-guide/")
+
+    def test_chapter_get_absolute_url(self):
+        guide = GuideFactory(slug="test-guide")
+        chapter = ChapterFactory(guide=guide, slug="test-chapter")
+        self.assertEqual(chapter.get_absolute_url(), "/guides/test-guide/test-chapter/")

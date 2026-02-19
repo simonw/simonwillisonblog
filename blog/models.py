@@ -235,6 +235,54 @@ class Series(models.Model):
         verbose_name_plural = "Series"
 
 
+class Guide(models.Model):
+    created = models.DateTimeField(default=datetime.datetime.utcnow)
+    updated = models.DateTimeField(auto_now=True)
+    title = models.CharField(max_length=255)
+    slug = models.SlugField(max_length=64, unique=True)
+    description = models.TextField(blank=True)
+    is_draft = models.BooleanField(default=False)
+
+    def get_absolute_url(self):
+        return "/guides/{}/".format(self.slug)
+
+    def edit_url(self):
+        return "/admin/blog/guide/%d/" % self.id
+
+    def __str__(self):
+        return self.title
+
+    class Meta:
+        ordering = ("title",)
+
+
+class Chapter(models.Model):
+    guide = models.ForeignKey(Guide, related_name="chapters", on_delete=models.CASCADE)
+    created = models.DateTimeField(default=datetime.datetime.utcnow)
+    updated = models.DateTimeField(auto_now=True)
+    title = models.CharField(max_length=255)
+    slug = models.SlugField(max_length=64)
+    body = models.TextField()
+    order = models.IntegerField(default=0)
+    is_draft = models.BooleanField(default=False)
+
+    def body_rendered(self):
+        return mark_safe(markdown(self.body))
+
+    def get_absolute_url(self):
+        return "/guides/{}/{}/".format(self.guide.slug, self.slug)
+
+    def edit_url(self):
+        return "/admin/blog/chapter/%d/" % self.id
+
+    def __str__(self):
+        return self.title
+
+    class Meta:
+        ordering = ("order", "created")
+        unique_together = (("guide", "slug"),)
+
+
 class SponsorMessage(models.Model):
     COLOR_SCHEME_CHOICES = [
         ("warm", "Warm"),

@@ -49,6 +49,26 @@ class BeatFactory(BaseFactory):
     url = factory.Faker("uri")
 
 
+class GuideFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = "blog.Guide"
+
+    title = factory.Faker("sentence")
+    slug = factory.LazyFunction(lambda: "slug%d" % next(_global_slug_counter))
+    description = factory.Faker("paragraph")
+
+
+class ChapterFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = "blog.Chapter"
+
+    guide = factory.SubFactory(GuideFactory)
+    title = factory.Faker("sentence")
+    slug = factory.LazyFunction(lambda: "slug%d" % next(_global_slug_counter))
+    body = factory.Faker("paragraph")
+    order = factory.Sequence(lambda n: n)
+
+
 class SponsorMessageFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = "blog.SponsorMessage"
