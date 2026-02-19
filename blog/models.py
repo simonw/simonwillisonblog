@@ -299,7 +299,7 @@ class SponsorMessage(models.Model):
         ("moss", "Moss"),
     ]
 
-    name = models.TextField()
+    name = models.CharField(max_length=255)
     message = models.TextField()
     learn_more_url = models.URLField()
     display_from = models.DateTimeField()
