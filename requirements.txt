@@ -23,3 +23,4 @@ whitenoise==6.11.0
 Markdown==3.10.2
 django-hosts==7.0.0
 pyspellchecker==0.8.4
+PyYAML==6.0.3

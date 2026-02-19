@@ -1580,9 +1580,11 @@ class ImporterViewTests(TransactionTestCase):
         self.assertContains(response, "Research")
         self.assertContains(response, "TILs")
         self.assertContains(response, "Tools")
+        self.assertContains(response, "Museums")
         # Source URLs should be shown as links
         self.assertContains(response, "releases_cache.json")
         self.assertContains(response, "tools.json")
+        self.assertContains(response, "museums.json")
 
     def test_api_run_importer_requires_login(self):
         response = self.client.post(
@@ -1780,6 +1782,119 @@ class ImporterViewTests(TransactionTestCase):
         assert data["updated"] == 1
         assert data["skipped"] == 0
         assert data["total"] == 1
+
+    def test_api_run_importer_museums(self):
+        from unittest.mock import patch, MagicMock
+
+        json_text = json.dumps([
+            {
+                "name": "Musée Mécanique",
+                "url": "https://www.niche-museums.com/1",
+                "address": "Pier 45, Fishermans Wharf, San Francisco, CA 94133",
+                "description": "A collection of antique arcade games.",
+                "created": "2019-10-23T21:32:12-07:00",
+            },
+            {
+                "name": "Bigfoot Discovery Museum",
+                "url": "https://www.niche-museums.com/2",
+                "address": "5497 Highway 9, Felton, CA 95018",
+                "description": "Dedicated to the search for Bigfoot.",
+                "created": "2019-10-23T21:32:12-07:00",
+            },
+        ])
+
+        mock_response = MagicMock()
+        mock_response.text = json_text
+        mock_response.raise_for_status = MagicMock()
+
+        self.client.login(username="admin", password="password")
+        with patch("blog.importers.httpx.get", return_value=mock_response):
+            response = self.client.post(
+                "/api/run-importer/",
+                json.dumps({"importer": "museums"}),
+                content_type="application/json",
+            )
+        assert response.status_code == 200
+        data = json.loads(response.content)
+        assert data["created"] == 2
+        assert data["total"] == 2
+        assert "Musée Mécanique" in data["items_html"]
+        assert 'class="beat-label museum"' in data["items_html"]
+
+    def test_api_run_importer_museums_skips_no_url(self):
+        from unittest.mock import patch, MagicMock
+
+        json_text = json.dumps([
+            {
+                "name": "Museum Without URL",
+                "address": "Somewhere",
+                "description": "No URL provided.",
+                "created": "2019-10-23T21:32:12-07:00",
+            },
+            {
+                "name": "Museum With URL",
+                "url": "https://www.niche-museums.com/2",
+                "address": "Elsewhere",
+                "description": "Has a URL.",
+                "created": "2019-10-23T21:32:12-07:00",
+            },
+        ])
+
+        mock_response = MagicMock()
+        mock_response.text = json_text
+        mock_response.raise_for_status = MagicMock()
+
+        self.client.login(username="admin", password="password")
+        with patch("blog.importers.httpx.get", return_value=mock_response):
+            response = self.client.post(
+                "/api/run-importer/",
+                json.dumps({"importer": "museums"}),
+                content_type="application/json",
+            )
+        assert response.status_code == 200
+        data = json.loads(response.content)
+        assert data["created"] == 1
+
+    def test_api_run_importer_museums_skips_unchanged(self):
+        from unittest.mock import patch, MagicMock
+
+        json_text = json.dumps([
+            {
+                "name": "Test Museum",
+                "url": "https://www.niche-museums.com/1",
+                "address": "123 Main St",
+                "description": "A test museum.",
+                "created": "2019-10-23T21:32:12-07:00",
+            },
+        ])
+
+        mock_response = MagicMock()
+        mock_response.text = json_text
+        mock_response.raise_for_status = MagicMock()
+
+        self.client.login(username="admin", password="password")
+
+        # First run: creates the museum
+        with patch("blog.importers.httpx.get", return_value=mock_response):
+            response = self.client.post(
+                "/api/run-importer/",
+                json.dumps({"importer": "museums"}),
+                content_type="application/json",
+            )
+        data = json.loads(response.content)
+        assert data["created"] == 1
+        assert data["skipped"] == 0
+
+        # Second run with same data: should skip
+        with patch("blog.importers.httpx.get", return_value=mock_response):
+            response = self.client.post(
+                "/api/run-importer/",
+                json.dumps({"importer": "museums"}),
+                content_type="application/json",
+            )
+        data = json.loads(response.content)
+        assert data["created"] == 0
+        assert data["skipped"] == 1
 
     def test_admin_index_has_importers_link(self):
         self.client.login(username="admin", password="password")

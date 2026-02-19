@@ -2,7 +2,7 @@ from django import template
 
 register = template.Library()
 
-from blog.models import Entry, Photo, Quotation, Blogmark, Photoset, Note
+from blog.models import Entry, Photo, Quotation, Blogmark, Photoset, Note, Beat
 import datetime, copy
 
 # This code used to use the following:
@@ -67,6 +67,7 @@ MODELS_TO_CHECK = (  # Name, model, score
 
 def make_empty_day_dict(date):
     d = dict([(key, []) for key, _1, _2, _3 in MODELS_TO_CHECK])
+    d["beats"] = []
     d.update({"day": date, "populated": False, "display": True})
     return d
 
@@ -99,6 +100,13 @@ def calendar_context(date):
             day = day_things[attribute_lookup(item, created_lookup).date()]
             day[name].append(item)
             day["populated"] = True
+    # Also check for beats - they make days linkable but don't affect the score/colour
+    for item in Beat.objects.filter(
+        created__month=date.month, created__year=date.year, is_draft=False
+    ):
+        day = day_things[item.created.date()]
+        day["beats"].append(item)
+        day["populated"] = True
     # Now that we've gathered the data we can render the calendar
     days = list(day_things.values())
     days.sort(key=lambda x: x["day"])
