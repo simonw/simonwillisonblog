@@ -21,28 +21,6 @@
   }
 })();
 </script>
-<script>
-(function() {
-  var schemeNames = ['warm','lavender','sage','slate','gold','rose','ocean','copper','plum','mint','sky','moss'];
-  window.__bannerSchemes = schemeNames;
-  window.__applyBannerScheme = function(name) {
-    var el = document.getElementById('sponsored-banner');
-    if (!el) return;
-    schemeNames.forEach(function(s) { el.classList.remove('sponsor-scheme-' + s); });
-    el.classList.add('sponsor-scheme-' + name);
-  };
-  var saved = localStorage.getItem('sponsoredBannerScheme');
-  if (saved && schemeNames.indexOf(saved) !== -1) {
-    document.addEventListener('DOMContentLoaded', function() {
-      var el = document.getElementById('sponsored-banner');
-      if (el) {
-        el.style.display = '';
-        window.__applyBannerScheme(saved);
-      }
-    });
-  }
-})();
-</script>
 </head>
 <body{% block body_class %}{% endblock %}>
 {% block body %}{% endblock %}

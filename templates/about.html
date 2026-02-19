@@ -12,15 +12,8 @@
 </div>
 <script>
 (function() {
-  var hasScheme = localStorage.getItem('sponsoredBannerScheme');
-  var hasParam = new URLSearchParams(window.location.search).get('sponsor-preview') === '1';
-  if (!hasScheme && !hasParam) return;
-  var picker = document.getElementById('banner-scheme-picker');
-  picker.style.display = '';
-  var banner = document.getElementById('sponsored-banner');
-  if (banner) banner.style.display = '';
-  var schemes = window.__bannerSchemes;
-  if (!schemes) return;
+  if (new URLSearchParams(window.location.search).get('sponsor-preview') !== '1') return;
+  var schemeNames = ['warm','lavender','sage','slate','gold','rose','ocean','copper','plum','mint','sky','moss'];
   var labels = {warm:'Warm', lavender:'Lavender', sage:'Sage', slate:'Slate', gold:'Gold', rose:'Rose', ocean:'Ocean', copper:'Copper', plum:'Plum', mint:'Mint', sky:'Sky', moss:'Moss'};
   var btnColors = {
     warm:    {bg: '#e8ddd0', border: '#d4c7b8', label: '#5a4a3a'},
@@ -36,48 +29,44 @@
     sky:     {bg: '#d4e2ee', border: '#b4c8dc', label: '#2a405b'},
     moss:    {bg: '#dde0d0', border: '#c2c8b0', label: '#404830'}
   };
+  var banner = document.getElementById('sponsored-banner');
+  if (!banner) {
+    // No active sponsor message — create a dummy banner for preview
+    var wrapper = document.getElementById('wrapper');
+    banner = document.createElement('div');
+    banner.id = 'sponsored-banner';
+    banner.className = 'sponsor-scheme-warm';
+    banner.innerHTML = '<div id="sponsored-banner-inner"><strong class="sponsored-label">Sponsored by:</strong> Example Sponsor \u2014 This is a placeholder for a sponsored message. <a href="https://example.com/" rel="sponsored noopener" target="_blank">Learn more</a></div>';
+    wrapper.parentNode.insertBefore(banner, wrapper);
+  }
+  function applyScheme(name) {
+    schemeNames.forEach(function(s) { banner.classList.remove('sponsor-scheme-' + s); });
+    banner.classList.add('sponsor-scheme-' + name);
+  }
+  var picker = document.getElementById('banner-scheme-picker');
+  picker.style.display = '';
   var container = document.querySelector('#banner-scheme-picker div');
-  var current = localStorage.getItem('sponsoredBannerScheme');
   function clearOutlines() {
     container.querySelectorAll('button').forEach(function(b) {
       b.style.outline = 'none';
       b.style.outlineOffset = '';
     });
   }
-  schemes.forEach(function(key) {
+  schemeNames.forEach(function(key) {
     var c = btnColors[key];
     var btn = document.createElement('button');
     btn.type = 'button';
     btn.textContent = labels[key];
     btn.setAttribute('data-scheme', key);
     btn.style.cssText = 'border: 2px solid ' + c.border + '; background: ' + c.bg + '; color: ' + c.label + '; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 0.85em; font-weight: bold;';
-    if (key === current) {
-      btn.style.outline = '3px solid #555';
-      btn.style.outlineOffset = '1px';
-    }
     btn.addEventListener('click', function() {
-      localStorage.setItem('sponsoredBannerScheme', key);
-      if (banner) { banner.style.display = ''; }
-      window.__applyBannerScheme(key);
+      applyScheme(key);
       clearOutlines();
       btn.style.outline = '3px solid #555';
       btn.style.outlineOffset = '1px';
     });
     container.appendChild(btn);
   });
-  var clearBtn = document.createElement('button');
-  clearBtn.type = 'button';
-  clearBtn.textContent = 'Clear';
-  clearBtn.style.cssText = 'border: 2px solid #bbb; background: #fff; color: #666; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 0.85em; font-weight: bold;';
-  clearBtn.addEventListener('click', function() {
-    localStorage.removeItem('sponsoredBannerScheme');
-    if (banner) { banner.style.display = 'none'; }
-    clearOutlines();
-  });
-  container.appendChild(clearBtn);
-  if (current && schemes.indexOf(current) !== -1) {
-    window.__applyBannerScheme(current);
-  }
 })();
 </script>
 <div id="beats-toggle" style="display:none; background: #f5f3f0; border: 1px solid #ddd; border-radius: 6px; padding: 12px 16px; margin-bottom: 20px;">

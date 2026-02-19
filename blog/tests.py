@@ -1739,6 +1739,22 @@ class SponsorMessageTests(TransactionTestCase):
         response = self.client.get(entry.get_absolute_url())
         self.assertContains(response, "Detail Sponsor")
 
+    def test_banner_always_visible_no_display_none(self):
+        SponsorMessageFactory(name="Visible Sponsor", color_scheme="sage")
+        EntryFactory()
+        response = self.client.get("/")
+        content = response.content.decode()
+        self.assertIn('id="sponsored-banner"', content)
+        # Banner should not be hidden with display:none
+        idx = content.index('id="sponsored-banner"')
+        banner_tag = content[content.rfind("<", 0, idx) : content.index(">", idx) + 1]
+        self.assertNotIn("display:none", banner_tag)
+        self.assertNotIn("display: none", banner_tag)
+
+    def test_about_sponsor_preview_no_active_message(self):
+        response = self.client.get("/about/?sponsor-preview=1")
+        self.assertEqual(response.status_code, 200)
+
 
 class GuideTests(TransactionTestCase):
     def test_guide_index(self):
