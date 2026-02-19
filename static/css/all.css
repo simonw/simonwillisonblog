@@ -787,9 +787,9 @@ div#band {
     var(--color-purple-gradient-end) 100%
   );
   color: white;
-  margin-bottom: -2.2em;
+  margin-bottom: calc(-2.2em + 1px);
   line-height: 1em;
-  height: 2.2em;
+  height: calc(2.2em - 1px);
 }
 div#secondary div.day {
   border-bottom: 1px solid var(--color-border);
