@@ -129,7 +129,7 @@ class Beats(Base):
         )
 
     def item_title(self, item):
-        return item.title
+        return f"{item.get_beat_type_display()}: {item.title}"
 
     def item_description(self, item):
         desc = f'<p><a href="{item.url}">{item.title}</a></p>'
@@ -188,7 +188,7 @@ class Everything(Base):
             else:
                 return "Note on {}".format(date_format(item.created, "jS F Y"))
         elif isinstance(item, Beat):
-            return item.title
+            return f"{item.get_beat_type_display()}: {item.title}"
         else:
             return "Unknown item type"
 
