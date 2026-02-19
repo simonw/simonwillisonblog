@@ -787,9 +787,9 @@ div#band {
     var(--color-purple-gradient-end) 100%
   );
   color: white;
-  margin-bottom: calc(-2.2em + 1px);
+  margin-bottom: -2.2em;
   line-height: 1em;
-  height: calc(2.2em - 1px);
+  height: 2.2em;
 }
 div#secondary div.day {
   border-bottom: 1px solid var(--color-border);
@@ -815,12 +815,13 @@ div#searchbox input.image {
 h2.overband,
 div#primary h2.overband {
   color: white;
-  padding: 0.4em 0 0.25em 0;
+  padding: calc(0.4em + 1px) 0 0.25em 0;
   margin: 0;
   line-height: 1em;
   margin-bottom: 1.2em;
   font-weight: normal;
-  vertical-align: middle;
+  display: flex;
+  align-items: center;
 }
 h2.overband img.feedicon {
   vertical-align: middle;
@@ -836,8 +837,6 @@ h2.overband a {
 }
 h2.overband .overband-nav {
   font-size: 1em;
-  position: relative;
-  top: 1px;
 }
 h2.overband .overband-nav a {
   border-bottom: none;
