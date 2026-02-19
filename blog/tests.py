@@ -1507,15 +1507,15 @@ class BeatTypeFacetTests(TransactionTestCase):
         BeatFactory(title="A release", beat_type="release")
         BeatFactory(title="A TIL", beat_type="til_new")
         response = self.client.get("/search/?q=")
-        # The template should display labels for beat subtypes
-        self.assertContains(response, "beat:release")
-        self.assertContains(response, "beat:til_new")
+        # The template should display human-readable labels, not raw beat:* keys
+        self.assertContains(response, ">Release</a>")
+        self.assertContains(response, ">TIL</a>")
 
     def test_selected_type_pill_shows_beat_subtype(self):
-        """When filtering by beat:release, the selected filter pill should show the subtype."""
+        """When filtering by beat:release, the selected filter pill should show the human-readable label."""
         BeatFactory(title="A release", beat_type="release")
         response = self.client.get("/search/?type=beat:release")
-        self.assertContains(response, "Type: beat:release")
+        self.assertContains(response, "Type: Release")
 
     def test_plain_type_beat_still_works(self):
         """?type=beat should still show all beats regardless of subtype."""

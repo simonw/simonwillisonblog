@@ -61,7 +61,7 @@
     {% if selected %}<span class="filters">
         Filters:
         {% if selected.type and not fixed_type %}
-            <a class="selected-tag" href="{% remove_qsarg "type" selected.type %}">Type: {{ selected.type }} <strong>&#x00D7;</strong></a>
+            <a class="selected-tag" href="{% remove_qsarg "type" selected.type %}">Type: {{ selected.type_label }} <strong>&#x00D7;</strong></a>
         {% endif %}
         {% if selected.year %}
             <a class="selected-tag" href="{% remove_qsarg "year" selected.year %}">Year: {{ selected.year }} <strong>&#x00D7;</strong></a>
@@ -108,7 +108,7 @@
         <h3 id="facet-types">Types</h3>
         <ul>
             {% for t in type_counts %}
-                <li><a href="{% add_qsarg "type" t.type %}">{{ t.type }}</a> {{ t.n|intcomma }}</a></li>
+                <li><a href="{% add_qsarg "type" t.type %}">{{ t.label }}</a> {{ t.n|intcomma }}</a></li>
             {% endfor %}
         </ul>
     {% endif %}

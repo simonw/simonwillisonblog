@@ -248,9 +248,19 @@ def search(request, q=None, return_context=False):
     db_sort = {"relevance": "-rank", "date": "-created"}[sort]
     qs = qs.order_by(db_sort)
 
+    type_labels = {
+        "entry": "Entry",
+        "blogmark": "Blogmark",
+        "quotation": "Quotation",
+        "note": "Note",
+    }
+    # Add beat subtype labels: beat:release -> Release, etc.
+    for bt_value, bt_label in Beat.BeatType.choices:
+        type_labels[f"beat:{bt_value}"] = bt_label
+
     type_counts = sorted(
         [
-            {"type": type_name, "n": value}
+            {"type": type_name, "label": type_labels.get(type_name, type_name), "n": value}
             for type_name, value in list(type_counts_raw.items())
         ],
         key=lambda t: t["n"],
@@ -310,6 +320,7 @@ def search(request, q=None, return_context=False):
         "year": selected_year,
         "month": selected_month,
         "type": selected_type,
+        "type_label": type_labels.get(selected_type, selected_type) if selected_type else "",
         "beat": selected_beat,
         "beat_label": (
             beat_type_labels.get(selected_beat, selected_beat) if selected_beat else ""
