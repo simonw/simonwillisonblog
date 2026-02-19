@@ -573,6 +573,10 @@ class Beat(BaseModel):
     # Optional one-liner on the same row as the title.
     commentary = models.CharField(max_length=500, blank=True)
 
+    # Optional image
+    image_url = models.URLField(max_length=1000, blank=True, null=True)
+    image_alt = models.CharField(max_length=500, blank=True, null=True)
+
     is_beat = True
 
     def index_components(self):

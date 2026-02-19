@@ -246,6 +246,10 @@ def import_museums(url):
         slug = re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")
         created = datetime.fromisoformat(museum["created"])
 
+        photo_url = museum.get("photo_url") or ""
+        image_url = (photo_url + "?h=200") if photo_url else ""
+        image_alt = museum.get("photo_alt") or ""
+
         defaults = {
             "beat_type": "museum",
             "title": name,
@@ -253,6 +257,8 @@ def import_museums(url):
             "slug": unique_slug(slug, created, import_ref),
             "created": created,
             "commentary": address,
+            "image_url": image_url or None,
+            "image_alt": image_alt or None,
         }
 
         beat, status = _create_or_update(import_ref, defaults)
