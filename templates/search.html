@@ -108,7 +108,7 @@
         <h3 id="facet-types">Types</h3>
         <ul>
             {% for t in type_counts %}
-                <li{% if t.type == "beat" %} class="beat-facet" style="display:none"{% endif %}><a href="{% add_qsarg "type" t.type %}">{{ t.type }}</a> {{ t.n|intcomma }}</a></li>
+                <li><a href="{% add_qsarg "type" t.type %}">{{ t.type }}</a> {{ t.n|intcomma }}</a></li>
             {% endfor %}
         </ul>
     {% endif %}

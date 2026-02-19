@@ -84,6 +84,11 @@ def search(request, q=None, return_context=False):
     selected_month = request.GET.get("month", "")
     selected_beat = request.GET.get("beat", "")
 
+    # Support type=beat:release etc. - parse into selected_beat_subtype
+    selected_beat_subtype = ""
+    if selected_type.startswith("beat:"):
+        selected_beat_subtype = selected_type[5:]  # e.g. "release"
+
     # Parse ID filters: entries=1,2,3&notes=4,5&quotations=6&blogmarks=7,8
     id_filter_param_map = {
         "entries": "entry",
@@ -157,18 +162,39 @@ def search(request, q=None, return_context=False):
         (Note, "note"),
         (Beat, "beat"),
     ):
-        if selected_type and selected_type != type_name:
-            continue
+        # Determine if this type should be included based on selected_type
+        if selected_type:
+            if selected_beat_subtype:
+                # type=beat:something -> only include Beat
+                if type_name != "beat":
+                    continue
+            elif selected_type != type_name:
+                continue
         # If ID filters are active, skip types not mentioned
         if has_id_filters and type_name not in id_filters:
             continue
         klass_qs = make_queryset(klass, type_name)
+        # Apply beat subtype filter when type=beat:something
+        if selected_beat_subtype and type_name == "beat":
+            klass_qs = klass_qs.filter(beat_type=selected_beat_subtype)
         # Apply ID filter for this type
         if type_name in id_filters:
             klass_qs = klass_qs.filter(pk__in=id_filters[type_name])
-        type_count = klass_qs.count()
-        if type_count:
-            type_counts_raw[type_name] = type_count
+        # For beats, break down into per-beat_type counts in type_counts
+        if type_name == "beat":
+            for row in (
+                klass_qs.order_by()
+                .values("beat_type")
+                .annotate(n=models.Count("pk"))
+            ):
+                bt_key = f"beat:{row['beat_type']}"
+                type_counts_raw[bt_key] = (
+                    type_counts_raw.get(bt_key, 0) + row["n"]
+                )
+        else:
+            type_count = klass_qs.count()
+            if type_count:
+                type_counts_raw[type_name] = type_count
         for tag, count in (
             Tag.objects.filter(**{"%s__in" % type_name: klass_qs})
             .annotate(n=models.Count("tag"))
@@ -298,13 +324,25 @@ def search(request, q=None, return_context=False):
     selected = {key: value for key, value in list(selected.items()) if value}
 
     # Dynamic title
-    noun = {
+    beat_subtype_nouns = {
+        "release": "Releases",
+        "til_new": "TILs",
+        "til_update": "TIL updates",
+        "research": "Research",
+        "tool": "Tools",
+    }
+    base_type_nouns = {
         "quotation": "Quotations",
         "blogmark": "Blogmarks",
         "entry": "Entries",
         "note": "Notes",
         "beat": "Beats",
-    }.get(selected.get("type")) or "Posts"
+    }
+    sel_type = selected.get("type", "")
+    if sel_type.startswith("beat:"):
+        noun = beat_subtype_nouns.get(sel_type[5:], "Beats")
+    else:
+        noun = base_type_nouns.get(sel_type) or "Posts"
     title = noun
 
     if search_q:
