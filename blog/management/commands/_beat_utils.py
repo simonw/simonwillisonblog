@@ -28,13 +28,14 @@ def unique_slug(slug, created, import_ref):
     base_slug = slug[:64]
     candidate = base_slug
     suffix = 2
-    while (
-        Beat.objects.filter(
-            slug=candidate,
-            created__date=created.date() if hasattr(created, "date") else created,
-        ).exclude(import_ref=import_ref).exists()
-        or _slug_exists_for_date(candidate, created)
+    while Beat.objects.filter(
+        slug=candidate,
+        created__date=created.date() if hasattr(created, "date") else created,
+    ).exclude(import_ref=import_ref).exists() or _slug_exists_for_date(
+        candidate, created
     ):
-        candidate = "{}{}".format(base_slug[: 64 - len(str(suffix)) - 1], "-{}".format(suffix))
+        candidate = "{}{}".format(
+            base_slug[: 64 - len(str(suffix)) - 1], "-{}".format(suffix)
+        )
         suffix += 1
     return candidate

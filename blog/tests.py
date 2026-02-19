@@ -1237,9 +1237,7 @@ class BulkTagIdFilterTests(TransactionTestCase):
 
     def test_id_filter_message_shows_only_active_types(self):
         """Filter message should only list the types being filtered."""
-        response = self.client.get(
-            f"/admin/bulk-tag/?entries={self.entry1.pk}"
-        )
+        response = self.client.get(f"/admin/bulk-tag/?entries={self.entry1.pk}")
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Filtered to specific entries")
         self.assertNotContains(response, "notes")
@@ -1248,9 +1246,7 @@ class BulkTagIdFilterTests(TransactionTestCase):
 
     def test_id_filter_message_has_clear_link(self):
         """Filter message should include a way to clear the filter."""
-        response = self.client.get(
-            f"/admin/bulk-tag/?entries={self.entry1.pk}"
-        )
+        response = self.client.get(f"/admin/bulk-tag/?entries={self.entry1.pk}")
         self.assertEqual(response.status_code, 200)
         # Should contain × (cross icon) to clear filters
         self.assertContains(response, "&#x00D7;")
@@ -1269,9 +1265,7 @@ class BulkTagIdFilterTests(TransactionTestCase):
 
     def test_id_filter_excludes_unspecified_types(self):
         """When ID filters are active, types not mentioned should be excluded."""
-        response = self.client.get(
-            f"/admin/bulk-tag/?entries={self.entry1.pk}"
-        )
+        response = self.client.get(f"/admin/bulk-tag/?entries={self.entry1.pk}")
         self.assertEqual(response.status_code, 200)
         # Should only have entry results, no notes/blogmarks/quotations
         result_types = {r["type"] for r in response.context["results"]}
@@ -1296,9 +1290,7 @@ class BulkTagIdFilterTests(TransactionTestCase):
         self.assertIn(
             f'name="entries" value="{self.entry1.pk},{self.entry2.pk}"', content
         )
-        self.assertIn(
-            f'name="notes" value="{self.note1.pk}"', content
-        )
+        self.assertIn(f'name="notes" value="{self.note1.pk}"', content)
 
 
 class BeatTests(TransactionTestCase):
@@ -1403,7 +1395,9 @@ class BeatTests(TransactionTestCase):
     def test_beat_draft_detail_page_has_warning(self):
         """Draft beats should show a draft warning on their detail page."""
         EntryFactory()  # Needed for calendar widget
-        beat = BeatFactory(title="Draft Beat Detail", beat_type="release", is_draft=True)
+        beat = BeatFactory(
+            title="Draft Beat Detail", beat_type="release", is_draft=True
+        )
         response = self.client.get(beat.get_absolute_url())
         self.assertContains(response, "This is a draft post")
 
@@ -1592,7 +1586,9 @@ class ImporterViewTests(TransactionTestCase):
                         "release": "1.0",
                         "published_at": "2025-01-{}T10:00:00Z".format(15 + i),
                         "published_day": "2025-01-{}".format(15 + i),
-                        "url": "https://github.com/simonw/repo-{}/releases/tag/1.0".format(i),
+                        "url": "https://github.com/simonw/repo-{}/releases/tag/1.0".format(
+                            i
+                        ),
                     }
                 ],
             }

@@ -874,7 +874,9 @@ def random_tag_redirect(request, tag):
     """
 
     with connection.cursor() as cursor:
-        cursor.execute(sql, [tag_obj.pk, tag_obj.pk, tag_obj.pk, tag_obj.pk, tag_obj.pk])
+        cursor.execute(
+            sql, [tag_obj.pk, tag_obj.pk, tag_obj.pk, tag_obj.pk, tag_obj.pk]
+        )
         row = cursor.fetchone()
 
     if not row:
@@ -1189,7 +1191,12 @@ def importers(request):
 def api_run_importer(request):
     import json as json_module
     from django.template.loader import render_to_string
-    from blog.importers import import_releases, import_research, import_tils, import_tools
+    from blog.importers import (
+        import_releases,
+        import_research,
+        import_tils,
+        import_tools,
+    )
 
     try:
         body = json_module.loads(request.body)
@@ -1220,13 +1227,15 @@ def api_run_importer(request):
         "includes/importer_results.html", {"items": display_items}
     )
 
-    return JsonResponse({
-        "created": result.get("created", 0),
-        "updated": result.get("updated", 0),
-        "skipped": result.get("skipped", 0),
-        "total": total,
-        "items_html": items_html,
-    })
+    return JsonResponse(
+        {
+            "created": result.get("created", 0),
+            "updated": result.get("updated", 0),
+            "skipped": result.get("skipped", 0),
+            "total": total,
+            "items_html": items_html,
+        }
+    )
 
 
 # Hide vertical scrollbar, add fade at bottom of viewport

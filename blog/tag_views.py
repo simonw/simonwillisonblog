@@ -52,18 +52,14 @@ def tags_autocomplete(request):
         note_count = (
             Tag.objects.filter(id=OuterRef("pk"))
             .annotate(
-                count=Count(
-                    "note", filter=Q(note__is_draft=False), distinct=True
-                )
+                count=Count("note", filter=Q(note__is_draft=False), distinct=True)
             )
             .values("count")
         )
         beat_count = (
             Tag.objects.filter(id=OuterRef("pk"))
             .annotate(
-                count=Count(
-                    "beat", filter=Q(beat__is_draft=False), distinct=True
-                )
+                count=Count("beat", filter=Q(beat__is_draft=False), distinct=True)
             )
             .values("count")
         )

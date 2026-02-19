@@ -198,9 +198,7 @@ def search(request, q=None, return_context=False):
         # Only do beat_type counts if type=beat is selected
         if selected_type == "beat" and type_name == "beat":
             for row in (
-                klass_qs.order_by()
-                .values("beat_type")
-                .annotate(n=models.Count("pk"))
+                klass_qs.order_by().values("beat_type").annotate(n=models.Count("pk"))
             ):
                 beat_type_counts_raw[row["beat_type"]] = (
                     beat_type_counts_raw.get(row["beat_type"], 0) + row["n"]
@@ -287,7 +285,9 @@ def search(request, q=None, return_context=False):
         "month": selected_month,
         "type": selected_type,
         "beat": selected_beat,
-        "beat_label": beat_type_labels.get(selected_beat, selected_beat) if selected_beat else "",
+        "beat_label": (
+            beat_type_labels.get(selected_beat, selected_beat) if selected_beat else ""
+        ),
         "month_name": (
             calendar.month_name[int(selected_month)] if selected_month.isdigit() else ""
         ),

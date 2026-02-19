@@ -271,6 +271,12 @@ class TagMergeAdmin(admin.ModelAdmin):
 
 @admin.register(SponsorMessage)
 class SponsorMessageAdmin(admin.ModelAdmin):
-    list_display = ("name", "is_active", "display_from", "display_until", "color_scheme")
+    list_display = (
+        "name",
+        "is_active",
+        "display_from",
+        "display_until",
+        "color_scheme",
+    )
     list_filter = ("is_active", "color_scheme")
     search_fields = ("name", "message", "notes")

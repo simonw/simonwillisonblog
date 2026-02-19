@@ -561,9 +561,7 @@ class Beat(BaseModel):
         RESEARCH = "research", "Research"
         TOOL = "tool", "Tool"
 
-    beat_type = models.CharField(
-        max_length=20, choices=BeatType.choices, db_index=True
-    )
+    beat_type = models.CharField(max_length=20, choices=BeatType.choices, db_index=True)
 
     # The linked title — what appears as the clickable text in the timeline
     title = models.CharField(max_length=500)

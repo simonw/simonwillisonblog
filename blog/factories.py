@@ -84,6 +84,18 @@ class SponsorMessageFactory(factory.django.DjangoModelFactory):
     )
     is_active = True
     color_scheme = factory.fuzzy.FuzzyChoice(
-        ["warm", "lavender", "sage", "slate", "gold", "rose",
-         "ocean", "copper", "plum", "mint", "sky", "moss"]
+        [
+            "warm",
+            "lavender",
+            "sage",
+            "slate",
+            "gold",
+            "rose",
+            "ocean",
+            "copper",
+            "plum",
+            "mint",
+            "sky",
+            "moss",
+        ]
     )

@@ -170,10 +170,7 @@ class Everything(Base):
             .order_by("-created")[:30]
         )
         combined = (
-            last_30_blogmarks
-            + last_30_entries
-            + last_30_quotations
-            + last_30_notes
+            last_30_blogmarks + last_30_entries + last_30_quotations + last_30_notes
         )
         combined.sort(key=lambda e: e.created, reverse=True)
         return combined[:30]
