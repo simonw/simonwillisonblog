@@ -842,6 +842,11 @@ h2.overband .overband-nav a {
   border-bottom: none;
   margin-right: 0.8em;
 }
+@media (max-width: 480px) {
+  h2.overband .overband-nav .elsewhere-link {
+    display: none;
+  }
+}
 div#smallhead {
   margin-bottom: 15px;
   text-align: left;
@@ -1855,7 +1860,7 @@ div.beat {
   border: 1px solid #8a55a8;
 }
 
-.beat-label.til-new {
+.beat-label.til {
   background: #e6f9f0;
   color: #1a7a4a;
   border: 1px solid #a8dfc4;
@@ -1898,10 +1903,28 @@ div.beat {
   border: 1px solid #80cbc4;
 }
 
+/* ── Beat type navigation links ── */
+
+.beat-type-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0.4em 0 0.8em;
+}
+a.beat-type-link {
+  text-decoration: none;
+  font-size: 0.78rem;
+  padding: 3px 10px;
+  top: 0;
+}
+a.beat-type-link:hover {
+  opacity: 0.8;
+}
+
 /* ── Dark mode overrides for beats ── */
 
 [data-theme="dark"] .beat-label.release    { background: var(--color-purple-light); color: var(--color-purple-accent); border-color: var(--color-purple-border); }
-[data-theme="dark"] .beat-label.til-new         { background: #0d2e1c; color: #4dbb7a; border-color: #1f5c38; }
+[data-theme="dark"] .beat-label.til         { background: #0d2e1c; color: #4dbb7a; border-color: #1f5c38; }
 [data-theme="dark"] .beat-label.til-update      { background: #0d2e1c; color: #4dbb7a; border-color: #1f5c38; }
 [data-theme="dark"] .beat-label.til-update .til-update-suffix { background: #0a2218; color: #4dbb7a; }
 [data-theme="dark"] .beat-label.research        { background: #2a2000; color: #c8a830; border-color: #5a4800; }
@@ -1910,7 +1933,7 @@ div.beat {
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme]) .beat-label.release    { background: var(--color-purple-light); color: var(--color-purple-accent); border-color: var(--color-purple-border); }
-  :root:not([data-theme]) .beat-label.til-new         { background: #0d2e1c; color: #4dbb7a; border-color: #1f5c38; }
+  :root:not([data-theme]) .beat-label.til         { background: #0d2e1c; color: #4dbb7a; border-color: #1f5c38; }
   :root:not([data-theme]) .beat-label.til-update      { background: #0d2e1c; color: #4dbb7a; border-color: #1f5c38; }
   :root:not([data-theme]) .beat-label.til-update .til-update-suffix { background: #0a2218; color: #4dbb7a; }
   :root:not([data-theme]) .beat-label.research        { background: #2a2000; color: #c8a830; border-color: #5a4800; }

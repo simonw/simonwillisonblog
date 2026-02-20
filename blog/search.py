@@ -337,7 +337,7 @@ def search(request, q=None, return_context=False):
     # Dynamic title
     beat_subtype_nouns = {
         "release": "Releases",
-        "til_new": "TILs",
+        "til": "TILs",
         "til_update": "TIL updates",
         "research": "Research",
         "tool": "Tools",
@@ -347,11 +347,11 @@ def search(request, q=None, return_context=False):
         "blogmark": "Blogmarks",
         "entry": "Entries",
         "note": "Notes",
-        "beat": "Beats",
+        "beat": "Elsewhere",
     }
     sel_type = selected.get("type", "")
     if sel_type.startswith("beat:"):
-        noun = beat_subtype_nouns.get(sel_type[5:], "Beats")
+        noun = beat_subtype_nouns.get(sel_type[5:], "Elsewhere")
     else:
         noun = base_type_nouns.get(sel_type) or "Posts"
     title = noun
@@ -453,6 +453,28 @@ def type_listing(request, type_name):
     context = search(request, return_context=True)
     context["fixed_type"] = True
     context["feed_url"] = FEED_URLS.get(type_name)
+    if type_name == "beat":
+        active_types = set(
+            Beat.objects.filter(is_draft=False)
+            .values_list("beat_type", flat=True)
+            .distinct()
+        )
+        context["beat_type_links"] = [
+            {"slug": value, "label": label, "css_class": value.replace("_", "-")}
+            for value, label in Beat.BeatType.choices
+            if value in active_types
+        ]
+    return render(request, "search.html", context)
+
+
+def beat_type_listing(request, beat_type):
+    valid_types = {value for value, _ in Beat.BeatType.choices}
+    if beat_type not in valid_types:
+        raise Http404
+    request.GET = request.GET.copy()
+    request.GET["type"] = f"beat:{beat_type}"
+    context = search(request, return_context=True)
+    context["fixed_type"] = True
     return render(request, "search.html", context)
 
 

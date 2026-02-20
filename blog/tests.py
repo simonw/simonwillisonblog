@@ -1366,7 +1366,7 @@ class BeatTests(TransactionTestCase):
     def test_beat_on_tag_page(self):
         """Beat should appear on tag pages."""
         tag = Tag.objects.create(tag="cloudflare")
-        beat = BeatFactory(title="Tagged Beat", beat_type="til_new")
+        beat = BeatFactory(title="Tagged Beat", beat_type="til")
         beat.tags.add(tag)
         response = self.client.get("/tags/cloudflare/")
         self.assertContains(response, "Tagged Beat")
@@ -1415,9 +1415,9 @@ class BeatTests(TransactionTestCase):
         self.assertEqual(response.url, beat.get_absolute_url())
 
     def test_beats_listing_page(self):
-        """Beats should have a /beats/ listing page."""
+        """Beats should have an /elsewhere/ listing page."""
         beat = BeatFactory(title="Listed Beat", beat_type="release")
-        response = self.client.get("/beats/")
+        response = self.client.get("/elsewhere/")
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Listed Beat")
 
@@ -1431,14 +1431,14 @@ class BeatTests(TransactionTestCase):
         """All beat types should render with their correct label."""
         for beat_type, display in [
             ("release", "Release"),
-            ("til_new", "TIL"),
+            ("til", "TIL"),
             ("research", "Research"),
             ("tool", "Tool"),
         ]:
             beat = BeatFactory(title=f"Type {beat_type}", beat_type=beat_type)
         response = self.client.get("/")
         self.assertContains(response, 'class="beat-label release"')
-        self.assertContains(response, 'class="beat-label til-new"')
+        self.assertContains(response, 'class="beat-label til"')
         self.assertContains(response, 'class="beat-label research"')
         self.assertContains(response, 'class="beat-label tool"')
 
@@ -1455,37 +1455,37 @@ class BeatTests(TransactionTestCase):
 
 
 class BeatTypeFacetTests(TransactionTestCase):
-    """Tests for surfacing beat types (release, til_new, etc.) directly in the Type facet."""
+    """Tests for surfacing beat types (release, til, etc.) directly in the Type facet."""
 
     def test_type_counts_include_beat_subtypes(self):
-        """Type facet should include beat:release, beat:til_new etc. instead of just 'beat'."""
+        """Type facet should include beat:release, beat:til etc. instead of just 'beat'."""
         EntryFactory(title="An entry")
         BeatFactory(title="Release beat", beat_type="release")
-        BeatFactory(title="TIL beat", beat_type="til_new")
+        BeatFactory(title="TIL beat", beat_type="til")
         BeatFactory(title="Another release", beat_type="release")
         response = self.client.get("/search/?q=")
         type_counts = response.context["type_counts"]
         type_names = [t["type"] for t in type_counts]
-        # Should have beat:release and beat:til_new, not plain "beat"
+        # Should have beat:release and beat:til, not plain "beat"
         self.assertIn("beat:release", type_names)
-        self.assertIn("beat:til_new", type_names)
+        self.assertIn("beat:til", type_names)
         self.assertNotIn("beat", type_names)
 
     def test_type_counts_beat_subtype_counts_correct(self):
         """Each beat subtype should have the correct count."""
         BeatFactory(title="Release 1", beat_type="release")
         BeatFactory(title="Release 2", beat_type="release")
-        BeatFactory(title="TIL 1", beat_type="til_new")
+        BeatFactory(title="TIL 1", beat_type="til")
         response = self.client.get("/search/?q=")
         type_counts = response.context["type_counts"]
         counts_by_type = {t["type"]: t["n"] for t in type_counts}
         self.assertEqual(counts_by_type["beat:release"], 2)
-        self.assertEqual(counts_by_type["beat:til_new"], 1)
+        self.assertEqual(counts_by_type["beat:til"], 1)
 
     def test_filter_by_beat_subtype(self):
         """?type=beat:release should show only release beats."""
         BeatFactory(title="Release beat", beat_type="release")
-        BeatFactory(title="TIL beat", beat_type="til_new")
+        BeatFactory(title="TIL beat", beat_type="til")
         EntryFactory(title="An entry")
         response = self.client.get("/search/?type=beat:release")
         self.assertEqual(response.status_code, 200)
@@ -1493,11 +1493,11 @@ class BeatTypeFacetTests(TransactionTestCase):
         self.assertNotContains(response, "TIL beat")
         self.assertNotContains(response, "An entry")
 
-    def test_filter_by_beat_subtype_til_new(self):
-        """?type=beat:til_new should show only TIL beats."""
+    def test_filter_by_beat_subtype_til(self):
+        """?type=beat:til should show only TIL beats."""
         BeatFactory(title="Release beat", beat_type="release")
-        BeatFactory(title="TIL beat", beat_type="til_new")
-        response = self.client.get("/search/?type=beat:til_new")
+        BeatFactory(title="TIL beat", beat_type="til")
+        response = self.client.get("/search/?type=beat:til")
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "TIL beat")
         self.assertNotContains(response, "Release beat")
@@ -1505,7 +1505,7 @@ class BeatTypeFacetTests(TransactionTestCase):
     def test_type_facet_shows_beat_subtype_labels(self):
         """The type facet in the template should show human-readable labels for beat subtypes."""
         BeatFactory(title="A release", beat_type="release")
-        BeatFactory(title="A TIL", beat_type="til_new")
+        BeatFactory(title="A TIL", beat_type="til")
         response = self.client.get("/search/?q=")
         # The template should display human-readable labels, not raw beat:* keys
         self.assertContains(response, ">Release</a>")
@@ -1520,7 +1520,7 @@ class BeatTypeFacetTests(TransactionTestCase):
     def test_plain_type_beat_still_works(self):
         """?type=beat should still show all beats regardless of subtype."""
         BeatFactory(title="Release beat", beat_type="release")
-        BeatFactory(title="TIL beat", beat_type="til_new")
+        BeatFactory(title="TIL beat", beat_type="til")
         response = self.client.get("/search/?type=beat")
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Release beat")
@@ -1530,7 +1530,7 @@ class BeatTypeFacetTests(TransactionTestCase):
         """?type=beat:release&q=searchterm should filter by both."""
         BeatFactory(title="Searchable release", beat_type="release")
         BeatFactory(title="Other release", beat_type="release")
-        BeatFactory(title="Searchable til", beat_type="til_new")
+        BeatFactory(title="Searchable til", beat_type="til")
         response = self.client.get("/search/?type=beat:release&q=searchable")
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Searchable release")
@@ -1545,19 +1545,19 @@ class BeatTypeFacetTests(TransactionTestCase):
 
     def test_all_beat_subtypes_in_type_counts(self):
         """All beat subtypes with results should appear in type_counts."""
-        for beat_type in ["release", "til_new", "til_update", "research", "tool"]:
+        for beat_type in ["release", "til", "til_update", "research", "tool"]:
             BeatFactory(beat_type=beat_type)
         response = self.client.get("/search/?q=")
         type_counts = response.context["type_counts"]
         type_names = [t["type"] for t in type_counts]
-        for beat_type in ["release", "til_new", "til_update", "research", "tool"]:
+        for beat_type in ["release", "til", "til_update", "research", "tool"]:
             self.assertIn(f"beat:{beat_type}", type_names)
 
     def test_beats_listing_page_still_works(self):
-        """/beats/ should still show all beats."""
+        """/elsewhere/ should still show all beats."""
         BeatFactory(title="Release beat", beat_type="release")
-        BeatFactory(title="TIL beat", beat_type="til_new")
-        response = self.client.get("/beats/")
+        BeatFactory(title="TIL beat", beat_type="til")
+        response = self.client.get("/elsewhere/")
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Release beat")
         self.assertContains(response, "TIL beat")
