@@ -1,3 +1,5 @@
+import re
+
 from django.test import TransactionTestCase
 from django.contrib.auth.models import User
 from blog.templatetags.entry_tags import do_typography_string
@@ -521,8 +523,12 @@ class BlogTests(TransactionTestCase):
             response,
             "/search/?type=quotation&year=2025&month=7",
         )
-        summary = response.content.decode()
-        self.assertNotIn("note", summary)
+        # The summary line (e.g. "4 posts: 2 entries, 1 link, 1 quote")
+        # should not mention notes since none were created.
+        soup = response.content.decode()
+        summary_match = re.search(r"(\d+ posts?:.*?)</p>", soup, re.DOTALL)
+        self.assertIsNotNone(summary_match)
+        self.assertNotIn("note", summary_match.group(1))
 
     def test_archive_month_includes_notes(self):
         created = datetime.datetime(2025, 7, 1, tzinfo=datetime.timezone.utc)
