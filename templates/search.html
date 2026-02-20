@@ -31,6 +31,14 @@
 </a>{% endif %}
 <h2>{{ title }}</h2>
 
+{% if beat_type_links %}
+<p class="beat-type-links">
+    {% for bt in beat_type_links %}
+        <a class="beat-type-link beat-label {{ bt.css_class }}" href="/elsewhere/{{ bt.slug }}/">{{ bt.label }}</a>
+    {% endfor %}
+</p>
+{% endif %}
+
 <form action="{% if fixed_type %}/search/{% else %}{{ request.path }}{% endif %}" method="GET">
     <input type="search" class="search-input" name="q" value="{{ q }}" style="width: 80%" autocomplete="off">
     <input type="submit" class="search-submit" value="Search">

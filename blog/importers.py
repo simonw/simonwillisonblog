@@ -154,7 +154,7 @@ def import_tils(url):
 
         created = parse_datetime(til["created_utc"])
         defaults = {
-            "beat_type": "til_new",
+            "beat_type": "til",
             "title": til["title"],
             "url": til_url,
             "slug": unique_slug(slug, created, import_ref),

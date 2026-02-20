@@ -556,7 +556,7 @@ class Beat(BaseModel):
 
     class BeatType(models.TextChoices):
         RELEASE = "release", "Release"
-        TIL_NEW = "til_new", "TIL"
+        TIL = "til", "TIL"
         TIL_UPDATE = "til_update", "TIL updated"
         RESEARCH = "research", "Research"
         TOOL = "tool", "Tool"

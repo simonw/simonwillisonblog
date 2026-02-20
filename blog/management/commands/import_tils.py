@@ -4,7 +4,7 @@ from blog.importers import import_tils
 
 
 class Command(BaseCommand):
-    help = "Import TILs from til.simonwillison.net as Beat objects with beat_type='til_new'"
+    help = "Import TILs from til.simonwillison.net as Beat objects with beat_type='til'"
 
     def add_arguments(self, parser):
         parser.add_argument(
