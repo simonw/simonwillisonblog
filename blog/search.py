@@ -341,6 +341,7 @@ def search(request, q=None, return_context=False):
         "til_update": "TIL updates",
         "research": "Research",
         "tool": "Tools",
+        "museum": "Museums",
     }
     base_type_nouns = {
         "quotation": "Quotations",
