@@ -61,7 +61,7 @@ def parse_date_clauses(query):
     return query.strip(), from_date, to_date
 
 
-def search(request, q=None, return_context=False):
+def search(request, q=None, return_context=False, per_page=30):
     q = (q or request.GET.get("q", "")).strip()
     search_q, from_date, to_date = parse_date_clauses(q)
     search_q = search_q.strip()
@@ -295,7 +295,7 @@ def search(request, q=None, return_context=False):
         reverse=True,
     )
 
-    paginator = Paginator(qs, 30)
+    paginator = Paginator(qs, per_page)
     page_number = request.GET.get("page") or "1"
     try:
         page = paginator.page(page_number)

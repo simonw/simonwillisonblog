@@ -925,7 +925,7 @@ def bulk_tag(request):
     """
     from blog import search as search_views
 
-    context = search_views.search(request, return_context=True)
+    context = search_views.search(request, return_context=True, per_page=200)
     return render(request, "bulk_tag.html", context)
 
 
