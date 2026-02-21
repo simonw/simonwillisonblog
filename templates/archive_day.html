@@ -7,6 +7,19 @@
 {% load blog_tags %}
 {% blog_mixed_list items %}
 
+<div style="margin-top: 2em; display: flex; justify-content: space-between;">
+  <div>
+    {% if previous_day %}
+      &larr; <a href="{{ previous_day_url }}">{{ previous_day|date:"l, jS F Y" }}</a>
+    {% endif %}
+  </div>
+  <div>
+    {% if next_day %}
+      <a href="{{ next_day_url }}">{{ next_day|date:"l, jS F Y" }}</a> &rarr;
+    {% endif %}
+  </div>
+</div>
+
 {% endblock %}
 
 {% block secondary %}

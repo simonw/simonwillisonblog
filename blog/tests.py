@@ -548,6 +548,84 @@ class BlogTests(TransactionTestCase):
             "/search/?type=note&year=2025&month=7",
         )
 
+    def test_archive_day_navigation_links(self):
+        """Day archive page shows previous/next day navigation links."""
+        EntryFactory(
+            created=datetime.datetime(2024, 12, 20, 12, 0, tzinfo=datetime.timezone.utc)
+        )
+        EntryFactory(
+            created=datetime.datetime(2024, 12, 22, 12, 0, tzinfo=datetime.timezone.utc)
+        )
+        EntryFactory(
+            created=datetime.datetime(2024, 12, 25, 12, 0, tzinfo=datetime.timezone.utc)
+        )
+
+        # Middle day: should have both previous and next
+        response = self.client.get("/2024/Dec/22/")
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "/2024/Dec/20/")
+        self.assertContains(response, "Friday, 20th December 2024")
+        self.assertContains(response, "/2024/Dec/25/")
+        self.assertContains(response, "Wednesday, 25th December 2024")
+
+        # First day: should have next but no previous
+        response = self.client.get("/2024/Dec/20/")
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "/2024/Dec/22/")
+        self.assertNotContains(response, "&larr;")
+
+        # Last day: should have previous but no next
+        response = self.client.get("/2024/Dec/25/")
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "/2024/Dec/22/")
+        self.assertNotContains(response, "&rarr;")
+
+    def test_archive_day_navigation_across_months(self):
+        """Day navigation works across month boundaries."""
+        EntryFactory(
+            created=datetime.datetime(2024, 11, 30, 12, 0, tzinfo=datetime.timezone.utc)
+        )
+        EntryFactory(
+            created=datetime.datetime(2024, 12, 1, 12, 0, tzinfo=datetime.timezone.utc)
+        )
+
+        response = self.client.get("/2024/Dec/1/")
+        self.assertContains(response, "/2024/Nov/30/")
+        self.assertContains(response, "Saturday, 30th November 2024")
+
+    def test_archive_day_navigation_skips_draft_only_days(self):
+        """Navigation should skip days that only have draft content."""
+        EntryFactory(
+            created=datetime.datetime(2024, 12, 20, 12, 0, tzinfo=datetime.timezone.utc)
+        )
+        EntryFactory(
+            created=datetime.datetime(2024, 12, 21, 12, 0, tzinfo=datetime.timezone.utc),
+            is_draft=True,
+        )
+        EntryFactory(
+            created=datetime.datetime(2024, 12, 22, 12, 0, tzinfo=datetime.timezone.utc)
+        )
+
+        response = self.client.get("/2024/Dec/22/")
+        self.assertContains(response, "/2024/Dec/20/")
+        self.assertNotContains(response, "/2024/Dec/21/")
+
+    def test_archive_day_navigation_across_model_types(self):
+        """Navigation finds adjacent days across different content types."""
+        BlogmarkFactory(
+            created=datetime.datetime(2024, 12, 18, 12, 0, tzinfo=datetime.timezone.utc)
+        )
+        EntryFactory(
+            created=datetime.datetime(2024, 12, 22, 12, 0, tzinfo=datetime.timezone.utc)
+        )
+        NoteFactory(
+            created=datetime.datetime(2024, 12, 28, 12, 0, tzinfo=datetime.timezone.utc)
+        )
+
+        response = self.client.get("/2024/Dec/22/")
+        self.assertContains(response, "/2024/Dec/18/")
+        self.assertContains(response, "/2024/Dec/28/")
+
 
 class TypeListingTests(TransactionTestCase):
     def test_entries_page(self):
