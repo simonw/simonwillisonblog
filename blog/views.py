@@ -420,6 +420,55 @@ def archive_month(request, year, month):
     )
 
 
+def _get_adjacent_content_days(current_date):
+    """
+    Find the nearest previous and next days that have published content.
+    Returns (previous_date, next_date) where each is a datetime.date or None.
+    """
+    previous_date = None
+    next_date = None
+
+    for model in (Blogmark, Entry, Quotation, Note, Beat):
+        prev_created = (
+            model.objects.filter(
+                created__date__lt=current_date,
+                is_draft=False,
+            )
+            .order_by("-created")
+            .values_list("created", flat=True)
+            .first()
+        )
+        if prev_created:
+            prev_day = prev_created.date()
+            if previous_date is None or prev_day > previous_date:
+                previous_date = prev_day
+
+        next_created = (
+            model.objects.filter(
+                created__date__gt=current_date,
+                is_draft=False,
+            )
+            .order_by("created")
+            .values_list("created", flat=True)
+            .first()
+        )
+        if next_created:
+            next_day = next_created.date()
+            if next_date is None or next_day < next_date:
+                next_date = next_day
+
+    return previous_date, next_date
+
+
+def _day_archive_url(date):
+    """Build the day archive URL for a given datetime.date."""
+    return "/%d/%s/%d/" % (
+        date.year,
+        MONTHS_3_REV_REV[date.month].title(),
+        date.day,
+    )
+
+
 def archive_day(request, year, month, day):
     if day.startswith("0"):
         day = day.lstrip("0")
@@ -469,6 +518,14 @@ def archive_day(request, year, month, day):
     # Should we show more_photos ?
     if photos.count() > 25:
         context["more_photos"] = photos.count()
+    # Find adjacent days with content for navigation
+    previous_day, next_day = _get_adjacent_content_days(context["date"])
+    if previous_day:
+        context["previous_day"] = previous_day
+        context["previous_day_url"] = _day_archive_url(previous_day)
+    if next_day:
+        context["next_day"] = next_day
+        context["next_day_url"] = _day_archive_url(next_day)
     return render(request, "archive_day.html", context)
 
 
