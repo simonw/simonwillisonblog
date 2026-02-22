@@ -70,7 +70,9 @@ def import_releases(url):
 
 
 def import_research(url):
-    response = httpx.get(url)
+    response = httpx.get(
+        url, headers={"Accept": "application/vnd.github.raw"}
+    )
     response.raise_for_status()
     text = response.text
 

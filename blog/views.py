@@ -1218,7 +1218,7 @@ IMPORTERS = {
     "research": {
         "name": "Research",
         "description": "Import research projects from README.md",
-        "url": "https://raw.githubusercontent.com/simonw/research/refs/heads/main/README.md",
+        "url": "https://api.github.com/repos/simonw/research/readme",
     },
     "tils": {
         "name": "TILs",
