@@ -88,11 +88,13 @@ def import_research(url):
     for i, match in enumerate(matches):
         title = match.group(1)
         project_url = match.group(2)
+        # Extract directory name from URL for use as slug
+        dir_name = project_url.split("#")[0].rstrip("/").split("/")[-1]
         if not project_url.endswith("#readme"):
             project_url += "#readme"
         date_str = match.group(3)
         created = datetime.strptime(date_str, "%Y-%m-%d").replace(tzinfo=timezone.utc)
-        import_ref = "research:{}".format(title)
+        import_ref = "research:{}".format(dir_name)
 
         start = match.end()
         end = matches[i + 1].start() if i + 1 < len(matches) else len(text)
@@ -106,7 +108,7 @@ def import_research(url):
             "beat_type": "research",
             "title": title,
             "url": project_url,
-            "slug": unique_slug(title, created, import_ref),
+            "slug": unique_slug(dir_name, created, import_ref),
             "created": created,
             "commentary": commentary,
         }
