@@ -75,7 +75,7 @@ def import_research(url):
     text = response.text
 
     heading_pattern = re.compile(
-        r"^### \[([^\]]+)\]\(([^)]+)\) \((\d{4}-\d{2}-\d{2})\)",
+        r"^### \[([^\]]+)\]\(([^)]+)\) \((\d{4}-\d{2}-\d{2})(?: (\d{2}:\d{2}))?\)",
         re.MULTILINE,
     )
 
@@ -93,7 +93,15 @@ def import_research(url):
         if not project_url.endswith("#readme"):
             project_url += "#readme"
         date_str = match.group(3)
-        created = datetime.strptime(date_str, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+        time_str = match.group(4)
+        if time_str:
+            created = datetime.strptime(
+                f"{date_str} {time_str}", "%Y-%m-%d %H:%M"
+            ).replace(tzinfo=timezone.utc)
+        else:
+            created = datetime.strptime(date_str, "%Y-%m-%d").replace(
+                tzinfo=timezone.utc
+            )
         import_ref = "research:{}".format(dir_name)
 
         start = match.end()
