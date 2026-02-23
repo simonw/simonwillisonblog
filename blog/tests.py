@@ -1378,6 +1378,59 @@ class BulkTagIdFilterTests(TransactionTestCase):
         )
         self.assertIn(f'name="notes" value="{self.note1.pk}"', content)
 
+    def test_filter_chapters_by_id(self):
+        """Filtering by chapters= should only show those chapters."""
+        guide = GuideFactory()
+        chapter1 = ChapterFactory(guide=guide, title="Chapter One")
+        chapter2 = ChapterFactory(guide=guide, title="Chapter Two")
+        ids = f"{chapter1.pk}"
+        response = self.client.get(f"/admin/bulk-tag/?chapters={ids}")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["total"], 1)
+        result_types = {r["type"] for r in response.context["results"]}
+        self.assertEqual(result_types, {"chapter"})
+        result_pks = {r["obj"].pk for r in response.context["results"]}
+        self.assertIn(chapter1.pk, result_pks)
+        self.assertNotIn(chapter2.pk, result_pks)
+
+
+class BulkTagChapterApiTests(TransactionTestCase):
+    """Tests for the api_add_tag endpoint with chapters."""
+
+    def setUp(self):
+        self.staff_user = User.objects.create_user(
+            username="staff", password="password", is_staff=True
+        )
+        self.client.login(username="staff", password="password")
+
+    def test_api_add_tag_to_chapter(self):
+        """The api/add-tag/ endpoint should support tagging chapters."""
+        guide = GuideFactory()
+        chapter = ChapterFactory(guide=guide, title="Test Chapter")
+        response = self.client.post(
+            "/api/add-tag/",
+            {"content_type": "chapter", "object_id": chapter.pk, "tag": "testtag"},
+        )
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.content)
+        self.assertTrue(data["success"])
+        self.assertEqual(data["tag"], "testtag")
+        # Verify the tag was actually added
+        chapter.refresh_from_db()
+        self.assertEqual(list(chapter.tags.values_list("tag", flat=True)), ["testtag"])
+
+    def test_api_add_tag_to_chapter_creates_new_tag(self):
+        """Tagging a chapter with a new tag should create that tag."""
+        guide = GuideFactory()
+        chapter = ChapterFactory(guide=guide)
+        self.assertFalse(Tag.objects.filter(tag="brandnewtag").exists())
+        response = self.client.post(
+            "/api/add-tag/",
+            {"content_type": "chapter", "object_id": chapter.pk, "tag": "brandnewtag"},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(Tag.objects.filter(tag="brandnewtag").exists())
+
 
 class BeatTests(TransactionTestCase):
     def test_beat_on_homepage(self):
