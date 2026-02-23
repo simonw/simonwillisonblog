@@ -2,7 +2,7 @@ from django import template
 
 register = template.Library()
 
-from blog.models import Entry, Photo, Quotation, Blogmark, Photoset, Note, Beat
+from blog.models import Entry, Photo, Quotation, Blogmark, Photoset, Note, Beat, Chapter
 import datetime, copy
 
 # This code used to use the following:
@@ -60,6 +60,7 @@ MODELS_TO_CHECK = (  # Name, model, score
     ("entries", Entry, 4, "created"),
     ("quotes", Quotation, 2, "created"),
     ("notes", Note, 2, "created"),
+    ("chapters", Chapter, 2, "created"),
     ("photos", Photo, 1, "created"),
     ("photosets", Photoset, 2, "primary__created"),
 )
@@ -94,8 +95,10 @@ def calendar_context(date):
             created_lookup + "__month": date.month,
             created_lookup + "__year": date.year,
         }
-        if model in (Blogmark, Entry, Quotation, Note):
+        if model in (Blogmark, Entry, Quotation, Note, Chapter):
             lookup_args["is_draft"] = False
+        if model == Chapter:
+            lookup_args["guide__is_draft"] = False
         for item in model.objects.filter(**lookup_args):
             day = day_things[attribute_lookup(item, created_lookup).date()]
             day[name].append(item)

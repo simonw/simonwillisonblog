@@ -58,6 +58,14 @@
   {% partial date-and-tags %}
 </div>
 {% endif %}
+{% if item.type == "chapter" %}
+<div class="chapter note segment" data-type="chapter" data-id="{{ item.obj.id }}">
+  <p class="chapter-guide-breadcrumb" style="font-size: 0.85em; color: #999; margin: 0 0 -0.2em 0; line-height: 1.2;"><a href="{{ item.obj.guide.get_absolute_url }}" style="color: #999; text-decoration: none; border-bottom: none;">{{ item.obj.guide.title }}</a> &gt;</p>
+  <h3 style="margin-top: 0.2em; margin-bottom: 0.5em;"><a href="{{ item.obj.get_absolute_url }}" rel="bookmark">{{ item.obj.title }}</a></h3>
+  {{ item.obj.body_rendered }}
+  {% partial date-and-tags %}
+</div>
+{% endif %}
 {% if item.type == "beat" %}
 <div class="beat segment" data-type="beat" data-id="{{ item.obj.id }}">
   <div class="beat-row1">
