@@ -26,3 +26,28 @@
 
 <p class="edit-page-link" data-admin-url="{{ chapter.edit_url }}" style="display: none;"></p>
 {% endblock %}
+
+{% block secondary %}
+<div class="metabox">
+<p class="this-is">This is a chapter from the guide <strong><a href="{{ guide.get_absolute_url }}">{{ guide.title }}</a></strong>.</p>
+<div class="series-info">
+  <p><strong>Chapters in this guide</strong></p>
+  <ol>
+    {% for other in all_chapters %}
+      {% if other.pk == chapter.pk %}
+        <li><strong>{{ other.title }}</strong></li>
+      {% else %}
+        <li><a href="{{ other.get_absolute_url }}">{{ other.title }}</a></li>
+      {% endif %}
+    {% endfor %}
+  </ol>
+</div>
+{% include "_tags.html" with obj=chapter %}
+{% if previous_chapter %}
+<p><strong>Previous:</strong> <a href="{{ previous_chapter.get_absolute_url }}">{{ previous_chapter.title }}</a></p>
+{% endif %}
+{% if next_chapter %}
+<p><strong>Next:</strong> <a href="{{ next_chapter.get_absolute_url }}">{{ next_chapter.title }}</a></p>
+{% endif %}
+</div>
+{% endblock %}

@@ -851,6 +851,7 @@ def chapter_detail(request, guide_slug, chapter_slug):
         {
             "guide": guide,
             "chapter": chapter,
+            "all_chapters": all_chapters,
             "previous_chapter": previous_chapter,
             "next_chapter": next_chapter,
         },
