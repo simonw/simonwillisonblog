@@ -804,7 +804,7 @@ def guide_detail(request, slug):
     chapters = guide.chapters.filter(is_draft=False).order_by("order", "created")
     if request.user.is_staff:
         chapters = guide.chapters.order_by("order", "created")
-    return render(
+    response = render(
         request,
         "guide_detail.html",
         {
@@ -812,6 +812,9 @@ def guide_detail(request, slug):
             "chapters": chapters,
         },
     )
+    if guide.is_draft:
+        set_no_cache(response)
+    return response
 
 
 def chapter_detail(request, guide_slug, chapter_slug):
@@ -842,7 +845,7 @@ def chapter_detail(request, guide_slug, chapter_slug):
         if current_index is not None and current_index < len(all_chapters) - 1
         else None
     )
-    return render(
+    response = render(
         request,
         "chapter_detail.html",
         {
@@ -852,6 +855,9 @@ def chapter_detail(request, guide_slug, chapter_slug):
             "next_chapter": next_chapter,
         },
     )
+    if guide.is_draft or chapter.is_draft:
+        set_no_cache(response)
+    return response
 
 
 def chapter_changes(request, guide_slug, chapter_slug):
