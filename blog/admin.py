@@ -189,7 +189,7 @@ class GuideAdmin(admin.ModelAdmin):
 
 
 @admin.register(Chapter)
-class ChapterAdmin(admin.ModelAdmin):
+class ChapterAdmin(BaseAdmin):
     list_display = ("title", "guide", "order", "is_draft")
     list_filter = ("guide", "is_draft")
     prepopulated_fields = {"slug": ("title",)}

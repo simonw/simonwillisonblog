@@ -86,6 +86,20 @@ def first_paragraph(xhtml):
 
 
 @register.filter
+def first_three_paragraphs(html):
+    """Extract first three <p> elements from an HTML string."""
+    html = str(html)
+    et = ElementTree.fromstring("<entry>%s</entry>" % html)
+    paragraphs = et.findall("p")
+    if len(paragraphs) <= 3:
+        return mark_safe(html)
+    parts = []
+    for p in paragraphs[:3]:
+        parts.append(ElementTree.tostring(p, "unicode"))
+    return mark_safe("\n".join(parts))
+
+
+@register.filter
 def openid_to_url(openid):
     openid = openid.strip()
     if openid[0] in ("=", "@"):

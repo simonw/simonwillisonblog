@@ -62,7 +62,8 @@
 <div class="chapter note segment" data-type="chapter" data-id="{{ item.obj.id }}">
   <p class="chapter-guide-breadcrumb" style="font-size: 0.85em; color: #999; margin: 0 0 -0.2em 0; line-height: 1.2;"><a href="{{ item.obj.guide.get_absolute_url }}" style="color: #999; text-decoration: none; border-bottom: none;">{{ item.obj.guide.title }}</a> &gt;</p>
   <h3 style="margin-top: 0.2em; margin-bottom: 0.5em;"><a href="{{ item.obj.get_absolute_url }}" rel="bookmark">{{ item.obj.title }}</a></h3>
-  {{ item.obj.body_rendered }}
+  {{ item.obj.body_rendered|first_three_paragraphs|xhtml2html }}
+  {% if item.obj.multi_paragraph %}<p><span style="font-size: 0.9em">[... <a href="{{ item.obj.get_absolute_url }}">{{ item.obj.body|wordcount|intcomma }} word{{ item.obj.body|wordcount|pluralize }}</a>]</span></p>{% endif %}
   {% partial date-and-tags %}
 </div>
 {% endif %}
