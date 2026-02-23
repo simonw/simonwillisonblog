@@ -1,0 +1,87 @@
+{% extends "smallhead.html" %}
+{% block title %}Changes - {{ chapter.title }} - {{ guide.title }} - Simon Willison's Weblog{% endblock %}
+{% block primary %}
+
+<p style="margin-bottom: 1em"><a href="/guides/">Guides</a> &gt; <a href="{{ guide.get_absolute_url }}">{{ guide.title }}</a> &gt; <a href="{{ chapter.get_absolute_url }}">{{ chapter.title }}</a></p>
+
+<h2 class="archive-h2">Changes to {{ chapter.title }}</h2>
+
+<style>
+.diff-block {
+  font-family: monospace;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  background: #f8f8f8;
+  border: 1px solid #ddd;
+  padding: 0.5em;
+  margin: 0.5em 0 1em 0;
+  overflow-x: auto;
+}
+.diff-block .diff-add {
+  background-color: #e6ffec;
+  color: #1a7f37;
+}
+.diff-block .diff-remove {
+  background-color: #ffebe9;
+  color: #cf222e;
+}
+.diff-block .diff-header {
+  color: #656d76;
+}
+.change-entry {
+  margin-bottom: 2em;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 1em;
+}
+.change-note {
+  font-style: italic;
+  color: #555;
+  margin: 0.5em 0;
+}
+</style>
+
+{% for diff in diffs %}
+<div class="change-entry">
+  <h3>{{ diff.change.created|date:"N j, Y, P" }}{% if diff.change.is_notable %} <strong>(notable)</strong>{% endif %}</h3>
+
+  {% if diff.change.change_note %}<p class="change-note">{{ diff.change.change_note }}</p>{% endif %}
+
+  {% if diff.is_first %}
+    <p>Initial version.</p>
+  {% else %}
+    {% if diff.title_diff %}
+      <h4>Title</h4>
+      <div class="diff-block">{% for line in diff.title_diff %}{% if line|slice:":3" == "---" or line|slice:":3" == "+++" %}<span class="diff-header">{{ line }}</span>
+{% elif line|slice:":2" == "@@" %}<span class="diff-header">{{ line }}</span>
+{% elif line|first == "+" %}<span class="diff-add">{{ line }}</span>
+{% elif line|first == "-" %}<span class="diff-remove">{{ line }}</span>
+{% else %}{{ line }}
+{% endif %}{% endfor %}</div>
+    {% endif %}
+
+    {% if diff.body_diff %}
+      <h4>Body</h4>
+      <div class="diff-block">{% for line in diff.body_diff %}{% if line|slice:":3" == "---" or line|slice:":3" == "+++" %}<span class="diff-header">{{ line }}</span>
+{% elif line|slice:":2" == "@@" %}<span class="diff-header">{{ line }}</span>
+{% elif line|first == "+" %}<span class="diff-add">{{ line }}</span>
+{% elif line|first == "-" %}<span class="diff-remove">{{ line }}</span>
+{% else %}{{ line }}
+{% endif %}{% endfor %}</div>
+    {% endif %}
+
+    {% if diff.is_draft_changed %}
+      <p>Draft status changed from <strong>{{ diff.prev_is_draft|yesno:"draft,published" }}</strong> to <strong>{{ diff.change.is_draft|yesno:"draft,published" }}</strong>.</p>
+    {% endif %}
+
+    {% if not diff.title_diff and not diff.body_diff and not diff.is_draft_changed %}
+      <p>No changes to tracked fields.</p>
+    {% endif %}
+  {% endif %}
+</div>
+{% endfor %}
+
+{% if not diffs %}
+<p>No changes recorded for this chapter.</p>
+{% endif %}
+
+{% endblock %}

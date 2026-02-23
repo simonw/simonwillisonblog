@@ -19,6 +19,7 @@ from .models import (
     Beat,
     Blogmark,
     Chapter,
+    ChapterChange,
     Entry,
     Guide,
     Quotation,
@@ -206,9 +207,15 @@ def index(request):
         if content_type not in to_load:
             continue
         if content_type == "chapter":
-            objects = model.objects.select_related("guide").prefetch_related("tags").in_bulk(to_load[content_type])
+            objects = (
+                model.objects.select_related("guide")
+                .prefetch_related("tags")
+                .in_bulk(to_load[content_type])
+            )
         else:
-            objects = model.objects.prefetch_related("tags").in_bulk(to_load[content_type])
+            objects = model.objects.prefetch_related("tags").in_bulk(
+                to_load[content_type]
+            )
         items.extend([{"type": content_type, "obj": obj} for obj in objects.values()])
 
     items.sort(key=lambda x: x["obj"].created, reverse=True)
@@ -331,9 +338,19 @@ def archive_year(request, year):
             created__year=year, created__month=month, is_draft=False
         ).count()
         chapter_count = Chapter.objects.filter(
-            created__year=year, created__month=month, is_draft=False, guide__is_draft=False
+            created__year=year,
+            created__month=month,
+            is_draft=False,
+            guide__is_draft=False,
         ).count()
-        month_count = entry_count + link_count + quote_count + photo_count + note_count + chapter_count
+        month_count = (
+            entry_count
+            + link_count
+            + quote_count
+            + photo_count
+            + note_count
+            + chapter_count
+        )
         if month_count:
             counts = [
                 ("entry", entry_count),
@@ -395,15 +412,14 @@ def archive_month(request, year, month):
         )
         if ids:
             if model == Chapter:
-                qs = model.objects.select_related("guide").prefetch_related("tags").in_bulk(ids)
+                qs = (
+                    model.objects.select_related("guide")
+                    .prefetch_related("tags")
+                    .in_bulk(ids)
+                )
             else:
                 qs = model.objects.prefetch_related("tags").in_bulk(ids)
-            items.extend(
-                [
-                    {"type": type_name, "obj": obj}
-                    for obj in list(qs.values())
-                ]
-            )
+            items.extend([{"type": type_name, "obj": obj} for obj in list(qs.values())])
             type_counts.append(
                 {
                     "type": type_name,
@@ -585,7 +601,11 @@ def top_tags(request):
                 "beat", filter=models.Q(beat__is_draft=False), distinct=True
             ),
             chapter_count=models.Count(
-                "chapter", filter=models.Q(chapter__is_draft=False, chapter__guide__is_draft=False), distinct=True
+                "chapter",
+                filter=models.Q(
+                    chapter__is_draft=False, chapter__guide__is_draft=False
+                ),
+                distinct=True,
             ),
         )
         .annotate(
@@ -665,17 +685,14 @@ def archive_tag(request, tags, atom=False):
         )
         ids = [r[0] for r in cursor.fetchall()]
         if content_type == "chapter":
-            objs = Chapter.objects.select_related("guide").prefetch_related("tags").filter(
-                pk__in=ids, guide__is_draft=False
+            objs = (
+                Chapter.objects.select_related("guide")
+                .prefetch_related("tags")
+                .filter(pk__in=ids, guide__is_draft=False)
             )
         else:
             objs = model.objects.prefetch_related("tags").in_bulk(ids).values()
-        items.extend(
-            [
-                {"type": content_type, "obj": obj}
-                for obj in list(objs)
-            ]
-        )
+        items.extend([{"type": content_type, "obj": obj} for obj in list(objs)])
     if not items:
         raise Http404
     items.sort(key=lambda x: x["obj"].created, reverse=True)
@@ -832,6 +849,69 @@ def chapter_detail(request, guide_slug, chapter_slug):
             "chapter": chapter,
             "previous_chapter": previous_chapter,
             "next_chapter": next_chapter,
+        },
+    )
+
+
+def chapter_changes(request, guide_slug, chapter_slug):
+    if request.user.is_staff:
+        guide = get_object_or_404(Guide, slug=guide_slug)
+        chapter = get_object_or_404(Chapter, guide=guide, slug=chapter_slug)
+    else:
+        guide = get_object_or_404(Guide, slug=guide_slug, is_draft=False)
+        chapter = get_object_or_404(
+            Chapter, guide=guide, slug=chapter_slug, is_draft=False
+        )
+    changes = list(chapter.changes.order_by("created"))
+    import difflib
+
+    diffs = []
+    for i, change in enumerate(changes):
+        if i == 0:
+            diffs.append(
+                {
+                    "change": change,
+                    "title_diff": None,
+                    "body_diff": None,
+                    "is_draft_changed": False,
+                    "is_first": True,
+                }
+            )
+        else:
+            prev = changes[i - 1]
+            title_diff = None
+            if change.title != prev.title:
+                title_diff = difflib.unified_diff(
+                    prev.title.splitlines(keepends=True),
+                    change.title.splitlines(keepends=True),
+                    lineterm="",
+                )
+                title_diff = list(title_diff)
+            body_diff = None
+            if change.body != prev.body:
+                body_diff = difflib.unified_diff(
+                    prev.body.splitlines(keepends=True),
+                    change.body.splitlines(keepends=True),
+                    lineterm="",
+                )
+                body_diff = list(body_diff)
+            diffs.append(
+                {
+                    "change": change,
+                    "title_diff": title_diff,
+                    "body_diff": body_diff,
+                    "is_draft_changed": change.is_draft != prev.is_draft,
+                    "prev_is_draft": prev.is_draft,
+                    "is_first": False,
+                }
+            )
+    return render(
+        request,
+        "chapter_changes.html",
+        {
+            "guide": guide,
+            "chapter": chapter,
+            "diffs": diffs,
         },
     )
 

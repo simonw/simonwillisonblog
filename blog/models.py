@@ -13,6 +13,7 @@ from collections import Counter
 import re
 import arrow
 import datetime
+from django.utils import timezone
 from markdown import markdown
 from xml.etree import ElementTree
 
@@ -104,7 +105,9 @@ class Tag(models.Model):
         )
 
         chapter_count = Subquery(
-            Chapter.objects.filter(is_draft=False, guide__is_draft=False, tags=OuterRef("pk"))
+            Chapter.objects.filter(
+                is_draft=False, guide__is_draft=False, tags=OuterRef("pk")
+            )
             .values("tags")
             .annotate(count=Count("id"))
             .values("count"),
@@ -160,7 +163,9 @@ class Tag(models.Model):
             .annotate(type=models.Value("chapter", output_field=models.CharField()))
             .values("pk", "created", "type")
         )
-        return entries.union(blogmarks, quotations, notes, beats, chapters).order_by("-created")
+        return entries.union(blogmarks, quotations, notes, beats, chapters).order_by(
+            "-created"
+        )
 
     def get_related_tags(self, limit=10):
         """Get all items tagged with this, look at /their/ tags, order by count"""
@@ -348,6 +353,30 @@ class Chapter(BaseModel):
     order = models.IntegerField(default=0)
     is_chapter = True
 
+    def save(self, **kwargs):
+        is_new = self.pk is None
+        if not is_new:
+            try:
+                old = Chapter.objects.get(pk=self.pk)
+            except Chapter.DoesNotExist:
+                old = None
+            should_record = old and (
+                old.title != self.title
+                or old.body != self.body
+                or old.is_draft != self.is_draft
+            )
+        else:
+            should_record = True
+        super().save(**kwargs)
+        if should_record:
+            ChapterChange.objects.create(
+                chapter=self,
+                created=self.created if is_new else timezone.now(),
+                title=self.title,
+                body=self.body,
+                is_draft=self.is_draft,
+            )
+
     def body_rendered(self):
         return mark_safe(markdown(self.body))
 
@@ -373,6 +402,24 @@ class Chapter(BaseModel):
     class Meta(BaseModel.Meta):
         ordering = ("order", "created")
         unique_together = (("guide", "slug"),)
+
+
+class ChapterChange(models.Model):
+    chapter = models.ForeignKey(
+        Chapter, related_name="changes", on_delete=models.CASCADE
+    )
+    created = models.DateTimeField()
+    title = models.CharField(max_length=255)
+    body = models.TextField()
+    is_draft = models.BooleanField()
+    is_notable = models.BooleanField(default=False)
+    change_note = models.TextField(default="", blank=True)
+
+    def __str__(self):
+        return f"Change to {self.chapter.title} at {self.created.strftime('%Y-%m-%d %H:%M')}"
+
+    class Meta:
+        ordering = ("created",)
 
 
 class Entry(BaseModel):
@@ -808,7 +855,11 @@ def load_mixed_objects(dicts):
     ):
         ids = to_fetch.get(key) or []
         if key == "chapter":
-            objects = model.objects.select_related("guide").prefetch_related("tags").filter(pk__in=ids)
+            objects = (
+                model.objects.select_related("guide")
+                .prefetch_related("tags")
+                .filter(pk__in=ids)
+            )
         else:
             objects = model.objects.prefetch_related("tags").filter(pk__in=ids)
         for obj in objects:

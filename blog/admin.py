@@ -7,6 +7,7 @@ from xml.etree import ElementTree
 from .models import (
     Beat,
     Chapter,
+    ChapterChange,
     Entry,
     Guide,
     Tag,
@@ -188,11 +189,42 @@ class GuideAdmin(admin.ModelAdmin):
     inlines = [ChapterInline]
 
 
+class ChapterChangeInline(admin.TabularInline):
+    model = ChapterChange
+    fields = ("created", "title", "is_draft", "is_notable", "change_note")
+    readonly_fields = ("created", "title", "is_draft")
+    extra = 0
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+
 @admin.register(Chapter)
 class ChapterAdmin(BaseAdmin):
     list_display = ("title", "guide", "order", "is_draft")
     list_filter = ("guide", "is_draft")
     prepopulated_fields = {"slug": ("title",)}
+    inlines = [ChapterChangeInline]
+
+
+@admin.register(ChapterChange)
+class ChapterChangeAdmin(admin.ModelAdmin):
+    list_display = ("__str__", "chapter", "created", "is_notable")
+    list_filter = ("is_notable", "created")
+    readonly_fields = ("chapter", "created", "title", "body", "is_draft")
+    fields = (
+        "chapter",
+        "created",
+        "title",
+        "body",
+        "is_draft",
+        "is_notable",
+        "change_note",
+    )
+    date_hierarchy = "created"
+
+    def has_add_permission(self, request):
+        return False
 
 
 admin.site.register(
