@@ -1136,6 +1136,7 @@ def api_add_tag(request):
         "quotation": Quotation,
         "note": Note,
         "beat": Beat,
+        "chapter": Chapter,
     }.get(content_type)
     if not model:
         return JsonResponse({"error": "Invalid content type"}, status=400)

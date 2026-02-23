@@ -239,6 +239,15 @@ document.addEventListener('DOMContentLoaded', function() {
                     entryFooter.appendChild(tagButton);
                 }
             }
+        } else if (contentType === 'chapter') {
+            const title = segment.querySelector('h3');
+            if (title) {
+                title.insertBefore(checkbox, title.firstChild);
+            }
+            const dateAndTags = segment.querySelector('.date-and-tags');
+            if (dateAndTags) {
+                dateAndTags.appendChild(tagButton);
+            }
         } else if (contentType === 'beat') {
             const row1 = segment.querySelector('.beat-row1');
             if (row1) {
