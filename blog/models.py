@@ -351,6 +351,9 @@ class Chapter(BaseModel):
     def body_rendered(self):
         return mark_safe(markdown(self.body))
 
+    def multi_paragraph(self):
+        return str(self.body_rendered()).count("<p") > 3
+
     def get_absolute_url(self):
         return "/guides/{}/{}/".format(self.guide.slug, self.slug)
 
