@@ -2185,6 +2185,44 @@ class GuideTests(TransactionTestCase):
         response = self.client.get("/guides/g6/ch-3/")
         self.assertContains(response, "Ch 2")
 
+    def test_chapter_navigation_skips_draft_chapters(self):
+        """Next/previous links on non-draft chapter pages should skip draft chapters."""
+        guide = GuideFactory(slug="g-nav-draft")
+        ChapterFactory(guide=guide, title="Ch 1", slug="ch-1", order=1)
+        ChapterFactory(
+            guide=guide, title="Ch 2 Draft", slug="ch-2", order=2, is_draft=True
+        )
+        ChapterFactory(guide=guide, title="Ch 3", slug="ch-3", order=3)
+        # Ch 1 should link to Ch 3 (skipping draft Ch 2)
+        response = self.client.get("/guides/g-nav-draft/ch-1/")
+        self.assertContains(response, "Ch 3")
+        self.assertNotContains(response, "Ch 2 Draft")
+        # Ch 3 should link back to Ch 1 (skipping draft Ch 2)
+        response = self.client.get("/guides/g-nav-draft/ch-3/")
+        self.assertContains(response, "Ch 1")
+        self.assertNotContains(response, "Ch 2 Draft")
+
+    def test_chapter_navigation_skips_drafts_for_staff(self):
+        """Staff viewing a non-draft chapter should also skip drafts in navigation."""
+        from django.contrib.auth.models import User
+
+        User.objects.create_superuser("navstaff", "s@s.com", "pass")
+        self.client.login(username="navstaff", password="pass")
+        guide = GuideFactory(slug="g-nav-staff")
+        ChapterFactory(guide=guide, title="Ch A", slug="ch-a", order=1)
+        ChapterFactory(
+            guide=guide, title="Ch B Draft", slug="ch-b", order=2, is_draft=True
+        )
+        ChapterFactory(guide=guide, title="Ch C", slug="ch-c", order=3)
+        # Staff on non-draft Ch A: next should be Ch C, not draft Ch B
+        response = self.client.get("/guides/g-nav-staff/ch-a/")
+        self.assertContains(response, "Ch C")
+        self.assertNotContains(response, "Ch B Draft")
+        # Staff on non-draft Ch C: previous should be Ch A
+        response = self.client.get("/guides/g-nav-staff/ch-c/")
+        self.assertContains(response, "Ch A")
+        self.assertNotContains(response, "Ch B Draft")
+
     def test_chapter_in_draft_guide_404(self):
         guide = GuideFactory(slug="draft-g", is_draft=True)
         ChapterFactory(guide=guide, slug="ch1")

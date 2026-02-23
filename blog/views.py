@@ -823,11 +823,12 @@ def chapter_detail(request, guide_slug, chapter_slug):
         chapter = get_object_or_404(
             Chapter, guide=guide, slug=chapter_slug, is_draft=False
         )
-    all_chapters = list(
-        guide.chapters.filter(is_draft=False).order_by("order", "created")
-    )
-    if request.user.is_staff:
+    if request.user.is_staff and chapter.is_draft:
         all_chapters = list(guide.chapters.order_by("order", "created"))
+    else:
+        all_chapters = list(
+            guide.chapters.filter(is_draft=False).order_by("order", "created")
+        )
     current_index = None
     for i, ch in enumerate(all_chapters):
         if ch.pk == chapter.pk:
