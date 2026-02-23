@@ -5,6 +5,8 @@ from xml.etree import ElementTree
 import re
 import datetime
 
+from django.utils import timezone
+
 register = template.Library()
 entry_stripper = re.compile("^<entry>(.*?)</entry>$", re.DOTALL)
 
@@ -282,7 +284,7 @@ chunks = (
 @register.filter
 def text_ago(d):
     """Returns 'One day' or 'Three minutes' etc - similar to time_since"""
-    delta = datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc) - d
+    delta = timezone.now() - d
     since_seconds = (24 * 60 * 60 * delta.days) + delta.seconds
     for i, (seconds, name) in enumerate(chunks):
         count = since_seconds // seconds

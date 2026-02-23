@@ -13,6 +13,7 @@ from collections import Counter
 import re
 import arrow
 import datetime
+
 from django.utils import timezone
 from markdown import markdown
 from xml.etree import ElementTree
@@ -234,7 +235,7 @@ class TagMerge(models.Model):
 
 
 class Series(models.Model):
-    created = models.DateTimeField(default=datetime.datetime.utcnow)
+    created = models.DateTimeField(default=timezone.now)
     slug = models.SlugField(max_length=64, unique=True)
     title = models.CharField(max_length=255)
     summary = models.TextField()
@@ -259,7 +260,7 @@ class Series(models.Model):
 
 
 class Guide(models.Model):
-    created = models.DateTimeField(default=datetime.datetime.utcnow)
+    created = models.DateTimeField(default=timezone.now)
     updated = models.DateTimeField(auto_now=True)
     title = models.CharField(max_length=255)
     slug = models.SlugField(max_length=64, unique=True)
@@ -312,7 +313,7 @@ class SponsorMessage(models.Model):
 
 
 class BaseModel(models.Model):
-    created = models.DateTimeField(default=datetime.datetime.utcnow)
+    created = models.DateTimeField(default=timezone.now)
     tags = models.ManyToManyField(Tag, blank=True)
     slug = models.SlugField(max_length=64)
     metadata = JSONField(blank=True, default=dict)
