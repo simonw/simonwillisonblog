@@ -1,4 +1,4 @@
-{% extends "smallhead.html" %}
+{% extends "smallhead.html" %}{% load blog_tags %}
 {% block title %}{{ guide.title }} - Simon Willison's Weblog{% endblock %}
 {% block primary %}
 
@@ -6,7 +6,7 @@
 
 <h2 class="archive-h2"><a href="/guides/">Guides</a>: {{ guide.title }}</h2>
 
-{% if guide.description %}<p>{{ guide.description }}</p>{% endif %}
+{% if guide.description %}<p>{{ guide.description|markdownify }}</p>{% endif %}
 
 <ol style="margin-top: 1em">
   {% for chapter in chapters %}
