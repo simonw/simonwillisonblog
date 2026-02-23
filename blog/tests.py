@@ -2344,3 +2344,47 @@ class ChapterEverywhereTests(TransactionTestCase):
         self.assertEqual(components["A"], "Index Title")
         self.assertEqual(components["C"], "Index Body")
         self.assertIn("indextest", components["B"])
+
+    def test_chapter_word_count_inline_with_last_paragraph(self):
+        """When chapter has >3 paragraphs, word count should be inline in the last shown paragraph, not a separate <p>."""
+        body = "Para one.\n\nPara two.\n\nPara three.\n\nPara four."
+        chapter = self._make_chapter(body=body)
+        response = self.client.get("/")
+        content = response.content.decode()
+        # The word count link should NOT be in its own <p>
+        self.assertNotIn("<p><span", content)
+        # It should appear inline before </p>
+        self.assertIn("words</a>]</span></p>", content)
+        # The third paragraph text and the word count should be in the same <p>
+        self.assertIn("Para three.", content)
+        self.assertIn("word", content)
+
+    def test_chapter_short_body_no_word_count(self):
+        """When chapter has <=3 paragraphs, no word count should be shown."""
+        body = "Para one.\n\nPara two.\n\nPara three."
+        chapter = self._make_chapter(body=body)
+        response = self.client.get("/")
+        content = response.content.decode()
+        self.assertIn("Para one.", content)
+        self.assertIn("Para three.", content)
+        self.assertNotIn("words</a>]", content)
+
+    def test_chapter_single_paragraph_no_word_count(self):
+        """A chapter with a single paragraph should not show word count."""
+        chapter = self._make_chapter(body="Just one paragraph.")
+        response = self.client.get("/")
+        content = response.content.decode()
+        self.assertIn("Just one paragraph.", content)
+        self.assertNotIn("words</a>]", content)
+        self.assertNotIn("word</a>]", content)
+
+    def test_chapter_word_count_on_tag_page(self):
+        """Word count should also be inline on tag archive pages."""
+        body = "Para one.\n\nPara two.\n\nPara three.\n\nPara four."
+        tag = Tag.objects.create(tag="excerpttest")
+        chapter = self._make_chapter(body=body)
+        chapter.tags.add(tag)
+        response = self.client.get("/tags/excerpttest/")
+        content = response.content.decode()
+        self.assertNotIn("<p><span", content)
+        self.assertIn("words</a>]</span></p>", content)
