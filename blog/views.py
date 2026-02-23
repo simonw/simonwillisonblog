@@ -181,6 +181,12 @@ def index(request):
             .values("content_type", "id", "created")
             .order_by()
         )
+        .union(
+            Chapter.objects.filter(is_draft=False, guide__is_draft=False)
+            .annotate(content_type=Value("chapter", output_field=CharField()))
+            .values("content_type", "id", "created")
+            .order_by()
+        )
         .order_by("-created")[:30]
     )
 
@@ -195,10 +201,14 @@ def index(request):
         ("quotation", Quotation),
         ("note", Note),
         ("beat", Beat),
+        ("chapter", Chapter),
     ):
         if content_type not in to_load:
             continue
-        objects = model.objects.prefetch_related("tags").in_bulk(to_load[content_type])
+        if content_type == "chapter":
+            objects = model.objects.select_related("guide").prefetch_related("tags").in_bulk(to_load[content_type])
+        else:
+            objects = model.objects.prefetch_related("tags").in_bulk(to_load[content_type])
         items.extend([{"type": content_type, "obj": obj} for obj in objects.values()])
 
     items.sort(key=lambda x: x["obj"].created, reverse=True)
@@ -320,7 +330,10 @@ def archive_year(request, year):
         note_count = Note.objects.filter(
             created__year=year, created__month=month, is_draft=False
         ).count()
-        month_count = entry_count + link_count + quote_count + photo_count + note_count
+        chapter_count = Chapter.objects.filter(
+            created__year=year, created__month=month, is_draft=False, guide__is_draft=False
+        ).count()
+        month_count = entry_count + link_count + quote_count + photo_count + note_count + chapter_count
         if month_count:
             counts = [
                 ("entry", entry_count),
@@ -328,6 +341,7 @@ def archive_year(request, year):
                 ("photo", photo_count),
                 ("quote", quote_count),
                 ("note", note_count),
+                ("chapter", chapter_count),
             ]
             counts_not_0 = [p for p in counts if p[1]]
             months.append(
@@ -369,19 +383,25 @@ def archive_month(request, year, month):
         (Quotation, "quotation", "quote", "quotes"),
         (Note, "note", "note", "notes"),
         (Beat, "beat", "beat", "beats"),
+        (Chapter, "chapter", "chapter", "chapters"),
     ):
+        extra_filter = {}
+        if model == Chapter:
+            extra_filter["guide__is_draft"] = False
         ids = list(
             model.objects.filter(
-                created__year=year, created__month=month, is_draft=False
+                created__year=year, created__month=month, is_draft=False, **extra_filter
             ).values_list("id", flat=True)
         )
         if ids:
+            if model == Chapter:
+                qs = model.objects.select_related("guide").prefetch_related("tags").in_bulk(ids)
+            else:
+                qs = model.objects.prefetch_related("tags").in_bulk(ids)
             items.extend(
                 [
                     {"type": type_name, "obj": obj}
-                    for obj in list(
-                        model.objects.prefetch_related("tags").in_bulk(ids).values()
-                    )
+                    for obj in list(qs.values())
                 ]
             )
             type_counts.append(
@@ -428,11 +448,15 @@ def _get_adjacent_content_days(current_date):
     previous_date = None
     next_date = None
 
-    for model in (Blogmark, Entry, Quotation, Note, Beat):
+    for model in (Blogmark, Entry, Quotation, Note, Beat, Chapter):
+        extra_filter = {}
+        if model == Chapter:
+            extra_filter["guide__is_draft"] = False
         prev_created = (
             model.objects.filter(
                 created__date__lt=current_date,
                 is_draft=False,
+                **extra_filter,
             )
             .order_by("-created")
             .values_list("created", flat=True)
@@ -447,6 +471,7 @@ def _get_adjacent_content_days(current_date):
             model.objects.filter(
                 created__date__gt=current_date,
                 is_draft=False,
+                **extra_filter,
             )
             .order_by("created")
             .values_list("created", flat=True)
@@ -483,13 +508,20 @@ def archive_day(request, year, month, day):
         ("quotation", Quotation),
         ("note", Note),
         ("beat", Beat),
+        ("chapter", Chapter),
     ):
+        extra_filter = {}
+        if model == Chapter:
+            extra_filter["guide__is_draft"] = False
         filt = model.objects.filter(
             created__year=int(year),
             created__month=MONTHS_3_REV[month.lower()],
             created__day=int(day),
             is_draft=False,
+            **extra_filter,
         ).order_by("created")
+        if model == Chapter:
+            filt = filt.select_related("guide")
         context[name] = list(filt)
         count += len(context[name])
         items.extend([{"type": name, "obj": obj} for obj in context[name]])
@@ -552,6 +584,9 @@ def top_tags(request):
             beat_count=models.Count(
                 "beat", filter=models.Q(beat__is_draft=False), distinct=True
             ),
+            chapter_count=models.Count(
+                "chapter", filter=models.Q(chapter__is_draft=False, chapter__guide__is_draft=False), distinct=True
+            ),
         )
         .annotate(
             total=models.F("entry_count")
@@ -559,6 +594,7 @@ def top_tags(request):
             + models.F("quotation_count")
             + models.F("note_count")
             + models.F("beat_count")
+            + models.F("chapter_count")
         )
         .order_by("-total")[:10]
     )
@@ -615,6 +651,7 @@ def archive_tag(request, tags, atom=False):
         (Blogmark, "blogmark"),
         (Note, "note"),
         (Beat, "beat"),
+        (Chapter, "chapter"),
     ):
         cursor.execute(
             INTERSECTION_SQL
@@ -627,12 +664,16 @@ def archive_tag(request, tags, atom=False):
             }
         )
         ids = [r[0] for r in cursor.fetchall()]
+        if content_type == "chapter":
+            objs = Chapter.objects.select_related("guide").prefetch_related("tags").filter(
+                pk__in=ids, guide__is_draft=False
+            )
+        else:
+            objs = model.objects.prefetch_related("tags").in_bulk(ids).values()
         items.extend(
             [
                 {"type": content_type, "obj": obj}
-                for obj in list(
-                    model.objects.prefetch_related("tags").in_bulk(ids).values()
-                )
+                for obj in list(objs)
             ]
         )
     if not items:

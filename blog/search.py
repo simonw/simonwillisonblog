@@ -8,7 +8,7 @@ from django.contrib.postgres.search import SearchQuery, SearchRank
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.http import HttpResponse, Http404
 from django.shortcuts import render
-from blog.models import Beat, Entry, Blogmark, Quotation, Note, Tag, load_mixed_objects
+from blog.models import Beat, Chapter, Entry, Blogmark, Quotation, Note, Tag, load_mixed_objects
 from spellchecker import SpellChecker
 import datetime
 
@@ -96,6 +96,7 @@ def search(request, q=None, return_context=False, per_page=30):
         "quotations": "quotation",
         "notes": "note",
         "beats": "beat",
+        "chapters": "chapter",
     }
     id_filters = {}  # type_name -> set of int IDs
     for param, type_name in id_filter_param_map.items():
@@ -118,6 +119,8 @@ def search(request, q=None, return_context=False, per_page=30):
         qs = klass.objects.filter(is_draft=False).annotate(
             type=models.Value(type_name, output_field=models.CharField())
         )
+        if klass == Chapter:
+            qs = qs.filter(guide__is_draft=False)
         if selected_year and selected_year.isdigit() and 2000 <= int(selected_year):
             qs = qs.filter(created__year=int(selected_year))
         if (
@@ -161,6 +164,7 @@ def search(request, q=None, return_context=False, per_page=30):
         (Quotation, "quotation"),
         (Note, "note"),
         (Beat, "beat"),
+        (Chapter, "chapter"),
     ):
         # Determine if this type should be included based on selected_type
         if selected_type:
@@ -253,6 +257,7 @@ def search(request, q=None, return_context=False, per_page=30):
         "blogmark": "Blogmark",
         "quotation": "Quotation",
         "note": "Note",
+        "chapter": "Chapter",
     }
     # Add beat subtype labels: beat:release -> Release, etc.
     for bt_value, bt_label in Beat.BeatType.choices:
@@ -349,6 +354,7 @@ def search(request, q=None, return_context=False, per_page=30):
         "entry": "Entries",
         "note": "Notes",
         "beat": "Elsewhere",
+        "chapter": "Chapters",
     }
     sel_type = selected.get("type", "")
     if sel_type.startswith("beat:"):
@@ -405,8 +411,9 @@ def search(request, q=None, return_context=False, per_page=30):
         "quotation": "quotations",
         "note": "notes",
         "beat": "beats",
+        "chapter": "chapters",
     }
-    for type_name in ("entry", "blogmark", "quotation", "note", "beat"):
+    for type_name in ("entry", "blogmark", "quotation", "note", "beat", "chapter"):
         if type_name in id_filters:
             id_filter_type_names.append(type_display_names[type_name])
 

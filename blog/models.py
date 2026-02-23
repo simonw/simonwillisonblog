@@ -59,6 +59,9 @@ class Tag(models.Model):
     def beat_count(self):
         return self.beat_set.filter(is_draft=False).count()
 
+    def chapter_count(self):
+        return self.chapter_set.filter(is_draft=False, guide__is_draft=False).count()
+
     def total_count(self):
         entry_count = Subquery(
             Entry.objects.filter(is_draft=False, tags=OuterRef("pk"))
@@ -100,6 +103,14 @@ class Tag(models.Model):
             output_field=IntegerField(),
         )
 
+        chapter_count = Subquery(
+            Chapter.objects.filter(is_draft=False, guide__is_draft=False, tags=OuterRef("pk"))
+            .values("tags")
+            .annotate(count=Count("id"))
+            .values("count"),
+            output_field=IntegerField(),
+        )
+
         result = (
             Tag.objects.filter(pk=self.pk)
             .annotate(
@@ -109,6 +120,7 @@ class Tag(models.Model):
                     + Coalesce(quotation_count, 0)
                     + Coalesce(note_count, 0)
                     + Coalesce(beat_count, 0)
+                    + Coalesce(chapter_count, 0)
                 )
             )
             .values("total_count")
@@ -143,7 +155,12 @@ class Tag(models.Model):
             .annotate(type=models.Value("beat", output_field=models.CharField()))
             .values("pk", "created", "type")
         )
-        return entries.union(blogmarks, quotations, notes, beats).order_by("-created")
+        chapters = (
+            self.chapter_set.all()
+            .annotate(type=models.Value("chapter", output_field=models.CharField()))
+            .values("pk", "created", "type")
+        )
+        return entries.union(blogmarks, quotations, notes, beats, chapters).order_by("-created")
 
     def get_related_tags(self, limit=10):
         """Get all items tagged with this, look at /their/ tags, order by count"""
@@ -155,6 +172,7 @@ class Tag(models.Model):
                 (Quotation, "quotation_set"),
                 (Note, "note_set"),
                 (Beat, "beat_set"),
+                (Chapter, "chapter_set"),
             ):
                 qs = klass.objects.filter(
                     pk__in=getattr(self, collection).all()
@@ -256,33 +274,6 @@ class Guide(models.Model):
         ordering = ("title",)
 
 
-class Chapter(models.Model):
-    guide = models.ForeignKey(Guide, related_name="chapters", on_delete=models.CASCADE)
-    created = models.DateTimeField(default=datetime.datetime.utcnow)
-    updated = models.DateTimeField(auto_now=True)
-    title = models.CharField(max_length=255)
-    slug = models.SlugField(max_length=64)
-    body = models.TextField()
-    order = models.IntegerField(default=0)
-    is_draft = models.BooleanField(default=False)
-
-    def body_rendered(self):
-        return mark_safe(markdown(self.body))
-
-    def get_absolute_url(self):
-        return "/guides/{}/{}/".format(self.guide.slug, self.slug)
-
-    def edit_url(self):
-        return "/admin/blog/chapter/%d/" % self.id
-
-    def __str__(self):
-        return self.title
-
-    class Meta:
-        ordering = ("order", "created")
-        unique_together = (("guide", "slug"),)
-
-
 class SponsorMessage(models.Model):
     COLOR_SCHEME_CHOICES = [
         ("warm", "Warm"),
@@ -347,6 +338,38 @@ class BaseModel(models.Model):
         abstract = True
         ordering = ("-created",)
         indexes = [GinIndex(fields=["search_document"])]
+
+
+class Chapter(BaseModel):
+    guide = models.ForeignKey(Guide, related_name="chapters", on_delete=models.CASCADE)
+    updated = models.DateTimeField(auto_now=True)
+    title = models.CharField(max_length=255)
+    body = models.TextField()
+    order = models.IntegerField(default=0)
+    is_chapter = True
+
+    def body_rendered(self):
+        return mark_safe(markdown(self.body))
+
+    def get_absolute_url(self):
+        return "/guides/{}/{}/".format(self.guide.slug, self.slug)
+
+    def edit_url(self):
+        return "/admin/blog/chapter/%d/" % self.id
+
+    def index_components(self):
+        return {
+            "A": self.title,
+            "C": self.body,
+            "B": " ".join(self.tags.values_list("tag", flat=True)),
+        }
+
+    def __str__(self):
+        return self.title
+
+    class Meta(BaseModel.Meta):
+        ordering = ("order", "created")
+        unique_together = (("guide", "slug"),)
 
 
 class Entry(BaseModel):
@@ -778,9 +801,13 @@ def load_mixed_objects(dicts):
         ("quotation", Quotation),
         ("note", Note),
         ("beat", Beat),
+        ("chapter", Chapter),
     ):
         ids = to_fetch.get(key) or []
-        objects = model.objects.prefetch_related("tags").filter(pk__in=ids)
+        if key == "chapter":
+            objects = model.objects.select_related("guide").prefetch_related("tags").filter(pk__in=ids)
+        else:
+            objects = model.objects.prefetch_related("tags").filter(pk__in=ids)
         for obj in objects:
             fetched[(key, obj.pk)] = obj
     # Build list in same order as dicts argument

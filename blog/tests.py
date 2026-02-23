@@ -2191,3 +2191,156 @@ class GuideTests(TransactionTestCase):
         guide = GuideFactory(slug="test-guide")
         chapter = ChapterFactory(guide=guide, slug="test-chapter")
         self.assertEqual(chapter.get_absolute_url(), "/guides/test-guide/test-chapter/")
+
+
+class ChapterEverywhereTests(TransactionTestCase):
+    """Tests for chapters showing up in homepage, archives, search, feeds, calendar."""
+
+    def _make_chapter(self, **kwargs):
+        defaults = {
+            "title": "Test Chapter",
+            "body": "Chapter body with **bold**",
+            "is_draft": False,
+        }
+        defaults.update(kwargs)
+        if "guide" not in defaults:
+            defaults["guide"] = GuideFactory(is_draft=False)
+        return ChapterFactory(**defaults)
+
+    def test_chapter_on_homepage(self):
+        chapter = self._make_chapter()
+        response = self.client.get("/")
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, chapter.title)
+        self.assertContains(response, chapter.guide.title)
+
+    def test_draft_chapter_not_on_homepage(self):
+        chapter = self._make_chapter(title="Draft Chapter", is_draft=True)
+        response = self.client.get("/")
+        self.assertNotContains(response, "Draft Chapter")
+
+    def test_chapter_in_draft_guide_not_on_homepage(self):
+        guide = GuideFactory(is_draft=True)
+        chapter = self._make_chapter(guide=guide, title="Hidden Chapter")
+        response = self.client.get("/")
+        self.assertNotContains(response, "Hidden Chapter")
+
+    def test_chapter_on_day_archive(self):
+        chapter = self._make_chapter()
+        # Calendar widget needs at least one Entry
+        EntryFactory(created=chapter.created)
+        url = "/{}/".format(chapter.created.strftime("%Y/%b/%-d"))
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, chapter.title)
+        self.assertContains(response, chapter.guide.title)
+
+    def test_draft_chapter_not_on_day_archive(self):
+        chapter = self._make_chapter(title="Draft Day Chapter", is_draft=True)
+        # Create a non-draft item on the same day so the page exists
+        EntryFactory(created=chapter.created)
+        url = "/{}/".format(chapter.created.strftime("%Y/%b/%-d"))
+        response = self.client.get(url)
+        self.assertNotContains(response, "Draft Day Chapter")
+
+    def test_chapter_on_month_archive(self):
+        chapter = self._make_chapter()
+        # Calendar widget needs at least one Entry
+        EntryFactory(created=chapter.created)
+        url = "/{}/".format(chapter.created.strftime("%Y/%b"))
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, chapter.title)
+
+    def test_chapter_on_tag_archive(self):
+        tag = Tag.objects.create(tag="testchaptertag")
+        chapter = self._make_chapter()
+        chapter.tags.add(tag)
+        response = self.client.get("/tags/testchaptertag/")
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, chapter.title)
+        self.assertContains(response, chapter.guide.title)
+
+    def test_draft_chapter_not_on_tag_archive(self):
+        tag = Tag.objects.create(tag="testdrafttag")
+        chapter = self._make_chapter(title="Draft Tagged", is_draft=True)
+        chapter.tags.add(tag)
+        # Also add a published item so the tag page exists
+        entry = EntryFactory()
+        entry.tags.add(tag)
+        response = self.client.get("/tags/testdrafttag/")
+        self.assertNotContains(response, "Draft Tagged")
+
+    def test_chapter_in_draft_guide_not_on_tag_archive(self):
+        tag = Tag.objects.create(tag="guidedrafttag")
+        guide = GuideFactory(is_draft=True)
+        chapter = self._make_chapter(guide=guide, title="Guide Draft Tagged")
+        chapter.tags.add(tag)
+        entry = EntryFactory()
+        entry.tags.add(tag)
+        response = self.client.get("/tags/guidedrafttag/")
+        self.assertNotContains(response, "Guide Draft Tagged")
+
+    def test_chapter_in_search(self):
+        chapter = self._make_chapter(title="Searchable Chapter", body="unique searchterm here")
+        # Update search index
+        from django.contrib.postgres.search import SearchVector
+        from django.db.models import Value, TextField
+        from blog.models import Chapter
+        import operator
+        from functools import reduce
+        components = chapter.index_components()
+        search_vectors = []
+        for weight, text in components.items():
+            search_vectors.append(SearchVector(Value(text, output_field=TextField()), weight=weight))
+        Chapter.objects.filter(pk=chapter.pk).update(search_document=reduce(operator.add, search_vectors))
+
+        response = self.client.get("/search/?q=searchterm")
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Searchable Chapter")
+
+    def test_chapter_in_everything_feed(self):
+        chapter = self._make_chapter(title="Feed Chapter")
+        response = self.client.get("/atom/everything/")
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Feed Chapter")
+        self.assertContains(response, chapter.guide.title)
+
+    def test_draft_chapter_not_in_everything_feed(self):
+        self._make_chapter(title="Draft Feed Chapter", is_draft=True)
+        response = self.client.get("/atom/everything/")
+        self.assertNotContains(response, "Draft Feed Chapter")
+
+    def test_chapter_guide_breadcrumb_style(self):
+        """Chapter should show guide name with > and no underline."""
+        chapter = self._make_chapter()
+        response = self.client.get("/")
+        content = response.content.decode()
+        self.assertIn(chapter.guide.title, content)
+        self.assertIn("&gt;", content)
+        self.assertIn("border-bottom: none", content)
+        self.assertIn("text-decoration: none", content)
+
+    def test_chapter_body_rendered_as_markdown(self):
+        chapter = self._make_chapter(body="- item one\n- item two\n- item three")
+        response = self.client.get("/")
+        content = response.content.decode()
+        self.assertIn("<li>", content)
+        self.assertIn("item one", content)
+
+    def test_chapter_has_tags(self):
+        """Chapter (extending BaseModel) should support tags."""
+        tag = Tag.objects.create(tag="chaptertest")
+        chapter = self._make_chapter()
+        chapter.tags.add(tag)
+        self.assertEqual(list(chapter.tags.values_list("tag", flat=True)), ["chaptertest"])
+
+    def test_chapter_index_components(self):
+        """Chapter should return title, body, and tags for search indexing."""
+        tag = Tag.objects.create(tag="indextest")
+        chapter = self._make_chapter(title="Index Title", body="Index Body")
+        chapter.tags.add(tag)
+        components = chapter.index_components()
+        self.assertEqual(components["A"], "Index Title")
+        self.assertEqual(components["C"], "Index Body")
+        self.assertIn("indextest", components["B"])
