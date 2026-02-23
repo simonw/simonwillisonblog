@@ -99,6 +99,32 @@ def first_three_paragraphs(html):
     return mark_safe("\n".join(parts))
 
 
+@register.simple_tag
+def chapter_excerpt(chapter):
+    """Render first three paragraphs of a chapter, with word count appended inline to the last paragraph."""
+    body_rendered = chapter.body_rendered()
+    try:
+        html = str(xhtml2html(first_three_paragraphs(body_rendered)))
+    except ElementTree.ParseError:
+        html = str(body_rendered)
+    if chapter.multi_paragraph():
+        from django.template.defaultfilters import wordcount
+
+        count = int(wordcount(chapter.body))
+        url = conditional_escape(chapter.get_absolute_url())
+        suffix = (
+            f' <span style="font-size: 0.9em">'
+            f'[... <a href="{url}">{count:,} word{"s" if count != 1 else ""}</a>]'
+            f"</span>"
+        )
+        last_p = html.rfind("</p>")
+        if last_p != -1:
+            html = html[:last_p] + suffix + html[last_p:]
+        else:
+            html += suffix
+    return mark_safe(html)
+
+
 @register.filter
 def openid_to_url(openid):
     openid = openid.strip()
