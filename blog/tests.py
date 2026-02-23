@@ -13,7 +13,7 @@ from .factories import (
     BeatFactory,
     SponsorMessageFactory,
 )
-from blog.models import Tag, PreviousTagName, TagMerge
+from blog.models import Tag, PreviousTagName, TagMerge, ChapterChange
 from django.utils import timezone
 import datetime
 from datetime import timedelta
@@ -599,7 +599,9 @@ class BlogTests(TransactionTestCase):
             created=datetime.datetime(2024, 12, 20, 12, 0, tzinfo=datetime.timezone.utc)
         )
         EntryFactory(
-            created=datetime.datetime(2024, 12, 21, 12, 0, tzinfo=datetime.timezone.utc),
+            created=datetime.datetime(
+                2024, 12, 21, 12, 0, tzinfo=datetime.timezone.utc
+            ),
             is_draft=True,
         )
         EntryFactory(
@@ -1870,22 +1872,24 @@ class ImporterViewTests(TransactionTestCase):
     def test_api_run_importer_museums(self):
         from unittest.mock import patch, MagicMock
 
-        json_text = json.dumps([
-            {
-                "name": "Musée Mécanique",
-                "url": "https://www.niche-museums.com/1",
-                "address": "Pier 45, Fishermans Wharf, San Francisco, CA 94133",
-                "description": "A collection of antique arcade games.",
-                "created": "2019-10-23T21:32:12-07:00",
-            },
-            {
-                "name": "Bigfoot Discovery Museum",
-                "url": "https://www.niche-museums.com/2",
-                "address": "5497 Highway 9, Felton, CA 95018",
-                "description": "Dedicated to the search for Bigfoot.",
-                "created": "2019-10-23T21:32:12-07:00",
-            },
-        ])
+        json_text = json.dumps(
+            [
+                {
+                    "name": "Musée Mécanique",
+                    "url": "https://www.niche-museums.com/1",
+                    "address": "Pier 45, Fishermans Wharf, San Francisco, CA 94133",
+                    "description": "A collection of antique arcade games.",
+                    "created": "2019-10-23T21:32:12-07:00",
+                },
+                {
+                    "name": "Bigfoot Discovery Museum",
+                    "url": "https://www.niche-museums.com/2",
+                    "address": "5497 Highway 9, Felton, CA 95018",
+                    "description": "Dedicated to the search for Bigfoot.",
+                    "created": "2019-10-23T21:32:12-07:00",
+                },
+            ]
+        )
 
         mock_response = MagicMock()
         mock_response.text = json_text
@@ -1908,21 +1912,23 @@ class ImporterViewTests(TransactionTestCase):
     def test_api_run_importer_museums_skips_no_url(self):
         from unittest.mock import patch, MagicMock
 
-        json_text = json.dumps([
-            {
-                "name": "Museum Without URL",
-                "address": "Somewhere",
-                "description": "No URL provided.",
-                "created": "2019-10-23T21:32:12-07:00",
-            },
-            {
-                "name": "Museum With URL",
-                "url": "https://www.niche-museums.com/2",
-                "address": "Elsewhere",
-                "description": "Has a URL.",
-                "created": "2019-10-23T21:32:12-07:00",
-            },
-        ])
+        json_text = json.dumps(
+            [
+                {
+                    "name": "Museum Without URL",
+                    "address": "Somewhere",
+                    "description": "No URL provided.",
+                    "created": "2019-10-23T21:32:12-07:00",
+                },
+                {
+                    "name": "Museum With URL",
+                    "url": "https://www.niche-museums.com/2",
+                    "address": "Elsewhere",
+                    "description": "Has a URL.",
+                    "created": "2019-10-23T21:32:12-07:00",
+                },
+            ]
+        )
 
         mock_response = MagicMock()
         mock_response.text = json_text
@@ -1942,15 +1948,17 @@ class ImporterViewTests(TransactionTestCase):
     def test_api_run_importer_museums_skips_unchanged(self):
         from unittest.mock import patch, MagicMock
 
-        json_text = json.dumps([
-            {
-                "name": "Test Museum",
-                "url": "https://www.niche-museums.com/1",
-                "address": "123 Main St",
-                "description": "A test museum.",
-                "created": "2019-10-23T21:32:12-07:00",
-            },
-        ])
+        json_text = json.dumps(
+            [
+                {
+                    "name": "Test Museum",
+                    "url": "https://www.niche-museums.com/1",
+                    "address": "123 Main St",
+                    "description": "A test museum.",
+                    "created": "2019-10-23T21:32:12-07:00",
+                },
+            ]
+        )
 
         mock_response = MagicMock()
         mock_response.text = json_text
@@ -2282,18 +2290,25 @@ class ChapterEverywhereTests(TransactionTestCase):
         self.assertNotContains(response, "Guide Draft Tagged")
 
     def test_chapter_in_search(self):
-        chapter = self._make_chapter(title="Searchable Chapter", body="unique searchterm here")
+        chapter = self._make_chapter(
+            title="Searchable Chapter", body="unique searchterm here"
+        )
         # Update search index
         from django.contrib.postgres.search import SearchVector
         from django.db.models import Value, TextField
         from blog.models import Chapter
         import operator
         from functools import reduce
+
         components = chapter.index_components()
         search_vectors = []
         for weight, text in components.items():
-            search_vectors.append(SearchVector(Value(text, output_field=TextField()), weight=weight))
-        Chapter.objects.filter(pk=chapter.pk).update(search_document=reduce(operator.add, search_vectors))
+            search_vectors.append(
+                SearchVector(Value(text, output_field=TextField()), weight=weight)
+            )
+        Chapter.objects.filter(pk=chapter.pk).update(
+            search_document=reduce(operator.add, search_vectors)
+        )
 
         response = self.client.get("/search/?q=searchterm")
         self.assertEqual(response.status_code, 200)
@@ -2333,7 +2348,9 @@ class ChapterEverywhereTests(TransactionTestCase):
         tag = Tag.objects.create(tag="chaptertest")
         chapter = self._make_chapter()
         chapter.tags.add(tag)
-        self.assertEqual(list(chapter.tags.values_list("tag", flat=True)), ["chaptertest"])
+        self.assertEqual(
+            list(chapter.tags.values_list("tag", flat=True)), ["chaptertest"]
+        )
 
     def test_chapter_index_components(self):
         """Chapter should return title, body, and tags for search indexing."""
@@ -2388,3 +2405,183 @@ class ChapterEverywhereTests(TransactionTestCase):
         content = response.content.decode()
         self.assertNotIn("<p><span", content)
         self.assertIn("words</a>]</span></p>", content)
+
+
+class ChapterChangeTests(TransactionTestCase):
+    def test_change_recorded_on_create(self):
+        """Creating a new chapter should automatically create a ChapterChange."""
+        guide = GuideFactory(slug="cg1")
+        chapter = ChapterFactory(guide=guide, title="New", body="Body", slug="new")
+        changes = list(ChapterChange.objects.filter(chapter=chapter))
+        self.assertEqual(len(changes), 1)
+        self.assertEqual(changes[0].title, "New")
+        self.assertEqual(changes[0].body, "Body")
+        self.assertEqual(changes[0].created, chapter.created)
+
+    def test_change_recorded_on_title_edit(self):
+        guide = GuideFactory(slug="cg2")
+        chapter = ChapterFactory(guide=guide, title="Original", body="Body", slug="ch")
+        chapter.title = "Updated"
+        chapter.save()
+        changes = list(
+            ChapterChange.objects.filter(chapter=chapter).order_by("created")
+        )
+        self.assertEqual(len(changes), 2)
+        self.assertEqual(changes[0].title, "Original")
+        self.assertEqual(changes[1].title, "Updated")
+        self.assertEqual(changes[1].body, "Body")
+
+    def test_change_recorded_on_body_edit(self):
+        guide = GuideFactory(slug="cg3")
+        chapter = ChapterFactory(guide=guide, title="Title", body="Old body", slug="ch")
+        chapter.body = "New body"
+        chapter.save()
+        changes = list(
+            ChapterChange.objects.filter(chapter=chapter).order_by("created")
+        )
+        self.assertEqual(len(changes), 2)
+        self.assertEqual(changes[0].body, "Old body")
+        self.assertEqual(changes[1].body, "New body")
+        self.assertEqual(changes[1].title, "Title")
+
+    def test_change_recorded_on_is_draft_edit(self):
+        guide = GuideFactory(slug="cg4")
+        chapter = ChapterFactory(
+            guide=guide, title="Title", body="Body", slug="ch", is_draft=True
+        )
+        chapter.is_draft = False
+        chapter.save()
+        changes = list(
+            ChapterChange.objects.filter(chapter=chapter).order_by("created")
+        )
+        self.assertEqual(len(changes), 2)
+        self.assertTrue(changes[0].is_draft)
+        self.assertFalse(changes[1].is_draft)
+
+    def test_no_change_on_untracked_field_edit(self):
+        """Editing order should not create an additional ChapterChange."""
+        guide = GuideFactory(slug="cg5")
+        chapter = ChapterFactory(guide=guide, title="Title", body="Body", slug="ch")
+        chapter.order = 99
+        chapter.save()
+        # Only the initial creation change should exist
+        self.assertEqual(ChapterChange.objects.filter(chapter=chapter).count(), 1)
+
+    def test_multiple_changes_recorded(self):
+        guide = GuideFactory(slug="cg6")
+        chapter = ChapterFactory(guide=guide, title="V1", body="Body", slug="ch")
+        chapter.title = "V2"
+        chapter.save()
+        chapter.title = "V3"
+        chapter.save()
+        changes = list(
+            ChapterChange.objects.filter(chapter=chapter).order_by("created")
+        )
+        self.assertEqual(len(changes), 3)
+        self.assertEqual(changes[0].title, "V1")
+        self.assertEqual(changes[1].title, "V2")
+        self.assertEqual(changes[2].title, "V3")
+
+    def test_change_defaults(self):
+        guide = GuideFactory(slug="cg7")
+        chapter = ChapterFactory(guide=guide, title="Title", body="Body", slug="ch")
+        change = ChapterChange.objects.filter(chapter=chapter).first()
+        self.assertFalse(change.is_notable)
+        self.assertEqual(change.change_note, "")
+
+    def test_change_str(self):
+        guide = GuideFactory(slug="cg8")
+        chapter = ChapterFactory(
+            guide=guide, title="My Chapter", body="Body", slug="ch"
+        )
+        chapter.title = "Updated Chapter"
+        chapter.save()
+        change = ChapterChange.objects.filter(chapter=chapter).order_by("created").last()
+        self.assertIn("Updated Chapter", str(change))
+
+
+class ChapterChangesPageTests(TransactionTestCase):
+    def test_changes_page_initial_version(self):
+        """Creating a chapter auto-creates a ChapterChange shown as initial version."""
+        guide = GuideFactory(slug="pg2")
+        chapter = ChapterFactory(guide=guide, title="Ch", body="Body", slug="ch")
+        response = self.client.get("/guides/pg2/ch/changes/")
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Initial version")
+
+    def test_changes_page_shows_diff(self):
+        guide = GuideFactory(slug="pg3")
+        chapter = ChapterFactory(guide=guide, title="Ch", body="Line one", slug="ch")
+        chapter.body = "Line two"
+        chapter.save()
+        response = self.client.get("/guides/pg3/ch/changes/")
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode()
+        self.assertIn("diff-add", content)
+        self.assertIn("diff-remove", content)
+
+    def test_changes_page_shows_title_diff(self):
+        guide = GuideFactory(slug="pg4")
+        chapter = ChapterFactory(guide=guide, title="Old Title", body="Body", slug="ch")
+        chapter.title = "New Title"
+        chapter.save()
+        response = self.client.get("/guides/pg4/ch/changes/")
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Title")
+
+    def test_changes_page_shows_draft_status_change(self):
+        guide = GuideFactory(slug="pg5")
+        chapter = ChapterFactory(
+            guide=guide, title="Ch", body="Body", slug="ch", is_draft=True
+        )
+        chapter.is_draft = False
+        chapter.save()
+        # Must be staff to view a chapter whose guide is not draft but chapter was draft
+        User.objects.create_superuser("admin", "a@b.com", "pw")
+        self.client.login(username="admin", password="pw")
+        response = self.client.get("/guides/pg5/ch/changes/")
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Draft status changed")
+
+    def test_changes_page_shows_change_note(self):
+        guide = GuideFactory(slug="pg6")
+        chapter = ChapterFactory(guide=guide, title="Ch", body="Body", slug="ch")
+        # Add a change_note to the auto-created initial change
+        change = ChapterChange.objects.get(chapter=chapter)
+        change.change_note = "Initial import"
+        change.save()
+        response = self.client.get("/guides/pg6/ch/changes/")
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Initial import")
+
+    def test_changes_page_draft_chapter_404_for_anonymous(self):
+        guide = GuideFactory(slug="pg7")
+        ChapterFactory(guide=guide, slug="draft-ch", is_draft=True)
+        response = self.client.get("/guides/pg7/draft-ch/changes/")
+        self.assertEqual(response.status_code, 404)
+
+    def test_changes_page_draft_guide_404_for_anonymous(self):
+        guide = GuideFactory(slug="pg8", is_draft=True)
+        ChapterFactory(guide=guide, slug="ch")
+        response = self.client.get("/guides/pg8/ch/changes/")
+        self.assertEqual(response.status_code, 404)
+
+    def test_changes_page_draft_visible_for_staff(self):
+        User.objects.create_superuser("admin", "a@b.com", "pw")
+        self.client.login(username="admin", password="pw")
+        guide = GuideFactory(slug="pg9", is_draft=True)
+        chapter = ChapterFactory(guide=guide, title="Secret Ch", slug="ch")
+        response = self.client.get("/guides/pg9/ch/changes/")
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Secret Ch")
+
+    def test_changes_page_breadcrumb(self):
+        guide = GuideFactory(slug="pg10", title="My Guide")
+        chapter = ChapterFactory(
+            guide=guide, title="My Chapter", body="Body", slug="ch"
+        )
+        response = self.client.get("/guides/pg10/ch/changes/")
+        self.assertContains(response, "My Guide")
+        self.assertContains(response, "My Chapter")
+        self.assertContains(response, "/guides/pg10/")
+        self.assertContains(response, "/guides/pg10/ch/")

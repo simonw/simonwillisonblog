@@ -19,7 +19,6 @@ import importlib.metadata
 import json
 from proxy.views import proxy_view
 
-
 handler404 = "blog.views.custom_404"
 
 
@@ -164,7 +163,11 @@ urlpatterns = [
     ),
     path("notes/", search_views.type_listing, {"type_name": "note"}, name="notes"),
     path("elsewhere/", search_views.type_listing, {"type_name": "beat"}, name="beats"),
-    path("elsewhere/<slug:beat_type>/", search_views.beat_type_listing, name="beat_type_listing"),
+    path(
+        "elsewhere/<slug:beat_type>/",
+        search_views.beat_type_listing,
+        name="beat_type_listing",
+    ),
     re_path(r"^about/$", blog_views.about),
     path("top-tags/", blog_views.top_tags),
     re_path(r"^tags/$", blog_views.tag_index),
@@ -175,6 +178,7 @@ urlpatterns = [
     path("guides/", blog_views.guide_index),
     re_path(r"^guides/([\w-]+)/$", blog_views.guide_detail),
     re_path(r"^guides/([\w-]+)/([\w-]+)/$", blog_views.chapter_detail),
+    re_path(r"^guides/([\w-]+)/([\w-]+)/changes/$", blog_views.chapter_changes),
     re_path(r"^series/$", blog_views.series_index),
     re_path(r"^series/(.*?)/$", blog_views.archive_series),
     re_path(r"^series/(.*?).atom$", blog_views.archive_series_atom),
