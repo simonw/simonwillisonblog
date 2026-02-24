@@ -838,7 +838,7 @@ def guide_detail(request, slug):
         guide = get_object_or_404(Guide, slug=slug)
     else:
         guide = get_object_or_404(Guide, slug=slug, is_draft=False)
-    include_drafts = request.user.is_staff
+    include_drafts = request.user.is_staff and guide.is_draft
     toc = build_guide_toc(guide, include_drafts=include_drafts)
     response = render(
         request,
@@ -947,7 +947,7 @@ def chapter_changes(request, guide_slug, chapter_slug):
                     "is_first": False,
                 }
             )
-    return render(
+    response = render(
         request,
         "chapter_changes.html",
         {
@@ -956,6 +956,9 @@ def chapter_changes(request, guide_slug, chapter_slug):
             "diffs": diffs,
         },
     )
+    if guide.is_draft or chapter.is_draft:
+        set_no_cache(response)
+    return response
 
 
 @never_cache
