@@ -2728,3 +2728,68 @@ class GuideSectionTests(TransactionTestCase):
         section.delete()
         chapter.refresh_from_db()
         self.assertIsNone(chapter.section)
+
+    def test_build_guide_toc_mixed(self):
+        from blog.views import build_guide_toc
+
+        guide = GuideFactory(slug="toc-mixed")
+        standalone = ChapterFactory(
+            guide=guide, title="Intro", slug="intro", order=0
+        )
+        section = GuideSectionFactory(
+            guide=guide, title="Basics", slug="basics", order=1
+        )
+        ch_in_sec1 = ChapterFactory(
+            guide=guide, title="Glossary", slug="glossary", order=0, section=section
+        )
+        ch_in_sec2 = ChapterFactory(
+            guide=guide, title="Install", slug="install", order=1, section=section
+        )
+
+        toc = build_guide_toc(guide)
+        self.assertEqual(len(toc), 2)
+        self.assertEqual(toc[0]["type"], "chapter")
+        self.assertEqual(toc[0]["chapter"], standalone)
+        self.assertEqual(toc[1]["type"], "section")
+        self.assertEqual(toc[1]["section"], section)
+        self.assertEqual(toc[1]["chapters"], [ch_in_sec1, ch_in_sec2])
+
+    def test_build_guide_toc_hides_empty_sections(self):
+        from blog.views import build_guide_toc
+
+        guide = GuideFactory(slug="toc-empty")
+        GuideSectionFactory(guide=guide, title="Empty", slug="empty", order=1)
+        ChapterFactory(guide=guide, title="Solo", slug="solo", order=0)
+
+        toc = build_guide_toc(guide)
+        self.assertEqual(len(toc), 1)
+        self.assertEqual(toc[0]["type"], "chapter")
+
+    def test_build_guide_toc_hides_draft_chapters(self):
+        from blog.views import build_guide_toc
+
+        guide = GuideFactory(slug="toc-drafts")
+        section = GuideSectionFactory(guide=guide, slug="sec", order=1)
+        ChapterFactory(
+            guide=guide, slug="draft-ch", order=0, section=section, is_draft=True
+        )
+        # Section has only draft chapters, so should be hidden
+        toc = build_guide_toc(guide)
+        self.assertEqual(len(toc), 0)
+
+    def test_flatten_toc(self):
+        from blog.views import build_guide_toc, flatten_toc
+
+        guide = GuideFactory(slug="toc-flat")
+        ch1 = ChapterFactory(guide=guide, title="Intro", slug="intro", order=0)
+        section = GuideSectionFactory(guide=guide, slug="basics", order=1)
+        ch2 = ChapterFactory(
+            guide=guide, slug="glossary", order=0, section=section
+        )
+        ch3 = ChapterFactory(
+            guide=guide, slug="install", order=1, section=section
+        )
+
+        toc = build_guide_toc(guide)
+        flat = flatten_toc(toc)
+        self.assertEqual(flat, [ch1, ch2, ch3])

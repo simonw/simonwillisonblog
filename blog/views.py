@@ -22,6 +22,7 @@ from .models import (
     ChapterChange,
     Entry,
     Guide,
+    GuideSection,
     Quotation,
     Note,
     Photo,
@@ -794,6 +795,42 @@ def guide_index(request):
             ),
         },
     )
+
+
+def build_guide_toc(guide, include_drafts=False):
+    qs = guide.chapters.all()
+    if not include_drafts:
+        qs = qs.filter(is_draft=False)
+
+    standalone = list(qs.filter(section__isnull=True).order_by("order", "created"))
+    sections = guide.sections.order_by("order")
+
+    toc = []
+    for ch in standalone:
+        toc.append({"type": "chapter", "order": ch.order, "chapter": ch})
+
+    for sec in sections:
+        sec_chapters = list(qs.filter(section=sec).order_by("order", "created"))
+        if sec_chapters:
+            toc.append({
+                "type": "section",
+                "order": sec.order,
+                "section": sec,
+                "chapters": sec_chapters,
+            })
+
+    toc.sort(key=lambda item: item["order"])
+    return toc
+
+
+def flatten_toc(toc):
+    flat = []
+    for item in toc:
+        if item["type"] == "chapter":
+            flat.append(item["chapter"])
+        else:
+            flat.extend(item["chapters"])
+    return flat
 
 
 def guide_detail(request, slug):
