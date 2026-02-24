@@ -9,11 +9,25 @@
 {% if guide.description %}<p>{{ guide.description|markdownify }}</p>{% endif %}
 
 <ol style="margin-top: 1em">
-  {% for chapter in chapters %}
-    <li style="margin-left: 2em; list-style-type: decimal; margin-bottom: 0.3em">
-      <a href="{{ chapter.get_absolute_url }}">{{ chapter.title }}</a>
-      {% if chapter.is_draft %} <em>(draft)</em>{% endif %}
-    </li>
+  {% for item in toc %}
+    {% if item.type == "chapter" %}
+      <li style="margin-left: 2em; list-style-type: decimal; margin-bottom: 0.3em">
+        <a href="{{ item.chapter.get_absolute_url }}">{{ item.chapter.title }}</a>
+        {% if item.chapter.is_draft %} <em>(draft)</em>{% endif %}
+      </li>
+    {% elif item.type == "section" %}
+      <li style="margin-left: 2em; list-style-type: decimal; margin-bottom: 0.3em">
+        <strong>{{ item.section.title }}</strong>
+        <ol>
+          {% for ch in item.chapters %}
+            <li style="margin-left: 2em; list-style-type: decimal; margin-bottom: 0.3em">
+              <a href="{{ ch.get_absolute_url }}">{{ ch.title }}</a>
+              {% if ch.is_draft %} <em>(draft)</em>{% endif %}
+            </li>
+          {% endfor %}
+        </ol>
+      </li>
+    {% endif %}
   {% empty %}
     <li style="list-style: none">No chapters yet.</li>
   {% endfor %}

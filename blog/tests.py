@@ -8,12 +8,13 @@ from .factories import (
     EntryFactory,
     BlogmarkFactory,
     GuideFactory,
+    GuideSectionFactory,
     QuotationFactory,
     NoteFactory,
     BeatFactory,
     SponsorMessageFactory,
 )
-from blog.models import Tag, PreviousTagName, TagMerge, ChapterChange
+from blog.models import Tag, PreviousTagName, TagMerge, ChapterChange, GuideSection
 from django.utils import timezone
 import datetime
 from datetime import timedelta
@@ -2676,3 +2677,185 @@ class ChapterChangesPageTests(TransactionTestCase):
         self.assertContains(response, "My Chapter")
         self.assertContains(response, "/guides/pg10/")
         self.assertContains(response, "/guides/pg10/ch/")
+
+
+class GuideSectionTests(TransactionTestCase):
+    def test_create_section(self):
+        guide = GuideFactory(slug="sec-guide")
+        section = GuideSectionFactory(guide=guide, title="Basics", slug="basics", order=1)
+        self.assertEqual(section.guide, guide)
+        self.assertEqual(section.title, "Basics")
+        self.assertEqual(section.slug, "basics")
+        self.assertEqual(section.order, 1)
+        self.assertEqual(str(section), "Basics")
+
+    def test_section_unique_together(self):
+        guide = GuideFactory(slug="sec-guide2")
+        GuideSectionFactory(guide=guide, slug="basics", order=1)
+        from django.db import IntegrityError
+
+        with self.assertRaises(IntegrityError):
+            GuideSectionFactory(guide=guide, slug="basics", order=2)
+
+    def test_section_ordering(self):
+        guide = GuideFactory(slug="sec-guide3")
+        GuideSectionFactory(guide=guide, title="Second", slug="second", order=2)
+        GuideSectionFactory(guide=guide, title="First", slug="first", order=1)
+        sections = list(guide.sections.all())
+        self.assertEqual(sections[0].title, "First")
+        self.assertEqual(sections[1].title, "Second")
+
+    def test_chapter_section_fk(self):
+        guide = GuideFactory(slug="sec-fk")
+        section = GuideSectionFactory(guide=guide, slug="basics", order=1)
+        chapter = ChapterFactory(
+            guide=guide, title="Ch In Section", slug="ch-in-sec", order=0, section=section
+        )
+        self.assertEqual(chapter.section, section)
+        self.assertIn(chapter, list(section.chapters.all()))
+
+    def test_chapter_section_nullable(self):
+        guide = GuideFactory(slug="sec-null")
+        chapter = ChapterFactory(guide=guide, slug="standalone", order=0)
+        self.assertIsNone(chapter.section)
+
+    def test_chapter_section_set_null_on_delete(self):
+        guide = GuideFactory(slug="sec-del")
+        section = GuideSectionFactory(guide=guide, slug="temp", order=1)
+        chapter = ChapterFactory(
+            guide=guide, slug="orphan", order=0, section=section
+        )
+        section.delete()
+        chapter.refresh_from_db()
+        self.assertIsNone(chapter.section)
+
+    def test_build_guide_toc_mixed(self):
+        from blog.views import build_guide_toc
+
+        guide = GuideFactory(slug="toc-mixed")
+        standalone = ChapterFactory(
+            guide=guide, title="Intro", slug="intro", order=0
+        )
+        section = GuideSectionFactory(
+            guide=guide, title="Basics", slug="basics", order=1
+        )
+        ch_in_sec1 = ChapterFactory(
+            guide=guide, title="Glossary", slug="glossary", order=0, section=section
+        )
+        ch_in_sec2 = ChapterFactory(
+            guide=guide, title="Install", slug="install", order=1, section=section
+        )
+
+        toc = build_guide_toc(guide)
+        self.assertEqual(len(toc), 2)
+        self.assertEqual(toc[0]["type"], "chapter")
+        self.assertEqual(toc[0]["chapter"], standalone)
+        self.assertEqual(toc[1]["type"], "section")
+        self.assertEqual(toc[1]["section"], section)
+        self.assertEqual(toc[1]["chapters"], [ch_in_sec1, ch_in_sec2])
+
+    def test_build_guide_toc_hides_empty_sections(self):
+        from blog.views import build_guide_toc
+
+        guide = GuideFactory(slug="toc-empty")
+        GuideSectionFactory(guide=guide, title="Empty", slug="empty", order=1)
+        ChapterFactory(guide=guide, title="Solo", slug="solo", order=0)
+
+        toc = build_guide_toc(guide)
+        self.assertEqual(len(toc), 1)
+        self.assertEqual(toc[0]["type"], "chapter")
+
+    def test_build_guide_toc_hides_draft_chapters(self):
+        from blog.views import build_guide_toc
+
+        guide = GuideFactory(slug="toc-drafts")
+        section = GuideSectionFactory(guide=guide, slug="sec", order=1)
+        ChapterFactory(
+            guide=guide, slug="draft-ch", order=0, section=section, is_draft=True
+        )
+        # Section has only draft chapters, so should be hidden
+        toc = build_guide_toc(guide)
+        self.assertEqual(len(toc), 0)
+
+    def test_flatten_toc(self):
+        from blog.views import build_guide_toc, flatten_toc
+
+        guide = GuideFactory(slug="toc-flat")
+        ch1 = ChapterFactory(guide=guide, title="Intro", slug="intro", order=0)
+        section = GuideSectionFactory(guide=guide, slug="basics", order=1)
+        ch2 = ChapterFactory(
+            guide=guide, slug="glossary", order=0, section=section
+        )
+        ch3 = ChapterFactory(
+            guide=guide, slug="install", order=1, section=section
+        )
+
+        toc = build_guide_toc(guide)
+        flat = flatten_toc(toc)
+        self.assertEqual(flat, [ch1, ch2, ch3])
+
+    def test_guide_detail_shows_section_headings(self):
+        guide = GuideFactory(slug="view-sec")
+        ChapterFactory(guide=guide, title="Intro Ch", slug="intro", order=0)
+        section = GuideSectionFactory(
+            guide=guide, title="Basics Section", slug="basics", order=1
+        )
+        ChapterFactory(
+            guide=guide, title="Ch In Basics", slug="ch-basics", order=0, section=section
+        )
+        response = self.client.get("/guides/view-sec/")
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Intro Ch")
+        self.assertContains(response, "Basics Section")
+        self.assertContains(response, "Ch In Basics")
+        # Section title should be bold/strong, not a link
+        self.assertContains(response, "<strong>Basics Section</strong>")
+
+    def test_guide_detail_hides_empty_section(self):
+        guide = GuideFactory(slug="view-empty-sec")
+        ChapterFactory(guide=guide, title="Solo Ch", slug="solo", order=0)
+        GuideSectionFactory(guide=guide, title="Ghost Section", slug="ghost", order=1)
+        response = self.client.get("/guides/view-empty-sec/")
+        self.assertContains(response, "Solo Ch")
+        self.assertNotContains(response, "Ghost Section")
+
+    def test_chapter_sidebar_shows_section_headings(self):
+        guide = GuideFactory(slug="sidebar-sec")
+        section = GuideSectionFactory(
+            guide=guide, title="My Section", slug="my-sec", order=1
+        )
+        ch1 = ChapterFactory(
+            guide=guide, title="Standalone Ch", slug="standalone", order=0
+        )
+        ch2 = ChapterFactory(
+            guide=guide, title="Sec Ch", slug="sec-ch", order=0, section=section
+        )
+        response = self.client.get("/guides/sidebar-sec/standalone/")
+        self.assertEqual(response.status_code, 200)
+        # Sidebar should show the section heading
+        self.assertContains(response, "<strong>My Section</strong>")
+        self.assertContains(response, "Standalone Ch")
+        self.assertContains(response, "Sec Ch")
+
+    def test_chapter_prev_next_ignores_sections(self):
+        guide = GuideFactory(slug="nav-sec")
+        section = GuideSectionFactory(guide=guide, slug="sec", order=1)
+        ch1 = ChapterFactory(
+            guide=guide, title="First", slug="first", order=0
+        )
+        ch2 = ChapterFactory(
+            guide=guide, title="Second", slug="second", order=0, section=section
+        )
+        ch3 = ChapterFactory(
+            guide=guide, title="Third", slug="third", order=1, section=section
+        )
+        # First chapter: next should be Second (in section), flat walk
+        response = self.client.get("/guides/nav-sec/first/")
+        self.assertContains(response, "Second")
+        # Second chapter: prev=First, next=Third
+        response = self.client.get("/guides/nav-sec/second/")
+        self.assertContains(response, "First")
+        self.assertContains(response, "Third")
+        # Third chapter: prev=Second, no next
+        response = self.client.get("/guides/nav-sec/third/")
+        self.assertContains(response, "Second")

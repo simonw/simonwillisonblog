@@ -280,6 +280,20 @@ class Guide(models.Model):
         ordering = ("title",)
 
 
+class GuideSection(models.Model):
+    guide = models.ForeignKey(Guide, related_name="sections", on_delete=models.CASCADE)
+    title = models.CharField(max_length=255)
+    slug = models.SlugField(max_length=64)
+    order = models.IntegerField(default=0)
+
+    class Meta:
+        ordering = ("order",)
+        unique_together = (("guide", "slug"),)
+
+    def __str__(self):
+        return self.title
+
+
 class SponsorMessage(models.Model):
     COLOR_SCHEME_CHOICES = [
         ("warm", "Warm"),
@@ -348,6 +362,13 @@ class BaseModel(models.Model):
 
 class Chapter(BaseModel):
     guide = models.ForeignKey(Guide, related_name="chapters", on_delete=models.CASCADE)
+    section = models.ForeignKey(
+        GuideSection,
+        related_name="chapters",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
     updated = models.DateTimeField(auto_now=True)
     title = models.CharField(max_length=255)
     body = models.TextField()

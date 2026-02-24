@@ -22,6 +22,7 @@ from .models import (
     ChapterChange,
     Entry,
     Guide,
+    GuideSection,
     Quotation,
     Note,
     Photo,
@@ -796,20 +797,55 @@ def guide_index(request):
     )
 
 
+def build_guide_toc(guide, include_drafts=False):
+    qs = guide.chapters.all()
+    if not include_drafts:
+        qs = qs.filter(is_draft=False)
+
+    standalone = list(qs.filter(section__isnull=True).order_by("order", "created"))
+    sections = guide.sections.order_by("order")
+
+    toc = []
+    for ch in standalone:
+        toc.append({"type": "chapter", "order": ch.order, "chapter": ch})
+
+    for sec in sections:
+        sec_chapters = list(qs.filter(section=sec).order_by("order", "created"))
+        if sec_chapters:
+            toc.append({
+                "type": "section",
+                "order": sec.order,
+                "section": sec,
+                "chapters": sec_chapters,
+            })
+
+    toc.sort(key=lambda item: item["order"])
+    return toc
+
+
+def flatten_toc(toc):
+    flat = []
+    for item in toc:
+        if item["type"] == "chapter":
+            flat.append(item["chapter"])
+        else:
+            flat.extend(item["chapters"])
+    return flat
+
+
 def guide_detail(request, slug):
     if request.user.is_staff:
         guide = get_object_or_404(Guide, slug=slug)
     else:
         guide = get_object_or_404(Guide, slug=slug, is_draft=False)
-    chapters = guide.chapters.filter(is_draft=False).order_by("order", "created")
-    if request.user.is_staff:
-        chapters = guide.chapters.order_by("order", "created")
+    include_drafts = request.user.is_staff
+    toc = build_guide_toc(guide, include_drafts=include_drafts)
     response = render(
         request,
         "guide_detail.html",
         {
             "guide": guide,
-            "chapters": chapters,
+            "toc": toc,
         },
     )
     if guide.is_draft:
@@ -826,12 +862,9 @@ def chapter_detail(request, guide_slug, chapter_slug):
         chapter = get_object_or_404(
             Chapter, guide=guide, slug=chapter_slug, is_draft=False
         )
-    if request.user.is_staff and chapter.is_draft:
-        all_chapters = list(guide.chapters.order_by("order", "created"))
-    else:
-        all_chapters = list(
-            guide.chapters.filter(is_draft=False).order_by("order", "created")
-        )
+    include_drafts = request.user.is_staff and chapter.is_draft
+    toc = build_guide_toc(guide, include_drafts=include_drafts)
+    all_chapters = flatten_toc(toc)
     current_index = None
     for i, ch in enumerate(all_chapters):
         if ch.pk == chapter.pk:
@@ -851,6 +884,7 @@ def chapter_detail(request, guide_slug, chapter_slug):
         {
             "guide": guide,
             "chapter": chapter,
+            "toc": toc,
             "all_chapters": all_chapters,
             "previous_chapter": previous_chapter,
             "next_chapter": next_chapter,

@@ -10,6 +10,7 @@ from .models import (
     ChapterChange,
     Entry,
     Guide,
+    GuideSection,
     Tag,
     Quotation,
     Blogmark,
@@ -175,36 +176,24 @@ admin.site.register(
 )
 
 
-class ChapterInline(admin.TabularInline):
-    model = Chapter
-    fields = ("order", "title", "slug", "is_draft")
-    prepopulated_fields = {"slug": ("title",)}
-    extra = 1
-
-
 @admin.register(Guide)
 class GuideAdmin(admin.ModelAdmin):
     list_display = ("title", "slug", "is_draft")
     prepopulated_fields = {"slug": ("title",)}
-    inlines = [ChapterInline]
 
 
-class ChapterChangeInline(admin.TabularInline):
-    model = ChapterChange
-    fields = ("created", "title", "is_draft", "is_notable", "change_note")
-    readonly_fields = ("created", "title", "is_draft")
-    extra = 0
-
-    def has_add_permission(self, request, obj=None):
-        return False
+@admin.register(GuideSection)
+class GuideSectionAdmin(admin.ModelAdmin):
+    list_display = ("title", "guide", "order")
+    list_filter = ("guide",)
+    prepopulated_fields = {"slug": ("title",)}
 
 
 @admin.register(Chapter)
 class ChapterAdmin(BaseAdmin):
-    list_display = ("title", "guide", "order", "is_draft")
-    list_filter = ("guide", "is_draft")
+    list_display = ("title", "guide", "section", "order", "is_draft")
+    list_filter = ("guide", "section", "is_draft")
     prepopulated_fields = {"slug": ("title",)}
-    inlines = [ChapterChangeInline]
 
 
 @admin.register(ChapterChange)
