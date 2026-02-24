@@ -2704,3 +2704,27 @@ class GuideSectionTests(TransactionTestCase):
         sections = list(guide.sections.all())
         self.assertEqual(sections[0].title, "First")
         self.assertEqual(sections[1].title, "Second")
+
+    def test_chapter_section_fk(self):
+        guide = GuideFactory(slug="sec-fk")
+        section = GuideSectionFactory(guide=guide, slug="basics", order=1)
+        chapter = ChapterFactory(
+            guide=guide, title="Ch In Section", slug="ch-in-sec", order=0, section=section
+        )
+        self.assertEqual(chapter.section, section)
+        self.assertIn(chapter, list(section.chapters.all()))
+
+    def test_chapter_section_nullable(self):
+        guide = GuideFactory(slug="sec-null")
+        chapter = ChapterFactory(guide=guide, slug="standalone", order=0)
+        self.assertIsNone(chapter.section)
+
+    def test_chapter_section_set_null_on_delete(self):
+        guide = GuideFactory(slug="sec-del")
+        section = GuideSectionFactory(guide=guide, slug="temp", order=1)
+        chapter = ChapterFactory(
+            guide=guide, slug="orphan", order=0, section=section
+        )
+        section.delete()
+        chapter.refresh_from_db()
+        self.assertIsNone(chapter.section)
