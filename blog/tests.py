@@ -2818,3 +2818,44 @@ class GuideSectionTests(TransactionTestCase):
         response = self.client.get("/guides/view-empty-sec/")
         self.assertContains(response, "Solo Ch")
         self.assertNotContains(response, "Ghost Section")
+
+    def test_chapter_sidebar_shows_section_headings(self):
+        guide = GuideFactory(slug="sidebar-sec")
+        section = GuideSectionFactory(
+            guide=guide, title="My Section", slug="my-sec", order=1
+        )
+        ch1 = ChapterFactory(
+            guide=guide, title="Standalone Ch", slug="standalone", order=0
+        )
+        ch2 = ChapterFactory(
+            guide=guide, title="Sec Ch", slug="sec-ch", order=0, section=section
+        )
+        response = self.client.get("/guides/sidebar-sec/standalone/")
+        self.assertEqual(response.status_code, 200)
+        # Sidebar should show the section heading
+        self.assertContains(response, "<strong>My Section</strong>")
+        self.assertContains(response, "Standalone Ch")
+        self.assertContains(response, "Sec Ch")
+
+    def test_chapter_prev_next_ignores_sections(self):
+        guide = GuideFactory(slug="nav-sec")
+        section = GuideSectionFactory(guide=guide, slug="sec", order=1)
+        ch1 = ChapterFactory(
+            guide=guide, title="First", slug="first", order=0
+        )
+        ch2 = ChapterFactory(
+            guide=guide, title="Second", slug="second", order=0, section=section
+        )
+        ch3 = ChapterFactory(
+            guide=guide, title="Third", slug="third", order=1, section=section
+        )
+        # First chapter: next should be Second (in section), flat walk
+        response = self.client.get("/guides/nav-sec/first/")
+        self.assertContains(response, "Second")
+        # Second chapter: prev=First, next=Third
+        response = self.client.get("/guides/nav-sec/second/")
+        self.assertContains(response, "First")
+        self.assertContains(response, "Third")
+        # Third chapter: prev=Second, no next
+        response = self.client.get("/guides/nav-sec/third/")
+        self.assertContains(response, "Second")

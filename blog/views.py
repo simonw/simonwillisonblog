@@ -862,12 +862,9 @@ def chapter_detail(request, guide_slug, chapter_slug):
         chapter = get_object_or_404(
             Chapter, guide=guide, slug=chapter_slug, is_draft=False
         )
-    if request.user.is_staff and chapter.is_draft:
-        all_chapters = list(guide.chapters.order_by("order", "created"))
-    else:
-        all_chapters = list(
-            guide.chapters.filter(is_draft=False).order_by("order", "created")
-        )
+    include_drafts = request.user.is_staff and chapter.is_draft
+    toc = build_guide_toc(guide, include_drafts=include_drafts)
+    all_chapters = flatten_toc(toc)
     current_index = None
     for i, ch in enumerate(all_chapters):
         if ch.pk == chapter.pk:
@@ -887,6 +884,7 @@ def chapter_detail(request, guide_slug, chapter_slug):
         {
             "guide": guide,
             "chapter": chapter,
+            "toc": toc,
             "all_chapters": all_chapters,
             "previous_chapter": previous_chapter,
             "next_chapter": next_chapter,

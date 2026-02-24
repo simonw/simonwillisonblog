@@ -33,11 +33,26 @@
 <div class="series-info">
   <p><strong>Chapters in this guide</strong></p>
   <ol>
-    {% for other in all_chapters %}
-      {% if other.pk == chapter.pk %}
-        <li><strong>{{ other.title }}</strong></li>
-      {% else %}
-        <li><a href="{{ other.get_absolute_url }}">{{ other.title }}</a></li>
+    {% for item in toc %}
+      {% if item.type == "chapter" %}
+        {% if item.chapter.pk == chapter.pk %}
+          <li><strong>{{ item.chapter.title }}</strong></li>
+        {% else %}
+          <li><a href="{{ item.chapter.get_absolute_url }}">{{ item.chapter.title }}</a></li>
+        {% endif %}
+      {% elif item.type == "section" %}
+        <li style="list-style: none">
+          <strong>{{ item.section.title }}</strong>
+          <ol>
+            {% for ch in item.chapters %}
+              {% if ch.pk == chapter.pk %}
+                <li><strong>{{ ch.title }}</strong></li>
+              {% else %}
+                <li><a href="{{ ch.get_absolute_url }}">{{ ch.title }}</a></li>
+              {% endif %}
+            {% endfor %}
+          </ol>
+        </li>
       {% endif %}
     {% endfor %}
   </ol>
