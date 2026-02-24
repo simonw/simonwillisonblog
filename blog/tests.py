@@ -2793,3 +2793,28 @@ class GuideSectionTests(TransactionTestCase):
         toc = build_guide_toc(guide)
         flat = flatten_toc(toc)
         self.assertEqual(flat, [ch1, ch2, ch3])
+
+    def test_guide_detail_shows_section_headings(self):
+        guide = GuideFactory(slug="view-sec")
+        ChapterFactory(guide=guide, title="Intro Ch", slug="intro", order=0)
+        section = GuideSectionFactory(
+            guide=guide, title="Basics Section", slug="basics", order=1
+        )
+        ChapterFactory(
+            guide=guide, title="Ch In Basics", slug="ch-basics", order=0, section=section
+        )
+        response = self.client.get("/guides/view-sec/")
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Intro Ch")
+        self.assertContains(response, "Basics Section")
+        self.assertContains(response, "Ch In Basics")
+        # Section title should be bold/strong, not a link
+        self.assertContains(response, "<strong>Basics Section</strong>")
+
+    def test_guide_detail_hides_empty_section(self):
+        guide = GuideFactory(slug="view-empty-sec")
+        ChapterFactory(guide=guide, title="Solo Ch", slug="solo", order=0)
+        GuideSectionFactory(guide=guide, title="Ghost Section", slug="ghost", order=1)
+        response = self.client.get("/guides/view-empty-sec/")
+        self.assertContains(response, "Solo Ch")
+        self.assertNotContains(response, "Ghost Section")

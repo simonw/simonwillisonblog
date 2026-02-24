@@ -838,15 +838,14 @@ def guide_detail(request, slug):
         guide = get_object_or_404(Guide, slug=slug)
     else:
         guide = get_object_or_404(Guide, slug=slug, is_draft=False)
-    chapters = guide.chapters.filter(is_draft=False).order_by("order", "created")
-    if request.user.is_staff:
-        chapters = guide.chapters.order_by("order", "created")
+    include_drafts = request.user.is_staff
+    toc = build_guide_toc(guide, include_drafts=include_drafts)
     response = render(
         request,
         "guide_detail.html",
         {
             "guide": guide,
-            "chapters": chapters,
+            "toc": toc,
         },
     )
     if guide.is_draft:
