@@ -8,12 +8,13 @@ from .factories import (
     EntryFactory,
     BlogmarkFactory,
     GuideFactory,
+    GuideSectionFactory,
     QuotationFactory,
     NoteFactory,
     BeatFactory,
     SponsorMessageFactory,
 )
-from blog.models import Tag, PreviousTagName, TagMerge, ChapterChange
+from blog.models import Tag, PreviousTagName, TagMerge, ChapterChange, GuideSection
 from django.utils import timezone
 import datetime
 from datetime import timedelta
@@ -2676,3 +2677,30 @@ class ChapterChangesPageTests(TransactionTestCase):
         self.assertContains(response, "My Chapter")
         self.assertContains(response, "/guides/pg10/")
         self.assertContains(response, "/guides/pg10/ch/")
+
+
+class GuideSectionTests(TransactionTestCase):
+    def test_create_section(self):
+        guide = GuideFactory(slug="sec-guide")
+        section = GuideSectionFactory(guide=guide, title="Basics", slug="basics", order=1)
+        self.assertEqual(section.guide, guide)
+        self.assertEqual(section.title, "Basics")
+        self.assertEqual(section.slug, "basics")
+        self.assertEqual(section.order, 1)
+        self.assertEqual(str(section), "Basics")
+
+    def test_section_unique_together(self):
+        guide = GuideFactory(slug="sec-guide2")
+        GuideSectionFactory(guide=guide, slug="basics", order=1)
+        from django.db import IntegrityError
+
+        with self.assertRaises(IntegrityError):
+            GuideSectionFactory(guide=guide, slug="basics", order=2)
+
+    def test_section_ordering(self):
+        guide = GuideFactory(slug="sec-guide3")
+        GuideSectionFactory(guide=guide, title="Second", slug="second", order=2)
+        GuideSectionFactory(guide=guide, title="First", slug="first", order=1)
+        sections = list(guide.sections.all())
+        self.assertEqual(sections[0].title, "First")
+        self.assertEqual(sections[1].title, "Second")
