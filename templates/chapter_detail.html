@@ -41,7 +41,7 @@
           <li><a href="{{ item.chapter.get_absolute_url }}">{{ item.chapter.title }}</a></li>
         {% endif %}
       {% elif item.type == "section" %}
-        <li style="list-style: none">
+        <li>
           <strong>{{ item.section.title }}</strong>
           <ol>
             {% for ch in item.chapters %}

@@ -16,7 +16,7 @@
         {% if item.chapter.is_draft %} <em>(draft)</em>{% endif %}
       </li>
     {% elif item.type == "section" %}
-      <li style="margin-left: 2em; list-style-type: none; margin-bottom: 0.3em">
+      <li style="margin-left: 2em; list-style-type: decimal; margin-bottom: 0.3em">
         <strong>{{ item.section.title }}</strong>
         <ol>
           {% for ch in item.chapters %}
