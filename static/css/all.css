@@ -557,9 +557,11 @@ div.entryPage {
 .entry img,
 .blogmark img,
 .note img,
+.quote img,
 .entry video,
 .blogmark video,
-.note video {
+.note video,
+.quote video {
   max-width: 100%;
 }
 /* Center embedded tweets in articles */
