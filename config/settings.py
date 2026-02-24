@@ -1,4 +1,5 @@
 import os
+import sys
 import dj_database_url
 import djp
 
@@ -202,5 +203,10 @@ CACHES = {
         "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
     }
 }
+
+if "test" in sys.argv:
+    PASSWORD_HASHERS = [
+        "django.contrib.auth.hashers.MD5PasswordHasher",
+    ]
 
 djp.settings(globals())

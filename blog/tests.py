@@ -1,6 +1,6 @@
 import re
 
-from django.test import TransactionTestCase
+from django.test import TestCase
 from django.contrib.auth.models import User
 from blog.templatetags.entry_tags import do_typography_string
 from .factories import (
@@ -22,7 +22,7 @@ import json
 import xml.etree.ElementTree as ET
 
 
-class BlogTests(TransactionTestCase):
+class BlogTests(TestCase):
     def test_homepage(self):
         db_entries = [
             EntryFactory(),
@@ -167,32 +167,33 @@ class BlogTests(TransactionTestCase):
         self.assertEqual(tag.tag, "tag-with-hyphen")
 
     def test_draft_items_not_displayed(self):
-        draft_entry = EntryFactory(is_draft=True, title="draftentry")
-        draft_blogmark = BlogmarkFactory(is_draft=True, link_title="draftblogmark")
-        draft_quotation = QuotationFactory(is_draft=True, source="draftquotation")
-        draft_note = NoteFactory(is_draft=True, body="draftnote")
-        testing = Tag.objects.get_or_create(tag="testing")[0]
+        with self.captureOnCommitCallbacks(execute=True):
+            draft_entry = EntryFactory(is_draft=True, title="draftentry")
+            draft_blogmark = BlogmarkFactory(is_draft=True, link_title="draftblogmark")
+            draft_quotation = QuotationFactory(is_draft=True, source="draftquotation")
+            draft_note = NoteFactory(is_draft=True, body="draftnote")
+            testing = Tag.objects.get_or_create(tag="testing")[0]
 
-        live_entry = EntryFactory(title="publishedentry", created=draft_entry.created)
-        live_blogmark = BlogmarkFactory(
-            link_title="publishedblogmark", created=draft_blogmark.created
-        )
-        live_quotation = QuotationFactory(
-            source="publishedquotation", created=draft_quotation.created
-        )
-        live_note = NoteFactory(body="publishednote", created=draft_note.created)
+            live_entry = EntryFactory(title="publishedentry", created=draft_entry.created)
+            live_blogmark = BlogmarkFactory(
+                link_title="publishedblogmark", created=draft_blogmark.created
+            )
+            live_quotation = QuotationFactory(
+                source="publishedquotation", created=draft_quotation.created
+            )
+            live_note = NoteFactory(body="publishednote", created=draft_note.created)
 
-        for obj in (
-            draft_entry,
-            draft_blogmark,
-            draft_quotation,
-            draft_note,
-            live_entry,
-            live_blogmark,
-            live_quotation,
-            live_note,
-        ):
-            obj.tags.add(testing)
+            for obj in (
+                draft_entry,
+                draft_blogmark,
+                draft_quotation,
+                draft_note,
+                live_entry,
+                live_blogmark,
+                live_quotation,
+                live_note,
+            ):
+                obj.tags.add(testing)
 
         paths = (
             "/",  # Homepage
@@ -245,8 +246,9 @@ class BlogTests(TransactionTestCase):
             )
 
             # Publish it
-            obj.is_draft = False
-            obj.save()
+            with self.captureOnCommitCallbacks(execute=True):
+                obj.is_draft = False
+                obj.save()
 
             response3 = self.client.get(obj.get_absolute_url())
             self.assertNotContains(response3, robots_fragment)
@@ -630,7 +632,7 @@ class BlogTests(TransactionTestCase):
         self.assertContains(response, "/2024/Dec/28/")
 
 
-class TypeListingTests(TransactionTestCase):
+class TypeListingTests(TestCase):
     def test_entries_page(self):
         entry = EntryFactory()
         BlogmarkFactory()
@@ -744,7 +746,7 @@ class TypeListingTests(TransactionTestCase):
         self.assertContains(response, "Atom feed")
 
 
-class MergeTagsTests(TransactionTestCase):
+class MergeTagsTests(TestCase):
     def setUp(self):
         self.staff_user = User.objects.create_user(
             username="staff", password="password", is_staff=True
@@ -962,7 +964,7 @@ class MergeTagsTests(TransactionTestCase):
         self.assertContains(response, "dest-tag")
 
 
-class TagThroughModelStrTests(TransactionTestCase):
+class TagThroughModelStrTests(TestCase):
     """Tests for the monkey-patched __str__ methods on tag through models."""
 
     def test_entry_tag_through_str(self):
@@ -1044,7 +1046,7 @@ class TagThroughModelStrTests(TransactionTestCase):
         self.assertNotIn("A" * 100, str_repr)
 
 
-class TagAdminDeleteTests(TransactionTestCase):
+class TagAdminDeleteTests(TestCase):
     """Tests for the tag admin delete confirmation page."""
 
     def setUp(self):
@@ -1132,7 +1134,7 @@ class TagAdminDeleteTests(TransactionTestCase):
         self.assertContains(response, f"/admin/blog/note/{note.pk}/change/")
 
 
-class RandomTagRedirectTests(TransactionTestCase):
+class RandomTagRedirectTests(TestCase):
     """Tests for the /random/TAG/ endpoint."""
 
     def test_random_tag_redirect_returns_all_types(self):
@@ -1233,7 +1235,7 @@ class RandomTagRedirectTests(TransactionTestCase):
         self.assertEqual(response.url, published_entry.get_absolute_url())
 
 
-class BulkTagIdFilterTests(TransactionTestCase):
+class BulkTagIdFilterTests(TestCase):
     """Tests for filtering search/bulk-tag results by specific IDs."""
 
     def setUp(self):
@@ -1304,8 +1306,9 @@ class BulkTagIdFilterTests(TransactionTestCase):
 
     def test_id_filter_combined_with_search_query(self):
         """ID filters combined with q= should search within filtered items."""
-        entry_a = EntryFactory(title="Unique findable alpha term")
-        entry_b = EntryFactory(title="Something else entirely")
+        with self.captureOnCommitCallbacks(execute=True):
+            entry_a = EntryFactory(title="Unique findable alpha term")
+            entry_b = EntryFactory(title="Something else entirely")
         response = self.client.get(
             f"/admin/bulk-tag/?entries={entry_a.pk},{entry_b.pk}&q=alpha"
         )
@@ -1395,7 +1398,7 @@ class BulkTagIdFilterTests(TransactionTestCase):
         self.assertNotIn(chapter2.pk, result_pks)
 
 
-class BulkTagChapterApiTests(TransactionTestCase):
+class BulkTagChapterApiTests(TestCase):
     """Tests for the api_add_tag endpoint with chapters."""
 
     def setUp(self):
@@ -1433,7 +1436,7 @@ class BulkTagChapterApiTests(TransactionTestCase):
         self.assertTrue(Tag.objects.filter(tag="brandnewtag").exists())
 
 
-class BeatTests(TransactionTestCase):
+class BeatTests(TestCase):
     def test_beat_on_homepage(self):
         """Beat should appear on the homepage in the mixed timeline."""
         beat = BeatFactory(title="llm-anthropic 0.24", beat_type="release")
@@ -1594,7 +1597,7 @@ class BeatTests(TransactionTestCase):
         self.assertContains(response, "beat")
 
 
-class BeatTypeFacetTests(TransactionTestCase):
+class BeatTypeFacetTests(TestCase):
     """Tests for surfacing beat types (release, til, etc.) directly in the Type facet."""
 
     def test_type_counts_include_beat_subtypes(self):
@@ -1668,9 +1671,10 @@ class BeatTypeFacetTests(TransactionTestCase):
 
     def test_beat_subtype_with_search_query(self):
         """?type=beat:release&q=searchterm should filter by both."""
-        BeatFactory(title="Searchable release", beat_type="release")
-        BeatFactory(title="Other release", beat_type="release")
-        BeatFactory(title="Searchable til", beat_type="til")
+        with self.captureOnCommitCallbacks(execute=True):
+            BeatFactory(title="Searchable release", beat_type="release")
+            BeatFactory(title="Other release", beat_type="release")
+            BeatFactory(title="Searchable til", beat_type="til")
         response = self.client.get("/search/?type=beat:release&q=searchable")
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Searchable release")
@@ -1703,7 +1707,7 @@ class BeatTypeFacetTests(TransactionTestCase):
         self.assertContains(response, "TIL beat")
 
 
-class ImporterViewTests(TransactionTestCase):
+class ImporterViewTests(TestCase):
     def setUp(self):
         self.admin = User.objects.create_superuser("admin", "a@b.com", "password")
 
@@ -2049,7 +2053,7 @@ class ImporterViewTests(TransactionTestCase):
         self.assertContains(response, "Beat Importers")
 
 
-class SponsorMessageTests(TransactionTestCase):
+class SponsorMessageTests(TestCase):
     def test_no_sponsor_message_no_banner(self):
         EntryFactory()
         response = self.client.get("/")
@@ -2126,7 +2130,7 @@ class SponsorMessageTests(TransactionTestCase):
         self.assertEqual(response.status_code, 200)
 
 
-class GuideTests(TransactionTestCase):
+class GuideTests(TestCase):
     def test_guide_index(self):
         guide = GuideFactory(title="Test Guide", description="A test guide")
         ChapterFactory(guide=guide, title="Chapter 1", order=1)
@@ -2293,7 +2297,7 @@ class GuideTests(TransactionTestCase):
         self.assertEqual(chapter.get_absolute_url(), "/guides/test-guide/test-chapter/")
 
 
-class ChapterEverywhereTests(TransactionTestCase):
+class ChapterEverywhereTests(TestCase):
     """Tests for chapters showing up in homepage, archives, search, feeds, calendar."""
 
     def _make_chapter(self, **kwargs):
@@ -2499,7 +2503,7 @@ class ChapterEverywhereTests(TransactionTestCase):
         self.assertIn("words</a>]</span></p>", content)
 
 
-class ChapterChangeTests(TransactionTestCase):
+class ChapterChangeTests(TestCase):
     def test_change_recorded_on_create(self):
         """Creating a new chapter should automatically create a ChapterChange."""
         guide = GuideFactory(slug="cg1")
@@ -2592,7 +2596,7 @@ class ChapterChangeTests(TransactionTestCase):
         self.assertIn("Updated Chapter", str(change))
 
 
-class ChapterChangesPageTests(TransactionTestCase):
+class ChapterChangesPageTests(TestCase):
     def test_changes_page_initial_version(self):
         """Creating a chapter auto-creates a ChapterChange shown as initial version."""
         guide = GuideFactory(slug="pg2")
@@ -2679,7 +2683,7 @@ class ChapterChangesPageTests(TransactionTestCase):
         self.assertContains(response, "/guides/pg10/ch/")
 
 
-class GuideSectionTests(TransactionTestCase):
+class GuideSectionTests(TestCase):
     def test_create_section(self):
         guide = GuideFactory(slug="sec-guide")
         section = GuideSectionFactory(guide=guide, title="Basics", slug="basics", order=1)
