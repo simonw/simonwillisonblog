@@ -2,7 +2,8 @@ from django import template
 
 register = template.Library()
 
-from blog.models import Entry, Photo, Quotation, Blogmark, Photoset, Note, Beat, Chapter
+from blog.models import Entry, Photo, Quotation, Blogmark, Photoset, Note, Beat
+from guides.models import Chapter
 import datetime, copy
 
 # This code used to use the following:

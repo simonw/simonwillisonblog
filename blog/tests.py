@@ -4,17 +4,16 @@ from django.test import TransactionTestCase
 from django.contrib.auth.models import User
 from blog.templatetags.entry_tags import do_typography_string
 from .factories import (
-    ChapterFactory,
     EntryFactory,
     BlogmarkFactory,
-    GuideFactory,
-    GuideSectionFactory,
     QuotationFactory,
     NoteFactory,
     BeatFactory,
     SponsorMessageFactory,
 )
-from blog.models import Tag, PreviousTagName, TagMerge, ChapterChange, GuideSection
+from guides.factories import ChapterFactory, GuideFactory, GuideSectionFactory
+from blog.models import Tag, PreviousTagName, TagMerge
+from guides.models import ChapterChange, GuideSection
 from django.utils import timezone
 import datetime
 from datetime import timedelta
@@ -2210,15 +2209,15 @@ class GuideTests(TransactionTestCase):
         self.assertContains(response, "Draft Ch")
 
     def test_chapter_ordering(self):
-        guide = GuideFactory(slug="g5")
-        ChapterFactory(guide=guide, title="Second", slug="second", order=2)
-        ChapterFactory(guide=guide, title="First", slug="first", order=1)
-        ChapterFactory(guide=guide, title="Third", slug="third", order=3)
+        guide = GuideFactory(slug="g5", description="")
+        ChapterFactory(guide=guide, title="Xalpha", slug="second", order=2)
+        ChapterFactory(guide=guide, title="Xbravo", slug="first", order=1)
+        ChapterFactory(guide=guide, title="Xcharlie", slug="third", order=3)
         response = self.client.get("/guides/g5/")
         content = response.content.decode()
-        first_pos = content.index("First")
-        second_pos = content.index("Second")
-        third_pos = content.index("Third")
+        first_pos = content.index("Xbravo")
+        second_pos = content.index("Xalpha")
+        third_pos = content.index("Xcharlie")
         self.assertLess(first_pos, second_pos)
         self.assertLess(second_pos, third_pos)
 
@@ -2388,7 +2387,7 @@ class ChapterEverywhereTests(TransactionTestCase):
         # Update search index
         from django.contrib.postgres.search import SearchVector
         from django.db.models import Value, TextField
-        from blog.models import Chapter
+        from guides.models import Chapter
         import operator
         from functools import reduce
 
@@ -2730,7 +2729,7 @@ class GuideSectionTests(TransactionTestCase):
         self.assertIsNone(chapter.section)
 
     def test_build_guide_toc_mixed(self):
-        from blog.views import build_guide_toc
+        from guides.views import build_guide_toc
 
         guide = GuideFactory(slug="toc-mixed")
         standalone = ChapterFactory(
@@ -2755,7 +2754,7 @@ class GuideSectionTests(TransactionTestCase):
         self.assertEqual(toc[1]["chapters"], [ch_in_sec1, ch_in_sec2])
 
     def test_build_guide_toc_hides_empty_sections(self):
-        from blog.views import build_guide_toc
+        from guides.views import build_guide_toc
 
         guide = GuideFactory(slug="toc-empty")
         GuideSectionFactory(guide=guide, title="Empty", slug="empty", order=1)
@@ -2766,7 +2765,7 @@ class GuideSectionTests(TransactionTestCase):
         self.assertEqual(toc[0]["type"], "chapter")
 
     def test_build_guide_toc_hides_draft_chapters(self):
-        from blog.views import build_guide_toc
+        from guides.views import build_guide_toc
 
         guide = GuideFactory(slug="toc-drafts")
         section = GuideSectionFactory(guide=guide, slug="sec", order=1)
@@ -2778,7 +2777,7 @@ class GuideSectionTests(TransactionTestCase):
         self.assertEqual(len(toc), 0)
 
     def test_flatten_toc(self):
-        from blog.views import build_guide_toc, flatten_toc
+        from guides.views import build_guide_toc, flatten_toc
 
         guide = GuideFactory(slug="toc-flat")
         ch1 = ChapterFactory(guide=guide, title="Intro", slug="intro", order=0)

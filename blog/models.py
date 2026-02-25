@@ -62,7 +62,11 @@ class Tag(models.Model):
         return self.beat_set.filter(is_draft=False).count()
 
     def chapter_count(self):
-        return self.chapter_set.filter(is_draft=False, guide__is_draft=False).count()
+        from guides.models import Chapter
+
+        return Chapter.objects.filter(
+            tags=self, is_draft=False, guide__is_draft=False
+        ).count()
 
     def total_count(self):
         entry_count = Subquery(
@@ -105,8 +109,10 @@ class Tag(models.Model):
             output_field=IntegerField(),
         )
 
+        from guides.models import Chapter as GuidesChapter
+
         chapter_count = Subquery(
-            Chapter.objects.filter(
+            GuidesChapter.objects.filter(
                 is_draft=False, guide__is_draft=False, tags=OuterRef("pk")
             )
             .values("tags")
@@ -160,7 +166,7 @@ class Tag(models.Model):
             .values("pk", "created", "type")
         )
         chapters = (
-            self.chapter_set.all()
+            self.guides_chapter_set.all()
             .annotate(type=models.Value("chapter", output_field=models.CharField()))
             .values("pk", "created", "type")
         )
@@ -170,6 +176,8 @@ class Tag(models.Model):
 
     def get_related_tags(self, limit=10):
         """Get all items tagged with this, look at /their/ tags, order by count"""
+        from guides.models import Chapter as GuidesChapter
+
         if not hasattr(self, "_related_tags"):
             counts = Counter()
             for klass, collection in (
@@ -178,7 +186,7 @@ class Tag(models.Model):
                 (Quotation, "quotation_set"),
                 (Note, "note_set"),
                 (Beat, "beat_set"),
-                (Chapter, "chapter_set"),
+                (GuidesChapter, "guides_chapter_set"),
             ):
                 qs = klass.objects.filter(
                     pk__in=getattr(self, collection).all()
@@ -863,6 +871,8 @@ def load_mixed_objects(dicts):
 
     Each returned ORM object has a .original_dict attribute populated.
     """
+    from guides.models import Chapter as GuidesChapter
+
     to_fetch = {}
     for d in dicts:
         to_fetch.setdefault(d["type"], set()).add(d["pk"])
@@ -873,7 +883,7 @@ def load_mixed_objects(dicts):
         ("quotation", Quotation),
         ("note", Note),
         ("beat", Beat),
-        ("chapter", Chapter),
+        ("chapter", GuidesChapter),
     ):
         ids = to_fetch.get(key) or []
         if key == "chapter":
