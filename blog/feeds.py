@@ -2,7 +2,8 @@ from django.contrib.syndication.views import Feed
 from django.utils.dateformat import format as date_format
 from django.utils.feedgenerator import Atom1Feed
 from django.http import HttpResponse
-from blog.models import Beat, Chapter, Entry, Blogmark, Quotation, Note
+from blog.models import Beat, Entry, Blogmark, Quotation, Note
+from guides.models import Chapter
 
 
 class Base(Feed):

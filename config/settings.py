@@ -59,6 +59,7 @@ INSTALLED_APPS = [
     "django.contrib.humanize",
     "django_hosts",
     "blog",
+    "guides",
     "monthly",
     "redirects",
     "feedstats",

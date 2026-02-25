@@ -8,7 +8,8 @@ from django.contrib.postgres.search import SearchQuery, SearchRank
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.http import HttpResponse, Http404
 from django.shortcuts import render
-from blog.models import Beat, Chapter, Entry, Blogmark, Quotation, Note, Tag, load_mixed_objects
+from blog.models import Beat, Entry, Blogmark, Quotation, Note, Tag, load_mixed_objects
+from guides.models import Chapter
 from spellchecker import SpellChecker
 import datetime
 
@@ -158,13 +159,13 @@ def search(request, q=None, return_context=False, per_page=30):
     month_counts_raw = {}
     beat_type_counts_raw = {}
 
-    for klass, type_name in (
-        (Entry, "entry"),
-        (Blogmark, "blogmark"),
-        (Quotation, "quotation"),
-        (Note, "note"),
-        (Beat, "beat"),
-        (Chapter, "chapter"),
+    for klass, type_name, tag_filter_name in (
+        (Entry, "entry", "entry"),
+        (Blogmark, "blogmark", "blogmark"),
+        (Quotation, "quotation", "quotation"),
+        (Note, "note", "note"),
+        (Beat, "beat", "beat"),
+        (Chapter, "chapter", "guides_chapter_set"),
     ):
         # Determine if this type should be included based on selected_type
         if selected_type:
@@ -200,7 +201,7 @@ def search(request, q=None, return_context=False, per_page=30):
             if type_count:
                 type_counts_raw[type_name] = type_count
         for tag, count in (
-            Tag.objects.filter(**{"%s__in" % type_name: klass_qs})
+            Tag.objects.filter(**{"%s__in" % tag_filter_name: klass_qs})
             .annotate(n=models.Count("tag"))
             .values_list("tag", "n")
         ):
