@@ -2209,15 +2209,15 @@ class GuideTests(TransactionTestCase):
         self.assertContains(response, "Draft Ch")
 
     def test_chapter_ordering(self):
-        guide = GuideFactory(slug="g5")
-        ChapterFactory(guide=guide, title="Second", slug="second", order=2)
-        ChapterFactory(guide=guide, title="First", slug="first", order=1)
-        ChapterFactory(guide=guide, title="Third", slug="third", order=3)
+        guide = GuideFactory(slug="g5", description="")
+        ChapterFactory(guide=guide, title="Xalpha", slug="second", order=2)
+        ChapterFactory(guide=guide, title="Xbravo", slug="first", order=1)
+        ChapterFactory(guide=guide, title="Xcharlie", slug="third", order=3)
         response = self.client.get("/guides/g5/")
         content = response.content.decode()
-        first_pos = content.index("First")
-        second_pos = content.index("Second")
-        third_pos = content.index("Third")
+        first_pos = content.index("Xbravo")
+        second_pos = content.index("Xalpha")
+        third_pos = content.index("Xcharlie")
         self.assertLess(first_pos, second_pos)
         self.assertLess(second_pos, third_pos)
 
