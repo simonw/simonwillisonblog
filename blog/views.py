@@ -961,7 +961,7 @@ def chapter_changes(request, guide_slug, chapter_slug):
         {
             "guide": guide,
             "chapter": chapter,
-            "diffs": diffs,
+            "diffs": reversed(diffs),
         },
     )
     if guide.is_draft or chapter.is_draft:
