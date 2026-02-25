@@ -58,6 +58,13 @@
   </ol>
 </div>
 {% include "_tags.html" with obj=chapter %}
+{% if chapter_num_changes %}
+<p>
+  Created: {{ chapter_created|date:"jS F Y" }}<br>
+  Last modified: {{ chapter_last_modified|date:"jS F Y" }}<br>
+  <a href="{{ chapter.get_absolute_url }}changes/">{{ chapter_num_changes }} change{{ chapter_num_changes|pluralize }}</a>
+</p>
+{% endif %}
 {% if previous_chapter %}
 <p><strong>Previous:</strong> <a href="{{ previous_chapter.get_absolute_url }}">{{ previous_chapter.title }}</a></p>
 {% endif %}
