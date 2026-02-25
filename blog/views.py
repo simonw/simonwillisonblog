@@ -5,7 +5,7 @@ from django.contrib.admin.views.decorators import staff_member_required
 from django.views.decorators.http import require_POST
 from django.views.decorators.cache import never_cache
 from django.db import models
-from django.db.models import CharField, Value
+from django.db.models import CharField, Count, Max, Min, Value
 from django.conf import settings
 from django.core.paginator import (
     Paginator,
@@ -878,6 +878,11 @@ def chapter_detail(request, guide_slug, chapter_slug):
         if current_index is not None and current_index < len(all_chapters) - 1
         else None
     )
+    change_stats = chapter.changes.aggregate(
+        first_created=Min("created"),
+        last_modified=Max("created"),
+        num_changes=Count("id"),
+    )
     response = render(
         request,
         "chapter_detail.html",
@@ -888,6 +893,9 @@ def chapter_detail(request, guide_slug, chapter_slug):
             "all_chapters": all_chapters,
             "previous_chapter": previous_chapter,
             "next_chapter": next_chapter,
+            "chapter_created": change_stats["first_created"],
+            "chapter_last_modified": change_stats["last_modified"],
+            "chapter_num_changes": change_stats["num_changes"],
         },
     )
     if guide.is_draft or chapter.is_draft:
