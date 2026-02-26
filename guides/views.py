@@ -3,6 +3,7 @@ from django.db import models
 from django.db.models import Count, Max, Min
 
 from blog.views import set_no_cache
+from blog.feeds import GuideFeed
 from .models import Guide, Chapter
 
 
@@ -200,3 +201,10 @@ def chapter_changes(request, guide_slug, chapter_slug):
     if guide.is_draft or chapter.is_draft:
         set_no_cache(response)
     return response
+
+
+def guide_feed(request, slug):
+    # Only serve feed for public guides
+    guide = get_object_or_404(Guide, slug=slug, is_draft=False)
+    feed = GuideFeed(guide)
+    return feed(request)

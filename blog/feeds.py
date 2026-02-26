@@ -224,6 +224,80 @@ class EverythingTagged(Everything):
         return self._items
 
 
+class GuideFeed(Base):
+    ga_source = "guide"
+
+    def __init__(self, guide):
+        self.guide = guide
+        self.title = f"Simon Willison's Weblog: {guide.title}"
+
+    def items(self):
+        from guides.models import Chapter, ChapterChange
+
+        # Get all non-draft chapters in this guide
+        chapters = list(
+            Chapter.objects.filter(guide=self.guide, is_draft=False)
+            .prefetch_related("tags")
+            .order_by("-created")
+        )
+
+        # Get all notable changes to chapters in this guide
+        notable_changes = list(
+            ChapterChange.objects.filter(
+                chapter__guide=self.guide,
+                is_notable=True
+            )
+            .select_related("chapter")
+            .prefetch_related("chapter__tags")
+            .order_by("-created")
+        )
+
+        # Combine and sort by date
+        combined = chapters + notable_changes
+        combined.sort(key=lambda item: item.created, reverse=True)
+        return combined[:30]
+
+    def item_title(self, item):
+        from guides.models import Chapter, ChapterChange
+
+        if isinstance(item, Chapter):
+            return item.title
+        elif isinstance(item, ChapterChange):
+            return f"{item.chapter.title}: {item.change_note}" if item.change_note else item.chapter.title
+
+    def item_description(self, item):
+        from guides.models import Chapter, ChapterChange
+
+        if isinstance(item, Chapter):
+            return item.body_rendered()
+        elif isinstance(item, ChapterChange):
+            desc = f"<p><strong>{item.change_note}</strong></p>" if item.change_note else ""
+            desc += item.body
+            return desc
+
+    def item_link(self, item):
+        from guides.models import Chapter, ChapterChange
+
+        if isinstance(item, Chapter):
+            return "https://simonwillison.net" + item.get_absolute_url()
+        elif isinstance(item, ChapterChange):
+            return "https://simonwillison.net" + item.chapter.get_absolute_url()
+
+    def item_pubdate(self, item):
+        return item.created
+
+    def item_updateddate(self, item):
+        return item.created
+
+    def item_categories(self, item):
+        from guides.models import Chapter, ChapterChange
+
+        if isinstance(item, Chapter):
+            return [t.tag for t in item.tags.all()]
+        elif isinstance(item, ChapterChange):
+            return [t.tag for t in item.chapter.tags.all()]
+
+
 def sitemap(request):
     xml = [
         '<?xml version="1.0" encoding="UTF-8"?>'
