@@ -1584,6 +1584,112 @@ h3.blog-mixed-list-year {
   color: #032f62;
 }
 
+/*
+ * Pygments syntax highlighting (codehilite)
+ * Maps Pygments token classes to existing CSS custom properties
+ * for automatic light/dark theme support.
+ */
+.codehilite {
+  background: var(--color-code-bg);
+  padding: 0.5em;
+  overflow-x: auto;
+  border-radius: 6px;
+  border: 1px solid var(--color-border);
+  margin: 1em 0;
+}
+.codehilite pre {
+  margin: 0;
+  line-height: 1.45;
+}
+.codehilite code {
+  background: none;
+  padding: 0;
+  border: none;
+}
+/* Comments */
+.codehilite .c,
+.codehilite .ch,
+.codehilite .cm,
+.codehilite .cpf,
+.codehilite .c1,
+.codehilite .cs { color: var(--color-code-comment); font-style: italic; }
+.codehilite .cp { color: var(--color-code-comment); font-weight: bold; font-style: italic; }
+/* Keywords */
+.codehilite .k,
+.codehilite .kd,
+.codehilite .kn,
+.codehilite .kr,
+.codehilite .kt { color: var(--color-code-keyword); }
+.codehilite .kc,
+.codehilite .kp { color: var(--color-code-constant); }
+/* Strings */
+.codehilite .s,
+.codehilite .sa,
+.codehilite .sb,
+.codehilite .sc,
+.codehilite .dl,
+.codehilite .sd,
+.codehilite .s2,
+.codehilite .se,
+.codehilite .sh,
+.codehilite .si,
+.codehilite .sx,
+.codehilite .sr,
+.codehilite .s1,
+.codehilite .ss { color: var(--color-code-string); }
+/* Numbers/literals */
+.codehilite .m,
+.codehilite .mb,
+.codehilite .mf,
+.codehilite .mh,
+.codehilite .mi,
+.codehilite .mo,
+.codehilite .il { color: var(--color-code-constant); }
+/* Names */
+.codehilite .n,
+.codehilite .na,
+.codehilite .nb,
+.codehilite .ni,
+.codehilite .nl,
+.codehilite .nn,
+.codehilite .nx,
+.codehilite .py,
+.codehilite .nv,
+.codehilite .bp,
+.codehilite .vc,
+.codehilite .vg,
+.codehilite .vi,
+.codehilite .vm { color: var(--color-code-variable); }
+/* Functions/entities */
+.codehilite .nf,
+.codehilite .fm,
+.codehilite .nc,
+.codehilite .nd,
+.codehilite .ne { color: var(--color-code-entity); }
+/* Tags (HTML/XML) */
+.codehilite .nt { color: var(--color-code-tag); }
+/* Constants */
+.codehilite .no { color: var(--color-code-constant); }
+/* Operators */
+.codehilite .o,
+.codehilite .ow { color: var(--color-code-keyword); font-weight: bold; }
+/* Punctuation */
+.codehilite .p,
+.codehilite .pm { color: var(--color-code-variable); }
+/* Generic */
+.codehilite .gd { color: var(--color-code-keyword); }
+.codehilite .gi { color: var(--color-code-tag); }
+.codehilite .gh,
+.codehilite .gu { color: var(--color-code-constant); font-weight: bold; }
+.codehilite .ge { font-style: italic; }
+.codehilite .gs { font-weight: bold; }
+.codehilite .err { color: var(--color-code-keyword); }
+/* Values/decorators */
+.codehilite .l,
+.codehilite .ld { color: var(--color-code-value); }
+/* Whitespace */
+.codehilite .w { color: var(--color-code-comment); }
+
 /* Custom page templates */
 .entry-wide div#primary {
   width: auto;

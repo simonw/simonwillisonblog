@@ -89,7 +89,15 @@ class Chapter(BaseModel):
             )
 
     def body_rendered(self):
-        return mark_safe(markdown(self.body))
+        return mark_safe(
+            markdown(
+                self.body,
+                extensions=["fenced_code", "codehilite"],
+                extension_configs={
+                    "codehilite": {"guess_lang": False},
+                },
+            )
+        )
 
     def multi_paragraph(self):
         return str(self.body_rendered()).count("<p") > 3
