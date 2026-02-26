@@ -1,0 +1,6 @@
+<p><em><a href="https://simonwillison.net{{ obj.chapter.guide.get_absolute_url }}">{{ obj.chapter.guide.title }}</a> &gt;</em></p>
+{% if obj.change_note %}<p><strong>{{ obj.change_note }}</strong></p>{% endif %}
+{{ obj.body_rendered }}
+{% if obj.tags.count %}
+    <p>Tags: {% for tag in obj.tags.all %}<a href="https://simonwillison.net/tags/{{ tag.tag }}">{{ tag.tag }}</a>{% if not forloop.last %}, {% endif %}{% endfor %}</p>
+{% endif %}

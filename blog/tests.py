@@ -2858,3 +2858,136 @@ class GuideSectionTests(TransactionTestCase):
         # Third chapter: prev=Second, no next
         response = self.client.get("/guides/nav-sec/third/")
         self.assertContains(response, "Second")
+
+
+class GuideFeedTests(TransactionTestCase):
+    def _make_guide_with_chapters(self, guide_slug="feed-guide", **guide_kwargs):
+        defaults = {"slug": guide_slug, "title": "Feed Guide", "is_draft": False}
+        defaults.update(guide_kwargs)
+        guide = GuideFactory(**defaults)
+        return guide
+
+    def test_guide_feed_returns_200_and_xml(self):
+        guide = self._make_guide_with_chapters()
+        ChapterFactory(guide=guide, title="Ch1", slug="ch1")
+        response = self.client.get(f"/guides/{guide.slug}.atom")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("application/xml", response["Content-Type"])
+
+    def test_guide_feed_includes_published_chapters(self):
+        guide = self._make_guide_with_chapters(guide_slug="feed-pub")
+        ChapterFactory(guide=guide, title="Published Chapter", slug="pub-ch")
+        response = self.client.get("/guides/feed-pub.atom")
+        self.assertContains(response, "Published Chapter")
+
+    def test_guide_feed_excludes_draft_chapters(self):
+        guide = self._make_guide_with_chapters(guide_slug="feed-draft-ch")
+        ChapterFactory(
+            guide=guide, title="Draft Chapter", slug="draft-ch", is_draft=True
+        )
+        ChapterFactory(guide=guide, title="Visible Chapter", slug="vis-ch")
+        response = self.client.get("/guides/feed-draft-ch.atom")
+        self.assertNotContains(response, "Draft Chapter")
+        self.assertContains(response, "Visible Chapter")
+
+    def test_guide_feed_includes_notable_changes(self):
+        guide = self._make_guide_with_chapters(guide_slug="feed-notable")
+        chapter = ChapterFactory(
+            guide=guide, title="Evolving Chapter", slug="evolving"
+        )
+        # Make a notable change
+        chapter.title = "Evolving Chapter"
+        chapter.body = "Updated body content"
+        chapter.save()
+        change = ChapterChange.objects.filter(chapter=chapter).order_by("created").last()
+        change.is_notable = True
+        change.change_note = "Major rewrite"
+        change.save()
+        response = self.client.get("/guides/feed-notable.atom")
+        self.assertContains(response, "Major rewrite")
+
+    def test_guide_feed_excludes_non_notable_changes(self):
+        guide = self._make_guide_with_chapters(guide_slug="feed-nonnotable")
+        chapter = ChapterFactory(
+            guide=guide, title="Stable Chapter", slug="stable"
+        )
+        # Make a non-notable change (default is_notable=False)
+        chapter.body = "Minor typo fix"
+        chapter.save()
+        response = self.client.get("/guides/feed-nonnotable.atom")
+        ns = {"atom": "http://www.w3.org/2005/Atom"}
+        root = ET.fromstring(response.content)
+        entries = root.findall("atom:entry", ns)
+        # Should only have one entry (the original chapter), not the non-notable change
+        self.assertEqual(len(entries), 1)
+
+    def test_guide_feed_has_cors_and_cache_headers(self):
+        guide = self._make_guide_with_chapters(guide_slug="feed-cors")
+        ChapterFactory(guide=guide, title="Ch", slug="ch")
+        response = self.client.get("/guides/feed-cors.atom")
+        self.assertEqual(response["Access-Control-Allow-Origin"], "*")
+        self.assertIn("s-maxage", response["Cache-Control"])
+
+    def test_draft_guide_feed_returns_404(self):
+        guide = self._make_guide_with_chapters(
+            guide_slug="draft-guide-feed", is_draft=True
+        )
+        ChapterFactory(guide=guide, title="Ch", slug="ch")
+        response = self.client.get("/guides/draft-guide-feed.atom")
+        self.assertEqual(response.status_code, 404)
+
+    def test_guide_feed_title(self):
+        guide = self._make_guide_with_chapters(
+            guide_slug="feed-title", title="My Awesome Guide"
+        )
+        ChapterFactory(guide=guide, title="Ch", slug="ch")
+        response = self.client.get("/guides/feed-title.atom")
+        ns = {"atom": "http://www.w3.org/2005/Atom"}
+        root = ET.fromstring(response.content)
+        title = root.find("atom:title", ns).text
+        self.assertIn("My Awesome Guide", title)
+
+    def test_guide_feed_entry_links_to_chapter(self):
+        guide = self._make_guide_with_chapters(guide_slug="feed-links")
+        chapter = ChapterFactory(guide=guide, title="Linked Ch", slug="linked")
+        response = self.client.get("/guides/feed-links.atom")
+        self.assertContains(response, chapter.get_absolute_url())
+
+    def test_guide_detail_has_atom_icon(self):
+        guide = self._make_guide_with_chapters(guide_slug="feed-icon")
+        ChapterFactory(guide=guide, title="Ch", slug="ch")
+        response = self.client.get("/guides/feed-icon/")
+        self.assertContains(response, f"/guides/feed-icon.atom")
+        self.assertContains(response, "Atom feed")
+
+    def test_guide_feed_notable_change_shows_chapter_body(self):
+        guide = self._make_guide_with_chapters(guide_slug="feed-body")
+        chapter = ChapterFactory(
+            guide=guide, title="Body Chapter", slug="body-ch",
+            body="Original content"
+        )
+        chapter.body = "Revised content with **markdown**"
+        chapter.save()
+        change = ChapterChange.objects.filter(chapter=chapter).order_by("created").last()
+        change.is_notable = True
+        change.change_note = "Content revised"
+        change.save()
+        response = self.client.get("/guides/feed-body.atom")
+        # The notable change entry should contain the chapter body rendered
+        self.assertContains(response, "Revised content with")
+
+    def test_guide_feed_orders_by_date_descending(self):
+        guide = self._make_guide_with_chapters(guide_slug="feed-order")
+        ch1 = ChapterFactory(
+            guide=guide, title="Older Chapter", slug="older",
+            created=timezone.now() - timedelta(days=2),
+        )
+        ch2 = ChapterFactory(
+            guide=guide, title="Newer Chapter", slug="newer",
+            created=timezone.now() - timedelta(days=1),
+        )
+        response = self.client.get("/guides/feed-order.atom")
+        content = response.content.decode()
+        pos_newer = content.index("Newer Chapter")
+        pos_older = content.index("Older Chapter")
+        self.assertLess(pos_newer, pos_older)

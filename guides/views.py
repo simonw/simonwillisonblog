@@ -4,6 +4,7 @@ from django.db.models import Count, Max, Min
 
 from blog.views import set_no_cache
 from .models import Guide, Chapter
+from .feeds import GuideFeed
 
 
 def guide_index(request):
@@ -200,3 +201,8 @@ def chapter_changes(request, guide_slug, chapter_slug):
     if guide.is_draft or chapter.is_draft:
         set_no_cache(response)
     return response
+
+
+def guide_feed(request, slug):
+    guide = get_object_or_404(Guide, slug=slug, is_draft=False)
+    return GuideFeed(guide)(request)
