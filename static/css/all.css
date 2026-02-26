@@ -538,6 +538,12 @@ p.cite {
   text-indent: 16px;
   font-weight: bold;
 }
+.draft-warning {
+  background-color: pink;
+  border: 2px solid red;
+  padding: 0.3em 0.5em;
+  margin-bottom: 1em;
+}
 div.metabox {
   font-size: 0.9em;
 }
