@@ -2460,6 +2460,7 @@ class ChapterEverywhereTests(TransactionTestCase):
         self.assertIn('<div class="codehilite">', html)
         self.assertIn('<span class="nt">', html)
 
+
     def test_chapter_has_tags(self):
         """Chapter (extending BaseModel) should support tags."""
         tag = Tag.objects.create(tag="chaptertest")
