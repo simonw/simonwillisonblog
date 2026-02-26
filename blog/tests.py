@@ -2858,3 +2858,93 @@ class GuideSectionTests(TransactionTestCase):
         # Third chapter: prev=Second, no next
         response = self.client.get("/guides/nav-sec/third/")
         self.assertContains(response, "Second")
+
+
+class GuideAtomFeedTests(TransactionTestCase):
+    def test_guide_atom_feed_returns_xml(self):
+        guide = GuideFactory(slug="feed-guide", title="Feed Guide")
+        ChapterFactory(guide=guide, title="Chapter A", slug="ch-a", order=1)
+        response = self.client.get("/guides/feed-guide.atom")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response["Content-Type"], "application/xml; charset=utf-8"
+        )
+        self.assertContains(response, "Feed Guide")
+        self.assertContains(response, "Chapter A")
+
+    def test_guide_atom_feed_includes_new_chapters(self):
+        guide = GuideFactory(slug="feed-new", title="New Chapters Guide")
+        ch1 = ChapterFactory(guide=guide, title="First", slug="first", order=1)
+        ch2 = ChapterFactory(guide=guide, title="Second", slug="second", order=2)
+        response = self.client.get("/guides/feed-new.atom")
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "First")
+        self.assertContains(response, "Second")
+
+    def test_guide_atom_feed_includes_notable_changes(self):
+        guide = GuideFactory(slug="feed-notable", title="Notable Guide")
+        chapter = ChapterFactory(
+            guide=guide, title="My Chapter", slug="my-ch", body="Original"
+        )
+        # Mark an existing change as notable
+        change = ChapterChange.objects.create(
+            chapter=chapter,
+            created=timezone.now(),
+            title="My Chapter",
+            body="Updated body",
+            is_draft=False,
+            is_notable=True,
+            change_note="Big rewrite",
+        )
+        response = self.client.get("/guides/feed-notable.atom")
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Big rewrite")
+
+    def test_guide_atom_feed_excludes_non_notable_changes(self):
+        guide = GuideFactory(slug="feed-quiet", title="Quiet Guide")
+        chapter = ChapterFactory(
+            guide=guide, title="Stable Chapter", slug="stable", body="Body"
+        )
+        # Create a non-notable change
+        ChapterChange.objects.create(
+            chapter=chapter,
+            created=timezone.now(),
+            title="Stable Chapter",
+            body="Typo fix",
+            is_draft=False,
+            is_notable=False,
+        )
+        response = self.client.get("/guides/feed-quiet.atom")
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode()
+        # Should have exactly one entry (the initial chapter creation)
+        self.assertEqual(content.count("<entry>"), 1)
+
+    def test_guide_atom_feed_excludes_draft_chapters(self):
+        guide = GuideFactory(slug="feed-draft", title="Draft Guide Feed")
+        ChapterFactory(
+            guide=guide, title="Published Ch", slug="pub", is_draft=False
+        )
+        ChapterFactory(
+            guide=guide, title="Draft Ch", slug="draft", is_draft=True
+        )
+        response = self.client.get("/guides/feed-draft.atom")
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Published Ch")
+        self.assertNotContains(response, "Draft Ch")
+
+    def test_guide_atom_feed_404_for_draft_guide(self):
+        GuideFactory(slug="draft-feed", is_draft=True)
+        response = self.client.get("/guides/draft-feed.atom")
+        self.assertEqual(response.status_code, 404)
+
+    def test_guide_atom_feed_404_for_nonexistent(self):
+        response = self.client.get("/guides/nonexistent.atom")
+        self.assertEqual(response.status_code, 404)
+
+    def test_guide_detail_shows_atom_icon(self):
+        guide = GuideFactory(slug="icon-guide", title="Icon Guide")
+        ChapterFactory(guide=guide, title="Ch", slug="ch")
+        response = self.client.get("/guides/icon-guide/")
+        self.assertContains(response, "/guides/icon-guide.atom")
+        self.assertContains(response, "Atom feed")
