@@ -92,9 +92,13 @@ class Chapter(BaseModel):
         return mark_safe(
             markdown(
                 self.body,
-                extensions=["fenced_code", "codehilite"],
+                extensions=["pymdownx.superfences", "pymdownx.highlight"],
                 extension_configs={
-                    "codehilite": {"guess_lang": False},
+                    "pymdownx.highlight": {
+                        "guess_lang": False,
+                        "css_class": "codehilite",
+                        "use_pygments": True,
+                    },
                 },
             )
         )
