@@ -2451,6 +2451,15 @@ class ChapterEverywhereTests(TransactionTestCase):
         self.assertIn('<div class="codehilite">', html)
         self.assertIn('<span class="nt">', html)
 
+    def test_chapter_fenced_code_block_in_blockquote(self):
+        """Fenced code blocks inside blockquotes should be syntax-highlighted."""
+        body = "> Example:\n> ```html\n> <p>Hi</p>\n> ```"
+        chapter = self._make_chapter(body=body)
+        html = str(chapter.body_rendered())
+        self.assertIn("<blockquote>", html)
+        self.assertIn('<div class="codehilite">', html)
+        self.assertIn('<span class="nt">', html)
+
     def test_chapter_has_tags(self):
         """Chapter (extending BaseModel) should support tags."""
         tag = Tag.objects.create(tag="chaptertest")
