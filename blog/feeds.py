@@ -224,6 +224,69 @@ class EverythingTagged(Everything):
         return self._items
 
 
+class ChapterChangeItem:
+    """Wrapper for chapter changes to use in feeds"""
+    def __init__(self, change):
+        self.change = change
+        self.chapter = change.chapter
+        self.created = change.created
+        self.tags = change.chapter.tags.all()
+
+    def get_absolute_url(self):
+        return self.chapter.get_absolute_url()
+
+
+class GuideFeed(Base):
+    ga_source = "guide"
+
+    def __init__(self, guide):
+        self.guide = guide
+        self.title = "Simon Willison's Weblog: {}".format(guide.title)
+        self.link = guide.get_absolute_url()
+
+    def items(self):
+        from guides.models import ChapterChange
+
+        # Get all chapters for this guide (newest first)
+        chapters = Chapter.objects.filter(
+            guide=self.guide,
+            is_draft=False
+        ).order_by("-created")
+
+        # Create a list to hold chapter items
+        items = list(chapters)
+
+        # Also add notable chapter changes (treating them like separate items)
+        notable_changes = ChapterChange.objects.filter(
+            chapter__guide=self.guide,
+            is_notable=True
+        ).select_related("chapter").order_by("-created")
+
+        # Add changes as separate feed items
+        for change in notable_changes:
+            items.append(ChapterChangeItem(change))
+
+        # Sort all items by created date (newest first)
+        items.sort(key=lambda item: item.created, reverse=True)
+
+        return items[:30]
+
+    def item_title(self, item):
+        if isinstance(item, ChapterChangeItem):
+            return f"{item.chapter.title} (updated)"
+        return item.title
+
+    def item_description(self, item):
+        if isinstance(item, ChapterChangeItem):
+            change = item.change
+            desc = ""
+            if change.change_note:
+                desc += f"<p><strong>Change note:</strong> {change.change_note}</p>"
+            desc += f"<p>{change.body}</p>"
+            return desc
+        return ""
+
+
 def sitemap(request):
     xml = [
         '<?xml version="1.0" encoding="UTF-8"?>'

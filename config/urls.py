@@ -176,6 +176,7 @@ urlpatterns = [
     re_path(r"^tag/([a-zA-Z0-9_-]+)/$", tag_redirect),
     re_path(r"^random/([a-zA-Z0-9_-]+)/$", blog_views.random_tag_redirect),
     path("", include("guides.urls")),
+    re_path(r"^guides/([\w-]+)\.atom$", blog_views.guide_feed_atom),
     re_path(r"^series/$", blog_views.series_index),
     re_path(r"^series/(.*?)/$", blog_views.archive_series),
     re_path(r"^series/(.*?).atom$", blog_views.archive_series_atom),

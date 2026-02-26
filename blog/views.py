@@ -771,6 +771,14 @@ def archive_series_atom(request, slug):
     return SeriesFeed(series)(request)
 
 
+def guide_feed_atom(request, slug):
+    from .feeds import GuideFeed
+    from guides.models import Guide
+
+    guide = get_object_or_404(Guide, slug=slug, is_draft=False)
+    return GuideFeed(guide)(request)
+
+
 @never_cache
 @staff_member_required
 def write(request):
