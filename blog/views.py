@@ -599,9 +599,10 @@ def top_tags(request):
                 "beat", filter=models.Q(beat__is_draft=False), distinct=True
             ),
             chapter_count=models.Count(
-                "chapter",
+                "guides_chapter_set",
                 filter=models.Q(
-                    chapter__is_draft=False, chapter__guide__is_draft=False
+                    guides_chapter_set__is_draft=False,
+                    guides_chapter_set__guide__is_draft=False,
                 ),
                 distinct=True,
             ),
