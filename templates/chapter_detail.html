@@ -2,8 +2,16 @@
 {% block title %}{{ chapter.title }} - {{ guide.title }} - Simon Willison's Weblog{% endblock %}
 {% block primary %}
 
-{% if chapter.is_draft %}<p class="draft-warning">This chapter is a draft.</p>{% endif %}
-{% if guide.is_draft %}<p class="draft-warning">This guide is a draft.</p>{% endif %}
+{% if chapter.is_draft %}
+<div class="draft-warning">
+  <strong>Draft:</strong> This chapter is a draft. Please do not share this URL with anyone else.
+</div>
+{% endif %}
+{% if guide.is_draft %}
+<div class="draft-warning">
+  <strong>Draft:</strong> This guide is a draft. Please do not share this URL with anyone else.
+</div>
+{% endif %}
 
 <p style="margin-bottom: 1em"><a href="/guides/">Guides</a> &gt; <a href="{{ guide.get_absolute_url }}">{{ guide.title }}</a></p>
 
