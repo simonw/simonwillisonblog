@@ -2434,6 +2434,23 @@ class ChapterEverywhereTests(TransactionTestCase):
         self.assertIn("<li>", content)
         self.assertIn("item one", content)
 
+    def test_chapter_fenced_code_block_python(self):
+        """Fenced code blocks with a language should produce syntax-highlighted HTML."""
+        body = '```python\ndef hi():\n    print("Hello")\n```'
+        chapter = self._make_chapter(body=body)
+        html = str(chapter.body_rendered())
+        self.assertIn('<div class="codehilite">', html)
+        self.assertIn("<span", html)
+        self.assertRegex(html, r'class="[a-z]+[0-9]*"')
+
+    def test_chapter_fenced_code_block_html(self):
+        """Fenced HTML code blocks should produce syntax-highlighted HTML with tag spans."""
+        body = "```html\n<p>Hi</p>\n```"
+        chapter = self._make_chapter(body=body)
+        html = str(chapter.body_rendered())
+        self.assertIn('<div class="codehilite">', html)
+        self.assertIn('<span class="nt">', html)
+
     def test_chapter_has_tags(self):
         """Chapter (extending BaseModel) should support tags."""
         tag = Tag.objects.create(tag="chaptertest")
