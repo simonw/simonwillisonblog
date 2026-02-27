@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-
+{% load blog_tags %}
 {% block body_class %} class="smallhead"{% endblock %}
 {% block body %}
 <div id="smallhead">
@@ -12,7 +12,7 @@
 {% if sponsor_message %}
 <div id="sponsored-banner" class="sponsor-scheme-{{ sponsor_message.color_scheme }}">
   <div id="sponsored-banner-inner">
-    <strong class="sponsored-label">Sponsored by:</strong> {{ sponsor_message.name }} &mdash; {{ sponsor_message.message }} <a href="{{ sponsor_message.learn_more_url }}" rel="sponsored noopener" target="_blank">{{ sponsor_message.learn_more_label|default:"Learn more" }}</a>
+    <strong class="sponsored-label">Sponsored by:</strong> {{ sponsor_message.name }} &mdash; {{ sponsor_message.message }} {% with label=sponsor_message.learn_more_label|default:"Learn more" %}<a href="{{ sponsor_message.learn_more_url }}" rel="sponsored noopener" target="_blank">{{ label|strip_trailing_period }}</a>{{ label|trailing_period }}{% endwith %}
   </div>
 </div>
 {% endif %}

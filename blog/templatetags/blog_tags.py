@@ -106,3 +106,17 @@ def markdownify(text):
     Convert Markdown text to HTML.
     """
     return mark_safe(markdown(text))
+
+
+@register.filter
+def strip_trailing_period(text):
+    if text and text.endswith("."):
+        return text[:-1]
+    return text
+
+
+@register.filter
+def trailing_period(text):
+    if text and text.endswith("."):
+        return "."
+    return ""
