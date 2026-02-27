@@ -2140,6 +2140,26 @@ class SponsorMessageTests(TransactionTestCase):
         self.assertContains(response, ">Try it free</a>")
         self.assertNotContains(response, ">Learn more</a>")
 
+    def test_learn_more_label_trailing_period_outside_link(self):
+        SponsorMessageFactory(
+            name="Period Sponsor",
+            learn_more_label="Try it free.",
+        )
+        EntryFactory()
+        response = self.client.get("/")
+        self.assertContains(response, ">Try it free</a>.")
+        self.assertNotContains(response, ">Try it free.</a>")
+
+    def test_learn_more_label_no_trailing_period(self):
+        SponsorMessageFactory(
+            name="No Period Sponsor",
+            learn_more_label="Try it free",
+        )
+        EntryFactory()
+        response = self.client.get("/")
+        self.assertContains(response, ">Try it free</a>")
+        self.assertNotContains(response, "</a>.")
+
 
 class GuideTests(TransactionTestCase):
     def test_guide_index(self):
