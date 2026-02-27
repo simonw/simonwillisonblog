@@ -286,6 +286,7 @@ class SponsorMessage(models.Model):
     name = models.CharField(max_length=255)
     message = models.TextField()
     learn_more_url = models.URLField()
+    learn_more_label = models.CharField(max_length=255, blank=True, default="")
     display_from = models.DateTimeField()
     display_until = models.DateTimeField()
     is_active = models.BooleanField(default=False)

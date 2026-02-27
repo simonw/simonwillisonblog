@@ -2124,6 +2124,22 @@ class SponsorMessageTests(TransactionTestCase):
         response = self.client.get("/about/?sponsor-preview=1")
         self.assertEqual(response.status_code, 200)
 
+    def test_learn_more_label_default(self):
+        SponsorMessageFactory(name="Default Label Sponsor")
+        EntryFactory()
+        response = self.client.get("/")
+        self.assertContains(response, ">Learn more</a>")
+
+    def test_learn_more_label_custom(self):
+        SponsorMessageFactory(
+            name="Custom Label Sponsor",
+            learn_more_label="Try it free",
+        )
+        EntryFactory()
+        response = self.client.get("/")
+        self.assertContains(response, ">Try it free</a>")
+        self.assertNotContains(response, ">Learn more</a>")
+
 
 class GuideTests(TransactionTestCase):
     def test_guide_index(self):
