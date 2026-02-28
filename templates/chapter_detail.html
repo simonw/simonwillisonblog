@@ -17,7 +17,7 @@
 
 <h2 class="archive-h2">{{ chapter.title }}</h2>
 
-<div class="note">{{ chapter.body_rendered }}</div>
+<div class="note" data-permalink-context="{{ chapter.get_absolute_url }}">{{ chapter.body_rendered }}</div>
 
 <div style="margin-top: 2em; display: flex; justify-content: space-between;">
   <div>
