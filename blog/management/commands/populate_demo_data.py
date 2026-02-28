@@ -62,6 +62,8 @@ class Command(BaseCommand):
                     "created": now,
                 },
             )
-            self.stdout.write(f"Beat ({bt_label}): {'created' if created else 'exists'}")
+            self.stdout.write(
+                f"Beat ({bt_label}): {'created' if created else 'exists'}"
+            )
 
         self.stdout.write(self.style.SUCCESS("Demo data populated."))

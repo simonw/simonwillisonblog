@@ -171,13 +171,19 @@ class Everything(Base):
             .order_by("-created")[:30]
         )
         last_30_chapters = list(
-            Chapter.objects.filter(is_draft=False, guide__is_draft=False, is_unlisted=False)
+            Chapter.objects.filter(
+                is_draft=False, guide__is_draft=False, is_unlisted=False
+            )
             .select_related("guide")
             .prefetch_related("tags")
             .order_by("-created")[:30]
         )
         combined = (
-            last_30_blogmarks + last_30_entries + last_30_quotations + last_30_notes + last_30_chapters
+            last_30_blogmarks
+            + last_30_entries
+            + last_30_quotations
+            + last_30_notes
+            + last_30_chapters
         )
         combined.sort(key=lambda e: e.created, reverse=True)
         return combined[:30]

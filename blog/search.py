@@ -13,7 +13,6 @@ from guides.models import Chapter
 from spellchecker import SpellChecker
 import datetime
 
-
 _spell = None
 
 
@@ -188,14 +187,10 @@ def search(request, q=None, return_context=False, per_page=30):
         # For beats, break down into per-beat_type counts in type_counts
         if type_name == "beat":
             for row in (
-                klass_qs.order_by()
-                .values("beat_type")
-                .annotate(n=models.Count("pk"))
+                klass_qs.order_by().values("beat_type").annotate(n=models.Count("pk"))
             ):
                 bt_key = f"beat:{row['beat_type']}"
-                type_counts_raw[bt_key] = (
-                    type_counts_raw.get(bt_key, 0) + row["n"]
-                )
+                type_counts_raw[bt_key] = type_counts_raw.get(bt_key, 0) + row["n"]
         else:
             type_count = klass_qs.count()
             if type_count:
@@ -266,7 +261,11 @@ def search(request, q=None, return_context=False, per_page=30):
 
     type_counts = sorted(
         [
-            {"type": type_name, "label": type_labels.get(type_name, type_name), "n": value}
+            {
+                "type": type_name,
+                "label": type_labels.get(type_name, type_name),
+                "n": value,
+            }
             for type_name, value in list(type_counts_raw.items())
         ],
         key=lambda t: t["n"],
@@ -326,7 +325,9 @@ def search(request, q=None, return_context=False, per_page=30):
         "year": selected_year,
         "month": selected_month,
         "type": selected_type,
-        "type_label": type_labels.get(selected_type, selected_type) if selected_type else "",
+        "type_label": (
+            type_labels.get(selected_type, selected_type) if selected_type else ""
+        ),
         "beat": selected_beat,
         "beat_label": (
             beat_type_labels.get(selected_beat, selected_beat) if selected_beat else ""

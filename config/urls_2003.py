@@ -5,7 +5,6 @@ from django.http import (
 from django.conf import settings
 from blog import views_2003 as blog_views
 
-
 DISALLOW_ALL = """
 User-agent: *
 Disallow: /

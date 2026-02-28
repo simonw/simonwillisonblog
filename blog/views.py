@@ -181,7 +181,9 @@ def index(request):
             .order_by()
         )
         .union(
-            Chapter.objects.filter(is_draft=False, guide__is_draft=False, is_unlisted=False)
+            Chapter.objects.filter(
+                is_draft=False, guide__is_draft=False, is_unlisted=False
+            )
             .annotate(content_type=Value("chapter", output_field=CharField()))
             .values("content_type", "id", "created")
             .order_by()

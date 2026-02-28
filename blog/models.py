@@ -113,7 +113,10 @@ class Tag(models.Model):
 
         chapter_count = Subquery(
             GuidesChapter.objects.filter(
-                is_draft=False, guide__is_draft=False, is_unlisted=False, tags=OuterRef("pk")
+                is_draft=False,
+                guide__is_draft=False,
+                is_unlisted=False,
+                tags=OuterRef("pk"),
             )
             .values("tags")
             .annotate(count=Count("id"))

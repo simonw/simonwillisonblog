@@ -2661,7 +2661,9 @@ class ChapterChangeTests(TransactionTestCase):
         )
         chapter.title = "Updated Chapter"
         chapter.save()
-        change = ChapterChange.objects.filter(chapter=chapter).order_by("created").last()
+        change = (
+            ChapterChange.objects.filter(chapter=chapter).order_by("created").last()
+        )
         self.assertIn("Updated Chapter", str(change))
 
 
@@ -2755,7 +2757,9 @@ class ChapterChangesPageTests(TransactionTestCase):
 class GuideSectionTests(TransactionTestCase):
     def test_create_section(self):
         guide = GuideFactory(slug="sec-guide")
-        section = GuideSectionFactory(guide=guide, title="Basics", slug="basics", order=1)
+        section = GuideSectionFactory(
+            guide=guide, title="Basics", slug="basics", order=1
+        )
         self.assertEqual(section.guide, guide)
         self.assertEqual(section.title, "Basics")
         self.assertEqual(section.slug, "basics")
@@ -2782,7 +2786,11 @@ class GuideSectionTests(TransactionTestCase):
         guide = GuideFactory(slug="sec-fk")
         section = GuideSectionFactory(guide=guide, slug="basics", order=1)
         chapter = ChapterFactory(
-            guide=guide, title="Ch In Section", slug="ch-in-sec", order=0, section=section
+            guide=guide,
+            title="Ch In Section",
+            slug="ch-in-sec",
+            order=0,
+            section=section,
         )
         self.assertEqual(chapter.section, section)
         self.assertIn(chapter, list(section.chapters.all()))
@@ -2795,9 +2803,7 @@ class GuideSectionTests(TransactionTestCase):
     def test_chapter_section_set_null_on_delete(self):
         guide = GuideFactory(slug="sec-del")
         section = GuideSectionFactory(guide=guide, slug="temp", order=1)
-        chapter = ChapterFactory(
-            guide=guide, slug="orphan", order=0, section=section
-        )
+        chapter = ChapterFactory(guide=guide, slug="orphan", order=0, section=section)
         section.delete()
         chapter.refresh_from_db()
         self.assertIsNone(chapter.section)
@@ -2806,9 +2812,7 @@ class GuideSectionTests(TransactionTestCase):
         from guides.views import build_guide_toc
 
         guide = GuideFactory(slug="toc-mixed")
-        standalone = ChapterFactory(
-            guide=guide, title="Intro", slug="intro", order=0
-        )
+        standalone = ChapterFactory(guide=guide, title="Intro", slug="intro", order=0)
         section = GuideSectionFactory(
             guide=guide, title="Basics", slug="basics", order=1
         )
@@ -2856,12 +2860,8 @@ class GuideSectionTests(TransactionTestCase):
         guide = GuideFactory(slug="toc-flat")
         ch1 = ChapterFactory(guide=guide, title="Intro", slug="intro", order=0)
         section = GuideSectionFactory(guide=guide, slug="basics", order=1)
-        ch2 = ChapterFactory(
-            guide=guide, slug="glossary", order=0, section=section
-        )
-        ch3 = ChapterFactory(
-            guide=guide, slug="install", order=1, section=section
-        )
+        ch2 = ChapterFactory(guide=guide, slug="glossary", order=0, section=section)
+        ch3 = ChapterFactory(guide=guide, slug="install", order=1, section=section)
 
         toc = build_guide_toc(guide)
         flat = flatten_toc(toc)
@@ -2874,7 +2874,11 @@ class GuideSectionTests(TransactionTestCase):
             guide=guide, title="Basics Section", slug="basics", order=1
         )
         ChapterFactory(
-            guide=guide, title="Ch In Basics", slug="ch-basics", order=0, section=section
+            guide=guide,
+            title="Ch In Basics",
+            slug="ch-basics",
+            order=0,
+            section=section,
         )
         response = self.client.get("/guides/view-sec/")
         self.assertEqual(response.status_code, 200)
@@ -2913,9 +2917,7 @@ class GuideSectionTests(TransactionTestCase):
     def test_chapter_prev_next_ignores_sections(self):
         guide = GuideFactory(slug="nav-sec")
         section = GuideSectionFactory(guide=guide, slug="sec", order=1)
-        ch1 = ChapterFactory(
-            guide=guide, title="First", slug="first", order=0
-        )
+        ch1 = ChapterFactory(guide=guide, title="First", slug="first", order=0)
         ch2 = ChapterFactory(
             guide=guide, title="Second", slug="second", order=0, section=section
         )
@@ -3044,7 +3046,9 @@ class UnlistedChapterTests(TransactionTestCase):
 
     def test_unlisted_chapter_on_guide_detail(self):
         guide = GuideFactory(slug="unlisted-guide", is_draft=False)
-        self._make_chapter(guide=guide, title="Normal Detail Ch", slug="normal", order=1)
+        self._make_chapter(
+            guide=guide, title="Normal Detail Ch", slug="normal", order=1
+        )
         self._make_unlisted_chapter(
             guide=guide, title="Unlisted Detail Ch", slug="unlisted", order=2
         )
@@ -3056,7 +3060,10 @@ class UnlistedChapterTests(TransactionTestCase):
     def test_unlisted_chapter_accessible_directly(self):
         guide = GuideFactory(slug="direct-guide", is_draft=False)
         self._make_unlisted_chapter(
-            guide=guide, title="Unlisted Direct Ch", slug="unlisted-ch", body="Direct body"
+            guide=guide,
+            title="Unlisted Direct Ch",
+            slug="unlisted-ch",
+            body="Direct body",
         )
         response = self.client.get("/guides/direct-guide/unlisted-ch/")
         self.assertEqual(response.status_code, 200)

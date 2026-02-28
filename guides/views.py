@@ -43,12 +43,14 @@ def build_guide_toc(guide, include_drafts=False):
     for sec in sections:
         sec_chapters = list(qs.filter(section=sec).order_by("order", "created"))
         if sec_chapters:
-            toc.append({
-                "type": "section",
-                "order": sec.order,
-                "section": sec,
-                "chapters": sec_chapters,
-            })
+            toc.append(
+                {
+                    "type": "section",
+                    "order": sec.order,
+                    "section": sec,
+                    "chapters": sec_chapters,
+                }
+            )
 
     toc.sort(key=lambda item: item["order"])
     return toc
