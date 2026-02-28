@@ -80,4 +80,8 @@
 <p><strong>Next:</strong> <a href="{{ next_chapter.get_absolute_url }}">{{ next_chapter.title }}</a></p>
 {% endif %}
 </div>
+
+{% load static %}
+<script type="module" src="{% static 'js/markdown-copy.js' %}"></script>
+
 {% endblock %}

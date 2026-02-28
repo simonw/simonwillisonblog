@@ -2496,6 +2496,17 @@ class ChapterEverywhereTests(TransactionTestCase):
         self.assertIn('<div class="codehilite">', html)
         self.assertIn('<span class="nt">', html)
 
+    def test_chapter_markdown_copy_fence(self):
+        """```markdown-copy fence should produce <markdown-copy><textarea>...</textarea></markdown-copy>."""
+        body = "```markdown-copy\n# Hello\n\nSome **bold** text\n```"
+        chapter = self._make_chapter(body=body)
+        html = str(chapter.body_rendered())
+        self.assertIn("<markdown-copy><textarea>", html)
+        self.assertIn("</textarea></markdown-copy>", html)
+        self.assertNotIn("<p><markdown-copy>", html)
+        # Content should be HTML-escaped, not rendered as markdown
+        self.assertIn("# Hello", html)
+        self.assertIn("Some **bold** text", html)
 
     def test_chapter_has_tags(self):
         """Chapter (extending BaseModel) should support tags."""

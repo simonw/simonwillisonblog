@@ -1,9 +1,24 @@
+from html import escape
+
 from django.db import models
 from django.utils import timezone
 from django.utils.safestring import mark_safe
 from markdown import markdown
 
 from blog.models import BaseModel, Tag, Series
+
+
+def _markdown_copy_formatter(source, language, css_class, options, md, **kwargs):
+    return f"<div><markdown-copy><textarea>{escape(source)}</textarea></markdown-copy></div>"
+
+
+_CUSTOM_FENCES = [
+    {
+        "name": "markdown-copy",
+        "class": "",
+        "format": _markdown_copy_formatter,
+    }
+]
 
 
 class Guide(models.Model):
@@ -95,6 +110,9 @@ class Chapter(BaseModel):
                 self.body,
                 extensions=["pymdownx.superfences", "pymdownx.highlight", "toc"],
                 extension_configs={
+                    "pymdownx.superfences": {
+                        "custom_fences": _CUSTOM_FENCES,
+                    },
                     "pymdownx.highlight": {
                         "guess_lang": False,
                         "css_class": "codehilite",
