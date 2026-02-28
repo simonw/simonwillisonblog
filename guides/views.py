@@ -7,25 +7,23 @@ from .models import Guide, Chapter
 
 
 def guide_index(request):
+    guides = (
+        Guide.objects.filter(is_draft=False)
+        .annotate(
+            num_chapters=models.Count(
+                "chapters", filter=models.Q(chapters__is_draft=False)
+            )
+        )
+        .prefetch_related("sections", "chapters")
+    )
+    for guide in guides:
+        toc = build_guide_toc(guide)
+        guide.visible_chapters = flatten_toc(toc)
     return render(
         request,
         "guide_index.html",
         {
-            "guides": Guide.objects.filter(is_draft=False)
-            .annotate(
-                num_chapters=models.Count(
-                    "chapters", filter=models.Q(chapters__is_draft=False)
-                )
-            )
-            .prefetch_related(
-                models.Prefetch(
-                    "chapters",
-                    queryset=Chapter.objects.filter(is_draft=False).order_by(
-                        "order", "created"
-                    ),
-                    to_attr="visible_chapters",
-                )
-            ),
+            "guides": guides,
         },
     )
 

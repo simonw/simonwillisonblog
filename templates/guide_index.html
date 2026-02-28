@@ -7,7 +7,7 @@
 {% for guide in guides %}
 <h3><a href="{{ guide.get_absolute_url }}">{{ guide.title }}</a></h3>
 {% if guide.description %}<p style="margin: 0.5em 0">{{ guide.description|markdownify }}</p>{% endif %}
-<p style="margin: 0.5em 0; color: #666;">{{ guide.num_chapters }} chapter{{ guide.num_chapters|pluralize }}:{% if guide.visible_chapters %} {% for chapter in guide.visible_chapters|slice:":3" %}<a href="{{ chapter.get_absolute_url }}">{{ chapter.title }}</a>{% if not forloop.last %}, {% endif %}{% endfor %}{% if guide.num_chapters > 3 %}, &hellip;{% endif %}{% endif %}</p>
+<p style="margin: 0.5em 0; color: #666;">{{ guide.num_chapters }} chapter{{ guide.num_chapters|pluralize }}:{% if guide.visible_chapters %} {% for chapter in guide.visible_chapters %}<a href="{{ chapter.get_absolute_url }}">{{ chapter.title }}</a>{% if not forloop.last %}, {% endif %}{% endfor %}{% endif %}</p>
 {% empty %}
 <p>No guides yet.</p>
 {% endfor %}
