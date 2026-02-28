@@ -181,7 +181,7 @@ def index(request):
             .order_by()
         )
         .union(
-            Chapter.objects.filter(is_draft=False, guide__is_draft=False)
+            Chapter.objects.filter(is_draft=False, guide__is_draft=False, is_unlisted=False)
             .annotate(content_type=Value("chapter", output_field=CharField()))
             .values("content_type", "id", "created")
             .order_by()
@@ -340,6 +340,7 @@ def archive_year(request, year):
             created__month=month,
             is_draft=False,
             guide__is_draft=False,
+            is_unlisted=False,
         ).count()
         month_count = (
             entry_count
@@ -403,6 +404,7 @@ def archive_month(request, year, month):
         extra_filter = {}
         if model == Chapter:
             extra_filter["guide__is_draft"] = False
+            extra_filter["is_unlisted"] = False
         ids = list(
             model.objects.filter(
                 created__year=year, created__month=month, is_draft=False, **extra_filter
@@ -466,6 +468,7 @@ def _get_adjacent_content_days(current_date):
         extra_filter = {}
         if model == Chapter:
             extra_filter["guide__is_draft"] = False
+            extra_filter["is_unlisted"] = False
         prev_created = (
             model.objects.filter(
                 created__date__lt=current_date,
@@ -527,6 +530,7 @@ def archive_day(request, year, month, day):
         extra_filter = {}
         if model == Chapter:
             extra_filter["guide__is_draft"] = False
+            extra_filter["is_unlisted"] = False
         filt = model.objects.filter(
             created__year=int(year),
             created__month=MONTHS_3_REV[month.lower()],
@@ -603,6 +607,7 @@ def top_tags(request):
                 filter=models.Q(
                     guides_chapter_set__is_draft=False,
                     guides_chapter_set__guide__is_draft=False,
+                    guides_chapter_set__is_unlisted=False,
                 ),
                 distinct=True,
             ),
@@ -687,7 +692,7 @@ def archive_tag(request, tags, atom=False):
             objs = (
                 Chapter.objects.select_related("guide")
                 .prefetch_related("tags")
-                .filter(pk__in=ids, guide__is_draft=False)
+                .filter(pk__in=ids, guide__is_draft=False, is_unlisted=False)
             )
         else:
             objs = model.objects.prefetch_related("tags").in_bulk(ids).values()

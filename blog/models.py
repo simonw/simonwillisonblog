@@ -65,7 +65,7 @@ class Tag(models.Model):
         from guides.models import Chapter
 
         return Chapter.objects.filter(
-            tags=self, is_draft=False, guide__is_draft=False
+            tags=self, is_draft=False, guide__is_draft=False, is_unlisted=False
         ).count()
 
     def total_count(self):
@@ -113,7 +113,7 @@ class Tag(models.Model):
 
         chapter_count = Subquery(
             GuidesChapter.objects.filter(
-                is_draft=False, guide__is_draft=False, tags=OuterRef("pk")
+                is_draft=False, guide__is_draft=False, is_unlisted=False, tags=OuterRef("pk")
             )
             .values("tags")
             .annotate(count=Count("id"))

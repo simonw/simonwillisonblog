@@ -18,8 +18,8 @@ class GuideSectionAdmin(admin.ModelAdmin):
 
 @admin.register(Chapter)
 class ChapterAdmin(BaseAdmin):
-    list_display = ("title", "guide", "section", "order", "is_draft")
-    list_filter = ("guide", "section", "is_draft")
+    list_display = ("title", "guide", "section", "order", "is_draft", "is_unlisted")
+    list_filter = ("guide", "section", "is_draft", "is_unlisted")
     prepopulated_fields = {"slug": ("title",)}
 
 
