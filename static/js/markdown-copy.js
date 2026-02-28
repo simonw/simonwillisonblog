@@ -140,7 +140,7 @@ class MarkdownCopy extends HTMLElement {
         font-size: 0.88em; font-family: 'SF Mono', Consolas, monospace;
       }
       .rendered pre {
-        background: #1e1e2e; color: #cdd6f4; padding: 1em;
+        background: #F9F9F9; color: #000; padding: 1em;
         border-radius: 8px; overflow-x: auto; font-size: 0.85rem;
         line-height: 1.5;
       }

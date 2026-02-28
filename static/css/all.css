@@ -672,6 +672,11 @@ div.blogmark ol li ul li {
 div.entry iframe {
   width: 100%;
 }
+
+markdown-copy {
+  margin-bottom: 1em;
+}
+
 div.entry div.entryFooter {
   font-size: 0.9em;
   margin-top: 1em;
