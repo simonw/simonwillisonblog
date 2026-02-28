@@ -92,7 +92,7 @@ class Chapter(BaseModel):
         return mark_safe(
             markdown(
                 self.body,
-                extensions=["pymdownx.superfences", "pymdownx.highlight"],
+                extensions=["pymdownx.superfences", "pymdownx.highlight", "toc"],
                 extension_configs={
                     "pymdownx.highlight": {
                         "guess_lang": False,
