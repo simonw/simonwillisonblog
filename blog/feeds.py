@@ -171,7 +171,7 @@ class Everything(Base):
             .order_by("-created")[:30]
         )
         last_30_chapters = list(
-            Chapter.objects.filter(is_draft=False, guide__is_draft=False)
+            Chapter.objects.filter(is_draft=False, guide__is_draft=False, is_unlisted=False)
             .select_related("guide")
             .prefetch_related("tags")
             .order_by("-created")[:30]

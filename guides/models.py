@@ -62,6 +62,7 @@ class Chapter(BaseModel):
     title = models.CharField(max_length=255)
     body = models.TextField()
     order = models.IntegerField(default=0)
+    is_unlisted = models.BooleanField(default=False)
     is_chapter = True
 
     def save(self, **kwargs):

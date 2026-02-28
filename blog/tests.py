@@ -2921,3 +2921,136 @@ class GuideSectionTests(TransactionTestCase):
         # Third chapter: prev=Second, no next
         response = self.client.get("/guides/nav-sec/third/")
         self.assertContains(response, "Second")
+
+
+class UnlistedChapterTests(TransactionTestCase):
+    """Tests for is_unlisted chapter behavior.
+
+    Unlisted chapters should be omitted from homepage, feeds, and archive pages
+    but should still appear in /search/ results and on guide pages themselves.
+    """
+
+    def _make_chapter(self, **kwargs):
+        defaults = {
+            "title": "Test Chapter",
+            "body": "Chapter body content",
+            "is_draft": False,
+        }
+        defaults.update(kwargs)
+        if "guide" not in defaults:
+            defaults["guide"] = GuideFactory(is_draft=False)
+        return ChapterFactory(**defaults)
+
+    def _make_unlisted_chapter(self, **kwargs):
+        kwargs.setdefault("is_unlisted", True)
+        return self._make_chapter(**kwargs)
+
+    # --- Should be EXCLUDED from these pages ---
+
+    def test_unlisted_chapter_not_on_homepage(self):
+        self._make_unlisted_chapter(title="Unlisted Appendix")
+        response = self.client.get("/")
+        self.assertNotContains(response, "Unlisted Appendix")
+
+    def test_listed_chapter_still_on_homepage(self):
+        """Sanity check: a normal (listed) chapter still appears on homepage."""
+        self._make_chapter(title="Listed Chapter")
+        response = self.client.get("/")
+        self.assertContains(response, "Listed Chapter")
+
+    def test_unlisted_chapter_not_in_everything_feed(self):
+        self._make_unlisted_chapter(title="Unlisted Feed Chapter")
+        response = self.client.get("/atom/everything/")
+        self.assertNotContains(response, "Unlisted Feed Chapter")
+
+    def test_unlisted_chapter_not_on_day_archive(self):
+        chapter = self._make_unlisted_chapter(title="Unlisted Day Chapter")
+        # Need a non-unlisted item so the day page exists
+        EntryFactory(created=chapter.created)
+        url = "/{}/".format(chapter.created.strftime("%Y/%b/%-d"))
+        response = self.client.get(url)
+        self.assertNotContains(response, "Unlisted Day Chapter")
+
+    def test_unlisted_chapter_not_on_month_archive(self):
+        chapter = self._make_unlisted_chapter(title="Unlisted Month Chapter")
+        EntryFactory(created=chapter.created)
+        url = "/{}/".format(chapter.created.strftime("%Y/%b"))
+        response = self.client.get(url)
+        self.assertNotContains(response, "Unlisted Month Chapter")
+
+    def test_unlisted_chapter_not_on_year_archive_count(self):
+        chapter = self._make_unlisted_chapter(title="Unlisted Year Chapter")
+        response = self.client.get("/{}/".format(chapter.created.year))
+        # The year archive shows counts; unlisted chapter should not be counted
+        self.assertNotContains(response, "chapter")
+
+    def test_unlisted_chapter_not_on_tag_archive(self):
+        tag = Tag.objects.create(tag="unlistedtagtest")
+        chapter = self._make_unlisted_chapter(title="Unlisted Tagged")
+        chapter.tags.add(tag)
+        # Need another item so the tag page exists
+        entry = EntryFactory()
+        entry.tags.add(tag)
+        response = self.client.get("/tags/unlistedtagtest/")
+        self.assertNotContains(response, "Unlisted Tagged")
+
+    # --- Should STILL appear on these pages ---
+
+    def test_unlisted_chapter_in_search(self):
+        chapter = self._make_unlisted_chapter(
+            title="Unlisted Searchable", body="unique_unlisted_term here"
+        )
+        # Update search index
+        from django.contrib.postgres.search import SearchVector
+        from django.db.models import Value, TextField
+        from guides.models import Chapter
+        import operator
+        from functools import reduce
+
+        components = chapter.index_components()
+        search_vectors = []
+        for weight, text in components.items():
+            search_vectors.append(
+                SearchVector(Value(text, output_field=TextField()), weight=weight)
+            )
+        Chapter.objects.filter(pk=chapter.pk).update(
+            search_document=reduce(operator.add, search_vectors)
+        )
+
+        response = self.client.get("/search/?q=unique_unlisted_term")
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Unlisted Searchable")
+
+    def test_unlisted_chapter_on_guide_index(self):
+        guide = GuideFactory(is_draft=False, title="Guide With Unlisted")
+        self._make_chapter(guide=guide, title="Normal Ch", order=1)
+        self._make_unlisted_chapter(guide=guide, title="Unlisted Ch", order=2)
+        response = self.client.get("/guides/")
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Guide With Unlisted")
+        # Both chapters should be counted/visible on the guide index
+        self.assertContains(response, "2 chapters")
+
+    def test_unlisted_chapter_on_guide_detail(self):
+        guide = GuideFactory(slug="unlisted-guide", is_draft=False)
+        self._make_chapter(guide=guide, title="Normal Detail Ch", slug="normal", order=1)
+        self._make_unlisted_chapter(
+            guide=guide, title="Unlisted Detail Ch", slug="unlisted", order=2
+        )
+        response = self.client.get("/guides/unlisted-guide/")
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Normal Detail Ch")
+        self.assertContains(response, "Unlisted Detail Ch")
+
+    def test_unlisted_chapter_accessible_directly(self):
+        guide = GuideFactory(slug="direct-guide", is_draft=False)
+        self._make_unlisted_chapter(
+            guide=guide, title="Unlisted Direct Ch", slug="unlisted-ch", body="Direct body"
+        )
+        response = self.client.get("/guides/direct-guide/unlisted-ch/")
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Unlisted Direct Ch")
+
+    def test_unlisted_chapter_defaults_to_false(self):
+        chapter = self._make_chapter()
+        self.assertFalse(chapter.is_unlisted)
