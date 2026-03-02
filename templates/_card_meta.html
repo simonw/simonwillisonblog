@@ -1,0 +1,10 @@
+<meta name="twitter:card" content="summary">
+{% if card_image %}<meta name="twitter:image" content="{{ card_image }}">{% endif %}
+<meta name="twitter:creator" content="@simonw">
+<meta property="og:url" content="https://simonwillison.net{{ request.path }}">
+<meta property="og:title" content="{{ card_title }}">
+{% if card_image %}<meta property="og:image" content="{{ card_image }}">{% endif %}
+<meta property="og:type" content="article">
+<meta property="og:description" content="{{ card_description }}">
+{% if created_unixtimestamp %}<meta property="og:updated_time" content="{{ created_unixtimestamp }}">{% endif %}
+{% if is_draft %}<meta name="robots" content="noindex">{% endif %}
