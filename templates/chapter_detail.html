@@ -1,5 +1,19 @@
 {% extends "smallhead.html" %}
 {% block title %}{{ chapter.title }} - {{ guide.title }} - Simon Willison's Weblog{% endblock %}
+{% block extrahead %}
+<meta name="twitter:card" content="summary">{% if chapter.card_image %}
+<meta name="twitter:image" content="{{ chapter.card_image }}">{% endif %}
+<meta name="twitter:creator" content="@simonw">
+<meta property="og:url" content="https://simonwillison.net{{ request.path }}">
+<meta property="og:title" content="{{ chapter.title }} - {{ guide.title }}">{% if chapter.card_image %}
+<meta property="og:image" content="{{ chapter.card_image }}">{% endif %}
+<meta property="og:type" content="article">
+<meta property="og:description" content="{{ chapter.title }} - {{ guide.title }}">
+<meta property="og:updated_time" content="{{ chapter.created_unixtimestamp }}">
+{% if chapter.is_draft %}
+<meta name="robots" content="noindex">
+{% endif %}
+{% endblock %}
 {% block primary %}
 
 {% if chapter.is_draft %}
