@@ -2,7 +2,7 @@ import re
 
 from django.test import TransactionTestCase
 from django.contrib.auth.models import User
-from blog.templatetags.entry_tags import do_typography_string
+from blog.templatetags.entry_tags import do_typography_string, first_three_paragraphs
 from .factories import (
     EntryFactory,
     BlogmarkFactory,
@@ -3072,3 +3072,73 @@ class UnlistedChapterTests(TransactionTestCase):
     def test_unlisted_chapter_defaults_to_false(self):
         chapter = self._make_chapter()
         self.assertFalse(chapter.is_unlisted)
+
+
+class FirstThreeParagraphsTests(TransactionTestCase):
+    def test_three_or_fewer_paragraphs_returned_unchanged(self):
+        html = "<p>One</p><p>Two</p><p>Three</p>"
+        result = str(first_three_paragraphs(html))
+        self.assertEqual(result, html)
+
+    def test_more_than_three_paragraphs_truncated(self):
+        html = "<p>One</p><p>Two</p><p>Three</p><p>Four</p>"
+        result = str(first_three_paragraphs(html))
+        self.assertIn("<p>One</p>", result)
+        self.assertIn("<p>Two</p>", result)
+        self.assertIn("<p>Three</p>", result)
+        self.assertNotIn("<p>Four</p>", result)
+
+    def test_headings_included_in_summary(self):
+        html = "<p>One</p><h2>A heading</h2><p>Two</p><p>Three</p><p>Four</p>"
+        result = str(first_three_paragraphs(html))
+        self.assertIn("A heading", result)
+        self.assertIn("<p>One</p>", result)
+        self.assertIn("<p>Two</p>", result)
+        self.assertIn("<p>Three</p>", result)
+        self.assertNotIn("<p>Four</p>", result)
+
+    def test_heading_level_adjusted_by_two(self):
+        html = "<p>One</p><h2>Heading</h2><p>Two</p><p>Three</p><p>Four</p>"
+        result = str(first_three_paragraphs(html))
+        self.assertIn("<h4>Heading</h4>", result)
+        self.assertNotIn("<h2>", result)
+
+    def test_h3_becomes_h5(self):
+        html = "<p>One</p><h3>Sub heading</h3><p>Two</p><p>Three</p><p>Four</p>"
+        result = str(first_three_paragraphs(html))
+        self.assertIn("<h5>Sub heading</h5>", result)
+        self.assertNotIn("<h3>", result)
+
+    def test_h5_and_h6_cap_at_h6(self):
+        html = "<p>One</p><h5>Deep</h5><p>Two</p><p>Three</p><p>Four</p>"
+        result = str(first_three_paragraphs(html))
+        self.assertIn("<h6>Deep</h6>", result)
+
+    def test_heading_id_stripped(self):
+        html = '<p>One</p><h2 id="my-heading">Heading</h2><p>Two</p><p>Three</p><p>Four</p>'
+        result = str(first_three_paragraphs(html))
+        self.assertNotIn('id=', result)
+        self.assertIn("<h4>Heading</h4>", result)
+
+    def test_heading_after_third_paragraph_excluded(self):
+        html = "<p>One</p><p>Two</p><p>Three</p><h2>Late heading</h2><p>Four</p>"
+        result = str(first_three_paragraphs(html))
+        self.assertNotIn("Late heading", result)
+
+    def test_heading_before_any_paragraph(self):
+        html = "<h2>First heading</h2><p>One</p><p>Two</p><p>Three</p><p>Four</p>"
+        result = str(first_three_paragraphs(html))
+        self.assertIn("<h4>First heading</h4>", result)
+        self.assertIn("<p>One</p>", result)
+
+    def test_multiple_headings_between_paragraphs(self):
+        html = "<p>One</p><h2>H2</h2><h3>H3</h3><p>Two</p><p>Three</p><p>Four</p>"
+        result = str(first_three_paragraphs(html))
+        self.assertIn("<h4>H2</h4>", result)
+        self.assertIn("<h5>H3</h5>", result)
+
+    def test_no_headings_still_works(self):
+        html = "<p>One</p><p>Two</p><p>Three</p><p>Four</p>"
+        result = str(first_three_paragraphs(html))
+        self.assertNotIn("<p>Four</p>", result)
+        self.assertEqual(result.count("<p>"), 3)
