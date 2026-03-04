@@ -87,17 +87,36 @@ def first_paragraph(xhtml):
         return mark_safe("<p>%s</p>" % xhtml)
 
 
+HEADING_TAGS = {"h1", "h2", "h3", "h4", "h5", "h6"}
+
+
 @register.filter
 def first_three_paragraphs(html):
-    """Extract first three <p> elements from an HTML string."""
+    """Extract first three <p> elements from an HTML string, including any
+    headings that appear before or between those paragraphs.  Heading levels
+    are increased by 2 (h2 → h4, etc., capped at h6) and id attributes are
+    stripped."""
     html = str(html)
     et = ElementTree.fromstring("<entry>%s</entry>" % html)
     paragraphs = et.findall("p")
     if len(paragraphs) <= 3:
         return mark_safe(html)
+    # Collect the first 3 <p> elements plus any headings that precede them
     parts = []
-    for p in paragraphs[:3]:
-        parts.append(ElementTree.tostring(p, "unicode"))
+    p_count = 0
+    for child in et:
+        if child.tag == "p":
+            parts.append(ElementTree.tostring(child, "unicode"))
+            p_count += 1
+            if p_count == 3:
+                break
+        elif child.tag in HEADING_TAGS:
+            level = int(child.tag[1])
+            new_level = min(level + 2, 6)
+            child.tag = "h%d" % new_level
+            if "id" in child.attrib:
+                del child.attrib["id"]
+            parts.append(ElementTree.tostring(child, "unicode"))
     return mark_safe("\n".join(parts))
 
 
