@@ -136,6 +136,77 @@ def chapter_detail(request, guide_slug, chapter_slug):
     return response
 
 
+def _char_diff_html(old_text, new_text, is_remove):
+    """Generate HTML for a single line with character-level diff highlights."""
+    import difflib
+
+    from django.utils.html import escape
+
+    sm = difflib.SequenceMatcher(None, old_text, new_text)
+    parts = []
+    for op, i1, i2, j1, j2 in sm.get_opcodes():
+        if is_remove:
+            chunk = old_text[i1:i2]
+        else:
+            chunk = new_text[j1:j2]
+        if op == "equal":
+            parts.append(escape(chunk))
+        elif op == "replace":
+            parts.append(f'<span class="char-highlight">{escape(chunk)}</span>')
+        elif op == "insert" and not is_remove:
+            parts.append(f'<span class="char-highlight">{escape(chunk)}</span>')
+        elif op == "delete" and is_remove:
+            parts.append(f'<span class="char-highlight">{escape(chunk)}</span>')
+    return "".join(parts)
+
+
+def _build_diff_html(diff_lines):
+    """Process unified diff lines into HTML with character-level highlighting."""
+    from django.utils.html import escape
+
+    if not diff_lines:
+        return None
+    lines = [l.rstrip("\n") for l in diff_lines]
+    result = []
+    i = 0
+    while i < len(lines):
+        line = lines[i]
+        if line.startswith("---") or line.startswith("+++"):
+            result.append(f'<span class="diff-header">{escape(line)}</span>')
+            i += 1
+        elif line.startswith("@@"):
+            result.append(f'<span class="diff-header">{escape(line)}</span>')
+            i += 1
+        elif line.startswith("-"):
+            removes = []
+            while i < len(lines) and lines[i].startswith("-") and not lines[i].startswith("---"):
+                removes.append(lines[i])
+                i += 1
+            adds = []
+            while i < len(lines) and lines[i].startswith("+") and not lines[i].startswith("+++"):
+                adds.append(lines[i])
+                i += 1
+            pairs = min(len(removes), len(adds))
+            for j in range(pairs):
+                rem_content = removes[j][1:]
+                add_content = adds[j][1:]
+                rem_html = _char_diff_html(rem_content, add_content, is_remove=True)
+                add_html = _char_diff_html(rem_content, add_content, is_remove=False)
+                result.append(f'<span class="diff-remove">-{rem_html}</span>')
+                result.append(f'<span class="diff-add">+{add_html}</span>')
+            for j in range(pairs, len(removes)):
+                result.append(f'<span class="diff-remove">{escape(removes[j])}</span>')
+            for j in range(pairs, len(adds)):
+                result.append(f'<span class="diff-add">{escape(adds[j])}</span>')
+        elif line.startswith("+"):
+            result.append(f'<span class="diff-add">{escape(line)}</span>')
+            i += 1
+        else:
+            result.append(escape(line))
+            i += 1
+    return "\n".join(result)
+
+
 def chapter_changes(request, guide_slug, chapter_slug):
     if request.user.is_staff:
         guide = get_object_or_404(Guide, slug=guide_slug)
@@ -164,20 +235,20 @@ def chapter_changes(request, guide_slug, chapter_slug):
             prev = changes[i - 1]
             title_diff = None
             if change.title != prev.title:
-                title_diff = difflib.unified_diff(
+                title_diff = list(difflib.unified_diff(
                     prev.title.splitlines(keepends=True),
                     change.title.splitlines(keepends=True),
                     lineterm="",
-                )
-                title_diff = list(title_diff)
+                ))
+                title_diff = _build_diff_html(title_diff)
             body_diff = None
             if change.body != prev.body:
-                body_diff = difflib.unified_diff(
+                body_diff = list(difflib.unified_diff(
                     prev.body.splitlines(keepends=True),
                     change.body.splitlines(keepends=True),
                     lineterm="",
-                )
-                body_diff = list(body_diff)
+                ))
+                body_diff = _build_diff_html(body_diff)
             diffs.append(
                 {
                     "change": change,

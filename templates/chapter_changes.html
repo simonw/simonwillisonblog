@@ -25,6 +25,12 @@
   background-color: #ffebe9;
   color: #cf222e;
 }
+.diff-block .diff-add .char-highlight {
+  background-color: #abf2bc;
+}
+.diff-block .diff-remove .char-highlight {
+  background-color: #ff818266;
+}
 .diff-block .diff-header {
   color: #656d76;
 }
@@ -51,22 +57,12 @@
   {% else %}
     {% if diff.title_diff %}
       <h4>Title</h4>
-      <div class="diff-block">{% for line in diff.title_diff %}{% if line|slice:":3" == "---" or line|slice:":3" == "+++" %}<span class="diff-header">{{ line }}</span>
-{% elif line|slice:":2" == "@@" %}<span class="diff-header">{{ line }}</span>
-{% elif line|first == "+" %}<span class="diff-add">{{ line }}</span>
-{% elif line|first == "-" %}<span class="diff-remove">{{ line }}</span>
-{% else %}{{ line }}
-{% endif %}{% endfor %}</div>
+      <div class="diff-block">{{ diff.title_diff|safe }}</div>
     {% endif %}
 
     {% if diff.body_diff %}
       <h4>Body</h4>
-      <div class="diff-block">{% for line in diff.body_diff %}{% if line|slice:":3" == "---" or line|slice:":3" == "+++" %}<span class="diff-header">{{ line }}</span>
-{% elif line|slice:":2" == "@@" %}<span class="diff-header">{{ line }}</span>
-{% elif line|first == "+" %}<span class="diff-add">{{ line }}</span>
-{% elif line|first == "-" %}<span class="diff-remove">{{ line }}</span>
-{% else %}{{ line }}
-{% endif %}{% endfor %}</div>
+      <div class="diff-block">{{ diff.body_diff|safe }}</div>
     {% endif %}
 
     {% if diff.is_draft_changed %}
