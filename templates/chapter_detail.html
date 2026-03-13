@@ -13,6 +13,7 @@
 {% if chapter.is_draft %}
 <meta name="robots" content="noindex">
 {% endif %}
+{% if not sponsor_message %}<script async src="https://media.ethicalads.io/media/client/ethicalads.min.js"></script>{% endif %}
 {% endblock %}
 {% block primary %}
 
@@ -50,6 +51,7 @@
 {% endblock %}
 
 {% block secondary %}
+{% if not sponsor_message %}<div data-ea-publisher="simonwillisonnet" data-ea-type="image"></div>{% endif %}
 <div class="metabox">
 <p class="this-is">This is a chapter from the guide <strong><a href="{{ guide.get_absolute_url }}">{{ guide.title }}</a></strong>.</p>
 <div class="series-info">
