@@ -13,17 +13,22 @@
 {% load entry_tags %}
 {% block item_content %}
 <p class="mobile-date-eyebrow">{{ beat.created|date:"jS F Y" }}</p>
-<div class="beat">
+<div class="beat{% if beat.image_url %} beat-has-image{% endif %}">
 {% include "_draft_warning.html" %}
-<div class="beat-row1">
-  {% if beat.beat_type == "til_update" %}
-    <span class="beat-label til-update">TIL<span class="til-update-suffix">(updated)</span></span>
-  {% else %}
-    <span class="beat-label {{ beat.beat_type|cut:"_" }}">{{ beat.get_beat_type_display }}</span>
-  {% endif %}
-  <span class="beat-title"><a href="{{ beat.url }}">{{ beat.title }}</a></span>
-  {% if beat.commentary %}<span class="beat-commit">&mdash; {{ beat.commentary }}</span>{% endif %}
+<div class="beat-content">
+  <div class="beat-row1">
+    {% if beat.beat_type == "til_update" %}
+      <span class="beat-label til-update">TIL<span class="til-update-suffix">(updated)</span></span>
+    {% else %}
+      <span class="beat-label {{ beat.beat_type|cut:"_" }}">{{ beat.get_beat_type_display }}</span>
+    {% endif %}
+    <span class="beat-title"><a href="{{ beat.url }}">{{ beat.title }}</a></span>
+    {% if beat.commentary %}<span class="beat-commit">&mdash; {{ beat.commentary }}</span>{% endif %}
+  </div>
 </div>
+{% if beat.image_url %}
+  <a href="{{ beat.url }}" class="beat-image-link"><img class="beat-image" src="{{ beat.image_url }}" alt="{{ beat.image_alt }}" loading="lazy"></a>
+{% endif %}
 </div>
 
 <div class="entryFooter">Posted <a href="/{{ beat.created|date:"Y/M/j/" }}">{{ beat.created|date:"jS F Y" }}</a> at {{ beat.created|date:"f A"|lower }}</div>

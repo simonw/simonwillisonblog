@@ -67,27 +67,32 @@
 </div>
 {% endif %}
 {% if item.type == "beat" %}
-<div class="beat segment" data-type="beat" data-id="{{ item.obj.id }}">
-  <div class="beat-row1">
-    {% if item.obj.beat_type == "til_update" %}
-      <span class="beat-label til-update">TIL<span class="til-update-suffix">(updated)</span></span>
-    {% elif item.obj.beat_type == "til" %}
-      <span class="beat-label til">TIL</span>
-    {% elif item.obj.beat_type == "release" %}
-      <span class="beat-label release">Release</span>
-    {% elif item.obj.beat_type == "research" %}
-      <span class="beat-label research">Research</span>
-    {% elif item.obj.beat_type == "tool" %}
-      <span class="beat-label tool">Tool</span>
-    {% elif item.obj.beat_type == "museum" %}
-      <span class="beat-label museum">Museum</span>
-    {% endif %}
-    <span class="beat-title"><a href="{{ item.obj.url }}">{{ item.obj.title }}</a></span>
-    {% if item.obj.commentary %}<span class="beat-commit">&mdash; {{ item.obj.commentary }}</span>{% endif %}
+<div class="beat segment{% if item.obj.image_url %} beat-has-image{% endif %}" data-type="beat" data-id="{{ item.obj.id }}">
+  <div class="beat-content">
+    <div class="beat-row1">
+      {% if item.obj.beat_type == "til_update" %}
+        <span class="beat-label til-update">TIL<span class="til-update-suffix">(updated)</span></span>
+      {% elif item.obj.beat_type == "til" %}
+        <span class="beat-label til">TIL</span>
+      {% elif item.obj.beat_type == "release" %}
+        <span class="beat-label release">Release</span>
+      {% elif item.obj.beat_type == "research" %}
+        <span class="beat-label research">Research</span>
+      {% elif item.obj.beat_type == "tool" %}
+        <span class="beat-label tool">Tool</span>
+      {% elif item.obj.beat_type == "museum" %}
+        <span class="beat-label museum">Museum</span>
+      {% endif %}
+      <span class="beat-title"><a href="{{ item.obj.url }}">{{ item.obj.title }}</a></span>
+      {% if item.obj.commentary %}<span class="beat-commit">&mdash; {{ item.obj.commentary }}</span>{% endif %}
+    </div>
+    <div class="beat-meta beat-row2">
+      <a href="{{ item.obj.get_absolute_url }}" rel="bookmark">{{ item.obj.created|date:"jS M Y" }}, {{ item.obj.created|date:"f A"|lower }}</a>{% if all_tags %} &middot; {% for tag in all_tags %}{{ tag.get_link }}{% if not forloop.last %}, {% endif %}{% endfor %}{% endif %}
+    </div>
   </div>
-  <div class="beat-meta beat-row2">
-    <a href="{{ item.obj.get_absolute_url }}" rel="bookmark">{{ item.obj.created|date:"jS M Y" }}, {{ item.obj.created|date:"f A"|lower }}</a>{% if all_tags %} &middot; {% for tag in all_tags %}{{ tag.get_link }}{% if not forloop.last %}, {% endif %}{% endfor %}{% endif %}
-  </div>
+  {% if item.obj.image_url %}
+    <a href="{{ item.obj.url }}" class="beat-image-link"><img class="beat-image" src="{{ item.obj.image_url }}" alt="{{ item.obj.image_alt }}" loading="lazy"></a>
+  {% endif %}
 </div>
 {% endif %}
 {% endwith %}

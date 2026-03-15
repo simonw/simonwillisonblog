@@ -1971,6 +1971,39 @@ div.beat {
   color: var(--color-text);
 }
 
+/* ── Beat image thumbnail ── */
+
+.beat-has-image {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.beat-has-image .beat-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.beat-image-link,
+.beat-image-link:link,
+.beat-image-link:visited,
+.beat-image-link:link:hover,
+.beat-image-link:link:focus,
+.beat-image-link:link:active {
+  flex-shrink: 0;
+  border: none;
+}
+
+.beat-image {
+  width: 90px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 4px;
+  border: none;
+  outline: none;
+  display: block;
+}
+
 /* ── Label colours by beat type ── */
 
 .beat-label.release {
