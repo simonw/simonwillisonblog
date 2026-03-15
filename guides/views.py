@@ -179,11 +179,19 @@ def _build_diff_html(diff_lines):
             i += 1
         elif line.startswith("-"):
             removes = []
-            while i < len(lines) and lines[i].startswith("-") and not lines[i].startswith("---"):
+            while (
+                i < len(lines)
+                and lines[i].startswith("-")
+                and not lines[i].startswith("---")
+            ):
                 removes.append(lines[i])
                 i += 1
             adds = []
-            while i < len(lines) and lines[i].startswith("+") and not lines[i].startswith("+++"):
+            while (
+                i < len(lines)
+                and lines[i].startswith("+")
+                and not lines[i].startswith("+++")
+            ):
                 adds.append(lines[i])
                 i += 1
             pairs = min(len(removes), len(adds))
@@ -235,19 +243,23 @@ def chapter_changes(request, guide_slug, chapter_slug):
             prev = changes[i - 1]
             title_diff = None
             if change.title != prev.title:
-                title_diff = list(difflib.unified_diff(
-                    prev.title.splitlines(keepends=True),
-                    change.title.splitlines(keepends=True),
-                    lineterm="",
-                ))
+                title_diff = list(
+                    difflib.unified_diff(
+                        prev.title.splitlines(keepends=True),
+                        change.title.splitlines(keepends=True),
+                        lineterm="",
+                    )
+                )
                 title_diff = _build_diff_html(title_diff)
             body_diff = None
             if change.body != prev.body:
-                body_diff = list(difflib.unified_diff(
-                    prev.body.splitlines(keepends=True),
-                    change.body.splitlines(keepends=True),
-                    lineterm="",
-                ))
+                body_diff = list(
+                    difflib.unified_diff(
+                        prev.body.splitlines(keepends=True),
+                        change.body.splitlines(keepends=True),
+                        lineterm="",
+                    )
+                )
                 body_diff = _build_diff_html(body_diff)
             diffs.append(
                 {

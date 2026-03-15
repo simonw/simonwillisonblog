@@ -3117,7 +3117,7 @@ class FirstThreeParagraphsTests(TransactionTestCase):
     def test_heading_id_stripped(self):
         html = '<p>One</p><h2 id="my-heading">Heading</h2><p>Two</p><p>Three</p><p>Four</p>'
         result = str(first_three_paragraphs(html))
-        self.assertNotIn('id=', result)
+        self.assertNotIn("id=", result)
         self.assertIn("<h4>Heading</h4>", result)
 
     def test_heading_after_third_paragraph_excluded(self):
