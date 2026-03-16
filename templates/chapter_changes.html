@@ -48,7 +48,7 @@
 
 {% for diff in diffs %}
 <div class="change-entry">
-  <h3>{{ diff.change.created|date:"N j, Y, P" }}{% if diff.change.is_notable %} <strong>(notable)</strong>{% endif %}</h3>
+  <h3 id="change-{{ diff.change.created|date:"Y-m-d-Hi" }}">{{ diff.change.created|date:"N j, Y, P" }}{% if diff.change.is_notable %} <strong>(notable)</strong>{% endif %} <a href="#change-{{ diff.change.created|date:"Y-m-d-Hi" }}">#</a></h3>
 
   {% if diff.change.change_note %}<p class="change-note">{{ diff.change.change_note }}</p>{% endif %}
 
@@ -61,7 +61,6 @@
     {% endif %}
 
     {% if diff.body_diff %}
-      <h4>Body</h4>
       <div class="diff-block">{{ diff.body_diff|safe }}</div>
     {% endif %}
 
