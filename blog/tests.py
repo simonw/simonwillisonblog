@@ -2124,11 +2124,21 @@ class SponsorMessageTests(TransactionTestCase):
         response = self.client.get("/about/?sponsor-preview=1")
         self.assertEqual(response.status_code, 200)
 
-    def test_learn_more_label_default(self):
-        SponsorMessageFactory(name="Default Label Sponsor")
+    def test_empty_learn_more_label_name_is_link(self):
+        SponsorMessageFactory(
+            name="WorkOS",
+            message="The infrastructure fast-growing B2B companies use.",
+            learn_more_url="https://workos.example.com/",
+            learn_more_label="",
+        )
         EntryFactory()
         response = self.client.get("/")
-        self.assertContains(response, ">Learn more</a>")
+        self.assertContains(
+            response,
+            '<a href="https://workos.example.com/" rel="sponsored noopener" '
+            'target="_blank">WorkOS</a>',
+        )
+        self.assertNotContains(response, ">Learn more</a>")
 
     def test_learn_more_label_custom(self):
         SponsorMessageFactory(
