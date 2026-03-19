@@ -12,7 +12,7 @@
 {% if sponsor_message %}
 <div id="sponsored-banner" class="sponsor-scheme-{{ sponsor_message.color_scheme }}">
   <div id="sponsored-banner-inner">
-    <strong class="sponsored-label">Sponsored by:</strong> {{ sponsor_message.name }} &mdash; {{ sponsor_message.message }} {% with label=sponsor_message.learn_more_label|default:"Learn more" %}<a href="{{ sponsor_message.learn_more_url }}" rel="sponsored noopener" target="_blank">{{ label|strip_trailing_period }}</a>{{ label|trailing_period }}{% endwith %}
+    <strong class="sponsored-label">Sponsored by:</strong> {% if sponsor_message.learn_more_label %}{{ sponsor_message.name }} &mdash; {{ sponsor_message.message }} {% with label=sponsor_message.learn_more_label %}<a href="{{ sponsor_message.learn_more_url }}" rel="sponsored noopener" target="_blank">{{ label|strip_trailing_period }}</a>{{ label|trailing_period }}{% endwith %}{% else %}<a href="{{ sponsor_message.learn_more_url }}" rel="sponsored noopener" target="_blank">{{ sponsor_message.name }}</a> &mdash; {{ sponsor_message.message }}{% endif %}
   </div>
 </div>
 {% endif %}
