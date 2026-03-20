@@ -163,6 +163,12 @@ def import_tils(url):
         commentary = truncate(first_line)
 
         created = parse_datetime(til["created_utc"])
+        shot_hash = til.get("shot_hash") or ""
+        image_url = (
+            "https://s3.amazonaws.com/til.simonwillison.net/{}.jpg".format(shot_hash)
+            if shot_hash
+            else None
+        )
         defaults = {
             "beat_type": "til",
             "title": til["title"],
@@ -170,6 +176,7 @@ def import_tils(url):
             "slug": unique_slug(slug, created, import_ref),
             "created": created,
             "commentary": commentary,
+            "image_url": image_url,
         }
 
         beat, status = _create_or_update(import_ref, defaults)
