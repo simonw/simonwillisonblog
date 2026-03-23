@@ -24,6 +24,7 @@
   <span class="beat-title"><a href="{{ beat.url }}">{{ beat.title }}</a></span>
   {% if beat.commentary %}<span class="beat-commit">&mdash; {{ beat.commentary }}</span>{% endif %}
 </div>
+{% if beat.note %}<div class="beat-note blogmark-body">{{ beat.note_rendered }}</div>{% endif %}
 </div>
 
 <div class="entryFooter">Posted <a href="/{{ beat.created|date:"Y/M/j/" }}">{{ beat.created|date:"jS F Y" }}</a> at {{ beat.created|date:"f A"|lower }}</div>

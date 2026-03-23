@@ -85,6 +85,7 @@
     <span class="beat-title"><a href="{{ item.obj.url }}">{{ item.obj.title }}</a></span>
     {% if item.obj.commentary %}<span class="beat-commit">&mdash; {{ item.obj.commentary }}</span>{% endif %}
   </div>
+  {% if item.obj.note %}<div class="beat-note blogmark-body">{{ item.obj.note_rendered }}</div>{% endif %}
   <div class="beat-meta beat-row2">
     <a href="{{ item.obj.get_absolute_url }}" rel="bookmark">{{ item.obj.created|date:"jS M Y" }}, {{ item.obj.created|date:"f A"|lower }}</a>{% if all_tags %} &middot; {% for tag in all_tags %}{{ tag.get_link }}{% if not forloop.last %}, {% endif %}{% endfor %}{% endif %}
   </div>
