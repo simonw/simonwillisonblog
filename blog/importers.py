@@ -213,8 +213,8 @@ def import_tools(url):
         defaults = {
             "beat_type": "tool",
             "title": tool["title"],
-            "url": "https://tools.simonwillison.net/colophon#{}".format(
-                tool["filename"]
+            "url": "https://tools.simonwillison.net/{}".format(
+                tool["filename"].replace(".html", "")
             ),
             "slug": unique_slug(tool["slug"], created, import_ref),
             "created": created,
