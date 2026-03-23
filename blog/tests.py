@@ -154,6 +154,21 @@ class BlogTests(TransactionTestCase):
         # Content inside <script> should be untouched
         self.assertIn("""var x = "don't touch";""", result)
 
+    def test_script_preserves_special_characters(self):
+        input_html = """<script>console.log(years.map(y => y * 100))</script>"""
+        result = str(typography(xhtml(input_html)))
+        self.assertIn("y => y * 100", result)
+        self.assertNotIn("&gt;", result)
+        self.assertNotIn("&lt;", result)
+        self.assertNotIn("&amp;", result)
+
+    def test_script_preserves_ampersands(self):
+        # In valid XHTML, ampersands in script tags are &amp;
+        input_html = """<p>"hello"</p><script>if (a &amp;&amp; b) { c &amp;= d; }</script>"""
+        result = str(typography(xhtml(input_html)))
+        self.assertIn("a && b", result)
+        self.assertIn("c &= d", result)
+
     def test_typography_skips_style_tags(self):
         input_html = """<p>"hello"</p><style>content: "don't change"</style>"""
         result = str(typography(xhtml(input_html)))
