@@ -2,7 +2,7 @@ import re
 
 from django.test import TransactionTestCase
 from django.contrib.auth.models import User
-from blog.templatetags.entry_tags import do_typography_string, first_three_paragraphs
+from blog.templatetags.entry_tags import do_typography_string, first_three_paragraphs, typography, xhtml
 from .factories import (
     EntryFactory,
     BlogmarkFactory,
@@ -144,6 +144,21 @@ class BlogTests(TransactionTestCase):
             ),
         ):
             self.assertEqual(do_typography_string(input), expected)
+
+    def test_typography_skips_script_tags(self):
+        input_html = """<p>He said "hello" and it's nice</p><script>var x = "don't touch";</script><p>"more" text</p>"""
+        result = str(typography(xhtml(input_html)))
+        # Quotes in <p> tags should be converted to curly quotes
+        self.assertIn("\u201chello\u201d", result)  # curly double quotes in prose
+        self.assertIn("it\u2019s", result)  # curly single quote in prose
+        # Content inside <script> should be untouched
+        self.assertIn("""var x = "don't touch";""", result)
+
+    def test_typography_skips_style_tags(self):
+        input_html = """<p>"hello"</p><style>content: "don't change"</style>"""
+        result = str(typography(xhtml(input_html)))
+        self.assertIn("\u201chello\u201d", result)  # curly quotes in prose
+        self.assertIn("""content: "don't change\"""", result)
 
     def test_rename_tag_creates_previous_tag_name(self):
         tag = Tag.objects.create(tag="old-name")
