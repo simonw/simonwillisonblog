@@ -9,6 +9,17 @@ from django.utils import timezone
 
 register = template.Library()
 entry_stripper = re.compile("^<entry>(.*?)</entry>$", re.DOTALL)
+_script_style_re = re.compile(
+    r"(<(?:script|style)[^>]*>)(.*?)(</(?:script|style)>)", re.DOTALL
+)
+
+
+def _unescape_script_style(m):
+    return (
+        m.group(1)
+        + m.group(2).replace("&amp;", "&").replace("&lt;", "<").replace("&gt;", ">")
+        + m.group(3)
+    )
 
 
 @register.filter
@@ -27,7 +38,9 @@ class XhtmlString(object):
             self.et = ElementTree.fromstring("<entry>%s</entry>" % value)
 
     def __str__(self):
-        m = entry_stripper.match(ElementTree.tostring(self.et, "unicode"))
+        s = ElementTree.tostring(self.et, "unicode")
+        s = _script_style_re.sub(_unescape_script_style, s)
+        m = entry_stripper.match(s)
         if m:
             return mark_safe(m.group(1))
         else:
