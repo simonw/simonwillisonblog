@@ -229,7 +229,7 @@ def strip_wrapping_p(xhtml):
 
 def do_typography(et):
     # Designed to be called recursively on ElementTree objects
-    if et.tag not in ("pre", "code"):
+    if et.tag not in ("pre", "code", "script", "style"):
         # Don't do et.text or children for those tags; just do et.tail
         if et.text:
             et.text = do_typography_string(et.text)
