@@ -26,6 +26,7 @@
     {% if beat.commentary %}<span class="beat-commit">&mdash; {{ beat.commentary }}</span>{% endif %}
   </div>
 </div>
+{% if beat.note %}<div class="beat-note blogmark-body">{{ beat.note_rendered }}</div>{% endif %}
 {% if beat.image_url %}
   <a href="{{ beat.url }}" class="beat-image-link"><img class="beat-image" src="{{ beat.image_url }}" alt="{{ beat.image_alt }}" loading="lazy"></a>
 {% endif %}

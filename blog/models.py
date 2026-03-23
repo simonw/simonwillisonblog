@@ -565,13 +565,21 @@ class Beat(BaseModel):
     image_url = models.URLField(max_length=1000, blank=True, null=True)
     image_alt = models.CharField(max_length=500, blank=True, null=True)
 
+    # Optional longer note (rendered as markdown)
+    note = models.TextField(blank=True)
+
     is_beat = True
+
+    def note_rendered(self):
+        if self.note:
+            return mark_safe(markdown(self.note))
+        return ""
 
     def index_components(self):
         return {
             "A": self.title,
             "B": " ".join(self.tags.values_list("tag", flat=True)),
-            "C": self.commentary,
+            "C": " ".join(filter(None, [self.commentary, self.note])),
         }
 
     def __str__(self):

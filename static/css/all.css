@@ -1957,6 +1957,21 @@ div.beat {
   min-width: 0;
 }
 
+.beat-note {
+  margin-top: 8px;
+  margin-bottom: 8px;
+  font-size: 0.9rem;
+  white-space: normal;
+}
+
+.beat-note p {
+  margin-bottom: 0.8em;
+}
+
+.beat-note p:last-child {
+  margin-bottom: 0;
+}
+
 .beat-meta {
   font-size: 0.8em;
   color: var(--color-text-muted);
