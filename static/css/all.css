@@ -648,25 +648,30 @@ div.blogmark ol,
 div.quote ul,
 div.quote ol,
 div.note ul,
-div.note ol {
+div.note ol,
+div.beat ul,
+div.beat ol {
   margin-bottom: 0.8em;
 }
 div.entry li,
 div.blogmark li,
 div.quote li,
-div.note li {
+div.note li,
+div.beat li {
   margin-left: 1em;
   list-style-type: square;
 }
 div.entry ol li,
 div.blogmark ol li,
 div.note ol li,
-div.quote ol li {
+div.quote ol li,
+div.beat ol li {
   list-style-type: decimal;
   margin-left: 2em;
 }
 div.entry ol li ul li,
-div.blogmark ol li ul li {
+div.blogmark ol li ul li,
+div.beat ol li ul li {
   list-style-type: square;
 }
 div.entry iframe {
