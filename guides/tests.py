@@ -73,6 +73,62 @@ class BuildDiffHtmlTests(TransactionTestCase):
         self.assertIsNone(_build_diff_html([]))
 
 
+class H2HeadingsTests(TransactionTestCase):
+    def test_h2_headings_extracts_headings(self):
+        guide = GuideFactory(slug="h2-test")
+        chapter = ChapterFactory(
+            guide=guide,
+            slug="ch",
+            title="Test",
+            body="## First heading\n\nSome text\n\n## Second heading\n\nMore text",
+        )
+        headings = chapter.h2_headings()
+        self.assertEqual(len(headings), 2)
+        self.assertEqual(headings[0]["id"], "first-heading")
+        self.assertEqual(headings[0]["title"], "First heading")
+        self.assertEqual(headings[1]["id"], "second-heading")
+        self.assertEqual(headings[1]["title"], "Second heading")
+
+    def test_h2_headings_empty_when_no_h2(self):
+        guide = GuideFactory(slug="h2-empty")
+        chapter = ChapterFactory(
+            guide=guide,
+            slug="ch",
+            title="Test",
+            body="Just a paragraph with no headings.",
+        )
+        self.assertEqual(chapter.h2_headings(), [])
+
+    def test_h2_headings_ignores_h3(self):
+        guide = GuideFactory(slug="h2-h3")
+        chapter = ChapterFactory(
+            guide=guide,
+            slug="ch",
+            title="Test",
+            body="## H2 heading\n\n### H3 heading\n\nText",
+        )
+        headings = chapter.h2_headings()
+        self.assertEqual(len(headings), 1)
+        self.assertEqual(headings[0]["title"], "H2 heading")
+
+    def test_guide_detail_shows_h2_subheadings(self):
+        guide = GuideFactory(slug="h2-detail", is_draft=False)
+        ChapterFactory(
+            guide=guide,
+            slug="ch1",
+            title="Chapter One",
+            body="## Sub one\n\nText\n\n## Sub two\n\nMore",
+            is_draft=False,
+        )
+        response = self.client.get("/guides/h2-detail/")
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode()
+        self.assertIn("#sub-one", content)
+        self.assertIn("#sub-two", content)
+        self.assertIn("Sub one", content)
+        self.assertIn("Sub two", content)
+
+
 class ChapterChangesCharHighlightTests(TransactionTestCase):
     def test_changes_page_has_char_highlights(self):
         guide = GuideFactory(slug="pg-char1")

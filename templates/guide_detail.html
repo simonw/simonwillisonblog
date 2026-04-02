@@ -18,6 +18,15 @@
       <li style="margin-left: 2em; list-style-type: decimal; margin-bottom: 0.3em">
         <a href="{{ item.chapter.get_absolute_url }}">{{ item.chapter.title }}</a>
         {% if item.chapter.is_draft %} <em>(draft)</em>{% endif %}
+        {% with headings=item.chapter.h2_headings %}
+        {% if headings %}
+        <ul style="list-style-type: disc; margin-top: 0.2em; margin-bottom: 0.2em">
+          {% for h in headings %}
+          <li style="margin-left: 2em; margin-bottom: 0.1em"><a href="{{ item.chapter.get_absolute_url }}#{{ h.id }}">{{ h.title }}</a></li>
+          {% endfor %}
+        </ul>
+        {% endif %}
+        {% endwith %}
       </li>
     {% elif item.type == "section" %}
       <li style="margin-left: 2em; list-style-type: decimal; margin-bottom: 0.3em">
@@ -27,6 +36,15 @@
             <li style="margin-left: 2em; list-style-type: decimal; margin-bottom: 0.3em">
               <a href="{{ ch.get_absolute_url }}">{{ ch.title }}</a>
               {% if ch.is_draft %} <em>(draft)</em>{% endif %}
+              {% with headings=ch.h2_headings %}
+              {% if headings %}
+              <ul style="list-style-type: disc; margin-top: 0.2em; margin-bottom: 0.2em">
+                {% for h in headings %}
+                <li style="margin-left: 2em; margin-bottom: 0.1em"><a href="{{ ch.get_absolute_url }}#{{ h.id }}">{{ h.title }}</a></li>
+                {% endfor %}
+              </ul>
+              {% endif %}
+              {% endwith %}
             </li>
           {% endfor %}
         </ol>

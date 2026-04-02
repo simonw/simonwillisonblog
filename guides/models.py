@@ -1,3 +1,4 @@
+import re
 from html import escape
 
 from django.db import models
@@ -121,6 +122,13 @@ class Chapter(BaseModel):
                 },
             )
         )
+
+    def h2_headings(self):
+        html = str(self.body_rendered())
+        return [
+            {"id": m.group(1), "title": re.sub(r"<[^>]+>", "", m.group(2))}
+            for m in re.finditer(r'<h2\s+id="([^"]+)">(.*?)</h2>', html)
+        ]
 
     def multi_paragraph(self):
         return str(self.body_rendered()).count("<p") > 3
