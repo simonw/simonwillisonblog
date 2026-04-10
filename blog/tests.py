@@ -25,9 +25,9 @@ class HomepageWeightedBudgetTests(TransactionTestCase):
     """Tests for the weighted-budget homepage logic.
 
     Weight rules:
-      - Beat with no note and no commentary: 0.2
-      - Beat with commentary (no note): 0.8
-      - Everything else (including beats with a note): 1.0
+      - Beat with no note: 0.2
+      - Beat with note: 0.8
+      - Everything else (non-beat): 1.0
 
     Total budget: 30.0
     """
@@ -58,32 +58,11 @@ class HomepageWeightedBudgetTests(TransactionTestCase):
         self.assertEqual(len(beats), 20)
         self.assertEqual(len(entries), 26)
 
-    def test_commentary_beats_cost_0_8(self):
-        """Beats with commentary (but no note) cost 0.8 each.
+    def test_beats_with_note_cost_0_8(self):
+        """Beats with a note cost 0.8 each.
 
-        Create 10 commentary beats (cost 8.0) and 30 entries (cost 30.0).
+        Create 10 beats-with-note (cost 8.0) and 30 entries (cost 30.0).
         Budget is 30.0: 10 beats (8.0) + 22 entries (22.0) = 30.0.
-        """
-        base = timezone.now() - timedelta(days=100)
-        for i in range(30):
-            EntryFactory(created=base + timedelta(hours=i))
-        for i in range(10):
-            BeatFactory(
-                created=base + timedelta(days=1, hours=i),
-                commentary="Some commentary",
-                note="",
-            )
-        items = self._homepage_items()
-        beats = [i for i in items if i["type"] == "beat"]
-        entries = [i for i in items if i["type"] == "entry"]
-        self.assertEqual(len(beats), 10)
-        self.assertEqual(len(entries), 22)
-
-    def test_beats_with_note_cost_1_0(self):
-        """Beats with a note are full-weight (1.0), same as entries.
-
-        Create 10 beats-with-note (cost 10.0) and 30 entries (cost 30.0).
-        Budget is 30.0: 10 beats + 20 entries = 30 items, all at cost 1.0.
         """
         base = timezone.now() - timedelta(days=100)
         for i in range(30):
@@ -97,7 +76,7 @@ class HomepageWeightedBudgetTests(TransactionTestCase):
         beats = [i for i in items if i["type"] == "beat"]
         entries = [i for i in items if i["type"] == "entry"]
         self.assertEqual(len(beats), 10)
-        self.assertEqual(len(entries), 20)
+        self.assertEqual(len(entries), 22)
 
     def test_non_beat_types_always_cost_1_0(self):
         """Blogmarks, quotations, notes all cost 1.0.
@@ -133,18 +112,16 @@ class HomepageWeightedBudgetTests(TransactionTestCase):
         self.assertEqual(len(beats), 100)
 
     def test_mixed_beat_weights(self):
-        """Mix of bare, commentary, and note beats with entries.
+        """Mix of bare and note beats with entries.
 
         Create (most recent first):
-          5 bare beats       = 5 * 0.2 = 1.0
-          5 commentary beats = 5 * 0.8 = 4.0
-          5 note beats       = 5 * 1.0 = 5.0
-          30 entries         = 30 * 1.0 = 30.0
-        Total available weight = 40.0, budget = 30.0.
-        In chronological order (newest first): bare beats, commentary beats,
-        note beats, entries. Walking newest-first:
-          5 bare (1.0) + 5 commentary (4.0) + 5 note (5.0) = 10.0
-          Then 20 entries fit (20.0), total = 30.0.
+          5 bare beats  = 5 * 0.2 = 1.0
+          5 note beats  = 5 * 0.8 = 4.0
+          30 entries    = 30 * 1.0 = 30.0
+        Total available weight = 35.0, budget = 30.0.
+        Walking newest-first:
+          5 bare (1.0) + 5 note (4.0) = 5.0
+          Then 25 entries fit (25.0), total = 30.0.
         """
         base = timezone.now() - timedelta(days=100)
         for i in range(30):
@@ -157,20 +134,13 @@ class HomepageWeightedBudgetTests(TransactionTestCase):
         for i in range(5):
             BeatFactory(
                 created=base + timedelta(days=2, hours=i),
-                commentary="Has commentary",
-                note="",
-            )
-        for i in range(5):
-            BeatFactory(
-                created=base + timedelta(days=3, hours=i),
-                commentary="",
                 note="",
             )
         items = self._homepage_items()
         beats = [i for i in items if i["type"] == "beat"]
         entries = [i for i in items if i["type"] == "entry"]
-        self.assertEqual(len(beats), 15)
-        self.assertEqual(len(entries), 20)
+        self.assertEqual(len(beats), 10)
+        self.assertEqual(len(entries), 25)
 
 
 class BlogTests(TransactionTestCase):

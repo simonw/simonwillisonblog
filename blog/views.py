@@ -155,8 +155,6 @@ HOMEPAGE_BUDGET = 30.0
 def _beat_weight(beat):
     """Return the homepage budget cost for a Beat based on its content."""
     if beat.note:
-        return 1.0
-    if beat.commentary:
         return 0.8
     return 0.2
 
