@@ -21,6 +21,158 @@ import json
 import xml.etree.ElementTree as ET
 
 
+class HomepageWeightedBudgetTests(TransactionTestCase):
+    """Tests for the weighted-budget homepage logic.
+
+    Weight rules:
+      - Beat with no note and no commentary: 0.2
+      - Beat with commentary (no note): 0.8
+      - Everything else (including beats with a note): 1.0
+
+    Total budget: 30.0
+    """
+
+    def _homepage_items(self):
+        response = self.client.get("/")
+        return response.context["items"]
+
+    def test_bare_beats_cost_0_2(self):
+        """With budget=30, we can fit 30 entries + many bare beats (0.2 each).
+
+        Create 30 entries and 20 bare beats, all more recent than the entries.
+        All 20 bare beats cost 20*0.2 = 4.0, plus 26 entries = 30.0.
+        So we expect all 20 beats + 26 entries = 46 items.
+        """
+        base = timezone.now() - timedelta(days=100)
+        for i in range(30):
+            EntryFactory(created=base + timedelta(hours=i))
+        for i in range(20):
+            BeatFactory(
+                created=base + timedelta(days=1, hours=i),
+                commentary="",
+                note="",
+            )
+        items = self._homepage_items()
+        beats = [i for i in items if i["type"] == "beat"]
+        entries = [i for i in items if i["type"] == "entry"]
+        self.assertEqual(len(beats), 20)
+        self.assertEqual(len(entries), 26)
+
+    def test_commentary_beats_cost_0_8(self):
+        """Beats with commentary (but no note) cost 0.8 each.
+
+        Create 10 commentary beats (cost 8.0) and 30 entries (cost 30.0).
+        Budget is 30.0: 10 beats (8.0) + 22 entries (22.0) = 30.0.
+        """
+        base = timezone.now() - timedelta(days=100)
+        for i in range(30):
+            EntryFactory(created=base + timedelta(hours=i))
+        for i in range(10):
+            BeatFactory(
+                created=base + timedelta(days=1, hours=i),
+                commentary="Some commentary",
+                note="",
+            )
+        items = self._homepage_items()
+        beats = [i for i in items if i["type"] == "beat"]
+        entries = [i for i in items if i["type"] == "entry"]
+        self.assertEqual(len(beats), 10)
+        self.assertEqual(len(entries), 22)
+
+    def test_beats_with_note_cost_1_0(self):
+        """Beats with a note are full-weight (1.0), same as entries.
+
+        Create 10 beats-with-note (cost 10.0) and 30 entries (cost 30.0).
+        Budget is 30.0: 10 beats + 20 entries = 30 items, all at cost 1.0.
+        """
+        base = timezone.now() - timedelta(days=100)
+        for i in range(30):
+            EntryFactory(created=base + timedelta(hours=i))
+        for i in range(10):
+            BeatFactory(
+                created=base + timedelta(days=1, hours=i),
+                note="A longer note here",
+            )
+        items = self._homepage_items()
+        beats = [i for i in items if i["type"] == "beat"]
+        entries = [i for i in items if i["type"] == "entry"]
+        self.assertEqual(len(beats), 10)
+        self.assertEqual(len(entries), 20)
+
+    def test_non_beat_types_always_cost_1_0(self):
+        """Blogmarks, quotations, notes all cost 1.0.
+
+        Create 35 blogmarks; only 30 should appear.
+        """
+        base = timezone.now() - timedelta(days=100)
+        for i in range(35):
+            BlogmarkFactory(created=base + timedelta(hours=i))
+        items = self._homepage_items()
+        self.assertEqual(len(items), 30)
+
+    def test_bare_beats_do_not_crowd_out_entries(self):
+        """Even with a flood of bare beats, entries still appear.
+
+        Create 100 bare beats (all most recent) and 5 entries (older).
+        100 bare beats = 20.0 weight, 5 entries = 5.0, total 25.0 < 30.
+        All 105 items should appear since they fit within budget.
+        """
+        base = timezone.now() - timedelta(days=100)
+        for i in range(5):
+            EntryFactory(created=base + timedelta(hours=i))
+        for i in range(100):
+            BeatFactory(
+                created=base + timedelta(days=1, hours=i),
+                commentary="",
+                note="",
+            )
+        items = self._homepage_items()
+        entries = [i for i in items if i["type"] == "entry"]
+        beats = [i for i in items if i["type"] == "beat"]
+        self.assertEqual(len(entries), 5)
+        self.assertEqual(len(beats), 100)
+
+    def test_mixed_beat_weights(self):
+        """Mix of bare, commentary, and note beats with entries.
+
+        Create (most recent first):
+          5 bare beats       = 5 * 0.2 = 1.0
+          5 commentary beats = 5 * 0.8 = 4.0
+          5 note beats       = 5 * 1.0 = 5.0
+          30 entries         = 30 * 1.0 = 30.0
+        Total available weight = 40.0, budget = 30.0.
+        In chronological order (newest first): bare beats, commentary beats,
+        note beats, entries. Walking newest-first:
+          5 bare (1.0) + 5 commentary (4.0) + 5 note (5.0) = 10.0
+          Then 20 entries fit (20.0), total = 30.0.
+        """
+        base = timezone.now() - timedelta(days=100)
+        for i in range(30):
+            EntryFactory(created=base + timedelta(hours=i))
+        for i in range(5):
+            BeatFactory(
+                created=base + timedelta(days=1, hours=i),
+                note="Has a note",
+            )
+        for i in range(5):
+            BeatFactory(
+                created=base + timedelta(days=2, hours=i),
+                commentary="Has commentary",
+                note="",
+            )
+        for i in range(5):
+            BeatFactory(
+                created=base + timedelta(days=3, hours=i),
+                commentary="",
+                note="",
+            )
+        items = self._homepage_items()
+        beats = [i for i in items if i["type"] == "beat"]
+        entries = [i for i in items if i["type"] == "entry"]
+        self.assertEqual(len(beats), 15)
+        self.assertEqual(len(entries), 20)
+
+
 class BlogTests(TransactionTestCase):
     def test_homepage(self):
         db_entries = [

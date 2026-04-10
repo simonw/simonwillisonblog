@@ -149,9 +149,23 @@ def archive_item(request, year, month, day, slug):
     raise Http404
 
 
+HOMEPAGE_BUDGET = 30.0
+
+
+def _beat_weight(beat):
+    """Return the homepage budget cost for a Beat based on its content."""
+    if beat.note:
+        return 1.0
+    if beat.commentary:
+        return 0.8
+    return 0.2
+
+
 def index(request):
-    # Get back 30 most recent across all item types
-    recent = list(
+    # Over-fetch candidates so lightweight beats don't starve heavier content.
+    # 150 is generous: even if every candidate were a bare beat (0.2 each),
+    # that's 150 * 0.2 = 30.0 — exactly the budget.
+    candidates = list(
         Entry.objects.filter(is_draft=False)
         .annotate(content_type=Value("entry", output_field=CharField()))
         .values("content_type", "id", "created")
@@ -188,14 +202,14 @@ def index(request):
             .values("content_type", "id", "created")
             .order_by()
         )
-        .order_by("-created")[:30]
+        .order_by("-created")[:150]
     )
 
-    # Now load the entries, blogmarks, quotations
-    items = []
+    # Bulk-load all candidate objects
     to_load = {}
-    for item in recent:
+    for item in candidates:
         to_load.setdefault(item["content_type"], []).append(item["id"])
+    loaded = {}
     for content_type, model in (
         ("entry", Entry),
         ("blogmark", Blogmark),
@@ -207,18 +221,34 @@ def index(request):
         if content_type not in to_load:
             continue
         if content_type == "chapter":
-            objects = (
+            loaded[content_type] = (
                 model.objects.select_related("guide")
                 .prefetch_related("tags")
                 .in_bulk(to_load[content_type])
             )
         else:
-            objects = model.objects.prefetch_related("tags").in_bulk(
+            loaded[content_type] = model.objects.prefetch_related("tags").in_bulk(
                 to_load[content_type]
             )
-        items.extend([{"type": content_type, "obj": obj} for obj in objects.values()])
 
-    items.sort(key=lambda x: x["obj"].created, reverse=True)
+    # Reassemble in chronological order with full objects
+    all_items = []
+    for item in candidates:
+        ct = item["content_type"]
+        obj = loaded.get(ct, {}).get(item["id"])
+        if obj:
+            all_items.append({"type": ct, "obj": obj})
+    all_items.sort(key=lambda x: x["obj"].created, reverse=True)
+
+    # Walk newest-first, spending budget by weight
+    items = []
+    spent = 0.0
+    for item in all_items:
+        cost = _beat_weight(item["obj"]) if item["type"] == "beat" else 1.0
+        if spent + cost > HOMEPAGE_BUDGET:
+            break
+        items.append(item)
+        spent += cost
 
     response = render(
         request,
