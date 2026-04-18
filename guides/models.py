@@ -13,11 +13,23 @@ def _markdown_copy_formatter(source, language, css_class, options, md, **kwargs)
     return f"<div><markdown-copy><textarea>{escape(source)}</textarea></markdown-copy></div>"
 
 
+def _markdown_copy_feed_formatter(source, language, css_class, options, md, **kwargs):
+    return f"<pre>{escape(source)}</pre>"
+
+
 _CUSTOM_FENCES = [
     {
         "name": "markdown-copy",
         "class": "",
         "format": _markdown_copy_formatter,
+    }
+]
+
+_CUSTOM_FENCES_FEED = [
+    {
+        "name": "markdown-copy",
+        "class": "",
+        "format": _markdown_copy_feed_formatter,
     }
 ]
 
@@ -105,14 +117,14 @@ class Chapter(BaseModel):
                 is_draft=self.is_draft,
             )
 
-    def body_rendered(self):
+    def _render_body(self, custom_fences):
         return mark_safe(
             markdown(
                 self.body,
                 extensions=["pymdownx.superfences", "pymdownx.highlight", "toc"],
                 extension_configs={
                     "pymdownx.superfences": {
-                        "custom_fences": _CUSTOM_FENCES,
+                        "custom_fences": custom_fences,
                     },
                     "pymdownx.highlight": {
                         "guess_lang": False,
@@ -122,6 +134,12 @@ class Chapter(BaseModel):
                 },
             )
         )
+
+    def body_rendered(self):
+        return self._render_body(_CUSTOM_FENCES)
+
+    def body_rendered_for_feed(self):
+        return self._render_body(_CUSTOM_FENCES_FEED)
 
     def h2_headings(self):
         html = str(self.body_rendered())

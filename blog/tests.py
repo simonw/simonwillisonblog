@@ -2615,6 +2615,22 @@ class ChapterEverywhereTests(TransactionTestCase):
         response = self.client.get("/atom/everything/")
         self.assertNotContains(response, "Draft Feed Chapter")
 
+    def test_chapter_markdown_copy_fence_in_atom_feed_uses_pre(self):
+        """In atom feeds, ```markdown-copy fences should render as <pre> not <markdown-copy><textarea>."""
+        body = "```markdown-copy\n# Hello\n\nSome **bold** text\n```"
+        self._make_chapter(title="Feed Copy Chapter", body=body)
+        response = self.client.get("/atom/everything/")
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode()
+        # HTML is XML-escaped inside <summary type="html"> in an atom feed
+        self.assertNotIn("markdown-copy", content)
+        self.assertNotIn("textarea", content)
+        self.assertIn("&lt;pre&gt;", content)
+        self.assertIn("&lt;/pre&gt;", content)
+        # Content should still be present
+        self.assertIn("# Hello", content)
+        self.assertIn("Some **bold** text", content)
+
     def test_chapter_guide_breadcrumb_style(self):
         """Chapter should show guide name with > and no underline."""
         chapter = self._make_chapter()
