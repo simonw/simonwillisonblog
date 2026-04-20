@@ -84,7 +84,7 @@
         <span class="beat-label museum">Museum</span>
       {% endif %}
       <span class="beat-title"><a href="{{ item.obj.url }}">{{ item.obj.title }}</a></span>
-      {% if item.obj.commentary %}<span class="beat-commit">&mdash; {{ item.obj.commentary }}</span>{% endif %}
+      {% if item.obj.commentary and not item.obj.note %}<span class="beat-commit">&mdash; {{ item.obj.commentary }}</span>{% endif %}
     </div>
     {% if item.obj.note %}<div class="beat-note blogmark-body">{{ item.obj.note_rendered }}</div>{% endif %}
     <div class="beat-meta beat-row2">
