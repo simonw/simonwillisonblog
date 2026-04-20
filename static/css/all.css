@@ -1906,7 +1906,7 @@ a.random-tag-nav svg {
 
 /* ── Beat component ─────────────────────────────────────
    Two-row slim timeline entry. Row 1: label + title + optional
-   commit message, all on one line, truncating with ellipsis.
+   commit message, wrapping to additional lines as needed.
    Row 2: muted metadata (date, context, tags).
    ──────────────────────────────────────────────────── */
 
@@ -1916,11 +1916,8 @@ div.beat {
 }
 
 .beat-row1 {
-  display: flex;
-  align-items: baseline;
-  gap: 7px;
-  overflow: hidden;
-  white-space: nowrap;
+  /* Inline flow so the label sits next to the title text and the
+     title wraps naturally around it on narrow viewports. */
 }
 
 .beat-row2 {
@@ -1934,6 +1931,7 @@ div.beat {
   display: inline-flex;
   align-items: center;
   flex-shrink: 0;
+  margin-right: 5px;
   padding: 1px 7px;
   border-radius: 3px;
   font-size: 0.68rem;
@@ -1946,7 +1944,6 @@ div.beat {
 
 .beat-title {
   font-weight: 600;
-  flex-shrink: 0;
 }
 
 .beat-title a {
