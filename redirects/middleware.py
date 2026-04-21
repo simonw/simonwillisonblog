@@ -1,8 +1,33 @@
+import re
+
 from .models import Redirect
-from django.http import HttpResponsePermanentRedirect
+from django.http import HttpResponseNotFound, HttpResponsePermanentRedirect
 
 
 CANONICAL_HOST = "simonwillison.net"
+
+# Crawlers occasionally get stuck in a loop re-URL-encoding their own input:
+# "%" becomes "%25", which re-encoded becomes "%2525", then "%252525", and so
+# on. Two shapes show up in logs:
+#   1. "%25%25%25..."     — three-or-more literal "%"s, each encoded once.
+#   2. "%252525252525..." — a single "%" re-encoded recursively; each
+#                           additional level appends another "25".
+# Both are bot pathologies: no legitimate URL contains three literal "%"
+# characters in a row, and no legitimate URL-encoding produces more than
+# two hex digits after a single "%". These requests can still match real
+# URL prefixes (e.g. /tags/<slug>/) and trigger expensive view + DB work
+# for what is effectively garbage input, so we short-circuit them here
+# with a bare 404 before any downstream middleware or view runs.
+NESTED_PERCENT_ENCODING_RE = re.compile(r"(?:%25){3,}|%(?:25){3,}")
+
+
+def block_nested_percent_encoding_middleware(get_response):
+    def middleware(request):
+        if NESTED_PERCENT_ENCODING_RE.search(request.get_full_path()):
+            return HttpResponseNotFound()
+        return get_response(request)
+
+    return middleware
 
 
 def herokuapp_redirect_middleware(get_response):

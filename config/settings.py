@@ -66,6 +66,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    "redirects.middleware.block_nested_percent_encoding_middleware",
     "redirects.middleware.herokuapp_redirect_middleware",
     "django_hosts.middleware.HostsRequestMiddleware",
     "redirects.middleware.redirect_middleware",
