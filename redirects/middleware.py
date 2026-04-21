@@ -2,6 +2,20 @@ from .models import Redirect
 from django.http import HttpResponsePermanentRedirect
 
 
+CANONICAL_HOST = "simonwillison.net"
+
+
+def herokuapp_redirect_middleware(get_response):
+    def middleware(request):
+        if request.get_host().endswith(".herokuapp.com"):
+            return HttpResponsePermanentRedirect(
+                "https://" + CANONICAL_HOST + request.get_full_path()
+            )
+        return get_response(request)
+
+    return middleware
+
+
 def redirect_middleware(get_response):
     def middleware(request):
         path = request.path.lstrip("/")
