@@ -2,7 +2,12 @@ import re
 
 from django.test import TransactionTestCase
 from django.contrib.auth.models import User
-from blog.templatetags.entry_tags import do_typography_string, first_three_paragraphs, typography, xhtml
+from blog.templatetags.entry_tags import (
+    do_typography_string,
+    first_three_paragraphs,
+    typography,
+    xhtml,
+)
 from .factories import (
     EntryFactory,
     BlogmarkFactory,
@@ -286,7 +291,9 @@ class BlogTests(TransactionTestCase):
 
     def test_script_preserves_ampersands(self):
         # In valid XHTML, ampersands in script tags are &amp;
-        input_html = """<p>"hello"</p><script>if (a &amp;&amp; b) { c &amp;= d; }</script>"""
+        input_html = (
+            """<p>"hello"</p><script>if (a &amp;&amp; b) { c &amp;= d; }</script>"""
+        )
         result = str(typography(xhtml(input_html)))
         self.assertIn("a && b", result)
         self.assertIn("c &= d", result)

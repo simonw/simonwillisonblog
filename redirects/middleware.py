@@ -3,7 +3,6 @@ import re
 from .models import Redirect
 from django.http import HttpResponseNotFound, HttpResponsePermanentRedirect
 
-
 CANONICAL_HOST = "simonwillison.net"
 
 # Crawlers occasionally get stuck in a loop re-URL-encoding their own input:
