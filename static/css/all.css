@@ -358,7 +358,11 @@ a:link:active {
 a.a-img:link,
 a.a-img:link:focus,
 a.a-img:link:hover,
-a.a-img:link:active {
+a.a-img:link:active,
+a:has(> img):link,
+a:has(> img):link:focus,
+a:has(> img):link:hover,
+a:has(> img):link:active {
   /* No border on links that just contain an image */
   border-bottom: none;
 }
