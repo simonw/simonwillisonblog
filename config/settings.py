@@ -63,6 +63,7 @@ INSTALLED_APPS = [
     "redirects",
     "feedstats",
     "django_http_debug",
+    "s3_web_manager_django",
 ]
 
 MIDDLEWARE = [
@@ -204,5 +205,17 @@ CACHES = {
         "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
     }
 }
+
+S3_WEB_MANAGER_PERMISSION = (
+    lambda request: request.user.is_authenticated and request.user.is_superuser
+)
+for _name in (
+    "S3_WEB_MANAGER_BUCKET_NAME",
+    "S3_WEB_MANAGER_REGION_NAME",
+    "S3_WEB_MANAGER_AWS_ACCESS_KEY_ID",
+    "S3_WEB_MANAGER_AWS_SECRET_ACCESS_KEY",
+):
+    if _name in os.environ:
+        globals()[_name] = os.environ[_name]
 
 djp.settings(globals())

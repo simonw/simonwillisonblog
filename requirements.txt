@@ -26,3 +26,4 @@ pymdown-extensions==10.21
 django-hosts==7.0.0
 pyspellchecker==0.8.4
 PyYAML==6.0.3
+https://static.simonwillison.net/static/2026/s3_web_manager_django-0.1-py3-none-any.whl

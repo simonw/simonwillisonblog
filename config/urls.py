@@ -188,6 +188,13 @@ urlpatterns = [
     re_path(r"^sitemap\.xml$", feeds.sitemap),
     path("tools/", blog_views.tools),
     path("tools/extract-title/", blog_views.tools_extract_title),
+    path(
+        "tools/s3/",
+        include(
+            ("s3_web_manager_django.urls", "s3_web_manager"),
+            namespace="s3_web_manager",
+        ),
+    ),
     re_path(r"^tools/search-tags/$", search_views.tools_search_tags),
     re_path(r"^write/$", blog_views.write),
     #  (r'^about/$', blog_views.about),
