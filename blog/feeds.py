@@ -1,7 +1,7 @@
 from django.contrib.syndication.views import Feed
 from django.utils.dateformat import format as date_format
 from django.utils.feedgenerator import Atom1Feed
-from django.http import HttpResponse
+from django.http import Http404, HttpResponse
 from blog.models import Beat, Entry, Blogmark, Quotation, Note
 from guides.models import Chapter
 
@@ -140,6 +140,27 @@ class Beats(Base):
 
     def item_link(self, item):
         return item.url
+
+
+class BeatsByType(Beats):
+    ga_source = "beats"
+
+    def get_object(self, request, beat_type):
+        valid_types = {value for value, _ in Beat.BeatType.choices}
+        if beat_type not in valid_types:
+            raise Http404
+        return beat_type
+
+    def title(self, obj):
+        label = dict(Beat.BeatType.choices)[obj]
+        return f"Simon Willison's Weblog: {label}"
+
+    def items(self, obj):
+        return (
+            Beat.objects.filter(is_draft=False, beat_type=obj)
+            .prefetch_related("tags")
+            .order_by("-created")[:15]
+        )
 
 
 class Everything(Base):

@@ -901,6 +901,45 @@ class TypeListingTests(TransactionTestCase):
         self.assertContains(response, "/atom/notes/")
         self.assertContains(response, "Atom feed")
 
+    def test_beats_page_has_feed_icon(self):
+        BeatFactory()
+        response = self.client.get("/elsewhere/")
+        self.assertContains(response, "/atom/beats/")
+        self.assertContains(response, "Atom feed")
+
+    def test_beat_type_listing_page_has_feed_icon(self):
+        BeatFactory(title="Tool beat", beat_type="tool")
+        response = self.client.get("/elsewhere/tool/")
+        self.assertContains(response, "/atom/beats/tool/")
+        self.assertContains(response, "Atom feed")
+
+    def test_beat_type_listing_all_types_have_feed_icon(self):
+        for beat_type in ["release", "til", "til_update", "research", "tool", "museum"]:
+            BeatFactory(beat_type=beat_type)
+            response = self.client.get(f"/elsewhere/{beat_type}/")
+            self.assertContains(
+                response,
+                f"/atom/beats/{beat_type}/",
+                msg_prefix=f"Missing feed link for {beat_type}",
+            )
+            self.assertContains(
+                response,
+                "Atom feed",
+                msg_prefix=f"Missing Atom feed icon for {beat_type}",
+            )
+
+    def test_atom_beats_by_type_feed(self):
+        BeatFactory(title="Tool One", beat_type="tool")
+        BeatFactory(title="Release One", beat_type="release")
+        response = self.client.get("/atom/beats/tool/")
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Tool One")
+        self.assertNotContains(response, "Release One")
+
+    def test_atom_beats_by_type_feed_invalid_type_404s(self):
+        response = self.client.get("/atom/beats/notarealtype/")
+        self.assertEqual(response.status_code, 404)
+
 
 class MergeTagsTests(TransactionTestCase):
     def setUp(self):
