@@ -485,6 +485,7 @@ def beat_type_listing(request, beat_type):
     request.GET["type"] = f"beat:{beat_type}"
     context = search(request, return_context=True)
     context["fixed_type"] = True
+    context["feed_url"] = f"/atom/beats/{beat_type}/"
     return render(request, "search.html", context)
 
 
