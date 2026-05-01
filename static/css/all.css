@@ -1999,15 +1999,10 @@ div.beat {
 
 /* ── Beat image thumbnail ── */
 
-.beat-has-image {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-}
-
-.beat-has-image .beat-content {
-  flex: 1;
-  min-width: 0;
+.beat-has-image::after {
+  content: "";
+  display: block;
+  clear: both;
 }
 
 .beat-image-link,
@@ -2016,7 +2011,8 @@ div.beat {
 .beat-image-link:link:hover,
 .beat-image-link:link:focus,
 .beat-image-link:link:active {
-  flex-shrink: 0;
+  float: right;
+  margin: 0 0 8px 12px;
   border: none;
 }
 
@@ -2028,6 +2024,13 @@ div.beat {
   border: none;
   outline: none;
   display: block;
+}
+
+.beat-note blockquote code,
+.beat-note pre,
+.beat-note pre code {
+  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
 /* ── Label colours by beat type ── */
