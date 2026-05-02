@@ -239,6 +239,125 @@ def import_tools(url):
     }
 
 
+def _sighting_photo(photo):
+    """Reduce an iNaturalist photo dict to {small_url, large_url}.
+
+    The clumps.json `thumbnail_url` is actually the medium variant; replace
+    `/medium.<ext>` with `/small.<ext>` for the grid thumbnail.
+    """
+    thumbnail_url = photo.get("thumbnail_url") or ""
+    large_url = photo.get("large_url") or thumbnail_url
+    small_url = re.sub(
+        r"/medium\.(jpe?g|png)(\?.*)?$",
+        r"/small.\1\2",
+        thumbnail_url,
+        flags=re.IGNORECASE,
+    )
+    return {"small_url": small_url or thumbnail_url, "large_url": large_url}
+
+
+def _species_name(taxon, fallback=""):
+    return (
+        (taxon or {}).get("common_name")
+        or (taxon or {}).get("scientific_name")
+        or fallback
+    )
+
+
+def import_sightings(url):
+    response = httpx.get(url)
+    response.raise_for_status()
+    data = response.json()
+    clumps = data.get("clumps") or []
+
+    created_count = 0
+    updated_count = 0
+    skipped_count = 0
+    items = []
+
+    for clump in clumps:
+        clump_id = clump.get("id")
+        if clump_id is None:
+            continue
+        observations = clump.get("observations") or []
+        if not observations:
+            continue
+
+        import_ref = "sighting:{}".format(clump_id)
+        created = parse_datetime(clump["started_at"])
+
+        # Reduce observations to the minimum the gallery template needs
+        obs_payload = []
+        for obs in observations:
+            taxon = obs.get("taxon") or {}
+            obs_payload.append(
+                {
+                    "uri": obs.get("uri") or "",
+                    "common_name": taxon.get("common_name") or "",
+                    "scientific_name": taxon.get("scientific_name") or "",
+                    "photos": [_sighting_photo(p) for p in obs.get("photos") or []],
+                }
+            )
+
+        # Species names for title and commentary
+        species_names = []
+        for sp in clump.get("species") or []:
+            name = sp.get("common_name") or sp.get("scientific_name")
+            if name and name not in species_names:
+                species_names.append(name)
+        if not species_names:
+            for obs in obs_payload:
+                name = obs["common_name"] or obs["scientific_name"]
+                if name and name not in species_names:
+                    species_names.append(name)
+
+        commentary = truncate(", ".join(species_names))
+        if species_names:
+            title = truncate(", ".join(species_names))
+        else:
+            title = "Sighting on {}".format(created.strftime("%-d %b %Y"))
+
+        first_uri = obs_payload[0]["uri"]
+
+        metadata = {
+            "started_at": clump.get("started_at"),
+            "ended_at": clump.get("ended_at"),
+            "observation_count": clump.get("observation_count")
+            or len(obs_payload),
+            "species": clump.get("species") or [],
+            "observations": obs_payload,
+        }
+
+        slug = "sighting-{}".format(clump_id)
+
+        defaults = {
+            "beat_type": "sighting",
+            "title": title,
+            "url": first_uri,
+            "slug": unique_slug(slug, created, import_ref),
+            "created": created,
+            "commentary": commentary,
+            "metadata": metadata,
+        }
+
+        beat, status = _create_or_update(import_ref, defaults)
+        if status == "created":
+            created_count += 1
+            items.append(beat)
+        elif status == "updated":
+            updated_count += 1
+            items.append(beat)
+        else:
+            skipped_count += 1
+
+    return {
+        "created": created_count,
+        "updated": updated_count,
+        "skipped": skipped_count,
+        "items": items,
+    }
+
+
 def import_museums(url):
     response = httpx.get(url)
     response.raise_for_status()

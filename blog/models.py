@@ -549,6 +549,7 @@ class Beat(BaseModel):
         RESEARCH = "research", "Research"
         TOOL = "tool", "Tool"
         MUSEUM = "museum", "Museum"
+        SIGHTING = "sighting", "Sighting"
 
     beat_type = models.CharField(max_length=20, choices=BeatType.choices, db_index=True)
 
@@ -574,6 +575,34 @@ class Beat(BaseModel):
         if self.note:
             return mark_safe(markdown(self.note))
         return ""
+
+    def sighting_time_range(self):
+        """Format the sighting time range from metadata started_at/ended_at.
+
+        Returns "10:23 AM" for a single moment, "9:15 AM – 5:42 PM" for a
+        same-day range, or "9:15 AM – 15 Mar 5:42 PM" for a cross-day range.
+        Falls back to the created timestamp when metadata is missing.
+        """
+        from dateutil.parser import parse as parse_datetime
+
+        md = self.metadata or {}
+        start = md.get("started_at")
+        end = md.get("ended_at")
+        if not start:
+            return self.created.strftime("%-I:%M %p")
+        s = parse_datetime(start)
+        if not end or end == start:
+            return s.strftime("%-I:%M %p")
+        e = parse_datetime(end)
+        if s.date() == e.date():
+            return "{} – {}".format(
+                s.strftime("%-I:%M %p"), e.strftime("%-I:%M %p")
+            )
+        return "{} – {} {}".format(
+            s.strftime("%-I:%M %p"),
+            e.strftime("%-d %b"),
+            e.strftime("%-I:%M %p"),
+        )
 
     def index_components(self):
         return {

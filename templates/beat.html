@@ -13,8 +13,21 @@
 {% load entry_tags %}
 {% block item_content %}
 <p class="mobile-date-eyebrow">{{ beat.created|date:"jS F Y" }}</p>
-<div class="beat{% if beat.image_url %} beat-has-image{% endif %}">
+<div class="beat{% if beat.image_url %} beat-has-image{% endif %}{% if beat.beat_type == "sighting" %} beat-sighting{% endif %}">
 {% include "_draft_warning.html" %}
+{% if beat.beat_type == "sighting" %}
+<div class="beat-content">
+  <div class="beat-row1">
+    <span class="beat-label sighting">Sighting</span>
+    <span class="beat-title"><a href="{{ beat.url }}">{{ beat.sighting_time_range }}</a></span>
+    {% if beat.commentary %}<span class="beat-commit">&mdash; {{ beat.commentary }}</span>{% endif %}
+  </div>
+  <captioned-image-gallery>
+    {% for obs in beat.metadata.observations %}{% for photo in obs.photos %}<figure><a href="{{ photo.large_url }}"><img src="{{ photo.small_url }}" alt="{{ obs.common_name|default:obs.scientific_name }}" loading="lazy"></a><figcaption>{% if obs.uri %}<a href="{{ obs.uri }}" title="View observation on iNaturalist">{{ obs.common_name|default:obs.scientific_name }}</a>{% else %}{{ obs.common_name|default:obs.scientific_name }}{% endif %}</figcaption></figure>{% endfor %}{% endfor %}
+  </captioned-image-gallery>
+{% if beat.note %}<div class="beat-note blogmark-body">{{ beat.note_rendered }}</div>{% endif %}
+</div>
+{% else %}
 {% if beat.image_url %}
   <a href="{{ beat.url }}" class="beat-image-link"><img class="beat-image" src="{{ beat.image_url }}" alt="{{ beat.image_alt }}" loading="lazy"></a>
 {% endif %}
@@ -30,6 +43,7 @@
   </div>
 {% if beat.note %}<div class="beat-note blogmark-body">{{ beat.note_rendered }}</div>{% endif %}
 </div>
+{% endif %}
 </div>
 
 <div class="entryFooter">Posted <a href="/{{ beat.created|date:"Y/M/j/" }}">{{ beat.created|date:"jS F Y" }}</a> at {{ beat.created|date:"f A"|lower }}</div>

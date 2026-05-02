@@ -1251,6 +1251,11 @@ IMPORTERS = {
         "description": "Import museums from niche-museums.com",
         "url": "https://www.niche-museums.com/museums.json",
     },
+    "sightings": {
+        "name": "Sightings",
+        "description": "Import iNaturalist sighting clumps",
+        "url": "https://raw.githubusercontent.com/simonw/inaturalist-clumps/refs/heads/main/clumps.json",
+    },
 }
 
 
@@ -1269,6 +1274,7 @@ def api_run_importer(request):
         import_museums,
         import_releases,
         import_research,
+        import_sightings,
         import_tils,
         import_tools,
     )
@@ -1288,6 +1294,7 @@ def api_run_importer(request):
         "tils": import_tils,
         "tools": import_tools,
         "museums": import_museums,
+        "sightings": import_sightings,
     }
 
     try:
