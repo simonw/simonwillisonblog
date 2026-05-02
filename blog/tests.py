@@ -2245,6 +2245,262 @@ class ImporterViewTests(TransactionTestCase):
         self.assertContains(response, "/admin/importers/")
         self.assertContains(response, "Beat Importers")
 
+    def test_importers_page_lists_sightings(self):
+        self.client.login(username="admin", password="password")
+        response = self.client.get("/admin/importers/")
+        assert response.status_code == 200
+        self.assertContains(response, "Sightings")
+        self.assertContains(response, "clumps.json")
+
+    def _sighting_clumps_fixture(self):
+        return {
+            "total_observations": 4,
+            "total_clumps": 2,
+            "clumps": [
+                {
+                    "id": 1,
+                    "started_at": "2015-06-03T10:23:01-07:00",
+                    "ended_at": "2015-06-03T10:23:01-07:00",
+                    "observation_count": 1,
+                    "species": [
+                        {
+                            "common_name": "Side-striped palm pit viper",
+                            "scientific_name": "Bothriechis lateralis",
+                            "count": 1,
+                        }
+                    ],
+                    "observations": [
+                        {
+                            "id": 9687475,
+                            "uri": "https://www.inaturalist.org/observations/9687475",
+                            "taxon": {
+                                "common_name": "Side-striped palm pit viper",
+                                "scientific_name": "Bothriechis lateralis",
+                            },
+                            "photos": [
+                                {
+                                    "thumbnail_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/13245173/medium.jpg",
+                                    "large_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/13245173/large.jpg",
+                                }
+                            ],
+                        }
+                    ],
+                },
+                {
+                    "id": 2,
+                    "started_at": "2024-03-14T09:15:00-07:00",
+                    "ended_at": "2024-03-15T17:42:00-07:00",
+                    "observation_count": 3,
+                    "species": [
+                        {
+                            "common_name": "Common newt",
+                            "scientific_name": "Lissotriton vulgaris",
+                            "count": 2,
+                        },
+                        {
+                            "common_name": "Mallard",
+                            "scientific_name": "Anas platyrhynchos",
+                            "count": 1,
+                        },
+                    ],
+                    "observations": [
+                        {
+                            "id": 100,
+                            "uri": "https://www.inaturalist.org/observations/100",
+                            "taxon": {
+                                "common_name": "Common newt",
+                                "scientific_name": "Lissotriton vulgaris",
+                            },
+                            "photos": [
+                                {
+                                    "thumbnail_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/100/medium.jpg",
+                                    "large_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/100/large.jpg",
+                                }
+                            ],
+                        },
+                        {
+                            "id": 101,
+                            "uri": "https://www.inaturalist.org/observations/101",
+                            "taxon": {
+                                "common_name": "Mallard",
+                                "scientific_name": "Anas platyrhynchos",
+                            },
+                            "photos": [
+                                {
+                                    "thumbnail_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/101/medium.jpg",
+                                    "large_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/101/large.jpg",
+                                }
+                            ],
+                        },
+                    ],
+                },
+            ],
+        }
+
+    def test_api_run_importer_sightings(self):
+        from unittest.mock import patch, MagicMock
+
+        mock_response = MagicMock()
+        mock_response.json.return_value = self._sighting_clumps_fixture()
+        mock_response.raise_for_status = MagicMock()
+
+        self.client.login(username="admin", password="password")
+        with patch("blog.importers.httpx.get", return_value=mock_response):
+            response = self.client.post(
+                "/api/run-importer/",
+                json.dumps({"importer": "sightings"}),
+                content_type="application/json",
+            )
+        assert response.status_code == 200, response.content
+        data = json.loads(response.content)
+        assert data["created"] == 2
+        assert data["total"] == 2
+        assert 'class="beat-label sighting"' in data["items_html"]
+        assert "Side-striped palm pit viper" in data["items_html"]
+
+        from blog.models import Beat
+
+        beat = Beat.objects.get(import_ref="sighting:1")
+        assert beat.beat_type == "sighting"
+        assert beat.url == "https://www.inaturalist.org/observations/9687475"
+        # commentary is just species names, no observation count prefix
+        assert beat.commentary == "Side-striped palm pit viper"
+        # Metadata stores the data needed for gallery rendering
+        md = beat.metadata
+        assert md["started_at"] == "2015-06-03T10:23:01-07:00"
+        assert md["ended_at"] == "2015-06-03T10:23:01-07:00"
+        assert md["observation_count"] == 1
+        assert len(md["observations"]) == 1
+        photo = md["observations"][0]["photos"][0]
+        # small_url derived from thumbnail_url by replacing /medium.jpg -> /small.jpg
+        assert photo["small_url"].endswith("/small.jpg")
+        assert photo["large_url"].endswith("/large.jpg")
+
+        beat2 = Beat.objects.get(import_ref="sighting:2")
+        # Multi-species commentary, no observation count
+        assert "Common newt" in beat2.commentary
+        assert "Mallard" in beat2.commentary
+        assert "observation" not in beat2.commentary.lower()
+
+    def test_api_run_importer_sightings_skips_unchanged(self):
+        from unittest.mock import patch, MagicMock
+
+        mock_response = MagicMock()
+        mock_response.json.return_value = self._sighting_clumps_fixture()
+        mock_response.raise_for_status = MagicMock()
+
+        self.client.login(username="admin", password="password")
+        with patch("blog.importers.httpx.get", return_value=mock_response):
+            self.client.post(
+                "/api/run-importer/",
+                json.dumps({"importer": "sightings"}),
+                content_type="application/json",
+            )
+        with patch("blog.importers.httpx.get", return_value=mock_response):
+            response = self.client.post(
+                "/api/run-importer/",
+                json.dumps({"importer": "sightings"}),
+                content_type="application/json",
+            )
+        data = json.loads(response.content)
+        assert data["created"] == 0
+        assert data["updated"] == 0
+        assert data["skipped"] == 2
+
+    def test_sighting_renders_captioned_image_gallery_in_mixed_list(self):
+        from django.template.loader import render_to_string
+        from blog.factories import BeatFactory
+
+        beat = BeatFactory(
+            beat_type="sighting",
+            title="Side-striped palm pit viper",
+            url="https://www.inaturalist.org/observations/9687475",
+            commentary="Side-striped palm pit viper",
+            metadata={
+                "started_at": "2015-06-03T10:23:01-07:00",
+                "ended_at": "2015-06-03T10:23:01-07:00",
+                "observation_count": 1,
+                "species": [],
+                "observations": [
+                    {
+                        "uri": "https://www.inaturalist.org/observations/9687475",
+                        "common_name": "Side-striped palm pit viper",
+                        "scientific_name": "Bothriechis lateralis",
+                        "photos": [
+                            {
+                                "small_url": "https://example.com/photos/13245173/small.jpg",
+                                "large_url": "https://example.com/photos/13245173/large.jpg",
+                            }
+                        ],
+                    }
+                ],
+            },
+        )
+        html = render_to_string(
+            "includes/blog_mixed_list.html",
+            {"items": [{"type": "beat", "obj": beat}]},
+        )
+        assert "<captioned-image-gallery" in html
+        assert "https://example.com/photos/13245173/small.jpg" in html
+        assert "https://example.com/photos/13245173/large.jpg" in html
+        # figcaption with link to the observation
+        assert "https://www.inaturalist.org/observations/9687475" in html
+        assert 'class="beat-label sighting"' in html
+
+    def test_sighting_time_range_same_time(self):
+        from blog.factories import BeatFactory
+
+        beat = BeatFactory(
+            beat_type="sighting",
+            metadata={
+                "started_at": "2015-06-03T10:23:01-07:00",
+                "ended_at": "2015-06-03T10:23:01-07:00",
+            },
+        )
+        # No dash for a single moment
+        result = beat.sighting_time_range()
+        assert "10:23" in result
+        assert "–" not in result and " - " not in result
+
+    def test_sighting_time_range_same_day(self):
+        from blog.factories import BeatFactory
+
+        beat = BeatFactory(
+            beat_type="sighting",
+            metadata={
+                "started_at": "2024-03-14T09:15:00-07:00",
+                "ended_at": "2024-03-14T17:42:00-07:00",
+            },
+        )
+        result = beat.sighting_time_range()
+        assert "9:15" in result
+        assert "5:42" in result
+        # En-dash separator
+        assert "–" in result
+
+    def test_sighting_time_range_cross_day(self):
+        from blog.factories import BeatFactory
+
+        beat = BeatFactory(
+            beat_type="sighting",
+            metadata={
+                "started_at": "2024-03-14T09:15:00-07:00",
+                "ended_at": "2024-03-15T17:42:00-07:00",
+            },
+        )
+        result = beat.sighting_time_range()
+        assert "9:15" in result
+        # Date for the end portion (Mar)
+        assert "Mar" in result
+        assert "5:42" in result
+
+    def test_base_html_loads_captioned_image_gallery(self):
+        path = "templates/base.html"
+        with open(path) as f:
+            contents = f.read()
+        assert "captioned-image-gallery" in contents
+        assert "/static/captioned-image-gallery.js" in contents
+
 
 class SponsorMessageTests(TransactionTestCase):
     def test_no_sponsor_message_no_banner(self):

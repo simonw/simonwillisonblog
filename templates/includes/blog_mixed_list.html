@@ -67,6 +67,23 @@
 </div>
 {% endif %}
 {% if item.type == "beat" %}
+{% if item.obj.beat_type == "sighting" %}
+<div class="beat segment beat-sighting" data-type="beat" data-id="{{ item.obj.id }}">
+  <div class="beat-content">
+    <div class="beat-row1">
+      <span class="beat-label sighting">Sighting</span>
+      <span class="beat-title"><a href="{{ item.obj.url }}">{{ item.obj.sighting_time_range }}</a></span>
+      {% if item.obj.commentary %}<span class="beat-commit">&mdash; {{ item.obj.commentary }}</span>{% endif %}
+    </div>
+    <captioned-image-gallery>
+      {% for obs in item.obj.metadata.observations %}{% for photo in obs.photos %}<figure><a href="{{ photo.large_url }}"><img src="{{ photo.small_url }}" alt="{{ obs.common_name|default:obs.scientific_name }}" loading="lazy"></a><figcaption>{% if obs.uri %}<a href="{{ obs.uri }}" title="View observation on iNaturalist">{{ obs.common_name|default:obs.scientific_name }}</a>{% else %}{{ obs.common_name|default:obs.scientific_name }}{% endif %}</figcaption></figure>{% endfor %}{% endfor %}
+    </captioned-image-gallery>
+    <div class="beat-meta beat-row2">
+      <a href="{{ item.obj.get_absolute_url }}" rel="bookmark">{{ item.obj.created|date:"jS M Y" }}</a>{% if all_tags %} &middot; {% for tag in all_tags %}{{ tag.get_link }}{% if not forloop.last %}, {% endif %}{% endfor %}{% endif %}
+    </div>
+  </div>
+</div>
+{% else %}
 <div class="beat segment{% if item.obj.image_url %} beat-has-image{% endif %}" data-type="beat" data-id="{{ item.obj.id }}">
   {% if item.obj.image_url %}
     <a href="{{ item.obj.url }}" class="beat-image-link"><img class="beat-image" src="{{ item.obj.image_url }}" alt="{{ item.obj.image_alt }}" loading="lazy"></a>
@@ -95,6 +112,7 @@
     </div>
   </div>
 </div>
+{% endif %}
 {% endif %}
 {% endwith %}
 {% endfor %}

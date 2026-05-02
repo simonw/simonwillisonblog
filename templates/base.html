@@ -45,7 +45,7 @@
     </ul>
 </div>
 {% endblock %}
-<style>image-gallery:not(:defined) img {max-height: 150px;}</style>
+<style>image-gallery:not(:defined) img {max-height: 150px;} captioned-image-gallery:not(:defined) > figure {max-height: 240px; overflow: hidden;}</style>
 <script>
 document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('h2[id],h3[id],h4[id],h5[id],h6[id]').forEach(el => {
@@ -69,7 +69,8 @@ document.addEventListener('DOMContentLoaded', () => {
 <script type="module">
 const config = [
   {"tag": "lite-youtube", "js": "/static/lite-yt-embed.js", "css": "/static/lite-yt-embed.css"},
-  {"tag": "image-gallery", "js": "/static/image-gallery.js", "css": null}
+  {"tag": "image-gallery", "js": "/static/image-gallery.js", "css": null},
+  {"tag": "captioned-image-gallery", "js": "/static/captioned-image-gallery.js", "css": null}
 ];
 for (const {tag, js, css} of config) {
   if (document.querySelector(tag)) {
