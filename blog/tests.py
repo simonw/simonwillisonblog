@@ -2281,6 +2281,10 @@ class ImporterViewTests(TransactionTestCase):
                                 {
                                     "thumbnail_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/13245173/medium.jpg",
                                     "large_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/13245173/large.jpg",
+                                    "original_dimensions": {
+                                        "width": 2048,
+                                        "height": 1152,
+                                    },
                                 }
                             ],
                         }
@@ -2375,12 +2379,20 @@ class ImporterViewTests(TransactionTestCase):
         # small_url derived from thumbnail_url by replacing /medium.jpg -> /small.jpg
         assert photo["small_url"].endswith("/small.jpg")
         assert photo["large_url"].endswith("/large.jpg")
+        # original_dimensions is captured so the gallery can lay out without
+        # waiting for image loads
+        assert photo["width"] == 2048
+        assert photo["height"] == 1152
 
         beat2 = Beat.objects.get(import_ref="sighting:2")
         # Multi-species commentary, no observation count
         assert "Common newt" in beat2.commentary
         assert "Mallard" in beat2.commentary
         assert "observation" not in beat2.commentary.lower()
+        # Photos without original_dimensions don't gain width/height keys
+        photo2 = beat2.metadata["observations"][0]["photos"][0]
+        assert "width" not in photo2
+        assert "height" not in photo2
 
     def test_api_run_importer_sightings_skips_unchanged(self):
         from unittest.mock import patch, MagicMock
@@ -2430,7 +2442,13 @@ class ImporterViewTests(TransactionTestCase):
                             {
                                 "small_url": "https://example.com/photos/13245173/small.jpg",
                                 "large_url": "https://example.com/photos/13245173/large.jpg",
-                            }
+                                "width": 2048,
+                                "height": 1152,
+                            },
+                            {
+                                "small_url": "https://example.com/photos/13245174/small.jpg",
+                                "large_url": "https://example.com/photos/13245174/large.jpg",
+                            },
                         ],
                     }
                 ],
@@ -2446,6 +2464,12 @@ class ImporterViewTests(TransactionTestCase):
         # figcaption with link to the observation
         assert "https://www.inaturalist.org/observations/9687475" in html
         assert 'class="beat-label sighting"' in html
+        # Photos with dimensions emit data-width / data-height so the gallery
+        # can lay out without waiting for image loads
+        assert 'data-width="2048"' in html
+        assert 'data-height="1152"' in html
+        # Photos without dimensions don't get the attributes
+        assert 'src="https://example.com/photos/13245174/small.jpg" alt="Side-striped palm pit viper" loading="lazy">' in html
 
     def test_sighting_time_range_same_time(self):
         from blog.factories import BeatFactory

@@ -264,16 +264,13 @@ class CaptionedImageGallery extends HTMLElement {
       }
     });
 
-    // Layout once images have natural dimensions available, then keep
-    // it in sync with container width changes
+    // Lay out as soon as we know an aspect ratio for every figure. When
+    // each img carries data-width / data-height we can do this synchronously
+    // and avoid the layout shift that comes from waiting on image loads.
     const imgs = this.figures.map(f => f.querySelector('img')).filter(Boolean);
-    Promise.all(imgs.map(img => {
-      if (img.complete && img.naturalWidth > 0) return Promise.resolve();
-      return new Promise(res => {
-        img.addEventListener('load', res, { once: true });
-        img.addEventListener('error', res, { once: true });
-      });
-    })).then(() => {
+    const ready = this.figures.every(f => this.declaredRatio(f) !== null);
+
+    const setup = () => {
       this.applyLayout();
       this._lastWidth = this.clientWidth;
       this._ro = new ResizeObserver(entries => {
@@ -284,7 +281,19 @@ class CaptionedImageGallery extends HTMLElement {
         }
       });
       this._ro.observe(this);
-    });
+    };
+
+    if (ready) {
+      setup();
+    } else {
+      Promise.all(imgs.map(img => {
+        if (img.complete && img.naturalWidth > 0) return Promise.resolve();
+        return new Promise(res => {
+          img.addEventListener('load', res, { once: true });
+          img.addEventListener('error', res, { once: true });
+        });
+      })).then(setup);
+    }
   }
 
   disconnectedCallback() {
@@ -292,7 +301,18 @@ class CaptionedImageGallery extends HTMLElement {
     CaptionedImageGallery.instances.delete(this);
   }
 
+  declaredRatio(figure) {
+    const img = figure.querySelector('img');
+    if (!img) return null;
+    const w = parseFloat(img.dataset.width);
+    const h = parseFloat(img.dataset.height);
+    if (isFinite(w) && isFinite(h) && w > 0 && h > 0) return w / h;
+    return null;
+  }
+
   ratioOf(figure) {
+    const declared = this.declaredRatio(figure);
+    if (declared !== null) return declared;
     const img = figure.querySelector('img');
     if (!img) return 1;
     const r = img.naturalWidth / img.naturalHeight;

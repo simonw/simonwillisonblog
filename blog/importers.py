@@ -240,10 +240,12 @@ def import_tools(url):
 
 
 def _sighting_photo(photo):
-    """Reduce an iNaturalist photo dict to {small_url, large_url}.
+    """Reduce an iNaturalist photo dict to the fields the gallery needs.
 
     The clumps.json `thumbnail_url` is actually the medium variant; replace
-    `/medium.<ext>` with `/small.<ext>` for the grid thumbnail.
+    `/medium.<ext>` with `/small.<ext>` for the grid thumbnail. When the
+    source includes `original_dimensions`, store width/height too so the
+    gallery can lay out without waiting for image loads.
     """
     thumbnail_url = photo.get("thumbnail_url") or ""
     large_url = photo.get("large_url") or thumbnail_url
@@ -253,7 +255,14 @@ def _sighting_photo(photo):
         thumbnail_url,
         flags=re.IGNORECASE,
     )
-    return {"small_url": small_url or thumbnail_url, "large_url": large_url}
+    result = {"small_url": small_url or thumbnail_url, "large_url": large_url}
+    dimensions = photo.get("original_dimensions") or {}
+    width = dimensions.get("width")
+    height = dimensions.get("height")
+    if width and height:
+        result["width"] = width
+        result["height"] = height
+    return result
 
 
 def _species_name(taxon, fallback=""):
