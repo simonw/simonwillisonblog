@@ -2502,6 +2502,149 @@ class ImporterViewTests(TransactionTestCase):
         assert "/static/captioned-image-gallery.js" in contents
 
 
+class SightingsListingAndFeedTests(TransactionTestCase):
+    def _make_sighting(self, **overrides):
+        defaults = dict(
+            beat_type="sighting",
+            title="Side-striped palm pit viper",
+            url="https://www.inaturalist.org/observations/9687475",
+            commentary="Side-striped palm pit viper",
+            slug="sighting-208",
+            created=datetime.datetime(
+                2026, 5, 2, 10, 23, tzinfo=datetime.timezone.utc
+            ),
+            metadata={
+                "started_at": "2026-05-02T10:23:01-07:00",
+                "ended_at": "2026-05-02T10:23:01-07:00",
+                "observation_count": 1,
+                "species": [],
+                "observations": [
+                    {
+                        "uri": "https://www.inaturalist.org/observations/9687475",
+                        "common_name": "Side-striped palm pit viper",
+                        "scientific_name": "Bothriechis lateralis",
+                        "photos": [
+                            {
+                                "small_url": "https://example.com/photos/1/small.jpg",
+                                "large_url": "https://example.com/photos/1/large.jpg",
+                            }
+                        ],
+                    }
+                ],
+            },
+        )
+        defaults.update(overrides)
+        return BeatFactory(**defaults)
+
+    def test_sightings_listing_page_title_is_sightings(self):
+        self._make_sighting()
+        response = self.client.get("/elsewhere/sighting/")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("Sightings", response.context["title"])
+        self.assertContains(response, "<title>Sightings</title>")
+        self.assertContains(response, "<h2>Sightings</h2>")
+
+    def test_sightings_atom_feed_title_is_plural(self):
+        self._make_sighting()
+        response = self.client.get("/atom/beats/sighting/")
+        self.assertEqual(response.status_code, 200)
+        root = ET.fromstring(response.content)
+        ns = {"atom": "http://www.w3.org/2005/Atom"}
+        title = root.find("atom:title", ns).text
+        self.assertEqual(title, "Simon Willison's Weblog: Sightings")
+
+    def test_sightings_atom_feed_links_to_sighting_page(self):
+        beat = self._make_sighting()
+        response = self.client.get("/atom/beats/sighting/")
+        self.assertEqual(response.status_code, 200)
+        root = ET.fromstring(response.content)
+        ns = {"atom": "http://www.w3.org/2005/Atom"}
+        entry = root.find("atom:entry", ns)
+        link = entry.find("atom:link", ns).get("href")
+        self.assertTrue(
+            link.startswith("https://simonwillison.net" + beat.get_absolute_url()),
+            link,
+        )
+        # And not the external iNaturalist URL
+        self.assertNotIn("inaturalist.org", link)
+
+    def test_sightings_atom_feed_embeds_images(self):
+        self._make_sighting()
+        response = self.client.get("/atom/beats/sighting/")
+        self.assertEqual(response.status_code, 200)
+        root = ET.fromstring(response.content)
+        ns = {"atom": "http://www.w3.org/2005/Atom"}
+        summary = root.find("atom:entry", ns).find("atom:summary", ns).text
+        self.assertIn(
+            "https://example.com/photos/1/large.jpg", summary
+        )
+        self.assertIn("<img", summary)
+
+    def test_combined_beats_feed_links_sighting_to_sighting_page(self):
+        """The /atom/beats/ feed should also link sightings to their sighting page."""
+        beat = self._make_sighting()
+        response = self.client.get("/atom/beats/")
+        self.assertEqual(response.status_code, 200)
+        root = ET.fromstring(response.content)
+        ns = {"atom": "http://www.w3.org/2005/Atom"}
+        entry = root.find("atom:entry", ns)
+        link = entry.find("atom:link", ns).get("href")
+        self.assertIn(beat.get_absolute_url(), link)
+        self.assertNotIn("inaturalist.org", link)
+
+    def test_combined_beats_feed_non_sighting_still_links_external(self):
+        """Non-sighting beats in /atom/beats/ should still use the external URL."""
+        BeatFactory(
+            beat_type="release",
+            title="llm-anthropic 0.24",
+            url="https://github.com/simonw/llm-anthropic/releases/tag/0.24",
+        )
+        response = self.client.get("/atom/beats/")
+        self.assertEqual(response.status_code, 200)
+        root = ET.fromstring(response.content)
+        ns = {"atom": "http://www.w3.org/2005/Atom"}
+        entry = root.find("atom:entry", ns)
+        link = entry.find("atom:link", ns).get("href")
+        self.assertEqual(
+            link,
+            "https://github.com/simonw/llm-anthropic/releases/tag/0.24",
+        )
+
+    def test_everything_feed_excludes_sightings_without_notes(self):
+        """Sightings without a note must not appear in /atom/everything/."""
+        # Need a non-beat item so the feed isn't empty
+        EntryFactory(title="An entry")
+        self._make_sighting(note="")
+        response = self.client.get("/atom/everything/")
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "Side-striped palm pit viper")
+
+    def test_everything_feed_includes_sightings_with_notes(self):
+        """Sightings with a note should appear in /atom/everything/ rendered
+        with embedded images and a link to the sighting page."""
+        EntryFactory(title="An entry")
+        beat = self._make_sighting(note="Found this beautiful snake on a hike.")
+        response = self.client.get("/atom/everything/")
+        self.assertEqual(response.status_code, 200)
+        root = ET.fromstring(response.content)
+        ns = {"atom": "http://www.w3.org/2005/Atom"}
+        entries = root.findall("atom:entry", ns)
+        sighting_entry = next(
+            e for e in entries
+            if "sighting" in (e.find("atom:link", ns).get("href") or "")
+        )
+        link = sighting_entry.find("atom:link", ns).get("href")
+        # Link to the sighting page, not the iNaturalist URL
+        self.assertIn(beat.get_absolute_url(), link)
+        self.assertNotIn("inaturalist.org", link)
+        # Embedded image
+        summary = sighting_entry.find("atom:summary", ns).text
+        self.assertIn("https://example.com/photos/1/large.jpg", summary)
+        self.assertIn("<img", summary)
+        # The note is also rendered
+        self.assertIn("Found this beautiful snake", summary)
+
+
 class SponsorMessageTests(TransactionTestCase):
     def test_no_sponsor_message_no_banner(self):
         EntryFactory()

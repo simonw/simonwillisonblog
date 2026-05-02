@@ -551,6 +551,16 @@ class Beat(BaseModel):
         MUSEUM = "museum", "Museum"
         SIGHTING = "sighting", "Sighting"
 
+    BEAT_TYPE_PLURALS = {
+        "release": "Releases",
+        "til": "TILs",
+        "til_update": "TIL updates",
+        "research": "Research",
+        "tool": "Tools",
+        "museum": "Museums",
+        "sighting": "Sightings",
+    }
+
     beat_type = models.CharField(max_length=20, choices=BeatType.choices, db_index=True)
 
     # The linked title — what appears as the clickable text in the timeline
@@ -575,6 +585,30 @@ class Beat(BaseModel):
         if self.note:
             return mark_safe(markdown(self.note))
         return ""
+
+    def sighting_feed_html(self):
+        """HTML used for sighting beats in atom feeds: embedded photos,
+        followed by commentary and an optional note. Falls back to a
+        title-link if metadata is missing."""
+        parts = []
+        for obs in (self.metadata or {}).get("observations") or []:
+            name = obs.get("common_name") or obs.get("scientific_name") or ""
+            for photo in obs.get("photos") or []:
+                large = photo.get("large_url") or photo.get("small_url") or ""
+                if not large:
+                    continue
+                parts.append(
+                    '<p><img src="{}" alt="{}"></p>'.format(escape(large), escape(name))
+                )
+        if self.commentary:
+            parts.append("<p>{}</p>".format(escape(self.commentary)))
+        if self.note:
+            parts.append(self.note_rendered())
+        if not parts:
+            parts.append(
+                '<p><a href="{}">{}</a></p>'.format(escape(self.url), escape(self.title))
+            )
+        return mark_safe("".join(parts))
 
     def sighting_time_range(self):
         """Format the sighting time range from metadata started_at/ended_at.

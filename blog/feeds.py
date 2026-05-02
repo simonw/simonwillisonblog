@@ -133,12 +133,20 @@ class Beats(Base):
         return item.title
 
     def item_description(self, item):
+        if item.beat_type == "sighting":
+            return item.sighting_feed_html()
         desc = f'<p><a href="{item.url}">{item.title}</a></p>'
         if item.commentary:
             desc += f"<p>{item.commentary}</p>"
         return desc
 
     def item_link(self, item):
+        if item.beat_type == "sighting":
+            return (
+                "https://simonwillison.net"
+                + item.get_absolute_url()
+                + "#atom-%s" % self.ga_source
+            )
         return item.url
 
 
@@ -152,7 +160,7 @@ class BeatsByType(Beats):
         return beat_type
 
     def title(self, obj):
-        label = dict(Beat.BeatType.choices)[obj]
+        label = Beat.BEAT_TYPE_PLURALS.get(obj) or dict(Beat.BeatType.choices)[obj]
         return f"Simon Willison's Weblog: {label}"
 
     def items(self, obj):
