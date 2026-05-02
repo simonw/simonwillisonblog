@@ -342,14 +342,7 @@ def search(request, q=None, return_context=False, per_page=30):
     selected = {key: value for key, value in list(selected.items()) if value}
 
     # Dynamic title
-    beat_subtype_nouns = {
-        "release": "Releases",
-        "til": "TILs",
-        "til_update": "TIL updates",
-        "research": "Research",
-        "tool": "Tools",
-        "museum": "Museums",
-    }
+    beat_subtype_nouns = Beat.BEAT_TYPE_PLURALS
     base_type_nouns = {
         "quotation": "Quotations",
         "blogmark": "Blogmarks",
