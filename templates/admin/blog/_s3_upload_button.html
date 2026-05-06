@@ -18,7 +18,7 @@
         var textarea = document.getElementById('id_{{ field }}');
         if (!btn || !textarea) return;
         textarea.insertAdjacentElement('afterend', btn);
-        btn.style.display = '';
+        btn.style.display = 'block';
     }
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', placeButton);
