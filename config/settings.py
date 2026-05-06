@@ -209,11 +209,13 @@ CACHES = {
 S3_WEB_MANAGER_PERMISSION = (
     lambda request: request.user.is_authenticated and request.user.is_superuser
 )
+S3_WEB_MANAGER_PUBLIC_URL_BASE = "https://static.simonwillison.net/"
 for _name in (
     "S3_WEB_MANAGER_BUCKET_NAME",
     "S3_WEB_MANAGER_REGION_NAME",
     "S3_WEB_MANAGER_AWS_ACCESS_KEY_ID",
     "S3_WEB_MANAGER_AWS_SECRET_ACCESS_KEY",
+    "S3_WEB_MANAGER_PUBLIC_URL_BASE",
 ):
     if _name in os.environ:
         globals()[_name] = os.environ[_name]

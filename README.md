@@ -16,3 +16,7 @@ This blog includes a built-in search engine. Here's how it works:
 6. The search interface is integrated into the blog's user interface, allowing for a seamless user experience.
 
 For more details on the implementation, refer to the `search` function in `blog/search.py`.
+
+## S3 Manager
+
+The admin tools include `/tools/s3/`, backed by `s3-web-manager-django`, for browsing and uploading files to the configured S3 bucket. `S3_WEB_MANAGER_PUBLIC_URL_BASE` is set to `https://static.simonwillison.net/` so copied and viewed object URLs use the public static host plus the path in the bucket.
