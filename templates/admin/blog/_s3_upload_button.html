@@ -1,0 +1,29 @@
+<script type="module" src="https://simonw.github.io/s3-web-manager/assets/s3-upload-button.js"></script>
+
+<s3-upload-button
+    data-target-textarea-id="id_{{ field }}"
+    api-base-url="/tools/s3/api"
+    public-url-base="https://static.simonwillison.net/"
+    on-upload-input="textarea#id_{{ field }}"
+    input-format="markdown"
+    path="static/{date}/"
+    style="display: none; margin-top: 8px;"></s3-upload-button>
+
+<script>
+(function () {
+    function placeButton() {
+        var btn = document.querySelector(
+            's3-upload-button[data-target-textarea-id="id_{{ field }}"]'
+        );
+        var textarea = document.getElementById('id_{{ field }}');
+        if (!btn || !textarea) return;
+        textarea.insertAdjacentElement('afterend', btn);
+        btn.style.display = '';
+    }
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', placeButton);
+    } else {
+        placeButton();
+    }
+})();
+</script>
