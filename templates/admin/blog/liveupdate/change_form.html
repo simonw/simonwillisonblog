@@ -1,0 +1,5 @@
+{% extends "admin/change_form.html" %}
+{% block content %}
+{{ block.super }}
+{% include "admin/blog/_s3_upload_button.html" with field="content" %}
+{% endblock %}
