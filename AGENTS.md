@@ -2,28 +2,27 @@
 
 ## Running tests
 
-1. Activate the virtual environment:
+Use `uv run` with the pinned requirements. Do not create or activate a virtual
+environment manually.
+
+Run the full test suite from the repository root:
 
 ```bash
-source .venv312/bin/activate
+DATABASE_URL=postgres:///simonwillisonblog uv run --with-requirements requirements.txt ./manage.py test --keepdb
 ```
 
-2. Run tests from the repository root with:
-
-```bash
-python manage.py test
-```
-
-The `DATABASE_URL` environment variable is configured in `.claude/settings.json` and the PostgreSQL setup is handled by the SessionStart hook.
+`--keepdb` is optional, but it makes repeated test runs much faster. PostgreSQL
+must be running locally; the expected database URL is also recorded in
+`.claude/settings.json`.
 
 To run a specific test class:
 
 ```bash
-python manage.py test blog.tests.BlogTests
+DATABASE_URL=postgres:///simonwillisonblog uv run --with-requirements requirements.txt ./manage.py test blog.tests.BlogTests --keepdb
 ```
 
 To run a specific test method:
 
 ```bash
-python manage.py test blog.tests.BlogTests.test_homepage
+DATABASE_URL=postgres:///simonwillisonblog uv run --with-requirements requirements.txt ./manage.py test blog.tests.BlogTests.test_homepage --keepdb
 ```
