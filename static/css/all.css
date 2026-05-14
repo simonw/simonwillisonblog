@@ -1946,6 +1946,15 @@ div.beat {
   top: -1px;
 }
 
+a.beat-label:link,
+a.beat-label:visited,
+a.beat-label:focus,
+a.beat-label:hover,
+a.beat-label:active {
+  text-decoration: none;
+  border-bottom-style: solid;
+}
+
 .beat-title {
   font-weight: 600;
 }

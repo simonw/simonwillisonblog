@@ -71,7 +71,7 @@
 <div class="beat segment beat-sighting" data-type="beat" data-id="{{ item.obj.id }}">
   <div class="beat-content">
     <div class="beat-row1">
-      <span class="beat-label sighting">Sighting</span>
+      <a class="beat-label sighting" href="/elsewhere/{{ item.obj.beat_type }}/">Sighting</a>
       <span class="beat-title"><a href="{{ item.obj.url }}">{{ item.obj.sighting_time_range }}</a></span>
       {% if item.obj.commentary %}<span class="beat-commit">&mdash; {{ item.obj.commentary }}</span>{% endif %}
     </div>
@@ -91,17 +91,17 @@
   <div class="beat-content">
     <div class="beat-row1">
       {% if item.obj.beat_type == "til_update" %}
-        <span class="beat-label til-update">TIL<span class="til-update-suffix">(updated)</span></span>
+        <a class="beat-label til-update" href="/elsewhere/{{ item.obj.beat_type }}/">TIL<span class="til-update-suffix">(updated)</span></a>
       {% elif item.obj.beat_type == "til" %}
-        <span class="beat-label til">TIL</span>
+        <a class="beat-label til" href="/elsewhere/{{ item.obj.beat_type }}/">TIL</a>
       {% elif item.obj.beat_type == "release" %}
-        <span class="beat-label release">Release</span>
+        <a class="beat-label release" href="/elsewhere/{{ item.obj.beat_type }}/">Release</a>
       {% elif item.obj.beat_type == "research" %}
-        <span class="beat-label research">Research</span>
+        <a class="beat-label research" href="/elsewhere/{{ item.obj.beat_type }}/">Research</a>
       {% elif item.obj.beat_type == "tool" %}
-        <span class="beat-label tool">Tool</span>
+        <a class="beat-label tool" href="/elsewhere/{{ item.obj.beat_type }}/">Tool</a>
       {% elif item.obj.beat_type == "museum" %}
-        <span class="beat-label museum">Museum</span>
+        <a class="beat-label museum" href="/elsewhere/{{ item.obj.beat_type }}/">Museum</a>
       {% endif %}
       <span class="beat-title"><a href="{{ item.obj.url }}">{{ item.obj.title }}</a></span>
       {% if item.obj.commentary and not item.obj.note %}<span class="beat-commit">&mdash; {{ item.obj.commentary }}</span>{% endif %}
