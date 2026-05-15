@@ -1,7 +1,7 @@
 arrow==1.4.0
 beautifulsoup4==4.14.3
 django-http-debug==0.2
-cloudflare==4.3.1
+cloudflare==5.1.0
 dateutils==0.6.12
 db-to-sqlite==1.5
 djp==0.3.1
