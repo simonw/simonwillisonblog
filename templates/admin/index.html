@@ -1,5 +1,17 @@
 {% extends "admin/index.html" %}
 
+{% block extrastyle %}
+{{ block.super }}
+<style>
+button.outline-danger:hover,
+button.outline-danger:focus {
+    background: #ba2121;
+    color: #fff;
+    outline: none;
+}
+</style>
+{% endblock %}
+
 {% block content %}
 <div id="content-main" class="app-list">
   {% include "admin/app_list.html" with app_list=app_list show_changelinks=True %}
@@ -30,7 +42,7 @@
           <li style="margin-bottom: 8px; list-style: none;">
               <form action="{% url 'admin_purge_cache' %}" method="POST" style="display: inline;" onsubmit="return confirm('Purge the entire Cloudflare cache?');">
                   {% csrf_token %}
-                  <button type="submit" style="cursor: pointer;">Purge Cloudflare cache</button>
+                  <button type="submit" class="outline-danger" style="cursor: pointer; background: transparent; color: #ba2121; border: 2px solid #ba2121; padding: 8px 14px; border-radius: 4px; font-weight: 600; font-size: 0.875rem;">Purge Cloudflare cache</button>
               </form>
               - Evict every cached asset on the Cloudflare zone
           </li>
