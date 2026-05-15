@@ -28,8 +28,7 @@ STAGING = bool(os.environ.get("STAGING"))
 DASHBOARD_ROW_LIMIT = 200
 
 # Cloudflare details
-CLOUDFLARE_EMAIL = os.environ.get("CLOUDFLARE_EMAIL", "")
-CLOUDFLARE_TOKEN = os.environ.get("CLOUDFLARE_TOKEN", "")
+CLOUDFLARE_API_TOKEN = os.environ.get("CLOUDFLARE_API_TOKEN", "")
 CLOUDFLARE_ZONE_ID = os.environ.get("CLOUDFLARE_ZONE_ID", "")
 
 # https://github.com/simonw/simonwillisonblog/issues/498

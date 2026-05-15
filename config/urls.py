@@ -205,6 +205,11 @@ urlpatterns = [
     path("admin/bulk-tag/", blog_views.bulk_tag, name="bulk_tag"),
     path("admin/merge-tags/", blog_views.merge_tags, name="merge_tags"),
     path("admin/importers/", blog_views.importers, name="importers"),
+    path(
+        "admin/purge-cache/",
+        blog_views.admin_purge_cache,
+        name="admin_purge_cache",
+    ),
     path("api/add-tag/", blog_views.api_add_tag, name="api_add_tag"),
     path("api/run-importer/", blog_views.api_run_importer, name="api_run_importer"),
     re_path(r"^admin/", admin.site.urls),

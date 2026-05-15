@@ -3789,3 +3789,53 @@ class FirstThreeParagraphsTests(TransactionTestCase):
         result = str(first_three_paragraphs(html))
         self.assertNotIn("<p>Four</p>", result)
         self.assertEqual(result.count("<p>"), 3)
+
+
+class CloudflarePurgeTests(TransactionTestCase):
+    def setUp(self):
+        self.admin = User.objects.create_superuser("admin", "a@b.com", "password")
+
+    def test_admin_purge_requires_login(self):
+        response = self.client.post("/admin/purge-cache/")
+        assert response.status_code == 302
+        assert "/admin/login/" in response["Location"]
+
+    def test_admin_purge_requires_post(self):
+        self.client.login(username="admin", password="password")
+        response = self.client.get("/admin/purge-cache/")
+        assert response.status_code == 405
+
+    def test_admin_purge_calls_sdk_and_flashes_success(self):
+        from unittest.mock import patch
+
+        self.client.login(username="admin", password="password")
+        with patch("blog.views.Cloudflare") as mock_cf, self.settings(
+            CLOUDFLARE_API_TOKEN="t0ken", CLOUDFLARE_ZONE_ID="zone123"
+        ):
+            response = self.client.post("/admin/purge-cache/", follow=False)
+            mock_cf.assert_called_once_with(api_token="t0ken")
+            mock_cf.return_value.cache.purge.assert_called_once_with(
+                zone_id="zone123", purge_everything=True
+            )
+        assert response.status_code == 301
+        assert response["Location"] == "/admin/"
+        # Follow the redirect and check the flash message rendered
+        response = self.client.get("/admin/")
+        self.assertContains(response, "Cloudflare cache purged")
+
+    def test_admin_purge_flashes_error_on_sdk_failure(self):
+        from unittest.mock import patch
+        from cloudflare import CloudflareError
+
+        self.client.login(username="admin", password="password")
+        with patch("blog.views.Cloudflare") as mock_cf:
+            mock_cf.return_value.cache.purge.side_effect = CloudflareError("boom")
+            self.client.post("/admin/purge-cache/")
+            response = self.client.get("/admin/")
+        self.assertContains(response, "Cloudflare cache purge failed: boom")
+
+    def test_admin_index_renders_purge_button(self):
+        self.client.login(username="admin", password="password")
+        response = self.client.get("/admin/")
+        self.assertContains(response, "Purge Cloudflare cache")
+        self.assertContains(response, "/admin/purge-cache/")
