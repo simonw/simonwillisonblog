@@ -1,6 +1,7 @@
 # coding=utf8
 from django.shortcuts import render, get_object_or_404
 from django.http import JsonResponse
+from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
 from django.views.decorators.http import require_POST
 from django.views.decorators.cache import never_cache
@@ -37,7 +38,7 @@ from bs4 import BeautifulSoup as Soup
 import datetime
 import random
 from collections import Counter
-import cloudflare
+from cloudflare import Cloudflare, CloudflareError
 import os
 import pytz
 
@@ -812,17 +813,23 @@ def write(request):
     return render(request, "write.html")
 
 
+def _purge_cloudflare_cache():
+    client = Cloudflare(api_token=settings.CLOUDFLARE_API_TOKEN)
+    client.cache.purge(
+        zone_id=settings.CLOUDFLARE_ZONE_ID, purge_everything=True
+    )
+
+
 @never_cache
 @staff_member_required
 def tools(request):
     if request.POST.get("purge_all"):
-        cf = cloudflare.CloudFlare(
-            email=settings.CLOUDFLARE_EMAIL, token=settings.CLOUDFLARE_TOKEN
-        )
-        cf.zones.purge_cache.delete(
-            settings.CLOUDFLARE_ZONE_ID, data={"purge_everything": True}
-        )
-        return Redirect(request.path + "?msg=Cache+purged")
+        try:
+            _purge_cloudflare_cache()
+            msg = "Cache purged"
+        except CloudflareError as e:
+            msg = "Cache purge failed: %s" % e
+        return Redirect(request.path + "?" + urlencode({"msg": msg}))
     return render(
         request,
         "tools.html",
@@ -831,6 +838,18 @@ def tools(request):
             "deployed_hash": os.environ.get("HEROKU_SLUG_COMMIT"),
         },
     )
+
+
+@never_cache
+@require_POST
+@staff_member_required
+def admin_purge_cache(request):
+    try:
+        _purge_cloudflare_cache()
+        messages.success(request, "Cloudflare cache purged")
+    except CloudflareError as e:
+        messages.error(request, "Cloudflare cache purge failed: %s" % e)
+    return Redirect("/admin/")
 
 
 @never_cache

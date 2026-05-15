@@ -27,6 +27,13 @@
                   Show "Edit" links on public pages
               </label>
           </li>
+          <li style="margin-bottom: 8px; list-style: none;">
+              <form action="{% url 'admin_purge_cache' %}" method="POST" style="display: inline;" onsubmit="return confirm('Purge the entire Cloudflare cache?');">
+                  {% csrf_token %}
+                  <button type="submit" style="cursor: pointer;">Purge Cloudflare cache</button>
+              </form>
+              - Evict every cached asset on the Cloudflare zone
+          </li>
       </ul>
   </div>
 </div>
