@@ -20,7 +20,7 @@
   <div class="beat-row1">
     <span class="beat-label sighting">Sighting</span>
     <span class="beat-title"><a href="{{ beat.url }}">{{ beat.sighting_time_range }}</a></span>
-    {% if beat.commentary %}<span class="beat-commit">&mdash; {{ beat.commentary }}</span>{% endif %}
+    {% with commit=beat.sighting_commentary_with_location %}{% if commit %}<span class="beat-commit">&mdash; {{ commit }}</span>{% endif %}{% endwith %}
   </div>
   <captioned-image-gallery>
     {% for obs in beat.metadata.observations %}{% for photo in obs.photos %}<figure><a href="{{ photo.large_url }}"><img src="{{ photo.small_url }}" alt="{{ obs.common_name|default:obs.scientific_name }}" loading="lazy"{% if photo.width and photo.height %} data-width="{{ photo.width }}" data-height="{{ photo.height }}"{% endif %}></a><figcaption>{% if obs.uri %}<a href="{{ obs.uri }}" title="View observation on iNaturalist">{{ obs.common_name|default:obs.scientific_name }}</a>{% else %}{{ obs.common_name|default:obs.scientific_name }}{% endif %}</figcaption></figure>{% endfor %}{% endfor %}

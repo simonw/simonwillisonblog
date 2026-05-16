@@ -2262,6 +2262,12 @@ class ImporterViewTests(TransactionTestCase):
                     "started_at": "2015-06-03T10:23:01-07:00",
                     "ended_at": "2015-06-03T10:23:01-07:00",
                     "observation_count": 1,
+                    "location": {
+                        "place_guess": "Abangares, Abangares, Guanacaste, CR",
+                        "place_id": 29342,
+                        "display_name": "Puntarenas, PU, CR",
+                        "breadcrumb": [29342, 8579, 6924, 97394],
+                    },
                     "species": [
                         {
                             "common_name": "Side-striped palm pit viper",
@@ -2374,6 +2380,8 @@ class ImporterViewTests(TransactionTestCase):
         assert md["started_at"] == "2015-06-03T10:23:01-07:00"
         assert md["ended_at"] == "2015-06-03T10:23:01-07:00"
         assert md["observation_count"] == 1
+        assert md["location"]["display_name"] == "Puntarenas, PU, CR"
+        assert md["location"]["place_id"] == 29342
         assert len(md["observations"]) == 1
         photo = md["observations"][0]["photos"][0]
         # small_url derived from thumbnail_url by replacing /medium.jpg -> /small.jpg
@@ -2389,6 +2397,8 @@ class ImporterViewTests(TransactionTestCase):
         assert "Common newt" in beat2.commentary
         assert "Mallard" in beat2.commentary
         assert "observation" not in beat2.commentary.lower()
+        # Clumps without a location key don't get one in metadata
+        assert "location" not in beat2.metadata
         # Photos without original_dimensions don't gain width/height keys
         photo2 = beat2.metadata["observations"][0]["photos"][0]
         assert "width" not in photo2
@@ -2433,6 +2443,7 @@ class ImporterViewTests(TransactionTestCase):
                 "ended_at": "2015-06-03T10:23:01-07:00",
                 "observation_count": 1,
                 "species": [],
+                "location": {"display_name": "Puntarenas, PU, CR"},
                 "observations": [
                     {
                         "uri": "https://www.inaturalist.org/observations/9687475",
@@ -2470,6 +2481,41 @@ class ImporterViewTests(TransactionTestCase):
         assert 'data-height="1152"' in html
         # Photos without dimensions don't get the attributes
         assert 'src="https://example.com/photos/13245174/small.jpg" alt="Side-striped palm pit viper" loading="lazy">' in html
+        # Location display name appears inline with the species commentary
+        assert (
+            '<span class="beat-commit">&mdash; Side-striped palm pit viper, in Puntarenas, PU, CR</span>'
+            in html
+        )
+
+    def test_sighting_commentary_with_location(self):
+        from blog.factories import BeatFactory
+
+        with_both = BeatFactory(
+            beat_type="sighting",
+            commentary="Common newt, Mallard",
+            metadata={"location": {"display_name": "Monterey Bay Area, CA, US"}},
+        )
+        assert (
+            with_both.sighting_commentary_with_location()
+            == "Common newt, Mallard, in Monterey Bay Area, CA, US"
+        )
+
+        location_only = BeatFactory(
+            beat_type="sighting",
+            commentary="",
+            metadata={"location": {"display_name": "Isle of Wight, England, GB"}},
+        )
+        assert (
+            location_only.sighting_commentary_with_location()
+            == "in Isle of Wight, England, GB"
+        )
+
+        commentary_only = BeatFactory(
+            beat_type="sighting",
+            commentary="Mallard",
+            metadata={},
+        )
+        assert commentary_only.sighting_commentary_with_location() == "Mallard"
 
     def test_sighting_time_range_same_time(self):
         from blog.factories import BeatFactory
@@ -2542,6 +2588,7 @@ class SightingsListingAndFeedTests(TransactionTestCase):
                 "ended_at": "2026-05-02T10:23:01-07:00",
                 "observation_count": 1,
                 "species": [],
+                "location": {"display_name": "Puntarenas, PU, CR"},
                 "observations": [
                     {
                         "uri": "https://www.inaturalist.org/observations/9687475",
@@ -2603,6 +2650,8 @@ class SightingsListingAndFeedTests(TransactionTestCase):
             "https://example.com/photos/1/large.jpg", summary
         )
         self.assertIn("<img", summary)
+        # Location display_name from metadata is rendered alongside commentary
+        self.assertIn("in Puntarenas, PU, CR", summary)
 
     def test_combined_beats_feed_links_sighting_to_sighting_page(self):
         """The /atom/beats/ feed should also link sightings to their sighting page."""

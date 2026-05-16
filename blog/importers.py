@@ -336,6 +336,9 @@ def import_sightings(url):
             "species": clump.get("species") or [],
             "observations": obs_payload,
         }
+        location = clump.get("location") or None
+        if location:
+            metadata["location"] = location
 
         slug = "sighting-{}".format(clump_id)
 
