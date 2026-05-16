@@ -586,6 +586,20 @@ class Beat(BaseModel):
             return mark_safe(markdown(self.note))
         return ""
 
+    def sighting_location_display(self):
+        """Return location.display_name from metadata, or empty string."""
+        location = (self.metadata or {}).get("location") or {}
+        return location.get("display_name") or ""
+
+    def sighting_commentary_with_location(self):
+        """Commentary with ", in <location>" appended when available."""
+        location = self.sighting_location_display()
+        if self.commentary and location:
+            return "{}, in {}".format(self.commentary, location)
+        if location:
+            return "in {}".format(location)
+        return self.commentary
+
     def sighting_feed_html(self):
         """HTML used for sighting beats in atom feeds: embedded photos,
         followed by commentary and an optional note. Falls back to a
@@ -600,8 +614,9 @@ class Beat(BaseModel):
                 parts.append(
                     '<p><img src="{}" alt="{}"></p>'.format(escape(large), escape(name))
                 )
-        if self.commentary:
-            parts.append("<p>{}</p>".format(escape(self.commentary)))
+        commit = self.sighting_commentary_with_location()
+        if commit:
+            parts.append("<p>{}</p>".format(escape(commit)))
         if self.note:
             parts.append(self.note_rendered())
         if not parts:
