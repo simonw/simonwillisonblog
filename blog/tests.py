@@ -1723,6 +1723,23 @@ class BeatTests(TransactionTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Detail Beat")
 
+    def test_sighting_beat_note_on_homepage(self):
+        """Sighting beat note should be rendered on the homepage timeline."""
+        beat = BeatFactory(
+            title="Sighting Note Beat",
+            beat_type="sighting",
+            commentary="Mallard",
+            note="A unique sighting note for the homepage test.",
+            metadata={
+                "started_at": "2025-07-15T09:15:00-07:00",
+                "ended_at": "2025-07-15T09:15:00-07:00",
+                "observations": [],
+            },
+        )
+        response = self.client.get("/")
+        self.assertContains(response, "A unique sighting note for the homepage test.")
+        self.assertContains(response, 'class="beat-note blogmark-body"')
+
     def test_beat_draft_not_on_homepage(self):
         """Draft beats should not appear on the homepage."""
         beat = BeatFactory(title="draftbeat", beat_type="release", is_draft=True)
