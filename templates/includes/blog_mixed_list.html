@@ -78,6 +78,7 @@
     <captioned-image-gallery>
       {% for obs in item.obj.metadata.observations %}{% for photo in obs.photos %}<figure><a href="{{ photo.large_url }}"><img src="{{ photo.small_url }}" alt="{{ obs.common_name|default:obs.scientific_name }}" loading="lazy"{% if photo.width and photo.height %} data-width="{{ photo.width }}" data-height="{{ photo.height }}"{% endif %}></a><figcaption>{% if obs.uri %}<a href="{{ obs.uri }}" title="View observation on iNaturalist">{{ obs.common_name|default:obs.scientific_name }}</a>{% else %}{{ obs.common_name|default:obs.scientific_name }}{% endif %}</figcaption></figure>{% endfor %}{% endfor %}
     </captioned-image-gallery>
+    {% if item.obj.note %}<div class="beat-note blogmark-body">{{ item.obj.note_rendered }}</div>{% endif %}
     <div class="beat-meta beat-row2">
       <a href="{{ item.obj.get_absolute_url }}" rel="bookmark">{{ item.obj.created|date:"jS M Y" }}</a>{% if all_tags %} &middot; {% for tag in all_tags %}{{ tag.get_link }}{% if not forloop.last %}, {% endif %}{% endfor %}{% endif %}
     </div>
