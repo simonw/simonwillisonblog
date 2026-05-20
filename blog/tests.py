@@ -2504,6 +2504,52 @@ class ImporterViewTests(TransactionTestCase):
             in html
         )
 
+    def test_single_photo_sighting_uses_large_url_for_thumbnail(self):
+        """A sighting with exactly one photo renders the large variant as the
+        <img src> so the enlarged single-image layout is not upscaled; the
+        thumbnail src and the lightbox <a href> are then the same file."""
+        from django.template.loader import render_to_string
+        from blog.factories import BeatFactory
+
+        beat = BeatFactory(
+            beat_type="sighting",
+            title="Surf Scoter",
+            url="https://www.inaturalist.org/observations/9687475",
+            commentary="Surf Scoter",
+            metadata={
+                "started_at": "2026-05-20T17:28:00-07:00",
+                "ended_at": "2026-05-20T17:28:00-07:00",
+                "observation_count": 1,
+                "species": [],
+                "observations": [
+                    {
+                        "uri": "https://www.inaturalist.org/observations/9687475",
+                        "common_name": "Surf Scoter",
+                        "scientific_name": "Melanitta perspicillata",
+                        "photos": [
+                            {
+                                "small_url": "https://example.com/photos/1/small.jpg",
+                                "large_url": "https://example.com/photos/1/large.jpg",
+                                "width": 2048,
+                                "height": 1152,
+                            },
+                        ],
+                    }
+                ],
+            },
+        )
+        assert beat.sighting_photo_count() == 1
+        html = render_to_string(
+            "includes/blog_mixed_list.html",
+            {"items": [{"type": "beat", "obj": beat}]},
+        )
+        # Single photo: <img src> uses the large variant, not the small one
+        assert (
+            'src="https://example.com/photos/1/large.jpg" alt="Surf Scoter" loading="lazy"'
+            in html
+        )
+        assert "https://example.com/photos/1/small.jpg" not in html
+
     def test_sighting_commentary_with_location(self):
         from blog.factories import BeatFactory
 

@@ -653,6 +653,13 @@ class Beat(BaseModel):
             e.strftime("%-I:%M %p"),
         )
 
+    def sighting_photo_count(self):
+        """Total number of photos across all observations in this sighting."""
+        count = 0
+        for obs in (self.metadata or {}).get("observations") or []:
+            count += len(obs.get("photos") or [])
+        return count
+
     def index_components(self):
         return {
             "A": self.title,
