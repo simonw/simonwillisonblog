@@ -76,7 +76,7 @@
       {% with commit=item.obj.sighting_commentary_with_location %}{% if commit %}<span class="beat-commit">&mdash; {{ commit }}</span>{% endif %}{% endwith %}
     </div>
     <captioned-image-gallery>
-      {% for obs in item.obj.metadata.observations %}{% for photo in obs.photos %}<figure><a href="{{ photo.large_url }}"><img src="{{ photo.small_url }}" alt="{{ obs.common_name|default:obs.scientific_name }}" loading="lazy"{% if photo.width and photo.height %} data-width="{{ photo.width }}" data-height="{{ photo.height }}"{% endif %}></a><figcaption>{% if obs.uri %}<a href="{{ obs.uri }}" title="View observation on iNaturalist">{{ obs.common_name|default:obs.scientific_name }}</a>{% else %}{{ obs.common_name|default:obs.scientific_name }}{% endif %}</figcaption></figure>{% endfor %}{% endfor %}
+      {% with photo_count=item.obj.sighting_photo_count %}{% for obs in item.obj.metadata.observations %}{% for photo in obs.photos %}<figure><a href="{{ photo.large_url }}"><img src="{% if photo_count == 1 %}{{ photo.large_url }}{% else %}{{ photo.small_url }}{% endif %}" alt="{{ obs.common_name|default:obs.scientific_name }}" loading="lazy"{% if photo.width and photo.height %} data-width="{{ photo.width }}" data-height="{{ photo.height }}"{% endif %}></a><figcaption>{% if obs.uri %}<a href="{{ obs.uri }}" title="View observation on iNaturalist">{{ obs.common_name|default:obs.scientific_name }}</a>{% else %}{{ obs.common_name|default:obs.scientific_name }}{% endif %}</figcaption></figure>{% endfor %}{% endfor %}{% endwith %}
     </captioned-image-gallery>
     {% if item.obj.note %}<div class="beat-note blogmark-body">{{ item.obj.note_rendered }}</div>{% endif %}
     <div class="beat-meta beat-row2">
