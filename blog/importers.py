@@ -1,5 +1,7 @@
 import re
+import secrets
 from datetime import datetime, timezone
+from urllib.parse import urlparse
 
 import httpx
 import json
@@ -274,7 +276,9 @@ def _species_name(taxon, fallback=""):
 
 
 def import_sightings(url):
-    response = httpx.get(url)
+    separator = "&" if urlparse(url).query else "?"
+    fetch_url = f"{url}{separator}cb={secrets.token_hex(8)}"
+    response = httpx.get(fetch_url)
     response.raise_for_status()
     data = response.json()
     clumps = data.get("clumps") or []
