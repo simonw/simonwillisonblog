@@ -18,7 +18,7 @@
 {% if beat.beat_type == "sighting" %}
 <div class="beat-content">
   <div class="beat-row1">
-    <span class="beat-label sighting">Sighting</span>
+    <a class="beat-label sighting" href="/elsewhere/{{ beat.beat_type }}/">Sighting</a>
     <span class="beat-title"><a href="{{ beat.url }}">{{ beat.sighting_time_range }}</a></span>
     {% with commit=beat.sighting_commentary_with_location %}{% if commit %}<span class="beat-commit">&mdash; {{ commit }}</span>{% endif %}{% endwith %}
   </div>
@@ -34,9 +34,9 @@
 <div class="beat-content">
   <div class="beat-row1">
     {% if beat.beat_type == "til_update" %}
-      <span class="beat-label til-update">TIL<span class="til-update-suffix">(updated)</span></span>
+      <a class="beat-label til-update" href="/elsewhere/{{ beat.beat_type }}/">TIL<span class="til-update-suffix">(updated)</span></a>
     {% else %}
-      <span class="beat-label {{ beat.beat_type|cut:"_" }}">{{ beat.get_beat_type_display }}</span>
+      <a class="beat-label {{ beat.beat_type|cut:"_" }}" href="/elsewhere/{{ beat.beat_type }}/">{{ beat.get_beat_type_display }}</a>
     {% endif %}
     <span class="beat-title"><a href="{{ beat.url }}">{{ beat.title }}</a></span>
     {% if beat.commentary %}<span class="beat-commit">&mdash; {{ beat.commentary }}</span>{% endif %}

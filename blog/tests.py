@@ -1644,6 +1644,16 @@ class BeatTests(TransactionTestCase):
         self.assertContains(response, 'class="beat-label release"')
         self.assertContains(response, "Release")
 
+    def test_beat_detail_label_links_to_beat_type_listing(self):
+        """Beat detail labels should link to their beat type listing page."""
+        beat = BeatFactory(title="Test Release Beat", beat_type="release")
+        response = self.client.get(beat.get_absolute_url())
+        self.assertContains(
+            response,
+            '<a class="beat-label release" href="/elsewhere/release/">Release</a>',
+            html=True,
+        )
+
     def test_beat_til_update_label(self):
         """TIL update beat should render with compound badge."""
         beat = BeatFactory(
@@ -3919,13 +3929,24 @@ class CloudflarePurgeTests(TransactionTestCase):
 
     def test_admin_purge_calls_sdk_and_flashes_success(self):
         from unittest.mock import patch
+        from cloudflare import Omit
 
         self.client.login(username="admin", password="password")
-        with patch("blog.views.Cloudflare") as mock_cf, self.settings(
-            CLOUDFLARE_API_TOKEN="t0ken", CLOUDFLARE_ZONE_ID="zone123"
+        with (
+            patch("blog.views.Cloudflare") as mock_cf,
+            patch.dict("blog.views.os.environ", {"CLOUDFLARE_EMAIL": "a@b.com"}),
+            self.settings(CLOUDFLARE_API_TOKEN="t0ken", CLOUDFLARE_ZONE_ID="zone123"),
         ):
             response = self.client.post("/admin/purge-cache/", follow=False)
-            mock_cf.assert_called_once_with(api_token="t0ken")
+            mock_cf.assert_called_once()
+            _, kwargs = mock_cf.call_args
+            self.assertEqual(kwargs["api_token"], "t0ken")
+            self.assertEqual(
+                kwargs["default_headers"]["Authorization"], "Bearer t0ken"
+            )
+            self.assertIsInstance(
+                kwargs["default_headers"]["X-Auth-Email"], Omit
+            )
             mock_cf.return_value.cache.purge.assert_called_once_with(
                 zone_id="zone123", purge_everything=True
             )

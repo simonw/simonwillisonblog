@@ -38,7 +38,7 @@ from bs4 import BeautifulSoup as Soup
 import datetime
 import random
 from collections import Counter
-from cloudflare import Cloudflare, CloudflareError
+from cloudflare import Cloudflare, CloudflareError, Omit
 import os
 import pytz
 
@@ -814,7 +814,14 @@ def write(request):
 
 
 def _purge_cloudflare_cache():
-    client = Cloudflare(api_token=settings.CLOUDFLARE_API_TOKEN)
+    client = Cloudflare(
+        api_token=settings.CLOUDFLARE_API_TOKEN,
+        default_headers={
+            "Authorization": "Bearer %s" % settings.CLOUDFLARE_API_TOKEN,
+            # The SDK auto-loads CLOUDFLARE_EMAIL and prefers it over api_token.
+            "X-Auth-Email": Omit(),
+        },
+    )
     client.cache.purge(
         zone_id=settings.CLOUDFLARE_ZONE_ID, purge_everything=True
     )
