@@ -1,7 +1,9 @@
 import re
 
 from django.test import TransactionTestCase
+from django.contrib.admin.models import LogEntry
 from django.contrib.auth.models import User
+from django.contrib.contenttypes.models import ContentType
 from blog.templatetags.entry_tags import (
     do_typography_string,
     first_three_paragraphs,
@@ -1164,6 +1166,112 @@ class MergeTagsTests(TransactionTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "source-tag")
         self.assertContains(response, "dest-tag")
+
+
+class AdminAutosaveTests(TransactionTestCase):
+    def setUp(self):
+        self.admin = User.objects.create_superuser("admin", "a@b.com", "password")
+        self.client.force_login(self.admin)
+
+    def make_quotation(self):
+        return QuotationFactory(
+            created=datetime.datetime(2026, 5, 29, 14, 0, tzinfo=datetime.timezone.utc),
+            is_draft=True,
+            quotation="Original quote",
+            source="Original source",
+            slug="original-quote",
+            metadata={},
+        )
+
+    def post_quotation_change(self, quotation, quotation_text, autosave=False):
+        data = {
+            "created_0": "2026-05-29",
+            "created_1": "14:00:00",
+            "slug": "original-quote",
+            "metadata": "{}",
+            "card_image": "",
+            "series": "",
+            "is_draft": "on",
+            "quotation": quotation_text,
+            "source": "Original source",
+            "source_url": "",
+            "context": "",
+            "_continue": "1",
+        }
+        if autosave:
+            data["_autosave"] = "1"
+        return self.client.post(f"/admin/blog/quotation/{quotation.pk}/change/", data)
+
+    def log_entries_for(self, obj):
+        return LogEntry.objects.filter(
+            content_type=ContentType.objects.get_for_model(obj), object_id=str(obj.pk)
+        )
+
+    def test_autosave_change_does_not_create_admin_log_entry(self):
+        quotation = self.make_quotation()
+        log_entries = self.log_entries_for(quotation)
+        self.assertEqual(log_entries.count(), 0)
+
+        response = self.post_quotation_change(
+            quotation, "Autosaved quote", autosave=True
+        )
+
+        self.assertEqual(response.status_code, 302)
+        quotation.refresh_from_db()
+        self.assertEqual(quotation.quotation, "Autosaved quote")
+        self.assertEqual(log_entries.count(), 0)
+
+    def test_normal_change_still_creates_admin_log_entry(self):
+        quotation = self.make_quotation()
+        log_entries = self.log_entries_for(quotation)
+        self.assertEqual(log_entries.count(), 0)
+
+        response = self.post_quotation_change(quotation, "Saved quote")
+
+        self.assertEqual(response.status_code, 302)
+        quotation.refresh_from_db()
+        self.assertEqual(quotation.quotation, "Saved quote")
+        self.assertEqual(log_entries.count(), 1)
+
+    def test_autosave_marker_on_beat_still_creates_admin_log_entry(self):
+        beat = BeatFactory(
+            created=datetime.datetime(2026, 5, 29, 14, 0, tzinfo=datetime.timezone.utc),
+            is_draft=True,
+            slug="original-beat",
+            metadata={},
+            beat_type="release",
+            title="Original beat",
+            url="https://example.com/",
+        )
+        log_entries = self.log_entries_for(beat)
+        self.assertEqual(log_entries.count(), 0)
+
+        response = self.client.post(
+            f"/admin/blog/beat/{beat.pk}/change/",
+            {
+                "created_0": "2026-05-29",
+                "created_1": "14:00:00",
+                "slug": "original-beat",
+                "metadata": "{}",
+                "card_image": "",
+                "series": "",
+                "is_draft": "on",
+                "beat_type": "release",
+                "title": "Autosaved beat",
+                "url": "https://example.com/",
+                "commentary": "",
+                "image_url": "",
+                "image_alt": "",
+                "note": "",
+                "_continue": "1",
+                "_autosave": "1",
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        beat.refresh_from_db()
+        self.assertEqual(beat.title, "Autosaved beat")
+        self.assertEqual(log_entries.count(), 1)
 
 
 class TagThroughModelStrTests(TransactionTestCase):

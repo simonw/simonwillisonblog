@@ -1,0 +1,122 @@
+@media (min-width: 800px) {
+    body.admin-live-preview-active {
+        overflow-x: hidden;
+    }
+
+    body.admin-live-preview-active #container,
+    body.admin-live-preview-active #header,
+    body.admin-live-preview-active nav[aria-label="Breadcrumbs"],
+    body.admin-live-preview-active .main,
+    body.admin-live-preview-active #content-start,
+    body.admin-live-preview-active #footer {
+        box-sizing: border-box;
+        width: 50vw;
+        max-width: 50vw;
+    }
+
+    body.admin-live-preview-active .main {
+        display: block !important;
+    }
+
+    body.admin-live-preview-active #nav-sidebar {
+        display: none;
+    }
+
+    body.admin-live-preview-active #content-start {
+        margin: 0;
+        padding: 0;
+        width: 50vw !important;
+        max-width: 50vw !important;
+    }
+
+    body.admin-live-preview-active #content {
+        box-sizing: border-box;
+        width: 100%;
+        max-width: none !important;
+        margin: 0;
+        padding: 20px;
+    }
+
+    body.admin-live-preview-active #content-main,
+    body.admin-live-preview-active fieldset.module,
+    body.admin-live-preview-active .form-row {
+        box-sizing: border-box;
+        float: none;
+        width: 100% !important;
+    }
+
+    body.admin-live-preview-active form {
+        display: block;
+        width: 100%;
+    }
+
+    body.admin-live-preview-active .object-tools {
+        margin-right: 0;
+    }
+
+    body.admin-live-preview-active .aligned label {
+        box-sizing: border-box;
+        min-width: 8em;
+        width: 8em;
+    }
+
+    body.admin-live-preview-active .aligned .form-row input,
+    body.admin-live-preview-active .aligned .form-row textarea,
+    body.admin-live-preview-active .aligned .form-row select,
+    body.admin-live-preview-active .vTextField,
+    body.admin-live-preview-active .vLargeTextField {
+        box-sizing: border-box;
+        max-width: 100%;
+    }
+
+    body.admin-live-preview-active .admin-live-preview-pane {
+        display: block;
+    }
+}
+
+.admin-live-preview-pane {
+    background: var(--body-bg, #fff);
+    border-left: 1px solid var(--hairline-color, #e8e8e8);
+    box-sizing: border-box;
+    display: none;
+    height: 100vh;
+    position: fixed;
+    right: 0;
+    top: 0;
+    width: 50vw;
+    z-index: 1000;
+}
+
+.admin-live-preview-frame {
+    border: 0;
+    display: block;
+    height: 100%;
+    width: 100%;
+}
+
+.admin-live-preview-status {
+    background: rgba(0, 0, 0, 0.78);
+    border-radius: 999px;
+    color: #fff;
+    font-size: 12px;
+    line-height: 1.2;
+    max-width: calc(50vw - 32px);
+    opacity: 0;
+    padding: 6px 10px;
+    pointer-events: none;
+    position: fixed;
+    right: 16px;
+    top: 16px;
+    transform: translateY(-4px);
+    transition: opacity 150ms ease, transform 150ms ease;
+    z-index: 1001;
+}
+
+.admin-live-preview-status[data-visible="true"] {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.admin-live-preview-status[data-state="error"] {
+    background: #ba2121;
+}

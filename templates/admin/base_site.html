@@ -1,4 +1,5 @@
 {% extends "admin/base.html" %}
+{% load static %}
 
 {% block extrastyle %}
 {{ block.super }}
@@ -14,4 +15,10 @@ form .form-row select {
     font-size: 1rem;
 }
 </style>
+{% endblock %}
+
+{% block extrahead %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static "admin-live-preview.css" %}">
+<script src="{% static "admin-live-preview.js" %}" defer></script>
 {% endblock %}

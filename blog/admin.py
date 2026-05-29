@@ -20,6 +20,13 @@ from .models import (
 )
 
 
+class AutosaveAdminMixin:
+    def log_change(self, request, obj, message):
+        if request.POST.get("_autosave"):
+            return
+        return super().log_change(request, obj, message)
+
+
 class BaseAdmin(admin.ModelAdmin):
     date_hierarchy = "created"
     raw_id_fields = ("tags",)
@@ -83,7 +90,7 @@ class MyEntryForm(forms.ModelForm):
 
 
 @admin.register(Entry)
-class EntryAdmin(BaseAdmin):
+class EntryAdmin(AutosaveAdminMixin, BaseAdmin):
     form = MyEntryForm
     prepopulated_fields = {"slug": ("title",)}
     search_fields = ("title", "body")
@@ -96,20 +103,20 @@ class LiveUpdateAdmin(admin.ModelAdmin):
 
 
 @admin.register(Quotation)
-class QuotationAdmin(BaseAdmin):
+class QuotationAdmin(AutosaveAdminMixin, BaseAdmin):
     search_fields = ("tags__tag", "quotation")
     list_display = ("__str__", "source", "created", "tag_summary", "is_draft")
     prepopulated_fields = {"slug": ("source",)}
 
 
 @admin.register(Blogmark)
-class BlogmarkAdmin(BaseAdmin):
+class BlogmarkAdmin(AutosaveAdminMixin, BaseAdmin):
     search_fields = ("tags__tag", "commentary")
     prepopulated_fields = {"slug": ("link_title",)}
 
 
 @admin.register(Note)
-class NoteAdmin(BaseAdmin):
+class NoteAdmin(AutosaveAdminMixin, BaseAdmin):
     search_fields = ("tags__tag", "body")
     list_display = ("__str__", "created", "tag_summary", "is_draft")
 
