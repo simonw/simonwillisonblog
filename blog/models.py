@@ -621,7 +621,9 @@ class Beat(BaseModel):
             parts.append(self.note_rendered())
         if not parts:
             parts.append(
-                '<p><a href="{}">{}</a></p>'.format(escape(self.url), escape(self.title))
+                '<p><a href="{}">{}</a></p>'.format(
+                    escape(self.url), escape(self.title)
+                )
             )
         return mark_safe("".join(parts))
 
@@ -644,9 +646,7 @@ class Beat(BaseModel):
             return s.strftime("%-I:%M %p")
         e = parse_datetime(end)
         if s.date() == e.date():
-            return "{} – {}".format(
-                s.strftime("%-I:%M %p"), e.strftime("%-I:%M %p")
-            )
+            return "{} – {}".format(s.strftime("%-I:%M %p"), e.strftime("%-I:%M %p"))
         return "{} – {} {}".format(
             s.strftime("%-I:%M %p"),
             e.strftime("%-d %b"),

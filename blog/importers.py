@@ -34,8 +34,13 @@ def _create_or_update(import_ref, defaults):
     return existing, "skipped"
 
 
+def _cache_busted_url(url):
+    separator = "&" if urlparse(url).query else "?"
+    return f"{url}{separator}cb={secrets.token_hex(8)}"
+
+
 def import_releases(url):
-    response = httpx.get(url)
+    response = httpx.get(_cache_busted_url(url))
     response.raise_for_status()
     repos = response.json()
 
@@ -72,7 +77,7 @@ def import_releases(url):
 
 
 def import_research(url):
-    response = httpx.get(url)
+    response = httpx.get(_cache_busted_url(url))
     response.raise_for_status()
     text = response.text
 
@@ -276,9 +281,7 @@ def _species_name(taxon, fallback=""):
 
 
 def import_sightings(url):
-    separator = "&" if urlparse(url).query else "?"
-    fetch_url = f"{url}{separator}cb={secrets.token_hex(8)}"
-    response = httpx.get(fetch_url)
+    response = httpx.get(_cache_busted_url(url))
     response.raise_for_status()
     data = response.json()
     clumps = data.get("clumps") or []
@@ -335,8 +338,7 @@ def import_sightings(url):
         metadata = {
             "started_at": clump.get("started_at"),
             "ended_at": clump.get("ended_at"),
-            "observation_count": clump.get("observation_count")
-            or len(obs_payload),
+            "observation_count": clump.get("observation_count") or len(obs_payload),
             "species": clump.get("species") or [],
             "observations": obs_payload,
         }

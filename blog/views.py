@@ -822,9 +822,7 @@ def _purge_cloudflare_cache():
             "X-Auth-Email": Omit(),
         },
     )
-    client.cache.purge(
-        zone_id=settings.CLOUDFLARE_ZONE_ID, purge_everything=True
-    )
+    client.cache.purge(zone_id=settings.CLOUDFLARE_ZONE_ID, purge_everything=True)
 
 
 @never_cache

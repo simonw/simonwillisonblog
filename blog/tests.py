@@ -2006,7 +2006,10 @@ class ImporterViewTests(TransactionTestCase):
         mock_response.raise_for_status = MagicMock()
 
         self.client.login(username="admin", password="password")
-        with patch("blog.importers.httpx.get", return_value=mock_response):
+        with (
+            patch("blog.importers.secrets.token_hex", return_value="feedfacecafebeef"),
+            patch("blog.importers.httpx.get", return_value=mock_response) as mock_get,
+        ):
             response = self.client.post(
                 "/api/run-importer/",
                 json.dumps({"importer": "releases"}),
@@ -2018,6 +2021,43 @@ class ImporterViewTests(TransactionTestCase):
         assert data["total"] == 1
         assert "my-repo 1.0" in data["items_html"]
         assert 'class="beat-label release"' in data["items_html"]
+        mock_get.assert_called_once_with(
+            "https://raw.githubusercontent.com/simonw/simonw/refs/heads/main/"
+            "releases_cache.json?cb=feedfacecafebeef"
+        )
+
+    def test_api_run_importer_research(self):
+        from unittest.mock import patch, MagicMock
+
+        mock_response = MagicMock()
+        mock_response.text = (
+            "### [Test Project](https://github.com/simonw/research/tree/main/"
+            "test-project) (2025-02-03 12:34)\n\n"
+            "First paragraph with [a link](https://example.com/).\n\n"
+            "Second paragraph."
+        )
+        mock_response.raise_for_status = MagicMock()
+
+        self.client.login(username="admin", password="password")
+        with (
+            patch("blog.importers.secrets.token_hex", return_value="ba5eba11c0ffee"),
+            patch("blog.importers.httpx.get", return_value=mock_response) as mock_get,
+        ):
+            response = self.client.post(
+                "/api/run-importer/",
+                json.dumps({"importer": "research"}),
+                content_type="application/json",
+            )
+        assert response.status_code == 200
+        data = json.loads(response.content)
+        assert data["created"] == 1
+        assert data["total"] == 1
+        assert "Test Project" in data["items_html"]
+        assert 'class="beat-label research"' in data["items_html"]
+        mock_get.assert_called_once_with(
+            "https://raw.githubusercontent.com/simonw/research/refs/heads/main/"
+            "README.md?cb=ba5eba11c0ffee"
+        )
 
     def test_api_run_importer_tools(self):
         from unittest.mock import patch, MagicMock
@@ -2507,7 +2547,10 @@ class ImporterViewTests(TransactionTestCase):
         assert 'data-width="2048"' in html
         assert 'data-height="1152"' in html
         # Photos without dimensions don't get the attributes
-        assert 'src="https://example.com/photos/13245174/small.jpg" alt="Side-striped palm pit viper" loading="lazy">' in html
+        assert (
+            'src="https://example.com/photos/13245174/small.jpg" alt="Side-striped palm pit viper" loading="lazy">'
+            in html
+        )
         # Location display name appears inline with the species commentary
         assert (
             '<span class="beat-commit">&mdash; Side-striped palm pit viper, in Puntarenas, PU, CR</span>'
@@ -2653,9 +2696,7 @@ class SightingsListingAndFeedTests(TransactionTestCase):
             url="https://www.inaturalist.org/observations/9687475",
             commentary="Side-striped palm pit viper",
             slug="sighting-208",
-            created=datetime.datetime(
-                2026, 5, 2, 10, 23, tzinfo=datetime.timezone.utc
-            ),
+            created=datetime.datetime(2026, 5, 2, 10, 23, tzinfo=datetime.timezone.utc),
             metadata={
                 "started_at": "2026-05-02T10:23:01-07:00",
                 "ended_at": "2026-05-02T10:23:01-07:00",
@@ -2719,9 +2760,7 @@ class SightingsListingAndFeedTests(TransactionTestCase):
         root = ET.fromstring(response.content)
         ns = {"atom": "http://www.w3.org/2005/Atom"}
         summary = root.find("atom:entry", ns).find("atom:summary", ns).text
-        self.assertIn(
-            "https://example.com/photos/1/large.jpg", summary
-        )
+        self.assertIn("https://example.com/photos/1/large.jpg", summary)
         self.assertIn("<img", summary)
         # Location display_name from metadata is rendered alongside commentary
         self.assertIn("in Puntarenas, PU, CR", summary)
@@ -2776,7 +2815,8 @@ class SightingsListingAndFeedTests(TransactionTestCase):
         ns = {"atom": "http://www.w3.org/2005/Atom"}
         entries = root.findall("atom:entry", ns)
         sighting_entry = next(
-            e for e in entries
+            e
+            for e in entries
             if "sighting" in (e.find("atom:link", ns).get("href") or "")
         )
         link = sighting_entry.find("atom:link", ns).get("href")
@@ -3941,12 +3981,8 @@ class CloudflarePurgeTests(TransactionTestCase):
             mock_cf.assert_called_once()
             _, kwargs = mock_cf.call_args
             self.assertEqual(kwargs["api_token"], "t0ken")
-            self.assertEqual(
-                kwargs["default_headers"]["Authorization"], "Bearer t0ken"
-            )
-            self.assertIsInstance(
-                kwargs["default_headers"]["X-Auth-Email"], Omit
-            )
+            self.assertEqual(kwargs["default_headers"]["Authorization"], "Bearer t0ken")
+            self.assertIsInstance(kwargs["default_headers"]["X-Auth-Email"], Omit)
             mock_cf.return_value.cache.purge.assert_called_once_with(
                 zone_id="zone123", purge_everything=True
             )
