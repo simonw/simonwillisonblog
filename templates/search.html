@@ -166,6 +166,7 @@ function debounce(func, wait) {
 }
 
 function fetchTags(query) {
+  const numberFormat = new Intl.NumberFormat("en-US");
   fetch(`/tags-autocomplete/?q=${query}`)
     .then((response) => response.json())
     .then((data) => {
@@ -178,7 +179,7 @@ function fetchTags(query) {
           const a = document.createElement("a");
           a.href = `/tags/${tag.tag}/`;
           a.className = "item-tag";
-          a.innerHTML = `${tag.tag} <span>${tag.count}</span>`;
+          a.innerHTML = `${tag.tag} <span>${numberFormat.format(tag.count)}</span>`;
           p.appendChild(a);
           // Add a space between tags
           p.appendChild(document.createTextNode(" "));

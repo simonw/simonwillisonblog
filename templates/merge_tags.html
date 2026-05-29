@@ -281,6 +281,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const input = document.getElementById(inputId);
     const results = document.getElementById(resultsId);
     const container = input.closest('.autocomplete-container');
+    const numberFormat = new Intl.NumberFormat("en-US");
 
     input.addEventListener('input', function() {
       const query = this.value.trim();
@@ -294,7 +295,7 @@ document.addEventListener('DOMContentLoaded', function() {
               data.tags.forEach(tag => {
                 const resultItem = document.createElement('div');
                 resultItem.className = 'autocomplete-result';
-                resultItem.innerHTML = `${tag.tag} <span class="count">(${tag.count})</span>`;
+                resultItem.innerHTML = `${tag.tag} <span class="count">(${numberFormat.format(tag.count)})</span>`;
                 resultItem.addEventListener('click', function() {
                   input.value = tag.tag;
                   results.style.display = 'none';

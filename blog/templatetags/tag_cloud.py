@@ -1,5 +1,6 @@
 from django import template
-from django.utils.safestring import mark_safe
+from django.contrib.humanize.templatetags.humanize import intcomma
+from django.utils.html import format_html
 
 register = template.Library()
 
@@ -75,10 +76,16 @@ def _tag_cloud_helper(tags):
         index = int((len(CLASSES) - 1) * (log(score) - log_min) / diff)
         if CLASSES[index] == "--skip--":
             continue
+        count_display = intcomma(score)
         html_tags.append(
-            mark_safe(
-                '<a href="/tags/%s/" title="%d item%s" class="item-tag %s">%s <span>%s</span></a>'
-                % (tag, score, (score != 1 and "s" or ""), CLASSES[index], tag, score)
+            format_html(
+                '<a href="/tags/{}/" title="{} item{}" class="item-tag {}">{} <span>{}</span></a>',
+                tag,
+                count_display,
+                "" if score == 1 else "s",
+                CLASSES[index],
+                tag,
+                count_display,
             )
         )
     return {"tags": html_tags}

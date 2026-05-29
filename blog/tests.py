@@ -8,6 +8,7 @@ from blog.templatetags.entry_tags import (
     typography,
     xhtml,
 )
+from blog.templatetags.tag_cloud import _tag_cloud_helper
 from .factories import (
     EntryFactory,
     BlogmarkFactory,
@@ -323,6 +324,12 @@ class BlogTests(TransactionTestCase):
     def test_tag_with_hyphen(self):
         tag = Tag.objects.create(tag="tag-with-hyphen")
         self.assertEqual(tag.tag, "tag-with-hyphen")
+
+    def test_tag_cloud_formats_large_counts(self):
+        context = _tag_cloud_helper(["sqlite"] * 1000 + ["python"])
+        rendered = "".join(str(tag) for tag in context["tags"])
+        self.assertIn('title="1,000 items"', rendered)
+        self.assertIn("<span>1,000</span>", rendered)
 
     def test_draft_items_not_displayed(self):
         draft_entry = EntryFactory(is_draft=True, title="draftentry")
