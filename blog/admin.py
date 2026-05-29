@@ -21,6 +21,9 @@ from .models import (
 
 
 class AutosaveAdminMixin:
+    def view_on_site(self, obj):
+        return obj.get_absolute_url()
+
     def log_change(self, request, obj, message):
         if request.POST.get("_autosave"):
             return

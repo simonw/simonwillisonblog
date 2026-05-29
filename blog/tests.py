@@ -1233,6 +1233,21 @@ class AdminAutosaveTests(TransactionTestCase):
         self.assertEqual(quotation.quotation, "Saved quote")
         self.assertEqual(log_entries.count(), 1)
 
+    def test_preview_enabled_admin_uses_relative_view_on_site_url(self):
+        quotation = self.make_quotation()
+
+        response = self.client.get(f"/admin/blog/quotation/{quotation.pk}/change/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(
+            response,
+            f'href="{quotation.get_absolute_url()}" class="viewsitelink"',
+        )
+        self.assertNotContains(
+            response,
+            f"/admin/r/{ContentType.objects.get_for_model(quotation).pk}/{quotation.pk}/",
+        )
+
     def test_autosave_marker_on_beat_still_creates_admin_log_entry(self):
         beat = BeatFactory(
             created=datetime.datetime(2026, 5, 29, 14, 0, tzinfo=datetime.timezone.utc),
