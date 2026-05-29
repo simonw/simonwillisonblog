@@ -119,12 +119,14 @@
     }
 
     function prepareFormData() {
-        const submitEvent = new Event("submit", {
-            bubbles: true,
-            cancelable: true,
-        });
-        if (!form.dispatchEvent(submitEvent)) {
-            return null;
+        if (window.SelectBox) {
+            for (const select of form.querySelectorAll(".selectfilter, .selectfilterstacked")) {
+                const toId = `${select.id}_to`;
+                if (document.getElementById(toId)) {
+                    window.SelectBox.filter(toId, "");
+                    window.SelectBox.select_all(toId);
+                }
+            }
         }
         const data = new FormData(form);
         data.delete("_save");
@@ -164,14 +166,17 @@
                 },
                 method: "POST",
             });
-            const html = await response.text();
+            const html = response.status === 204 ? "" : await response.text();
             const finalUrl = new URL(response.url || expectedUrl.href, window.location.href);
             const validation = collectValidationMessage(html);
             const looksSaved =
-                response.ok &&
-                !validation.hasErrors &&
-                finalUrl.pathname === expectedUrl.pathname &&
-                (response.redirected || html.includes("was changed successfully"));
+                response.status === 204 ||
+                (
+                    response.ok &&
+                    !validation.hasErrors &&
+                    finalUrl.pathname === expectedUrl.pathname &&
+                    (response.redirected || html.includes("was changed successfully"))
+                );
 
             if (looksSaved) {
                 showStatus("Saved", "saved", 1800);

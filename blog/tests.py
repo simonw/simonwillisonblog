@@ -1216,7 +1216,7 @@ class AdminAutosaveTests(TransactionTestCase):
             quotation, "Autosaved quote", autosave=True
         )
 
-        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.status_code, 204)
         quotation.refresh_from_db()
         self.assertEqual(quotation.quotation, "Autosaved quote")
         self.assertEqual(log_entries.count(), 0)

@@ -3,6 +3,7 @@ from django.contrib.postgres.search import SearchQuery, SearchRank
 from django.db.models.functions import Length
 from django.db.models import F
 from django import forms
+from django.http import HttpResponse
 from xml.etree import ElementTree
 from .models import (
     Beat,
@@ -28,6 +29,11 @@ class AutosaveAdminMixin:
         if request.POST.get("_autosave"):
             return
         return super().log_change(request, obj, message)
+
+    def response_change(self, request, obj):
+        if request.POST.get("_autosave"):
+            return HttpResponse(status=204)
+        return super().response_change(request, obj)
 
 
 class BaseAdmin(admin.ModelAdmin):
