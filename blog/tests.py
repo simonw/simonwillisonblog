@@ -2937,6 +2937,7 @@ class SponsorMessageTests(TransactionTestCase):
         )
         EntryFactory()
         response = self.client.get("/")
+        self.assertContains(response, 'class="sponsor-learn-more-label"')
         self.assertContains(response, ">Try it free</a>")
         self.assertNotContains(response, ">Learn more</a>")
 

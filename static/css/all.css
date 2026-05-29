@@ -747,6 +747,9 @@ div#bigheadcontainer {
   color: #5a4a3a;
   text-decoration: underline;
 }
+#sponsored-banner .sponsor-learn-more-label {
+  white-space: nowrap;
+}
 #sponsored-banner a:hover {
   color: #3a2a1a;
 }

@@ -36,7 +36,7 @@
     banner = document.createElement('div');
     banner.id = 'sponsored-banner';
     banner.className = 'sponsor-scheme-warm';
-    banner.innerHTML = '<div id="sponsored-banner-inner"><strong class="sponsored-label">Sponsored by:</strong> Example Sponsor \u2014 This is a placeholder for a sponsored message. <a href="https://example.com/" rel="sponsored noopener" target="_blank">Learn more</a></div>';
+    banner.innerHTML = '<div id="sponsored-banner-inner"><strong class="sponsored-label">Sponsored by:</strong> Example Sponsor \u2014 This is a placeholder for a sponsored message. <a class="sponsor-learn-more-label" href="https://example.com/" rel="sponsored noopener" target="_blank">Learn more</a></div>';
     wrapper.parentNode.insertBefore(banner, wrapper);
   }
   function applyScheme(name) {
