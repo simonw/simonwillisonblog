@@ -666,25 +666,57 @@ def top_tags(request):
     return render(request, "top_tags.html", {"tags_info": tags_info})
 
 
-# This query gets the IDs of things that match all of the tags
-INTERSECTION_SQL = """
-    SELECT %(content_table)s.id
-        FROM %(content_table)s, %(tag_table)s
-    WHERE is_draft = false AND %(tag_table)s.tag_id IN (
-            SELECT id FROM blog_tag WHERE tag IN (%(joined_tags)s)
-        )
-        AND %(tag_table)s.%(tag_table_content_key)s = %(content_table)s.id
-    GROUP BY %(content_table)s.id
-        HAVING COUNT(%(content_table)s.id) = %(tag_count)d
-"""
+def _tagged_items_metadata(model, content_type, tags, **extra_filters):
+    return (
+        model.objects.filter(is_draft=False, tags__tag__in=tags, **extra_filters)
+        .values("id", "created")
+        .annotate(tag_match_count=Count("tags", distinct=True))
+        .filter(tag_match_count=len(tags))
+        .annotate(content_type=Value(content_type, output_field=CharField()))
+        .values("content_type", "id", "created")
+        .order_by()
+    )
+
+
+def _load_tagged_items(rows):
+    to_load = {}
+    for row in rows:
+        to_load.setdefault(row["content_type"], []).append(row["id"])
+
+    loaded = {}
+    for content_type, model in (
+        ("entry", Entry),
+        ("quotation", Quotation),
+        ("blogmark", Blogmark),
+        ("note", Note),
+        ("beat", Beat),
+        ("chapter", Chapter),
+    ):
+        ids = to_load.get(content_type)
+        if not ids:
+            continue
+        if content_type == "chapter":
+            loaded[content_type] = (
+                model.objects.select_related("guide")
+                .prefetch_related("tags")
+                .in_bulk(ids)
+            )
+        else:
+            loaded[content_type] = model.objects.prefetch_related("tags").in_bulk(ids)
+
+    return [
+        {"type": row["content_type"], "obj": loaded[row["content_type"]][row["id"]]}
+        for row in rows
+        if row["id"] in loaded.get(row["content_type"], {})
+    ]
 
 
 def archive_tag(request, tags, atom=False):
     from .feeds import EverythingTagged
 
-    tags_ = Tag.objects.filter(tag__in=tags.split("+")).values_list("tag", flat=True)[
-        :3
-    ]
+    tags_ = list(
+        Tag.objects.filter(tag__in=tags.split("+")).values_list("tag", flat=True)[:3]
+    )
     if not tags_:
         # Try for a previous tag name
         if "+" not in tags:
@@ -696,43 +728,29 @@ def archive_tag(request, tags, atom=False):
 
         raise Http404
     tags = tags_
-    items = []
-    from django.db import connection
-
-    cursor = connection.cursor()
-    for model, content_type, db_prefix in (
-        (Entry, "entry", "blog"),
-        (Quotation, "quotation", "blog"),
-        (Blogmark, "blogmark", "blog"),
-        (Note, "note", "blog"),
-        (Beat, "beat", "blog"),
-        (Chapter, "chapter", "guides"),
-    ):
-        cursor.execute(
-            INTERSECTION_SQL
-            % {
-                "content_table": "%s_%s" % (db_prefix, content_type),
-                "tag_table": "%s_%s_tags" % (db_prefix, content_type),
-                "tag_table_content_key": "%s_id" % content_type,
-                "joined_tags": ", ".join(["'%s'" % tag for tag in tags]),
-                "tag_count": len(tags),
-            }
+    tagged_items = (
+        _tagged_items_metadata(Entry, "entry", tags)
+        .union(
+            _tagged_items_metadata(Quotation, "quotation", tags),
+            _tagged_items_metadata(Blogmark, "blogmark", tags),
+            _tagged_items_metadata(Note, "note", tags),
+            _tagged_items_metadata(Beat, "beat", tags),
+            _tagged_items_metadata(
+                Chapter,
+                "chapter",
+                tags,
+                guide__is_draft=False,
+                is_unlisted=False,
+            ),
+            all=True,
         )
-        ids = [r[0] for r in cursor.fetchall()]
-        if content_type == "chapter":
-            objs = (
-                Chapter.objects.select_related("guide")
-                .prefetch_related("tags")
-                .filter(pk__in=ids, guide__is_draft=False, is_unlisted=False)
-            )
-        else:
-            objs = model.objects.prefetch_related("tags").in_bulk(ids).values()
-        items.extend([{"type": content_type, "obj": obj} for obj in list(objs)])
-    if not items:
-        raise Http404
-    items.sort(key=lambda x: x["obj"].created, reverse=True)
+        .order_by("-created")
+    )
+
     # Paginate it
-    paginator = Paginator(items, min(1000, int(request.GET.get("size") or "30")))
+    paginator = Paginator(tagged_items, min(1000, int(request.GET.get("size") or "30")))
+    if not paginator.count:
+        raise Http404
     page_number = request.GET.get("page") or "1"
     if page_number == "last":
         page_number = paginator.num_pages
@@ -742,6 +760,7 @@ def archive_tag(request, tags, atom=False):
         raise Http404
     except EmptyPage:
         raise Http404
+    page.object_list = _load_tagged_items(list(page.object_list))
 
     if atom:
         response = EverythingTagged(

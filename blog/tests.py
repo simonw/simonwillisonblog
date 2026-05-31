@@ -586,6 +586,50 @@ class BlogTests(TransactionTestCase):
             html=False,
         )
 
+    def test_tag_page_paginates_mixed_items_by_created(self):
+        tag = Tag.objects.create(tag="mixed")
+        base = timezone.now()
+        entry = EntryFactory(title="Old Entry", created=base)
+        quotation = QuotationFactory(
+            source="Middle Quote", created=base + timedelta(days=1)
+        )
+        blogmark = BlogmarkFactory(
+            link_title="Newest Blogmark", created=base + timedelta(days=2)
+        )
+        for obj in (entry, quotation, blogmark):
+            obj.tags.add(tag)
+
+        response = self.client.get("/tags/mixed/?size=2")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["total"], 3)
+        self.assertEqual(
+            [(item["type"], item["obj"].pk) for item in response.context["items"]],
+            [("blogmark", blogmark.pk), ("quotation", quotation.pk)],
+        )
+
+        response = self.client.get("/tags/mixed/?size=2&page=2")
+        self.assertEqual(
+            [(item["type"], item["obj"].pk) for item in response.context["items"]],
+            [("entry", entry.pk)],
+        )
+
+    def test_tag_page_intersects_multiple_tags(self):
+        python = Tag.objects.create(tag="python")
+        django = Tag.objects.create(tag="django")
+        matching = EntryFactory(title="Tagged with both")
+        matching.tags.add(python, django)
+        not_matching = EntryFactory(title="Only Python")
+        not_matching.tags.add(python)
+
+        response = self.client.get("/tags/python+django/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            [(item["type"], item["obj"].pk) for item in response.context["items"]],
+            [("entry", matching.pk)],
+        )
+
     def test_top_tags_page(self):
         for i in range(1, 12):
             tag = Tag.objects.create(tag=f"tag{i}")
