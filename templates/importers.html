@@ -12,6 +12,9 @@
   <h3>{{ importer.name }}</h3>
   <p>{{ importer.description }}</p>
   <p style="font-size: 0.85em; word-break: break-all;">Source: <a href="{{ importer.url }}">{{ importer.url }}</a></p>
+  <label style="display: inline-block; margin-right: 1em;">
+    <input type="checkbox" class="draft-checkbox"> Mark imported items as draft
+  </label>
   <button class="run-import-btn" data-importer="{{ key }}" style="padding: 0.4em 1em; cursor: pointer;">Run Import</button>
   <div class="importer-status" style="margin-top: 0.5em;"></div>
   <div class="importer-results" style="margin-top: 0.5em;"></div>
@@ -27,6 +30,7 @@ document.querySelectorAll('.run-import-btn').forEach(function(btn) {
     var section = btn.closest('.importer-section');
     var statusEl = section.querySelector('.importer-status');
     var resultsEl = section.querySelector('.importer-results');
+    var draftCheckbox = section.querySelector('.draft-checkbox');
 
     btn.disabled = true;
     btn.textContent = 'Running...';
@@ -39,7 +43,7 @@ document.querySelectorAll('.run-import-btn').forEach(function(btn) {
         'Content-Type': 'application/json',
         'X-CSRFToken': document.cookie.match(/csrftoken=([^;]+)/)[1]
       },
-      body: JSON.stringify({importer: importer})
+      body: JSON.stringify({importer: importer, is_draft: draftCheckbox.checked})
     })
     .then(function(response) { return response.json().then(function(data) { return {ok: response.ok, data: data}; }); })
     .then(function(result) {

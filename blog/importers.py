@@ -39,7 +39,7 @@ def _cache_busted_url(url):
     return f"{url}{separator}cb={secrets.token_hex(8)}"
 
 
-def import_releases(url):
+def import_releases(url, is_draft=False):
     response = httpx.get(_cache_busted_url(url))
     response.raise_for_status()
     repos = response.json()
@@ -69,6 +69,7 @@ def import_releases(url):
                 created=created,
                 import_ref=import_ref,
                 commentary=description,
+                is_draft=is_draft,
             )
             items.append(beat)
             created_count += 1
@@ -76,7 +77,7 @@ def import_releases(url):
     return {"created": created_count, "skipped": skipped_count, "items": items}
 
 
-def import_research(url):
+def import_research(url, is_draft=False):
     response = httpx.get(_cache_busted_url(url))
     response.raise_for_status()
     text = response.text
@@ -126,6 +127,7 @@ def import_research(url):
             "slug": unique_slug(dir_name, created, import_ref),
             "created": created,
             "commentary": commentary,
+            "is_draft": is_draft,
         }
 
         beat, status = _create_or_update(import_ref, defaults)
@@ -146,7 +148,7 @@ def import_research(url):
     }
 
 
-def import_tils(url):
+def import_tils(url, is_draft=False):
     response = httpx.get(url)
     response.raise_for_status()
     tils = response.json()
@@ -184,6 +186,7 @@ def import_tils(url):
             "created": created,
             "commentary": commentary,
             "image_url": image_url,
+            "is_draft": is_draft,
         }
 
         beat, status = _create_or_update(import_ref, defaults)
@@ -204,7 +207,7 @@ def import_tils(url):
     }
 
 
-def import_tools(url):
+def import_tools(url, is_draft=False):
     response = httpx.get(url)
     response.raise_for_status()
     tools = response.json()
@@ -226,6 +229,7 @@ def import_tools(url):
             "slug": unique_slug(tool["slug"], created, import_ref),
             "created": created,
             "commentary": truncate(tool.get("description") or ""),
+            "is_draft": is_draft,
         }
 
         beat, status = _create_or_update(import_ref, defaults)
@@ -280,7 +284,7 @@ def _species_name(taxon, fallback=""):
     )
 
 
-def import_sightings(url):
+def import_sightings(url, is_draft=False):
     response = httpx.get(_cache_busted_url(url))
     response.raise_for_status()
     data = response.json()
@@ -356,6 +360,7 @@ def import_sightings(url):
             "created": created,
             "commentary": commentary,
             "metadata": metadata,
+            "is_draft": is_draft,
         }
 
         beat, status = _create_or_update(import_ref, defaults)
@@ -376,7 +381,7 @@ def import_sightings(url):
     }
 
 
-def import_museums(url):
+def import_museums(url, is_draft=False):
     response = httpx.get(url)
     response.raise_for_status()
     museums = json.loads(response.text)
@@ -413,6 +418,7 @@ def import_museums(url):
             "commentary": address,
             "image_url": image_url or None,
             "image_alt": image_alt or None,
+            "is_draft": is_draft,
         }
 
         beat, status = _create_or_update(import_ref, defaults)
