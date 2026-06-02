@@ -17,10 +17,12 @@
       <span class="beat-label sighting">Sighting</span>
     {% endif %}
     <span class="beat-title"><a href="{{ item.url }}">{{ item.title }}</a></span>
+    {% if item.is_draft %}<span class="beat-label draft">draft</span>{% endif %}
     {% if item.commentary %}<span class="beat-commit">&mdash; {{ item.commentary }}</span>{% endif %}
   </div>
   <div class="beat-meta beat-row2">
     <a href="{{ item.get_absolute_url }}" rel="bookmark">{{ item.created|date:"jS M Y" }}, {{ item.created|date:"f A"|lower }}</a>
+    &middot; <a href="{% url 'admin:blog_beat_change' item.pk %}">Edit in admin</a>
   </div>
 </div>
 {% endfor %}

@@ -1331,6 +1331,8 @@ def api_run_importer(request):
     if importer_name not in IMPORTERS:
         return JsonResponse({"error": "Unknown importer"}, status=400)
 
+    is_draft = bool(body.get("is_draft"))
+
     importer_funcs = {
         "releases": import_releases,
         "research": import_research,
@@ -1341,7 +1343,9 @@ def api_run_importer(request):
     }
 
     try:
-        result = importer_funcs[importer_name](IMPORTERS[importer_name]["url"])
+        result = importer_funcs[importer_name](
+            IMPORTERS[importer_name]["url"], is_draft=is_draft
+        )
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
 

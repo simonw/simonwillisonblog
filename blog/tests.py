@@ -2123,6 +2123,10 @@ class ImporterViewTests(TransactionTestCase):
         self.assertContains(response, "releases_cache.json")
         self.assertContains(response, "tools.json")
         self.assertContains(response, "museums.json")
+        # Each importer has a draft checkbox, unchecked by default
+        self.assertContains(response, "Mark imported items as draft")
+        self.assertContains(response, 'type="checkbox" class="draft-checkbox"')
+        self.assertNotContains(response, "checkbox\" checked")
 
     def test_api_run_importer_requires_login(self):
         response = self.client.post(
@@ -2199,6 +2203,64 @@ class ImporterViewTests(TransactionTestCase):
             "https://raw.githubusercontent.com/simonw/simonw/refs/heads/main/"
             "releases_cache.json?cb=feedfacecafebeef"
         )
+
+    def _releases_mock_response(self):
+        from unittest.mock import MagicMock
+
+        mock_response = MagicMock()
+        mock_response.json.return_value = {
+            "my-repo": {
+                "description": "First release",
+                "releases": [
+                    {
+                        "release": "1.0",
+                        "published_at": "2025-01-15T10:00:00Z",
+                        "url": "https://github.com/simonw/my-repo/releases/tag/1.0",
+                    }
+                ],
+            }
+        }
+        mock_response.raise_for_status = MagicMock()
+        return mock_response
+
+    def test_api_run_importer_defaults_to_not_draft(self):
+        from unittest.mock import patch
+        from blog.models import Beat
+
+        self.client.login(username="admin", password="password")
+        with patch(
+            "blog.importers.httpx.get", return_value=self._releases_mock_response()
+        ):
+            response = self.client.post(
+                "/api/run-importer/",
+                json.dumps({"importer": "releases"}),
+                content_type="application/json",
+            )
+        assert response.status_code == 200
+        beat = Beat.objects.get(import_ref="release:my-repo:1.0")
+        assert beat.is_draft is False
+        # Results list links each item to its admin edit page
+        data = json.loads(response.content)
+        assert "/admin/blog/beat/{}/change/".format(beat.pk) in data["items_html"]
+
+    def test_api_run_importer_marks_items_as_draft(self):
+        from unittest.mock import patch
+        from blog.models import Beat
+
+        self.client.login(username="admin", password="password")
+        with patch(
+            "blog.importers.httpx.get", return_value=self._releases_mock_response()
+        ):
+            response = self.client.post(
+                "/api/run-importer/",
+                json.dumps({"importer": "releases", "is_draft": True}),
+                content_type="application/json",
+            )
+        assert response.status_code == 200
+        beat = Beat.objects.get(import_ref="release:my-repo:1.0")
+        assert beat.is_draft is True
+        data = json.loads(response.content)
+        assert 'class="beat-label draft"' in data["items_html"]
 
     def test_api_run_importer_research(self):
         from unittest.mock import patch, MagicMock
