@@ -2126,7 +2126,7 @@ class ImporterViewTests(TransactionTestCase):
         # Each importer has a draft checkbox, unchecked by default
         self.assertContains(response, "Mark imported items as draft")
         self.assertContains(response, 'type="checkbox" class="draft-checkbox"')
-        self.assertNotContains(response, "checkbox\" checked")
+        self.assertNotContains(response, 'checkbox" checked')
 
     def test_api_run_importer_requires_login(self):
         response = self.client.post(
@@ -2294,6 +2294,57 @@ class ImporterViewTests(TransactionTestCase):
             "https://raw.githubusercontent.com/simonw/research/refs/heads/main/"
             "README.md?cb=ba5eba11c0ffee"
         )
+
+    def test_api_run_importer_research_draft_only_applies_to_new_items(self):
+        from datetime import datetime, timezone
+        from unittest.mock import patch, MagicMock
+
+        from blog.factories import BeatFactory
+        from blog.models import Beat
+
+        existing_created = datetime(2025, 2, 1, 12, 34, tzinfo=timezone.utc)
+        existing = BeatFactory(
+            beat_type="research",
+            title="Existing Project",
+            url="https://github.com/simonw/research/tree/main/existing-project#readme",
+            slug="existing-project",
+            created=existing_created,
+            import_ref="research:existing-project",
+            commentary="Existing paragraph.",
+            is_draft=False,
+        )
+        mock_response = MagicMock()
+        mock_response.text = (
+            "### [Existing Project](https://github.com/simonw/research/tree/main/"
+            "existing-project) (2025-02-01 12:34)\n\n"
+            "Existing paragraph.\n\n"
+            "### [New Project](https://github.com/simonw/research/tree/main/"
+            "new-project) (2025-02-02 12:34)\n\n"
+            "New paragraph."
+        )
+        mock_response.raise_for_status = MagicMock()
+
+        self.client.login(username="admin", password="password")
+        with patch("blog.importers.httpx.get", return_value=mock_response):
+            response = self.client.post(
+                "/api/run-importer/",
+                json.dumps({"importer": "research", "is_draft": True}),
+                content_type="application/json",
+            )
+
+        assert response.status_code == 200
+        data = json.loads(response.content)
+        assert data["created"] == 1
+        assert data["updated"] == 0
+        assert data["skipped"] == 1
+
+        existing.refresh_from_db()
+        assert existing.is_draft is False
+
+        new_beat = Beat.objects.get(import_ref="research:new-project")
+        assert new_beat.is_draft is True
+        assert "New Project" in data["items_html"]
+        assert "Existing Project" not in data["items_html"]
 
     def test_api_run_importer_tools(self):
         from unittest.mock import patch, MagicMock
