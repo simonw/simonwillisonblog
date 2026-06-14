@@ -14,6 +14,7 @@ from blog.management.commands._beat_utils import truncate, unique_slug
 def _create_or_update(import_ref, defaults):
     """
     Like update_or_create but only counts as 'updated' if data actually changed.
+    Preserve existing draft status; importer draft mode only applies to new items.
     Returns (beat, "created" | "updated" | "skipped").
     """
     try:
@@ -22,8 +23,10 @@ def _create_or_update(import_ref, defaults):
         beat = Beat.objects.create(import_ref=import_ref, **defaults)
         return beat, "created"
 
+    update_defaults = defaults.copy()
+    update_defaults.pop("is_draft", None)
     changed = False
-    for key, value in defaults.items():
+    for key, value in update_defaults.items():
         if getattr(existing, key) != value:
             changed = True
             setattr(existing, key, value)
