@@ -40,7 +40,7 @@ button.outline-danger:focus {
               </label>
           </li>
           <li style="margin-bottom: 8px; list-style: none;">
-              <form action="{% url 'admin_purge_cache' %}" method="POST" style="display: inline;" onsubmit="return confirm('Purge the entire Cloudflare cache?');">
+              <form action="{% url 'admin_purge_cache' %}" method="POST" style="display: inline;">
                   {% csrf_token %}
                   <button type="submit" class="outline-danger" style="cursor: pointer; background: transparent; color: #ba2121; border: 2px solid #ba2121; padding: 8px 14px; border-radius: 4px; font-weight: 600; font-size: 0.875rem;">Purge Cloudflare cache</button>
               </form>
