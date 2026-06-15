@@ -23,6 +23,7 @@
 {% block item_content %}
 {% endblock %}
 </div>
+{% block recent_articles %}
 {% if recent_articles %}
 <div class="recent-articles">
 <h2>{% block recent_articles_header %}Recent articles{% endblock %}</h2>
@@ -33,6 +34,7 @@
 </ul>
 </div>
 {% endif %}
+{% endblock %}
 {% endblock %}
 
 {% block thirdsection %}

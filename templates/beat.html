@@ -1,5 +1,7 @@
 {% extends "item_base.html" %}
 
+{% block body_class %} class="smallhead{% if beat.beat_type == "sighting" %} entry-wide sighting-detail-page{% endif %}"{% endblock %}
+
 {% block title %}{{ beat.get_beat_type_display }}: {{ beat.title }}{% endblock %}
 
 {% block extrahead %}
@@ -22,8 +24,8 @@
     <span class="beat-title">{{ beat.sighting_time_range }}</span>
     {% with commit=beat.sighting_commentary_with_location %}{% if commit %}<span class="beat-commit">&mdash; {{ commit }}</span>{% endif %}{% endwith %}
   </div>
-  <captioned-image-gallery>
-    {% with photo_count=beat.sighting_photo_count %}{% for obs in beat.metadata.observations %}{% for photo in obs.photos %}<figure><a href="{{ photo.large_url }}"><img src="{% if photo_count == 1 %}{{ photo.large_url }}{% else %}{{ photo.small_url }}{% endif %}" alt="{{ obs.common_name|default:obs.scientific_name }}" loading="lazy"{% if photo.width and photo.height %} data-width="{{ photo.width }}" data-height="{{ photo.height }}"{% endif %}></a><figcaption>{% if obs.uri %}<a href="{{ obs.uri }}" title="View observation on iNaturalist">{{ obs.common_name|default:obs.scientific_name }}</a>{% else %}{{ obs.common_name|default:obs.scientific_name }}{% endif %}</figcaption></figure>{% endfor %}{% endfor %}{% endwith %}
+  <captioned-image-gallery class="sighting-detail-gallery" max-row-items="2">
+    {% for obs in beat.metadata.observations %}{% for photo in obs.photos %}<figure><a href="{% if photo.large_url %}{{ photo.large_url }}{% else %}{{ photo.small_url }}{% endif %}"><img src="{% if photo.large_url %}{{ photo.large_url }}{% else %}{{ photo.small_url }}{% endif %}" alt="{{ obs.common_name|default:obs.scientific_name }}" loading="lazy"{% if photo.width and photo.height %} data-width="{{ photo.width }}" data-height="{{ photo.height }}"{% endif %}></a><figcaption>{% if obs.uri %}<a href="{{ obs.uri }}" title="View observation on iNaturalist">{{ obs.common_name|default:obs.scientific_name }}</a>{% else %}{{ obs.common_name|default:obs.scientific_name }}{% endif %}</figcaption></figure>{% endfor %}{% endfor %}
   </captioned-image-gallery>
 {% if beat.note %}<div class="beat-note blogmark-body">{{ beat.note_rendered }}</div>{% endif %}
 </div>
@@ -50,14 +52,24 @@
 <p class="edit-page-link" data-admin-url="{{ beat.edit_url }}" style="display: none;"></p>
 {% endblock %}
 
+{% block recent_articles %}
+{% if beat.beat_type != "sighting" %}
+{{ block.super }}
+{% endif %}
+{% endblock %}
+
 {% block secondary %}
+{% if beat.beat_type != "sighting" %}
 <div class="metabox">
 <p class="this-is">This is a <strong>beat</strong> by Simon Willison, posted on <a href="/{{ beat.created|date:"Y/M/j/" }}">{{ beat.created|date:"jS F Y" }}</a>.</p>
 
 {% include "_tags.html" with obj=beat %}
 
 {% if not sponsor_message %}<div data-ea-publisher="simonwillisonnet" data-ea-type="text"></div>{% endif %}
+{% if beat.beat_type != "sighting" %}
 {% include "_sponsor_promo.html" %}
+{% endif %}
 
 </div> <!-- .metabox -->
+{% endif %}
 {% endblock %}

@@ -2045,6 +2045,30 @@ a.beat-label:active {
   overflow-wrap: anywhere;
 }
 
+body.sighting-detail-page div#wrapper {
+  overflow: visible;
+}
+
+body.sighting-detail-page div#primary {
+  float: none;
+  width: auto;
+  max-width: 920px;
+  margin: 0 auto;
+}
+
+body.sighting-detail-page div#secondary {
+  float: none;
+  width: 560px;
+  max-width: 100%;
+  margin: 1.5em auto 0;
+}
+
+body.sighting-detail-page .sighting-detail-gallery {
+  --max-row-height: 420px;
+  --single-image-max-height: 720px;
+  margin-top: 10px;
+}
+
 /* ── Label colours by beat type ── */
 
 .beat-label.release {

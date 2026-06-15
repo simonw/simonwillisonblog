@@ -1906,6 +1906,61 @@ class BeatTests(TransactionTestCase):
         response = self.client.get(beat.get_absolute_url())
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Detail Beat")
+        self.assertContains(response, "Monthly briefing")
+        self.assertContains(response, "Recent articles")
+        self.assertContains(response, "This is a <strong>beat</strong>")
+
+    def test_sighting_detail_page_uses_large_gallery_images(self):
+        """Sighting detail pages use larger inline photos while preserving the
+        captioned gallery lightbox links."""
+        EntryFactory()  # Needed for calendar widget
+        beat = BeatFactory(
+            beat_type="sighting",
+            title="Brown Pelican",
+            url="https://www.inaturalist.org/observations/9687475",
+            commentary="Brown Pelican",
+            metadata={
+                "started_at": "2026-05-25T09:15:00-07:00",
+                "ended_at": "2026-05-25T09:15:00-07:00",
+                "observations": [
+                    {
+                        "uri": "https://www.inaturalist.org/observations/9687475",
+                        "common_name": "Brown Pelican",
+                        "scientific_name": "Pelecanus occidentalis",
+                        "photos": [
+                            {
+                                "small_url": "https://example.com/photos/1/small.jpg",
+                                "large_url": "https://example.com/photos/1/large.jpg",
+                                "width": 2048,
+                                "height": 1365,
+                            },
+                            {
+                                "small_url": "https://example.com/photos/2/small.jpg",
+                                "large_url": "https://example.com/photos/2/large.jpg",
+                            },
+                        ],
+                    }
+                ],
+            },
+        )
+
+        response = self.client.get(beat.get_absolute_url())
+
+        self.assertContains(
+            response, 'class="smallhead entry-wide sighting-detail-page"'
+        )
+        self.assertContains(
+            response,
+            '<captioned-image-gallery class="sighting-detail-gallery" max-row-items="2">',
+        )
+        self.assertContains(
+            response,
+            'href="https://example.com/photos/1/large.jpg"><img src="https://example.com/photos/1/large.jpg"',
+        )
+        self.assertNotContains(response, 'src="https://example.com/photos/1/small.jpg"')
+        self.assertNotContains(response, "Monthly briefing")
+        self.assertNotContains(response, "Recent articles")
+        self.assertNotContains(response, "This is a <strong>beat</strong>")
 
     def test_sighting_beat_note_on_homepage(self):
         """Sighting beat note should be rendered on the homepage timeline."""

@@ -23,12 +23,15 @@
  * Attributes:
  *   show-counter   Display "n / total" position counter in the lightbox
  *                  while viewing a figure from this gallery.
+ *   max-row-items  Maximum number of figures in a justified row. Defaults
+ *                  to 3.
  */
 
 const STYLES = `
 captioned-image-gallery:defined {
   --gap: 6px;
   --max-row-height: 240px;
+  --single-image-max-height: var(--max-row-height);
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
@@ -336,6 +339,9 @@ class CaptionedImageGallery extends HTMLElement {
     const gap = parseFloat(cs.gap) || 0;
     const containerW = this.clientWidth - padL - padR;
     const maxH = parseFloat(cs.getPropertyValue('--max-row-height')) || 240;
+    const singleMaxH = (
+      parseFloat(cs.getPropertyValue('--single-image-max-height')) || maxH
+    );
 
     if (containerW <= 0) return;
 
@@ -343,7 +349,7 @@ class CaptionedImageGallery extends HTMLElement {
       const f = this.figures[0];
       const r = ratios[0];
       this.dataset.orientation = r >= 1 ? 'landscape' : 'portrait';
-      let h = maxH;
+      let h = singleMaxH;
       let w = h * r;
       if (w > containerW) {
         w = containerW;
@@ -354,13 +360,13 @@ class CaptionedImageGallery extends HTMLElement {
       return;
     }
 
-    const splits = this.getRowSplits(count);
+    const splits = this.getRowSplits(count, this.maxRowItems());
     let idx = 0;
     splits.forEach(rowCount => {
       const rowFigs = this.figures.slice(idx, idx + rowCount);
       const rowRatios = ratios.slice(idx, idx + rowCount);
       const sum = rowRatios.reduce((a, b) => a + b, 0);
-      const rowAvailW = Math.max(0, containerW - (rowCount - 1) * gap);
+      const rowAvailW = Math.max(0, containerW - (rowCount - 1) * gap - 1);
       const naturalH = sum > 0 ? rowAvailW / sum : maxH;
       const rowH = Math.min(naturalH, maxH);
       rowFigs.forEach((f, i) => {
@@ -371,7 +377,26 @@ class CaptionedImageGallery extends HTMLElement {
     });
   }
 
-  getRowSplits(n) {
+  maxRowItems() {
+    const configured = parseInt(this.getAttribute('max-row-items'), 10);
+    if (isFinite(configured) && configured >= 1 && configured <= 3) {
+      return configured;
+    }
+    return 3;
+  }
+
+  getRowSplits(n, maxItems = 3) {
+    if (maxItems <= 1) return Array.from({ length: n }, () => 1);
+    if (maxItems === 2) {
+      const splits = [];
+      while (n > 0) {
+        const rowCount = Math.min(2, n);
+        splits.push(rowCount);
+        n -= rowCount;
+      }
+      return splits;
+    }
+
     if (n <= 3) return [n];
     // Cap rows at 3 wide. Use rows of 3 plus rows of 2 to make up the
     // remainder; smaller rows lead so the bottom row is the widest.
