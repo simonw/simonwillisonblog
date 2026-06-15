@@ -72,7 +72,7 @@
   <div class="beat-content">
     <div class="beat-row1">
       <a class="beat-label sighting" href="/elsewhere/{{ item.obj.beat_type }}/">Sighting</a>
-      <span class="beat-title"><a href="{{ item.obj.url }}">{{ item.obj.sighting_time_range }}</a></span>
+      <span class="beat-title"><a href="{{ item.obj.get_absolute_url }}">{{ item.obj.sighting_time_range }}</a></span>
       {% with commit=item.obj.sighting_commentary_with_location %}{% if commit %}<span class="beat-commit">&mdash; {{ commit }}</span>{% endif %}{% endwith %}
     </div>
     <captioned-image-gallery>
