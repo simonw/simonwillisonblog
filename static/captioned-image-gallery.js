@@ -85,11 +85,14 @@ captioned-image-gallery:defined figcaption {
 captioned-image-gallery:defined figcaption a {
   pointer-events: auto;
   color: inherit;
-  text-decoration: underline;
+  text-decoration: none;
+  border-bottom: none;
 }
 
 captioned-image-gallery:defined figcaption a:hover {
   color: #cfe8ff;
+  text-decoration: none;
+  border-bottom: none;
 }
 
 dialog.captioned-gallery-modal {
