@@ -746,12 +746,14 @@ div#bigheadcontainer {
 #sponsored-banner a {
   color: #5a4a3a;
   text-decoration: underline;
+  border-bottom: none;
 }
 #sponsored-banner .sponsor-learn-more-label {
   white-space: nowrap;
 }
 #sponsored-banner a:hover {
   color: #3a2a1a;
+  border-bottom: none;
 }
 /* Sponsor banner color schemes */
 #sponsored-banner.sponsor-scheme-warm { background-color: #e8ddd0; border-top-color: #d4c7b8; border-bottom-color: #d4c7b8; color: #6b5d50; }
