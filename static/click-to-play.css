@@ -66,7 +66,17 @@ click-to-play[data-ctp-state="playing"] .ctp-i-play {
 click-to-play[data-ctp-state="playing"] .ctp-i-pause {
   display: block;
 }
-click-to-play:hover .ctp-btn {
+/* hover emphasis only on devices that truly hover — avoids sticky :hover
+   keeping the control pinned on after a tap on touchscreens */
+@media (hover: hover) {
+  click-to-play:hover .ctp-btn {
+    opacity: 1;
+    transform: scale(1.06);
+    background: rgba(12, 14, 22, 0.5);
+  }
+}
+/* touch: reveal the control briefly while/just after the finger is down */
+click-to-play.ctp-touched .ctp-btn {
   opacity: 1;
   transform: scale(1.06);
   background: rgba(12, 14, 22, 0.5);
@@ -97,7 +107,12 @@ click-to-play[data-ctp-state="loading"] .ctp-spin {
 click-to-play[data-ctp-state="playing"] .ctp-btn {
   opacity: 0;
 }
-click-to-play[data-ctp-state="playing"]:hover .ctp-btn {
+@media (hover: hover) {
+  click-to-play[data-ctp-state="playing"]:hover .ctp-btn {
+    opacity: 0.72;
+  }
+}
+click-to-play[data-ctp-state="playing"].ctp-touched .ctp-btn {
   opacity: 0.72;
 }
 click-to-play[data-ctp-state="error"] .ctp-btn {
