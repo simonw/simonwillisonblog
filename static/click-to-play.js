@@ -29,9 +29,18 @@ class ClickToPlay extends HTMLElement {
     if (!link.getAttribute("aria-label")) link.setAttribute("aria-label", "Play animation");
 
     link.addEventListener("click", this._onClick.bind(this));
+    // touchscreens have no hover, so reveal the control on touch and fade it back out
+    this.addEventListener("touchstart", this._onTouch.bind(this), { passive: true });
   }
 
   _setState(s) { this.dataset.ctpState = s; }
+
+  _onTouch() {
+    var self = this;
+    this.classList.add("ctp-touched");
+    clearTimeout(this._touchTimer);
+    this._touchTimer = setTimeout(function () { self.classList.remove("ctp-touched"); }, 1400);
+  }
 
   _onClick(e) {
     e.preventDefault();                 // hold the navigation; enhance instead
