@@ -1,0 +1,114 @@
+click-to-play {
+  position: relative;
+  display: inline-block;
+  line-height: 0;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+click-to-play a {
+  display: block;
+  text-decoration: none;
+  outline-offset: 3px;
+}
+click-to-play img {
+  display: block;
+  width: 100%;
+  height: auto;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+click-to-play .ctp-ui {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+click-to-play .ctp-ui > * {
+  grid-area: 1/1;
+}
+click-to-play .ctp-btn {
+  width: 22%;
+  min-width: 46px;
+  max-width: 88px;
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(12, 14, 22, 0.34);
+  -webkit-backdrop-filter: blur(3px) saturate(1.15);
+  backdrop-filter: blur(3px) saturate(1.15);
+  box-shadow:
+    0 6px 22px rgba(0, 0, 0, 0.34),
+    inset 0 0 0 1.6px rgba(255, 255, 255, 0.9);
+  opacity: 0.92;
+  transition:
+    opacity 0.25s ease,
+    transform 0.25s ease,
+    background 0.25s ease;
+}
+click-to-play .ctp-btn svg {
+  grid-area: 1/1;
+  width: 40%;
+  height: 40%;
+  fill: #fff;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.45));
+}
+click-to-play .ctp-i-play {
+  margin-left: 7%;
+}
+click-to-play .ctp-i-pause {
+  display: none;
+}
+click-to-play[data-ctp-state="playing"] .ctp-i-play {
+  display: none;
+}
+click-to-play[data-ctp-state="playing"] .ctp-i-pause {
+  display: block;
+}
+click-to-play:hover .ctp-btn {
+  opacity: 1;
+  transform: scale(1.06);
+  background: rgba(12, 14, 22, 0.5);
+}
+click-to-play .ctp-spin {
+  display: none;
+  width: 16%;
+  min-width: 38px;
+  max-width: 62px;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: 3px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #fff;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  animation: ctp-spin 0.7s linear infinite;
+}
+@keyframes ctp-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+click-to-play[data-ctp-state="loading"] .ctp-btn {
+  opacity: 0;
+}
+click-to-play[data-ctp-state="loading"] .ctp-spin {
+  display: block;
+}
+click-to-play[data-ctp-state="playing"] .ctp-btn {
+  opacity: 0;
+}
+click-to-play[data-ctp-state="playing"]:hover .ctp-btn {
+  opacity: 0.72;
+}
+click-to-play[data-ctp-state="error"] .ctp-btn {
+  opacity: 0.7;
+  background: rgba(150, 30, 30, 0.62);
+}
+@media (prefers-reduced-motion: reduce) {
+  click-to-play .ctp-btn {
+    transition: none;
+  }
+  click-to-play .ctp-spin {
+    animation-duration: 1.3s;
+  }
+}

@@ -70,7 +70,8 @@ document.addEventListener('DOMContentLoaded', () => {
 const config = [
   {"tag": "lite-youtube", "js": "/static/lite-yt-embed.js", "css": "/static/lite-yt-embed.css"},
   {"tag": "image-gallery", "js": "/static/image-gallery.js", "css": null},
-  {"tag": "captioned-image-gallery", "js": "/static/captioned-image-gallery.js", "css": null}
+  {"tag": "captioned-image-gallery", "js": "/static/captioned-image-gallery.js", "css": null},
+  {"tag": "click-to-play", "js": "/static/click-to-play.js", "css": "/static/click-to-play.css"}
 ];
 for (const {tag, js, css} of config) {
   if (document.querySelector(tag)) {
