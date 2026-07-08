@@ -189,6 +189,10 @@ urlpatterns = [
         count_subscribers(feeds.BeatsByType().__call__),
     ),
     re_path(r"^atom/everything/$", count_subscribers(feeds.Everything().__call__)),
+    re_path(
+        r"^atom/everything-but-beats/$",
+        count_subscribers(feeds.EverythingButBeats().__call__),
+    ),
     re_path(r"^sitemap\.xml$", feeds.sitemap),
     path("tools/", blog_views.tools),
     path("tools/extract-title/", blog_views.tools_extract_title),

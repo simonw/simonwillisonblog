@@ -673,6 +673,40 @@ class BlogTests(TransactionTestCase):
         self.assertContains(response, "Notes")
         self.assertContains(response, "Test note body content")
 
+    def test_everything_but_beats_feed(self):
+        EntryFactory(title="Feed entry")
+        BlogmarkFactory(title="Feed blogmark", link_title="Ignored link title")
+        QuotationFactory(source="Feed quotation source")
+        NoteFactory(title="Feed note", body="Feed note body")
+        ChapterFactory(title="Feed chapter")
+        BeatFactory(title="Feed beat", note="A beat with enough substance for feeds")
+
+        response = self.client.get("/atom/everything-but-beats/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("application/xml", response["Content-Type"])
+        root = ET.fromstring(response.content)
+        ns = {"atom": "http://www.w3.org/2005/Atom"}
+        titles = [e.find("atom:title", ns).text for e in root.findall("atom:entry", ns)]
+        self.assertIn("Feed entry", titles)
+        self.assertIn("Feed blogmark", titles)
+        self.assertIn("Quoting Feed quotation source", titles)
+        self.assertIn("Feed note", titles)
+        self.assertIn("Feed chapter", titles)
+        self.assertNotIn("Feed beat", titles)
+
+    def test_about_page_documents_everything_but_beats_feed(self):
+        response = self.client.get("/about/")
+
+        self.assertContains(
+            response, "https://simonwillison.net/atom/everything-but-beats/"
+        )
+        self.assertContains(
+            response,
+            '<a href="https://simonwillison.net/2026/Feb/20/beats/">beats</a>',
+            html=False,
+        )
+
     def test_draft_items_not_in_quotations_feed(self):
         draft_quotation = QuotationFactory(is_draft=True, source="draftquotationsource")
         response = self.client.get("/atom/quotations/")

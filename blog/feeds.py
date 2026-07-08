@@ -175,9 +175,10 @@ class Everything(Base):
     title = "Simon Willison's Weblog"
     description_template = "feeds/everything.html"
     ga_source = "everything"
+    include_beats = True
 
     def items(self):
-        # Pretty dumb implementation: pull top 30 of entries/blogmarks/quotations
+        # Pretty dumb implementation: pull top 30 of each content type
         # then sort them together and return most recent 30 combined
         last_30_entries = list(
             Entry.objects.filter(is_draft=False)
@@ -207,20 +208,20 @@ class Everything(Base):
             .prefetch_related("tags")
             .order_by("-created")[:30]
         )
-        last_30_beats = list(
-            Beat.objects.filter(is_draft=False)
-            .exclude(note="")
-            .prefetch_related("tags")
-            .order_by("-created")[:30]
-        )
         combined = (
             last_30_blogmarks
             + last_30_entries
             + last_30_quotations
             + last_30_notes
             + last_30_chapters
-            + last_30_beats
         )
+        if self.include_beats:
+            combined += list(
+                Beat.objects.filter(is_draft=False)
+                .exclude(note="")
+                .prefetch_related("tags")
+                .order_by("-created")[:30]
+            )
         combined.sort(key=lambda e: e.created, reverse=True)
         return combined[:30]
 
@@ -242,6 +243,12 @@ class Everything(Base):
             return item.title
         else:
             return "Unknown item type"
+
+
+class EverythingButBeats(Everything):
+    title = "Simon Willison's Weblog: Everything but beats"
+    ga_source = "everything-but-beats"
+    include_beats = False
 
 
 class SeriesFeed(Everything):
