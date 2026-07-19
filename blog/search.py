@@ -322,6 +322,7 @@ def search(request, q=None, return_context=False, per_page=30):
 
     selected = {
         "tags": selected_tags,
+        "exclude_tags": excluded_tags,
         "year": selected_year,
         "month": selected_month,
         "type": selected_type,
@@ -363,6 +364,9 @@ def search(request, q=None, return_context=False, per_page=30):
 
     if selected.get("tags"):
         title += " tagged %s" % (", ".join(selected["tags"]))
+
+    if selected.get("exclude_tags"):
+        title += " excluding %s" % (", ".join(selected["exclude_tags"]))
 
     datebits = []
     if selected.get("month_name"):

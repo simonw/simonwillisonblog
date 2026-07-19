@@ -657,6 +657,20 @@ class BlogTests(TransactionTestCase):
             "Posts tagged llm-release in July, 2025",
         )
 
+    def test_search_exclude_tag_shows_results(self):
+        tag = Tag.objects.create(tag="ai")
+        tagged = EntryFactory(title="Entry tagged with ai")
+        tagged.tags.add(tag)
+        untagged = EntryFactory(title="Entry without that tag")
+        response = self.client.get("/search/?exclude.tag=ai")
+        self.assertEqual(response.status_code, 200)
+        results = [(r["type"], r["obj"].pk) for r in response.context["results"]]
+        self.assertIn(("entry", untagged.pk), results)
+        self.assertNotIn(("entry", tagged.pk), results)
+        self.assertEqual(response.context["sort"], "date")
+        self.assertContains(response, "Entry without that tag")
+        self.assertContains(response, "Posts excluding ai")
+
     def test_quotations_feed(self):
         quotation = QuotationFactory(source="Test Source")
         response = self.client.get("/atom/quotations/")
