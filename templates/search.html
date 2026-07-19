@@ -48,6 +48,10 @@
                 {% for tag in pair.1 %}
                     <input type="hidden" name="tag" value="{{ tag }}">
                 {% endfor %}
+            {% elif pair.0 == 'exclude_tags' %}
+                {% for tag in pair.1 %}
+                    <input type="hidden" name="exclude.tag" value="{{ tag }}">
+                {% endfor %}
             {% else %}
                 <input type="hidden" name="{{ pair.0 }}" value="{{ pair.1 }}">
             {% endif %}
@@ -82,6 +86,9 @@
         {% endif %}
         {% for tag in selected.tags %}
             <a class="selected-tag" href="{% remove_qsarg "tag" tag %}">{{ tag }} <strong>&#x00D7;</strong></a>
+        {% endfor %}
+        {% for tag in selected.exclude_tags %}
+            <a class="selected-tag" href="{% remove_qsarg "exclude.tag" tag %}">Excluding: {{ tag }} <strong>&#x00D7;</strong></a>
         {% endfor %}
     </span>{% endif %}
     {% if results %}
