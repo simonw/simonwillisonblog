@@ -23,11 +23,7 @@ class Base(Feed):
         return response
 
     def item_link(self, item):
-        return (
-            "https://simonwillison.net"
-            + item.get_absolute_url()
-            + "#atom-%s" % self.ga_source
-        )
+        return "https://simonwillison.net" + item.get_absolute_url()
 
     def item_categories(self, item):
         return [t.tag for t in item.tags.all()]
@@ -46,7 +42,6 @@ class Base(Feed):
 
 class Entries(Base):
     title = "Simon Willison's Weblog: Entries"
-    ga_source = "entries"
 
     def items(self):
         return (
@@ -70,7 +65,6 @@ class Entries(Base):
 class Blogmarks(Base):
     title = "Simon Willison's Weblog: Blogmarks"
     description_template = "feeds/blogmark.html"
-    ga_source = "blogmarks"
 
     def items(self):
         return (
@@ -86,7 +80,6 @@ class Blogmarks(Base):
 class Quotations(Base):
     title = "Simon Willison's Weblog: Quotations"
     description_template = "feeds/quotation.html"
-    ga_source = "quotations"
 
     def items(self):
         return (
@@ -102,7 +95,6 @@ class Quotations(Base):
 class Notes(Base):
     title = "Simon Willison's Weblog: Notes"
     description_template = "feeds/note.html"
-    ga_source = "notes"
 
     def items(self):
         return (
@@ -120,7 +112,6 @@ class Notes(Base):
 
 class Beats(Base):
     title = "Simon Willison's Weblog: Beats"
-    ga_source = "beats"
 
     def items(self):
         return (
@@ -142,17 +133,11 @@ class Beats(Base):
 
     def item_link(self, item):
         if item.beat_type == "sighting":
-            return (
-                "https://simonwillison.net"
-                + item.get_absolute_url()
-                + "#atom-%s" % self.ga_source
-            )
+            return super().item_link(item)
         return item.url
 
 
 class BeatsByType(Beats):
-    ga_source = "beats"
-
     def get_object(self, request, beat_type):
         valid_types = {value for value, _ in Beat.BeatType.choices}
         if beat_type not in valid_types:
@@ -174,7 +159,6 @@ class BeatsByType(Beats):
 class Everything(Base):
     title = "Simon Willison's Weblog"
     description_template = "feeds/everything.html"
-    ga_source = "everything"
     include_beats = True
 
     def items(self):
@@ -247,13 +231,10 @@ class Everything(Base):
 
 class EverythingButBeats(Everything):
     title = "Simon Willison's Weblog: Everything but beats"
-    ga_source = "everything-but-beats"
     include_beats = False
 
 
 class SeriesFeed(Everything):
-    ga_source = "series"
-
     def __init__(self, series):
         self.title = "Simon Willison's Weblog: {}".format(series.title)
         self.series = series
@@ -263,8 +244,6 @@ class SeriesFeed(Everything):
 
 
 class EverythingTagged(Everything):
-    ga_source = "tag"
-
     def __init__(self, title, items):
         self.title = "Simon Willison's Weblog: {}".format(title)
         self._items = items
