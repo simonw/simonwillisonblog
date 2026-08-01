@@ -8,7 +8,7 @@ djp==0.3.1
 django-plugin-django-header==0.1.1
 dj-database-url==3.1.2
 django-proxy==1.3.0
-django-sql-dashboard==1.2
+https://github.com/simonw/django-sql-dashboard/archive/40ffbf18e57c7959750181d44c36cd3c3e99ee9e.zip
 django-test-plus==2.4.1
 Django==6.0.5
 factory-boy==3.3.3
