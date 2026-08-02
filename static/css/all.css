@@ -564,6 +564,11 @@ div.series-info li {
 div.entryPage {
   border-bottom: none;
 }
+
+.note h4 {
+  margin-bottom: 0.5em;
+}
+
 .entry img,
 .blogmark img,
 .note img,
