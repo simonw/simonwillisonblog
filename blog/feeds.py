@@ -135,6 +135,8 @@ class Beats(Base):
     def item_description(self, item):
         if item.beat_type == "sighting":
             return item.sighting_feed_html()
+        if item.beat_type == "comment":
+            return item.comment_feed_html()
         desc = f'<p><a href="{item.url}">{item.title}</a></p>'
         if item.commentary:
             desc += f"<p>{item.commentary}</p>"

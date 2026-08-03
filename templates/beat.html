@@ -29,6 +29,12 @@
   </captioned-image-gallery>
 {% if beat.note %}<div class="beat-note blogmark-body">{{ beat.note_rendered }}</div>{% endif %}
 </div>
+{% elif beat.beat_type == "comment" %}
+<div class="note">
+  {% include "includes/comment_source_bar.html" %}
+  {% if beat.commentary %}<p class="comment-context">{{ beat.commentary }}</p>{% endif %}
+  {{ beat.note_rendered }}
+</div>
 {% else %}
 {% if beat.image_url %}
   <a href="{{ beat.url }}" class="beat-image-link"><img class="beat-image" src="{{ beat.image_url }}" alt="{{ beat.image_alt }}" loading="lazy"></a>

@@ -13,6 +13,7 @@ from collections import Counter
 import re
 import arrow
 import datetime
+from urllib.parse import quote, urlparse
 
 from django.utils import timezone
 from markdown import markdown
@@ -550,6 +551,7 @@ class Beat(BaseModel):
         TOOL = "tool", "Tool"
         MUSEUM = "museum", "Museum"
         SIGHTING = "sighting", "Sighting"
+        COMMENT = "comment", "Comment"
 
     BEAT_TYPE_PLURALS = {
         "release": "Releases",
@@ -559,6 +561,7 @@ class Beat(BaseModel):
         "tool": "Tools",
         "museum": "Museums",
         "sighting": "Sightings",
+        "comment": "Comments",
     }
 
     beat_type = models.CharField(max_length=20, choices=BeatType.choices, db_index=True)
@@ -659,6 +662,50 @@ class Beat(BaseModel):
         for obs in (self.metadata or {}).get("observations") or []:
             count += len(obs.get("photos") or [])
         return count
+
+    @staticmethod
+    def comment_domain_for_url(url):
+        """Lowercased domain of url with any leading 'www.' stripped, or ''."""
+        netloc = (urlparse(url or "").netloc or "").lower()
+        return netloc[4:] if netloc.startswith("www.") else netloc
+
+    def comment_site(self):
+        """Site name from metadata, falling back to the domain of url."""
+        site = (self.metadata or {}).get("comment_site") or ""
+        return site or self.comment_domain_for_url(self.url)
+
+    def comment_thread_url(self):
+        """URL of the thread the comment was posted on, falling back to url."""
+        return (self.metadata or {}).get("thread_url") or self.url
+
+    def comment_favicon_url(self):
+        """Google favicon service URL for the comment's site, or ''."""
+        domain = self.comment_domain_for_url(
+            self.url
+        ) or self.comment_domain_for_url(self.comment_thread_url())
+        if not domain:
+            return ""
+        return "https://www.google.com/s2/favicons?domain={}&sz=128".format(
+            quote(domain)
+        )
+
+    def comment_feed_html(self):
+        """HTML used for comment beats in atom feeds: a line linking to the
+        comment and the thread it was posted on, optional commentary for
+        context, then the full comment text (from note)."""
+        parts = [
+            '<p><a href="{}">My comment</a> on <a href="{}">{}</a> &mdash; {}.</p>'.format(
+                escape(self.url),
+                escape(self.comment_thread_url()),
+                escape(self.title),
+                escape(self.comment_site()),
+            )
+        ]
+        if self.commentary:
+            parts.append("<p><em>{}</em></p>".format(escape(self.commentary)))
+        if self.note:
+            parts.append(self.note_rendered())
+        return mark_safe("".join(parts))
 
     def index_components(self):
         return {

@@ -67,7 +67,14 @@
 </div>
 {% endif %}
 {% if item.type == "beat" %}
-{% if item.obj.beat_type == "sighting" %}
+{% if item.obj.beat_type == "comment" %}
+<div class="note segment beat-comment" data-type="beat" data-id="{{ item.obj.id }}">
+  {% include "includes/comment_source_bar.html" with beat=item.obj %}
+  {% if item.obj.commentary %}<p class="comment-context">{{ item.obj.commentary }}</p>{% endif %}
+  {{ item.obj.note_rendered }}
+  {% partial date-and-tags %}
+</div>
+{% elif item.obj.beat_type == "sighting" %}
 <div class="beat segment beat-sighting" data-type="beat" data-id="{{ item.obj.id }}">
   <div class="beat-content">
     <div class="beat-row1">
