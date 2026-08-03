@@ -3258,10 +3258,17 @@ class CommentBeatTests(TransactionTestCase):
         self.assertEqual(beat.comment_favicon_url(), "")
 
     def test_homepage_rendering(self):
-        beat = CommentBeatFactory()
+        beat = CommentBeatFactory(commentary="In response to a question about prices")
         response = self.client.get("/")
-        # Renders like a note: full comment text, no beat label
+        # Renders like a note: full comment text, with the badge in the bar
         self.assertContains(response, "note segment beat-comment")
+        self.assertContains(response, "beat-label comment")
+        # Commentary appears above as visually distinct context
+        self.assertContains(
+            response,
+            '<p class="comment-context">In response to a question about prices</p>',
+            html=True,
+        )
         self.assertContains(
             response, "This is the <strong>full text</strong> of the comment"
         )
@@ -3287,6 +3294,7 @@ class CommentBeatTests(TransactionTestCase):
             response, "This is the <strong>full text</strong> of the comment"
         )
         self.assertContains(response, "comment-source-bar")
+        self.assertContains(response, "beat-label comment")
         self.assertContains(
             response, '<a href="{}">My comment</a>'.format(beat.url), html=True
         )
@@ -3300,8 +3308,13 @@ class CommentBeatTests(TransactionTestCase):
         self.assertContains(response, "Hacker News")
         self.assertContains(response, self.FAVICON_URL.replace("&", "&amp;"))
 
+    def test_commentary_is_optional_in_rendering(self):
+        beat = CommentBeatFactory(commentary="")
+        response = self.client.get(beat.get_absolute_url())
+        self.assertNotContains(response, "comment-context")
+
     def test_beats_feed_links_to_comment_permalink(self):
-        beat = CommentBeatFactory()
+        beat = CommentBeatFactory(commentary="Some context")
         response = self.client.get("/atom/beats/")
         self.assertEqual(response.status_code, 200)
         root = ET.fromstring(response.content)
@@ -3310,6 +3323,7 @@ class CommentBeatTests(TransactionTestCase):
         link = entry.find("atom:link", ns).get("href")
         self.assertEqual(link, beat.url)
         summary = entry.find("atom:summary", ns).text
+        self.assertIn("<em>Some context</em>", summary)
         self.assertIn("full text</strong> of the comment", summary)
         self.assertIn("My comment", summary)
         self.assertIn("https://news.ycombinator.com/item?id=100", summary)

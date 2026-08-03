@@ -31,8 +31,9 @@
 </div>
 {% elif beat.beat_type == "comment" %}
 <div class="note">
-  {{ beat.note_rendered }}
   {% include "includes/comment_source_bar.html" %}
+  {% if beat.commentary %}<p class="comment-context">{{ beat.commentary }}</p>{% endif %}
+  {{ beat.note_rendered }}
 </div>
 {% else %}
 {% if beat.image_url %}

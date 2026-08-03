@@ -2136,14 +2136,23 @@ body.sighting-detail-page .sighting-detail-gallery {
   color: #135a9e;
   border: 1px solid #9cc7ec;
 }
+.comment-context {
+  font-style: italic;
+  color: #666;
+  font-size: 0.9em;
+  margin-bottom: 0.4em;
+}
 .comment-source-bar {
-  margin: 0.6em 0 0.2em 0;
+  margin: 0 0 0.6em 0;
   padding: 4px 10px;
   background: #e3f0fb;
   border: 1px solid #9cc7ec;
   border-radius: 6px;
   font-size: 0.85em;
   display: inline-block;
+}
+.comment-source-bar .beat-label {
+  margin-right: 6px;
 }
 .comment-source-bar .beat-favicon {
   width: 14px;
@@ -2183,6 +2192,7 @@ a.beat-type-link:hover {
 [data-theme="dark"] .beat-label.sighting        { background: #102a14; color: #7cd393; border-color: #2d5b3a; }
 [data-theme="dark"] .beat-label.comment         { background: #0d2236; color: #5aa8e8; border-color: #1e4a70; }
 [data-theme="dark"] .comment-source-bar         { background: #0d2236; border-color: #1e4a70; }
+[data-theme="dark"] .comment-context            { color: #9b9b9b; }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme]) .beat-label.release    { background: var(--color-purple-light); color: var(--color-purple-accent); border-color: var(--color-purple-border); }
@@ -2195,4 +2205,5 @@ a.beat-type-link:hover {
   :root:not([data-theme]) .beat-label.sighting        { background: #102a14; color: #7cd393; border-color: #2d5b3a; }
   :root:not([data-theme]) .beat-label.comment         { background: #0d2236; color: #5aa8e8; border-color: #1e4a70; }
   :root:not([data-theme]) .comment-source-bar         { background: #0d2236; border-color: #1e4a70; }
+  :root:not([data-theme]) .comment-context            { color: #9b9b9b; }
 }

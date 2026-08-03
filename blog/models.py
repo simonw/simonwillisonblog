@@ -690,20 +690,21 @@ class Beat(BaseModel):
         )
 
     def comment_feed_html(self):
-        """HTML used for comment beats in atom feeds: the full comment text
-        (from note), followed by a line linking to the comment and the
-        thread it was posted on."""
-        parts = []
-        if self.note:
-            parts.append(self.note_rendered())
-        parts.append(
+        """HTML used for comment beats in atom feeds: a line linking to the
+        comment and the thread it was posted on, optional commentary for
+        context, then the full comment text (from note)."""
+        parts = [
             '<p><a href="{}">My comment</a> on <a href="{}">{}</a> &mdash; {}.</p>'.format(
                 escape(self.url),
                 escape(self.comment_thread_url()),
                 escape(self.title),
                 escape(self.comment_site()),
             )
-        )
+        ]
+        if self.commentary:
+            parts.append("<p><em>{}</em></p>".format(escape(self.commentary)))
+        if self.note:
+            parts.append(self.note_rendered())
         return mark_safe("".join(parts))
 
     def index_components(self):
