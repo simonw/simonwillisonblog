@@ -130,8 +130,59 @@ class NoteAdmin(AutosaveAdminMixin, BaseAdmin):
     list_display = ("__str__", "created", "tag_summary", "is_draft")
 
 
+class BeatAdminForm(forms.ModelForm):
+    comment_site = forms.CharField(
+        required=False,
+        label="Comment: site name",
+        help_text='For comment beats, e.g. "Hacker News"',
+    )
+    comment_thread_url = forms.URLField(
+        required=False,
+        label="Comment: thread URL",
+        assume_scheme="https",
+        help_text=(
+            "For comment beats: the thread the comment was posted on "
+            "(the url field should be the permalink to the comment itself)"
+        ),
+    )
+
+    class Meta:
+        model = Beat
+        exclude = ("search_document",)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # import_ref is only set by the importers; beats created by hand
+        # (e.g. comment beats) don't have one. The admin drops this field
+        # entirely (it is in readonly_fields), so it may be absent here.
+        if "import_ref" in self.fields:
+            self.fields["import_ref"].required = False
+        metadata = (self.instance.metadata or {}) if self.instance.pk else {}
+        self.fields["comment_site"].initial = metadata.get("comment_site", "")
+        self.fields["comment_thread_url"].initial = metadata.get("thread_url", "")
+
+    def clean_import_ref(self):
+        # Normalize "" to None so the unique constraint only applies to
+        # real import refs
+        return self.cleaned_data.get("import_ref") or None
+
+    def clean(self):
+        cleaned = super().clean()
+        if cleaned.get("beat_type") == Beat.BeatType.COMMENT:
+            if not cleaned.get("comment_site"):
+                self.add_error("comment_site", "Required for comment beats")
+            if not cleaned.get("comment_thread_url"):
+                self.add_error("comment_thread_url", "Required for comment beats")
+            metadata = dict(cleaned.get("metadata") or {})
+            metadata["comment_site"] = cleaned.get("comment_site", "")
+            metadata["thread_url"] = cleaned.get("comment_thread_url", "")
+            cleaned["metadata"] = metadata
+        return cleaned
+
+
 @admin.register(Beat)
 class BeatAdmin(BaseAdmin):
+    form = BeatAdminForm
     search_fields = ("tags__tag", "title", "commentary")
     prepopulated_fields = {"slug": ("title",)}
     list_display = ("__str__", "beat_type", "created", "tag_summary", "is_draft")

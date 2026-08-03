@@ -49,6 +49,18 @@ class BeatFactory(BaseFactory):
     url = factory.Faker("uri")
 
 
+class CommentBeatFactory(BeatFactory):
+    beat_type = "comment"
+    title = "Show HN: An example thread"
+    url = "https://news.ycombinator.com/item?id=100#c200"
+    metadata = factory.LazyFunction(
+        lambda: {
+            "comment_site": "Hacker News",
+            "thread_url": "https://news.ycombinator.com/item?id=100",
+        }
+    )
+
+
 class SponsorMessageFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = "blog.SponsorMessage"

@@ -103,8 +103,11 @@
         <a class="beat-label tool" href="/elsewhere/{{ item.obj.beat_type }}/">Tool</a>
       {% elif item.obj.beat_type == "museum" %}
         <a class="beat-label museum" href="/elsewhere/{{ item.obj.beat_type }}/">Museum</a>
+      {% elif item.obj.beat_type == "comment" %}
+        <a class="beat-label comment" href="/elsewhere/{{ item.obj.beat_type }}/">Comment</a>
       {% endif %}
       <span class="beat-title"><a href="{{ item.obj.url }}">{{ item.obj.title }}</a></span>
+      {% if item.obj.beat_type == "comment" %}<span class="beat-site">on {% if item.obj.comment_favicon_url %}<img class="beat-favicon" src="{{ item.obj.comment_favicon_url }}" alt="" width="14" height="14" loading="lazy"> {% endif %}<a href="{{ item.obj.comment_thread_url }}">{{ item.obj.comment_site }}</a></span>{% endif %}
       {% if item.obj.commentary and not item.obj.note %}<span class="beat-commit">&mdash; {{ item.obj.commentary }}</span>{% endif %}
     </div>
     {% if item.obj.note %}<div class="beat-note blogmark-body">{{ item.obj.note_rendered }}</div>{% endif %}

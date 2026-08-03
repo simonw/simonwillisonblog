@@ -17,6 +17,7 @@ from .factories import (
     QuotationFactory,
     NoteFactory,
     BeatFactory,
+    CommentBeatFactory,
     SponsorMessageFactory,
 )
 from guides.factories import ChapterFactory, GuideFactory, GuideSectionFactory
@@ -1015,7 +1016,15 @@ class TypeListingTests(TransactionTestCase):
         self.assertContains(response, "Atom feed")
 
     def test_beat_type_listing_all_types_have_feed_icon(self):
-        for beat_type in ["release", "til", "til_update", "research", "tool", "museum"]:
+        for beat_type in [
+            "release",
+            "til",
+            "til_update",
+            "research",
+            "tool",
+            "museum",
+            "comment",
+        ]:
             BeatFactory(beat_type=beat_type)
             response = self.client.get(f"/elsewhere/{beat_type}/")
             self.assertContains(
@@ -3218,6 +3227,165 @@ class SightingsListingAndFeedTests(TransactionTestCase):
         self.assertIn("<img", summary)
         # The note is also rendered
         self.assertIn("Found this beautiful snake", summary)
+
+
+class CommentBeatTests(TransactionTestCase):
+    FAVICON_URL = "https://www.google.com/s2/favicons?domain=news.ycombinator.com&sz=128"
+
+    def test_helpers_use_metadata(self):
+        beat = CommentBeatFactory()
+        self.assertEqual(beat.comment_site(), "Hacker News")
+        self.assertEqual(
+            beat.comment_thread_url(), "https://news.ycombinator.com/item?id=100"
+        )
+        self.assertEqual(beat.comment_favicon_url(), self.FAVICON_URL)
+
+    def test_helpers_fall_back_without_metadata(self):
+        beat = CommentBeatFactory(
+            url="https://www.example.com/thread/1#comment-2", metadata={}
+        )
+        self.assertEqual(beat.comment_site(), "example.com")
+        self.assertEqual(
+            beat.comment_thread_url(), "https://www.example.com/thread/1#comment-2"
+        )
+        self.assertEqual(
+            beat.comment_favicon_url(),
+            "https://www.google.com/s2/favicons?domain=example.com&sz=128",
+        )
+
+    def test_favicon_url_empty_without_domain(self):
+        beat = CommentBeatFactory(url="not-a-url", metadata={})
+        self.assertEqual(beat.comment_favicon_url(), "")
+
+    def test_homepage_rendering(self):
+        beat = CommentBeatFactory(commentary="I wrote a long reply")
+        response = self.client.get("/")
+        self.assertContains(response, "beat-label comment")
+        self.assertContains(
+            response, '<a href="{}">{}</a>'.format(beat.url, beat.title), html=True
+        )
+        self.assertContains(
+            response,
+            '<a href="https://news.ycombinator.com/item?id=100">Hacker News</a>',
+            html=True,
+        )
+        self.assertContains(response, self.FAVICON_URL.replace("&", "&amp;"))
+
+    def test_detail_page_rendering(self):
+        beat = CommentBeatFactory()
+        response = self.client.get(beat.get_absolute_url())
+        self.assertContains(response, "beat-label comment")
+        self.assertContains(
+            response, '<a href="{}">{}</a>'.format(beat.url, beat.title), html=True
+        )
+        self.assertContains(
+            response,
+            '<a href="https://news.ycombinator.com/item?id=100">Hacker News</a>',
+            html=True,
+        )
+        self.assertContains(response, self.FAVICON_URL.replace("&", "&amp;"))
+
+    def test_beats_feed_links_to_comment_permalink(self):
+        beat = CommentBeatFactory()
+        response = self.client.get("/atom/beats/")
+        self.assertEqual(response.status_code, 200)
+        root = ET.fromstring(response.content)
+        ns = {"atom": "http://www.w3.org/2005/Atom"}
+        entry = root.find("atom:entry", ns)
+        link = entry.find("atom:link", ns).get("href")
+        self.assertEqual(link, beat.url)
+        summary = entry.find("atom:summary", ns).text
+        self.assertIn("My comment", summary)
+        self.assertIn("https://news.ycombinator.com/item?id=100", summary)
+        self.assertIn("Hacker News", summary)
+
+    def test_comment_beats_feed_title_is_plural(self):
+        CommentBeatFactory()
+        response = self.client.get("/atom/beats/comment/")
+        self.assertEqual(response.status_code, 200)
+        root = ET.fromstring(response.content)
+        ns = {"atom": "http://www.w3.org/2005/Atom"}
+        title = root.find("atom:title", ns).text
+        self.assertEqual(title, "Simon Willison's Weblog: Comments")
+
+    def test_everything_feed_includes_comments_with_notes(self):
+        EntryFactory(title="An entry")
+        beat = CommentBeatFactory(note="Some extra context on my comment.")
+        response = self.client.get("/atom/everything/")
+        self.assertEqual(response.status_code, 200)
+        root = ET.fromstring(response.content)
+        ns = {"atom": "http://www.w3.org/2005/Atom"}
+        entries = root.findall("atom:entry", ns)
+        comment_entry = next(
+            e
+            for e in entries
+            if beat.get_absolute_url() in (e.find("atom:link", ns).get("href") or "")
+        )
+        summary = comment_entry.find("atom:summary", ns).text
+        self.assertIn("My comment", summary)
+        self.assertIn("https://news.ycombinator.com/item?id=100", summary)
+        self.assertIn("Some extra context on my comment.", summary)
+
+    def _form_data(self, **overrides):
+        data = dict(
+            beat_type="comment",
+            title="Show HN: An example thread",
+            url="https://news.ycombinator.com/item?id=100#c200",
+            slug="example-thread",
+            created="2026-08-01 12:00:00",
+            commentary="",
+            note="",
+            metadata="{}",
+            comment_site="Hacker News",
+            comment_thread_url="https://news.ycombinator.com/item?id=100",
+        )
+        data.update(overrides)
+        return data
+
+    def test_admin_form_writes_metadata(self):
+        from blog.admin import BeatAdminForm
+
+        form = BeatAdminForm(data=self._form_data())
+        self.assertTrue(form.is_valid(), form.errors)
+        beat = form.save()
+        self.assertEqual(
+            beat.metadata,
+            {
+                "comment_site": "Hacker News",
+                "thread_url": "https://news.ycombinator.com/item?id=100",
+            },
+        )
+
+    def test_admin_form_requires_comment_fields(self):
+        from blog.admin import BeatAdminForm
+
+        form = BeatAdminForm(
+            data=self._form_data(comment_site="", comment_thread_url="")
+        )
+        self.assertFalse(form.is_valid())
+        self.assertIn("comment_site", form.errors)
+        self.assertIn("comment_thread_url", form.errors)
+
+    def test_admin_form_fields_optional_for_other_types(self):
+        from blog.admin import BeatAdminForm
+
+        form = BeatAdminForm(
+            data=self._form_data(
+                beat_type="release", comment_site="", comment_thread_url=""
+            )
+        )
+        self.assertTrue(form.is_valid(), form.errors)
+
+    def test_admin_form_initial_values_from_metadata(self):
+        from blog.admin import BeatAdminForm
+
+        beat = CommentBeatFactory()
+        form = BeatAdminForm(instance=beat)
+        self.assertEqual(form.fields["comment_site"].initial, "Hacker News")
+        self.assertEqual(
+            form.fields["comment_thread_url"].initial,
+            "https://news.ycombinator.com/item?id=100",
+        )
 
 
 class SponsorMessageTests(TransactionTestCase):

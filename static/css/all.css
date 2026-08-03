@@ -2131,6 +2131,21 @@ body.sighting-detail-page .sighting-detail-gallery {
   color: #1b5e20;
   border: 1px solid #81c784;
 }
+.beat-label.comment {
+  background: #e3f0fb;
+  color: #135a9e;
+  border: 1px solid #9cc7ec;
+}
+.beat-site {
+  font-size: 0.9em;
+}
+.beat-site .beat-favicon {
+  width: 14px;
+  height: 14px;
+  vertical-align: -2px;
+  border: none;
+  border-radius: 2px;
+}
 
 /* ── Beat type navigation links ── */
 
@@ -2160,6 +2175,7 @@ a.beat-type-link:hover {
 [data-theme="dark"] .beat-label.tool            { background: #2a0a1e; color: #e060b0; border-color: #6a1a4e; }
 [data-theme="dark"] .beat-label.museum          { background: #0a2622; color: #4db6ac; border-color: #1a5c52; }
 [data-theme="dark"] .beat-label.sighting        { background: #102a14; color: #7cd393; border-color: #2d5b3a; }
+[data-theme="dark"] .beat-label.comment         { background: #0d2236; color: #5aa8e8; border-color: #1e4a70; }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme]) .beat-label.release    { background: var(--color-purple-light); color: var(--color-purple-accent); border-color: var(--color-purple-border); }
@@ -2170,4 +2186,5 @@ a.beat-type-link:hover {
   :root:not([data-theme]) .beat-label.tool            { background: #2a0a1e; color: #e060b0; border-color: #6a1a4e; }
   :root:not([data-theme]) .beat-label.museum          { background: #0a2622; color: #4db6ac; border-color: #1a5c52; }
   :root:not([data-theme]) .beat-label.sighting        { background: #102a14; color: #7cd393; border-color: #2d5b3a; }
+  :root:not([data-theme]) .beat-label.comment         { background: #0d2236; color: #5aa8e8; border-color: #1e4a70; }
 }

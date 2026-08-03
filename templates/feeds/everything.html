@@ -18,6 +18,8 @@
 {% elif obj.is_beat %}
     {% if obj.beat_type == "sighting" %}
         {{ obj.sighting_feed_html }}
+    {% elif obj.beat_type == "comment" %}
+        {{ obj.comment_feed_html }}
     {% else %}
         <p><strong>{{ obj.get_beat_type_display }}:</strong> <a href="{{ obj.url }}">{{ obj.title }}</a></p>
         {% if obj.note %}{{ obj.note_rendered }}{% endif %}
