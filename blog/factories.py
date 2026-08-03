@@ -53,6 +53,7 @@ class CommentBeatFactory(BeatFactory):
     beat_type = "comment"
     title = "Show HN: An example thread"
     url = "https://news.ycombinator.com/item?id=100#c200"
+    note = "This is the **full text** of the comment I posted."
     metadata = factory.LazyFunction(
         lambda: {
             "comment_site": "Hacker News",

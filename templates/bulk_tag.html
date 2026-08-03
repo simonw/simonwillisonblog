@@ -249,13 +249,20 @@ document.addEventListener('DOMContentLoaded', function() {
                 dateAndTags.appendChild(tagButton);
             }
         } else if (contentType === 'beat') {
+            // Comment beats use note-style markup with a date-and-tags row
+            // instead of beat-row1/beat-row2
             const row1 = segment.querySelector('.beat-row1');
             if (row1) {
                 row1.insertBefore(checkbox, row1.firstChild);
+            } else {
+                segment.insertBefore(checkbox, segment.firstChild);
             }
             const row2 = segment.querySelector('.beat-row2');
+            const dateAndTags = segment.querySelector('.date-and-tags');
             if (row2) {
                 row2.appendChild(tagButton);
+            } else if (dateAndTags) {
+                dateAndTags.appendChild(tagButton);
             }
         } else {
             const firstPara = segment.querySelector('p');

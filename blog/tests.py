@@ -3258,31 +3258,46 @@ class CommentBeatTests(TransactionTestCase):
         self.assertEqual(beat.comment_favicon_url(), "")
 
     def test_homepage_rendering(self):
-        beat = CommentBeatFactory(commentary="I wrote a long reply")
+        beat = CommentBeatFactory()
         response = self.client.get("/")
-        self.assertContains(response, "beat-label comment")
+        # Renders like a note: full comment text, no beat label
+        self.assertContains(response, "note segment beat-comment")
         self.assertContains(
-            response, '<a href="{}">{}</a>'.format(beat.url, beat.title), html=True
+            response, "This is the <strong>full text</strong> of the comment"
+        )
+        # The source bar links the comment permalink, the thread and the site
+        self.assertContains(response, "comment-source-bar")
+        self.assertContains(
+            response, '<a href="{}">My comment</a>'.format(beat.url), html=True
         )
         self.assertContains(
             response,
-            '<a href="https://news.ycombinator.com/item?id=100">Hacker News</a>',
+            '<a href="https://news.ycombinator.com/item?id=100">{}</a>'.format(
+                beat.title
+            ),
             html=True,
         )
+        self.assertContains(response, "Hacker News")
         self.assertContains(response, self.FAVICON_URL.replace("&", "&amp;"))
 
     def test_detail_page_rendering(self):
         beat = CommentBeatFactory()
         response = self.client.get(beat.get_absolute_url())
-        self.assertContains(response, "beat-label comment")
         self.assertContains(
-            response, '<a href="{}">{}</a>'.format(beat.url, beat.title), html=True
+            response, "This is the <strong>full text</strong> of the comment"
+        )
+        self.assertContains(response, "comment-source-bar")
+        self.assertContains(
+            response, '<a href="{}">My comment</a>'.format(beat.url), html=True
         )
         self.assertContains(
             response,
-            '<a href="https://news.ycombinator.com/item?id=100">Hacker News</a>',
+            '<a href="https://news.ycombinator.com/item?id=100">{}</a>'.format(
+                beat.title
+            ),
             html=True,
         )
+        self.assertContains(response, "Hacker News")
         self.assertContains(response, self.FAVICON_URL.replace("&", "&amp;"))
 
     def test_beats_feed_links_to_comment_permalink(self):
@@ -3295,6 +3310,7 @@ class CommentBeatTests(TransactionTestCase):
         link = entry.find("atom:link", ns).get("href")
         self.assertEqual(link, beat.url)
         summary = entry.find("atom:summary", ns).text
+        self.assertIn("full text</strong> of the comment", summary)
         self.assertIn("My comment", summary)
         self.assertIn("https://news.ycombinator.com/item?id=100", summary)
         self.assertIn("Hacker News", summary)

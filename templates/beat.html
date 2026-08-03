@@ -29,6 +29,11 @@
   </captioned-image-gallery>
 {% if beat.note %}<div class="beat-note blogmark-body">{{ beat.note_rendered }}</div>{% endif %}
 </div>
+{% elif beat.beat_type == "comment" %}
+<div class="note">
+  {{ beat.note_rendered }}
+  {% include "includes/comment_source_bar.html" %}
+</div>
 {% else %}
 {% if beat.image_url %}
   <a href="{{ beat.url }}" class="beat-image-link"><img class="beat-image" src="{{ beat.image_url }}" alt="{{ beat.image_alt }}" loading="lazy"></a>
@@ -41,7 +46,6 @@
       <a class="beat-label {{ beat.beat_type|cut:"_" }}" href="/elsewhere/{{ beat.beat_type }}/">{{ beat.get_beat_type_display }}</a>
     {% endif %}
     <span class="beat-title"><a href="{{ beat.url }}">{{ beat.title }}</a></span>
-    {% if beat.beat_type == "comment" %}<span class="beat-site">on {% if beat.comment_favicon_url %}<img class="beat-favicon" src="{{ beat.comment_favicon_url }}" alt="" width="14" height="14" loading="lazy"> {% endif %}<a href="{{ beat.comment_thread_url }}">{{ beat.comment_site }}</a></span>{% endif %}
     {% if beat.commentary %}<span class="beat-commit">&mdash; {{ beat.commentary }}</span>{% endif %}
   </div>
 {% if beat.note %}<div class="beat-note blogmark-body">{{ beat.note_rendered }}</div>{% endif %}

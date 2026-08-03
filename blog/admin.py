@@ -141,8 +141,10 @@ class BeatAdminForm(forms.ModelForm):
         label="Comment: thread URL",
         assume_scheme="https",
         help_text=(
-            "For comment beats: the thread the comment was posted on "
-            "(the url field should be the permalink to the comment itself)"
+            "For comment beats: the thread the comment was posted on. "
+            "The url field should be the permalink to the comment itself, "
+            "title the thread title, and the full comment text (markdown) "
+            "goes in note"
         ),
     )
 
