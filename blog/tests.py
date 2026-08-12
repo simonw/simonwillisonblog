@@ -488,6 +488,12 @@ class BlogTests(TransactionTestCase):
             response.content.decode(),
         )
 
+    def test_atom_feed_links_have_no_tracking_fragments(self):
+        EntryFactory()
+        for path in ("/atom/entries/", "/atom/everything/"):
+            response = self.client.get(path)
+            self.assertNotContains(response, "#atom-")
+
     def test_og_description_strips_markdown(self):
         blogmark = BlogmarkFactory(
             commentary="This **has** *markdown*", use_markdown=True
@@ -3144,9 +3150,9 @@ class SightingsListingAndFeedTests(TransactionTestCase):
         ns = {"atom": "http://www.w3.org/2005/Atom"}
         entry = root.find("atom:entry", ns)
         link = entry.find("atom:link", ns).get("href")
-        self.assertTrue(
-            link.startswith("https://simonwillison.net" + beat.get_absolute_url()),
+        self.assertEqual(
             link,
+            "https://simonwillison.net" + beat.get_absolute_url(),
         )
         # And not the external iNaturalist URL
         self.assertNotIn("inaturalist.org", link)
