@@ -3444,6 +3444,21 @@ class SponsorMessageTests(TransactionTestCase):
         self.assertContains(response, "https://acme.example.com/")
         self.assertContains(response, "sponsor-scheme-ocean")
 
+    def test_sponsor_message_renders_markdown(self):
+        SponsorMessageFactory(
+            message="Build **faster** with [Acme](https://acme.example.com/docs/).",
+        )
+        EntryFactory()
+
+        response = self.client.get("/")
+
+        self.assertContains(response, "Build <strong>faster</strong> with")
+        self.assertContains(
+            response,
+            '<a href="https://acme.example.com/docs/">Acme</a>.',
+        )
+        self.assertNotContains(response, "<p>Build")
+
     def test_inactive_sponsor_message_hidden(self):
         SponsorMessageFactory(is_active=False, name="Hidden Sponsor")
         EntryFactory()
