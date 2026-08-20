@@ -18,10 +18,10 @@ psycopg2-binary==2.9.12
 pytest==9.1.1
 raven>=6.10.0
 requests==2.34.2
-SQLAlchemy>=2.0.51
+SQLAlchemy>=2.0.52
 whitenoise==6.12.0
 Markdown==3.10.3
-Pygments==2.20.0
+Pygments==2.21.0
 pymdown-extensions==11.0.1
 django-hosts==7.0.0
 pyspellchecker==0.9.0
