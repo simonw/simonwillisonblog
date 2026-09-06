@@ -490,8 +490,6 @@ def tools_search_tags(request):
     q = request.GET.get("q", "").strip()
     results = []
     if q:
-        results = list(
-            Tag.objects.filter(tag__icontains=q).values_list("tag", flat=True)
-        )
+        results = list(Tag.objects.search(q).values_list("tag", flat=True))
         results.sort(key=lambda t: len(t))
     return HttpResponse(json.dumps({"tags": results}), content_type="application/json")

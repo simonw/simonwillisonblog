@@ -4,7 +4,7 @@ from django.utils.html import format_html
 
 register = template.Library()
 
-from blog.models import Tag
+from blog.models import PreviousTagName
 
 # Classes for different levels
 CLASSES = (
@@ -51,7 +51,8 @@ def tag_cloud_for_tags(tags):
     return _tag_cloud_helper(tags)
 
 
-def _tag_cloud_helper(tags):
+def _tag_cloud_helper(tags, previous_names=None):
+    previous_names = previous_names or {}
     # Count them all up
     tag_counts = {}
     for tag in tags:
@@ -79,11 +80,13 @@ def _tag_cloud_helper(tags):
         count_display = intcomma(score)
         html_tags.append(
             format_html(
-                '<a href="/tags/{}/" title="{} item{}" class="item-tag {}">{} <span>{}</span></a>',
+                '<a href="/tags/{}/" title="{} item{}" class="item-tag {}" '
+                'data-previous-names="{}">{} <span>{}</span></a>',
                 tag,
                 count_display,
                 "" if score == 1 else "s",
                 CLASSES[index],
+                " ".join(previous_names.get(tag, [])),
                 tag,
                 count_display,
             )
@@ -117,4 +120,9 @@ def tag_cloud():
     cursor.close()
     # Add them together
     tags = entry_tags + blogmark_tags + quotation_tags + note_tags
-    return _tag_cloud_helper(tags)
+    previous_names = {}
+    for tag, previous_name in PreviousTagName.objects.values_list(
+        "tag__tag", "previous_name"
+    ):
+        previous_names.setdefault(tag, []).append(previous_name)
+    return _tag_cloud_helper(tags, previous_names=previous_names)

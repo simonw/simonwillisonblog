@@ -1,4 +1,4 @@
-from .models import Tag
+from .models import Tag, PreviousTagName
 from django.db.models import (
     Case,
     When,
@@ -65,7 +65,7 @@ def tags_autocomplete(request):
         )
 
         tags = (
-            Tag.objects.filter(tag__icontains=query)
+            Tag.objects.search(query)
             .annotate(
                 total_entry=Subquery(entry_count),
                 total_blogmark=Subquery(blogmark_count),
@@ -73,7 +73,15 @@ def tags_autocomplete(request):
                 total_note=Subquery(note_count),
                 total_beat=Subquery(beat_count),
                 is_exact_match=Case(
-                    When(tag__iexact=query, then=Value(1)),
+                    When(
+                        Q(tag__iexact=query)
+                        | Q(
+                            pk__in=PreviousTagName.objects.filter(
+                                previous_name__iexact=query
+                            ).values("tag_id")
+                        ),
+                        then=Value(1),
+                    ),
                     default=Value(0),
                     output_field=IntegerField(),
                 ),

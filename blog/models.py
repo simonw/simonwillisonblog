@@ -22,9 +22,22 @@ from xml.etree import ElementTree
 tag_re = re.compile("^[a-z0-9]+$")
 
 
+class TagQuerySet(models.QuerySet):
+    def search(self, term, lookup="icontains"):
+        """Match current and previous names without duplicating tags."""
+        previous_names = PreviousTagName.objects.filter(
+            **{f"previous_name__{lookup}": term}
+        )
+        return self.filter(
+            models.Q(**{f"tag__{lookup}": term})
+            | models.Q(pk__in=previous_names.values("tag_id"))
+        )
+
+
 class Tag(models.Model):
     tag = models.SlugField(unique=True)
     description = models.TextField(blank=True)
+    objects = TagQuerySet.as_manager()
 
     def __str__(self):
         return self.tag
