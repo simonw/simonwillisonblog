@@ -1165,6 +1165,10 @@ def merge_tags(request):
                     note.tags.add(destination_tag)
                     details["notes"]["added"].append(note.pk)
 
+            # Preserve aliases from earlier renames and merges before deleting
+            # the source tag, which would otherwise cascade-delete them.
+            PreviousTagName.objects.filter(tag=source_tag).update(tag=destination_tag)
+
             # Create PreviousTagName for redirect
             PreviousTagName.objects.create(
                 tag=destination_tag, previous_name=source_tag.tag

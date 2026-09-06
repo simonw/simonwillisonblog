@@ -42,7 +42,10 @@
             const tagText = tag.textContent;
 
             // Check if tag text matches the pattern (terms in order)
-            const matches = pattern.test(tagText);
+            const previousNames = (tag.dataset.previousNames || '').split(' ');
+            const matches = pattern.test(tagText) || previousNames.some(
+                name => pattern.test(name)
+            );
 
             tag.style.display = matches ? '' : 'none';
         });

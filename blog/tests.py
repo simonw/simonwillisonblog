@@ -1057,6 +1057,152 @@ class TypeListingTests(TransactionTestCase):
         self.assertEqual(response.status_code, 404)
 
 
+class TagSearchTests(TransactionTestCase):
+    def setUp(self):
+        self.tag = Tag.objects.create(tag="python")
+        for name in ("legacy-python", "legacy-python-2", "historic"):
+            PreviousTagName.objects.create(tag=self.tag, previous_name=name)
+        Tag.objects.create(tag="ruby")
+
+    def test_public_search_matches_current_and_previous_names(self):
+        for query in ("python", "PYTH", "legacy", "ACY-PY", "historic", " legacy "):
+            with self.subTest(query=query):
+                response = self.client.get("/tags-autocomplete/", {"q": query})
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(
+                    [(tag["id"], tag["tag"]) for tag in response.json()["tags"]],
+                    [(self.tag.pk, "python")],
+                )
+                response = self.client.get("/tools/search-tags/", {"q": query})
+                self.assertEqual(response.json(), {"tags": ["python"]})
+
+    def test_public_search_empty_or_unmatched_query(self):
+        for path in ("/tags-autocomplete/", "/tools/search-tags/"):
+            for query in ("", "  ", "missing"):
+                with self.subTest(path=path, query=query):
+                    response = self.client.get(path, {"q": query})
+                    self.assertEqual(response.json(), {"tags": []})
+
+    def test_public_autocomplete_counts_are_not_multiplied_by_aliases(self):
+        for factory in (
+            EntryFactory,
+            BlogmarkFactory,
+            QuotationFactory,
+            NoteFactory,
+            BeatFactory,
+        ):
+            factory(is_draft=False).tags.add(self.tag)
+            factory(is_draft=True).tags.add(self.tag)
+
+        response = self.client.get("/tags-autocomplete/", {"q": "python"})
+        tags = response.json()["tags"]
+        self.assertEqual(len(tags), 1)
+        self.assertEqual(tags[0]["count"], 5)
+        for content_type in ("entry", "blogmark", "quotation", "note", "beat"):
+            self.assertEqual(tags[0]["total_" + content_type], 1)
+
+    def test_exact_previous_name_is_prioritized_before_result_limit(self):
+        entry = EntryFactory()
+        for i in range(6):
+            entry.tags.add(Tag.objects.create(tag=f"legacy-python-extra-{i}"))
+
+        response = self.client.get("/tags-autocomplete/", {"q": "LEGACY-PYTHON"})
+        tags = response.json()["tags"]
+        self.assertEqual(len(tags), 5)
+        self.assertEqual(tags[0]["id"], self.tag.pk)
+        self.assertEqual(tags[0]["is_exact_match"], 1)
+
+    def test_tools_search_keeps_length_ordering(self):
+        short_tag = Tag.objects.create(tag="py")
+        PreviousTagName.objects.create(tag=short_tag, previous_name="legacy-py")
+        response = self.client.get("/tools/search-tags/", {"q": "legacy"})
+        self.assertEqual(response.json(), {"tags": ["py", "python"]})
+
+    def test_admin_autocomplete_matches_current_and_previous_prefixes(self):
+        admin = User.objects.create_superuser("admin", "a@example.com", "password")
+        self.client.force_login(admin)
+        for app_label, model in (
+            ("blog", "entry"),
+            ("blog", "blogmark"),
+            ("blog", "quotation"),
+            ("blog", "note"),
+            ("blog", "beat"),
+            ("guides", "chapter"),
+        ):
+            for query in ("py", "python", "LEGACY", "historic", " legacy "):
+                with self.subTest(model=model, query=query):
+                    response = self.client.get(
+                        "/admin/autocomplete/",
+                        {
+                            "app_label": app_label,
+                            "model_name": model,
+                            "field_name": "tags",
+                            "term": query,
+                        },
+                    )
+                    self.assertEqual(response.status_code, 200)
+                    self.assertEqual(
+                        response.json(),
+                        {
+                            "results": [{"id": str(self.tag.pk), "text": "python"}],
+                            "pagination": {"more": False},
+                        },
+                    )
+
+    def test_admin_search_preserves_queryset_and_prefix_matching(self):
+        from blog.admin import TagAdmin
+        from django.contrib import admin
+        from django.test import RequestFactory
+
+        tag_admin = TagAdmin(Tag, admin.site)
+        request = RequestFactory().get("/admin/blog/tag/")
+        short_tag = Tag.objects.create(tag="py")
+        PreviousTagName.objects.create(tag=short_tag, previous_name="legacy-py")
+
+        results, may_have_duplicates = tag_admin.get_search_results(
+            request, Tag.objects.all(), "legacy"
+        )
+        self.assertEqual(list(results), [short_tag, self.tag])
+        self.assertFalse(may_have_duplicates)
+
+        results, _ = tag_admin.get_search_results(
+            request, Tag.objects.exclude(pk=self.tag.pk), "historic"
+        )
+        self.assertFalse(results.exists())
+
+        for query in ("egacy", "missing"):
+            results, _ = tag_admin.get_search_results(request, Tag.objects.all(), query)
+            self.assertFalse(results.exists())
+
+        results, _ = tag_admin.get_search_results(request, Tag.objects.all(), "  ")
+        self.assertEqual(set(results), set(Tag.objects.all()))
+
+    def test_admin_tag_changelist_searches_previous_names(self):
+        admin = User.objects.create_superuser("admin", "a@example.com", "password")
+        self.client.force_login(admin)
+        response = self.client.get("/admin/blog/tag/", {"q": "legacy"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(list(response.context["cl"].result_list), [self.tag])
+
+    def test_tag_index_includes_previous_names_for_filtering(self):
+        from bs4 import BeautifulSoup
+
+        for _ in range(2):
+            EntryFactory().tags.add(self.tag)
+        EntryFactory().tags.add(Tag.objects.get(tag="ruby"))
+
+        response = self.client.get("/tags/")
+        self.assertEqual(response.status_code, 200)
+        soup = BeautifulSoup(response.content, "html.parser")
+        tags = soup.select('#tagcloud a[href="/tags/python/"]')
+        self.assertEqual(len(tags), 1)
+        self.assertEqual(
+            set(tags[0]["data-previous-names"].split()),
+            {"legacy-python", "legacy-python-2", "historic"},
+        )
+        self.assertEqual(tags[0].get_text(), "python 2")
+
+
 class MergeTagsTests(TransactionTestCase):
     def setUp(self):
         self.staff_user = User.objects.create_user(
@@ -1162,6 +1308,58 @@ class MergeTagsTests(TransactionTestCase):
         response = self.client.get("/tags/redirect-from/")
         self.assertEqual(response.status_code, 301)
         self.assertIn("redirect-to", response.url)
+
+    def test_previous_names_survive_repeated_merges(self):
+        source = Tag.objects.create(tag="original")
+        source.rename_tag("renamed")
+        Tag.objects.create(tag="intermediate")
+        destination = Tag.objects.create(tag="destination")
+        EntryFactory().tags.add(source)
+
+        self.staff_user.is_superuser = True
+        self.staff_user.save()
+        self.client.force_login(self.staff_user)
+        for source_name, destination_name in (
+            ("renamed", "intermediate"),
+            ("intermediate", "destination"),
+        ):
+            response = self.client.post(
+                "/admin/merge-tags/",
+                {
+                    "source": source_name,
+                    "destination": destination_name,
+                    "confirm": "yes",
+                },
+            )
+            self.assertContains(response, "Successfully merged")
+
+        for name in ("original", "renamed", "intermediate"):
+            with self.subTest(name=name):
+                self.assertEqual(
+                    PreviousTagName.objects.get(previous_name=name).tag, destination
+                )
+                response = self.client.get("/tags-autocomplete/", {"q": name})
+                self.assertEqual(
+                    [tag["tag"] for tag in response.json()["tags"]], ["destination"]
+                )
+                response = self.client.get("/tools/search-tags/", {"q": name})
+                self.assertEqual(response.json(), {"tags": ["destination"]})
+                response = self.client.get(
+                    "/admin/autocomplete/",
+                    {
+                        "app_label": "blog",
+                        "model_name": "entry",
+                        "field_name": "tags",
+                        "term": name,
+                    },
+                )
+                self.assertEqual(
+                    response.json()["results"],
+                    [{"id": str(destination.pk), "text": "destination"}],
+                )
+                response = self.client.get(f"/tags/{name}/", follow=True)
+                self.assertEqual(response.redirect_chain[-1][0], "/tags/destination/")
+                self.assertEqual(response.status_code, 200)
 
     def test_merge_creates_tag_merge_record(self):
         """Merging tags creates a TagMerge record with details."""
