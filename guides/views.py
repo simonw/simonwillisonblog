@@ -86,6 +86,13 @@ def guide_detail(request, slug):
     return response
 
 
+def _visible_chapter_changes(chapter, user):
+    changes = chapter.changes.all()
+    if not user.is_staff:
+        changes = changes.filter(is_draft=False, guide_is_draft=False)
+    return changes
+
+
 def chapter_detail(request, guide_slug, chapter_slug):
     if request.user.is_staff:
         guide = get_object_or_404(Guide, slug=guide_slug)
@@ -111,7 +118,7 @@ def chapter_detail(request, guide_slug, chapter_slug):
         if current_index is not None and current_index < len(all_chapters) - 1
         else None
     )
-    change_stats = chapter.changes.aggregate(
+    change_stats = _visible_chapter_changes(chapter, request.user).aggregate(
         first_created=Min("created"),
         last_modified=Max("created"),
         num_changes=Count("id"),
@@ -131,7 +138,7 @@ def chapter_detail(request, guide_slug, chapter_slug):
             "chapter_num_changes": change_stats["num_changes"],
         },
     )
-    if guide.is_draft or chapter.is_draft:
+    if request.user.is_staff or guide.is_draft or chapter.is_draft:
         set_no_cache(response)
     return response
 
@@ -224,7 +231,9 @@ def chapter_changes(request, guide_slug, chapter_slug):
         chapter = get_object_or_404(
             Chapter, guide=guide, slug=chapter_slug, is_draft=False
         )
-    changes = list(chapter.changes.order_by("created"))
+    changes = list(
+        _visible_chapter_changes(chapter, request.user).order_by("created", "pk")
+    )
     import difflib
 
     diffs = []
@@ -277,9 +286,9 @@ def chapter_changes(request, guide_slug, chapter_slug):
         {
             "guide": guide,
             "chapter": chapter,
-            "diffs": reversed(diffs),
+            "diffs": diffs[::-1],
         },
     )
-    if guide.is_draft or chapter.is_draft:
+    if request.user.is_staff or guide.is_draft or chapter.is_draft:
         set_no_cache(response)
     return response

@@ -27,13 +27,21 @@ class ChapterAdmin(BaseAdmin):
 class ChapterChangeAdmin(admin.ModelAdmin):
     list_display = ("__str__", "chapter", "created", "is_notable")
     list_filter = ("is_notable", "created")
-    readonly_fields = ("chapter", "created", "title", "body", "is_draft")
+    readonly_fields = (
+        "chapter",
+        "created",
+        "title",
+        "body",
+        "is_draft",
+        "guide_is_draft",
+    )
     fields = (
         "chapter",
         "created",
         "title",
         "body",
         "is_draft",
+        "guide_is_draft",
         "is_notable",
         "change_note",
     )

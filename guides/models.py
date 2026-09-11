@@ -94,27 +94,23 @@ class Chapter(BaseModel):
     is_chapter = True
 
     def save(self, **kwargs):
-        is_new = self.pk is None
-        if not is_new:
-            try:
-                old = Chapter.objects.get(pk=self.pk)
-            except Chapter.DoesNotExist:
-                old = None
-            should_record = old and (
-                old.title != self.title
-                or old.body != self.body
-                or old.is_draft != self.is_draft
-            )
-        else:
-            should_record = True
+        old = Chapter.objects.filter(pk=self.pk).first() if self.pk else None
         super().save(**kwargs)
+        # Snapshot persisted fields, including the guide's current visibility.
+        # The instance may have unsaved fields or a stale cached guide.
+        saved = Chapter.objects.select_related("guide").get(pk=self.pk)
+        should_record = old is None or any(
+            getattr(old, field) != getattr(saved, field)
+            for field in ("title", "body", "is_draft", "guide_id")
+        )
         if should_record:
             ChapterChange.objects.create(
-                chapter=self,
-                created=self.created if is_new else timezone.now(),
-                title=self.title,
-                body=self.body,
-                is_draft=self.is_draft,
+                chapter=saved,
+                created=saved.created if old is None else timezone.now(),
+                title=saved.title,
+                body=saved.body,
+                is_draft=saved.is_draft,
+                guide_is_draft=saved.guide.is_draft,
             )
 
     def _render_body(self, custom_fences):
@@ -180,6 +176,8 @@ class ChapterChange(models.Model):
     title = models.CharField(max_length=255)
     body = models.TextField()
     is_draft = models.BooleanField()
+    # NULL means historical guide visibility is unknown: keep these private.
+    guide_is_draft = models.BooleanField(null=True)
     is_notable = models.BooleanField(default=False)
     change_note = models.TextField(default="", blank=True)
 

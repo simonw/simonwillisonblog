@@ -260,7 +260,10 @@ def sitemap(request):
         '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
     ]
     for klass in (Entry, Blogmark, Quotation, Note, Beat, Chapter):
-        for obj in klass.objects.exclude(is_draft=True).only("slug", "created"):
+        objects = klass.objects.exclude(is_draft=True).only("slug", "created")
+        if klass is Chapter:
+            objects = objects.filter(guide__is_draft=False)
+        for obj in objects:
             xml.append(
                 "<url><loc>https://simonwillison.net%s</loc></url>"
                 % obj.get_absolute_url()
