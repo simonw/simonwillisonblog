@@ -1083,6 +1083,44 @@ class TagSearchTests(TransactionTestCase):
                     response = self.client.get(path, {"q": query})
                     self.assertEqual(response.json(), {"tags": []})
 
+    def test_public_autocomplete_debug_escapes_query(self):
+        for query, escaped_query in (
+            (
+                "<script>alert(1)</script>",
+                "&lt;script&gt;alert(1)&lt;/script&gt;",
+            ),
+            (
+                "</code><svg/onload=alert(1)>",
+                "&lt;/code&gt;&lt;svg/onload=alert(1)&gt;",
+            ),
+        ):
+            with self.subTest(query=query):
+                response = self.client.get(
+                    "/tags-autocomplete/", {"q": query, "debug": "1"}
+                )
+                self.assertContains(response, escaped_query)
+                self.assertNotContains(response, query)
+                self.assertContains(response, "<pre>[]</pre>")
+
+    def test_public_autocomplete_debug_escapes_results(self):
+        description = '</pre><script>alert(1)</script><p>"Fish & chips"</p>'
+        self.tag.description = description
+        self.tag.save()
+
+        response = self.client.get(
+            "/tags-autocomplete/", {"q": "python", "debug": "1"}
+        )
+        self.assertContains(
+            response, "&lt;/pre&gt;&lt;script&gt;alert(1)&lt;/script&gt;"
+        )
+        self.assertContains(response, "Fish &amp; chips")
+        self.assertContains(response, "SELECT")
+        self.assertNotContains(response, "<script>")
+
+        response = self.client.get("/tags-autocomplete/", {"q": "python"})
+        self.assertEqual(response["Content-Type"], "application/json")
+        self.assertEqual(response.json()["tags"][0]["description"], description)
+
     def test_public_autocomplete_counts_are_not_multiplied_by_aliases(self):
         for factory in (
             EntryFactory,

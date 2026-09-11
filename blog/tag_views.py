@@ -12,6 +12,7 @@ from django.db.models import (
 )
 from django.db.models.functions import Length
 from django.http import JsonResponse, HttpResponse
+from django.utils.html import format_html
 import json
 
 
@@ -100,11 +101,11 @@ def tags_autocomplete(request):
 
     if request.GET.get("debug"):
         return HttpResponse(
-            "<html><body><pre>"
-            + json.dumps(list(tags.values()), indent=4)
-            + "</pre><hr><code>"
-            + str(tags.query)
-            + "</body></html>"
+            format_html(
+                "<html><body><pre>{}</pre><hr><code>{}</code></body></html>",
+                json.dumps(list(tags.values()), indent=4),
+                str(tags.query),
+            )
         )
 
     return JsonResponse({"tags": list(tags.values())})
