@@ -1,6 +1,12 @@
 {% extends "admin/change_form.html" %}
 {% block content %}
 {{ block.super }}
+{% if can_go_live_with_replacement %}
+<form method="post" action="{% url 'admin:blog_entry_go_live_with_replacement' original.pk %}">{% csrf_token %}
+  <p>Save your edits first. This publishes the saved entry at the original URL and moves the original blogmark or note to a draft with a <code>-replaced</code> slug.</p>
+  <input type="submit" value="Go live with replacement">
+</form>
+{% endif %}
 
 <h3>&lt;lite-youtube&gt;</h3>
 

@@ -1,5 +1,11 @@
 {% extends "admin/change_form.html" %}
 {% block content %}
 {{ block.super }}
+{% if can_convert_to_entry %}
+<form method="post" action="{% url 'admin:blog_blogmark_convert_to_entry' original.pk %}">{% csrf_token %}
+  <p>Convert the saved version to a draft blog entry, keeping this item in place until the replacement goes live.</p>
+  <input type="submit" value="Convert to blog entry">
+</form>
+{% endif %}
 {% include "admin/blog/_s3_upload_button.html" with field="commentary" %}
 {% endblock %}

@@ -3,7 +3,13 @@ from django.contrib.postgres.search import SearchQuery, SearchRank
 from django.db.models.functions import Length
 from django.db.models import F
 from django import forms
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseBadRequest
+from django.core.exceptions import PermissionDenied, ValidationError
+from django.db import transaction
+from django.shortcuts import get_object_or_404, redirect
+from django.urls import path
+from django.views.decorators.http import require_POST
+from .replacements import create_replacement, publish_replacement
 from xml.etree import ElementTree
 from .models import (
     Beat,
@@ -59,6 +65,57 @@ class BaseAdmin(admin.ModelAdmin):
         return queryset, False
 
 
+class ConvertToEntryAdminMixin:
+    def get_urls(self):
+        return [
+            path(
+                "<int:object_id>/convert-to-entry/",
+                self.admin_site.admin_view(require_POST(self.convert_to_entry)),
+                name=f"blog_{self.model._meta.model_name}_convert_to_entry",
+            )
+        ] + super().get_urls()
+
+    def change_view(self, request, object_id, form_url="", extra_context=None):
+        obj = self.get_object(request, object_id)
+        context = dict(extra_context or {})
+        context["can_convert_to_entry"] = (
+            obj is not None
+            and self.has_change_permission(request, obj)
+            and self.admin_site._registry[Entry].has_add_permission(request)
+            and self.admin_site._registry[Entry].has_change_permission(request)
+        )
+        return super().change_view(request, object_id, form_url, context)
+
+    def convert_to_entry(self, request, object_id):
+        try:
+            with transaction.atomic():
+                source = get_object_or_404(
+                    self.get_queryset(request).select_for_update(), pk=object_id
+                )
+                entry_admin = self.admin_site._registry[Entry]
+                if not (
+                    self.has_change_permission(request, source)
+                    and entry_admin.has_add_permission(request)
+                    and entry_admin.has_change_permission(request)
+                ):
+                    raise PermissionDenied
+                entry, created = create_replacement(source)
+                if created:
+                    entry_admin.log_addition(
+                        request, entry, "Created replacement draft from " + str(source)
+                    )
+                    self.log_change(
+                        request, source, f"Created replacement entry {entry.pk}"
+                    )
+                self.message_user(
+                    request,
+                    "Replacement draft ready. Edit and save it, then use Go live with replacement.",
+                )
+                return redirect("admin:blog_entry_change", entry.pk)
+        except (ValidationError, ElementTree.ParseError) as ex:
+            return HttpResponseBadRequest(str(ex), content_type="text/plain")
+
+
 class MyEntryForm(forms.ModelForm):
     def clean_body(self):
         # Ensure this is valid XML
@@ -105,6 +162,58 @@ class EntryAdmin(AutosaveAdminMixin, BaseAdmin):
     search_fields = ("title", "body")
     list_filter = ("created", "series")
 
+    def get_urls(self):
+        return [
+            path(
+                "<int:object_id>/go-live-with-replacement/",
+                self.admin_site.admin_view(require_POST(self.go_live_with_replacement)),
+                name="blog_entry_go_live_with_replacement",
+            )
+        ] + super().get_urls()
+
+    def change_view(self, request, object_id, form_url="", extra_context=None):
+        obj = self.get_object(request, object_id)
+        context = dict(extra_context or {})
+        source = (obj.replacement_blogmark or obj.replacement_note) if obj else None
+        context["can_go_live_with_replacement"] = bool(
+            source
+            and obj.is_draft
+            and self.has_change_permission(request, obj)
+            and self.admin_site._registry[type(source)].has_change_permission(
+                request, source
+            )
+        )
+        return super().change_view(request, object_id, form_url, context)
+
+    def go_live_with_replacement(self, request, object_id):
+        try:
+            with transaction.atomic():
+                entry = get_object_or_404(
+                    Entry.objects.select_for_update(), pk=object_id
+                )
+                if not self.has_change_permission(request, entry):
+                    raise PermissionDenied
+                source = entry.replacement_blogmark or entry.replacement_note
+                if source is None:
+                    raise ValidationError(
+                        "This entry does not replace a blogmark or note."
+                    )
+                source = type(source).objects.select_for_update().get(pk=source.pk)
+                source_admin = self.admin_site._registry[type(source)]
+                if not source_admin.has_change_permission(request, source):
+                    raise PermissionDenied
+                publish_replacement(entry, source)
+                self.log_change(request, entry, "Went live with replacement")
+                source_admin.log_change(
+                    request, source, f"Replaced by entry {entry.pk}; moved to draft"
+                )
+                self.message_user(
+                    request, "Replacement is live. The original item is now a draft."
+                )
+                return redirect("admin:blog_entry_change", entry.pk)
+        except ValidationError as ex:
+            return HttpResponseBadRequest(str(ex), content_type="text/plain")
+
 
 @admin.register(LiveUpdate)
 class LiveUpdateAdmin(admin.ModelAdmin):
@@ -119,13 +228,13 @@ class QuotationAdmin(AutosaveAdminMixin, BaseAdmin):
 
 
 @admin.register(Blogmark)
-class BlogmarkAdmin(AutosaveAdminMixin, BaseAdmin):
+class BlogmarkAdmin(ConvertToEntryAdminMixin, AutosaveAdminMixin, BaseAdmin):
     search_fields = ("tags__tag", "commentary")
     prepopulated_fields = {"slug": ("link_title",)}
 
 
 @admin.register(Note)
-class NoteAdmin(AutosaveAdminMixin, BaseAdmin):
+class NoteAdmin(ConvertToEntryAdminMixin, AutosaveAdminMixin, BaseAdmin):
     search_fields = ("tags__tag", "body")
     list_display = ("__str__", "created", "tag_summary", "is_draft")
 

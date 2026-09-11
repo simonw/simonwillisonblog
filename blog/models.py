@@ -352,6 +352,23 @@ class BaseModel(models.Model):
 
 
 class Entry(BaseModel):
+    slug = models.SlugField(max_length=128)
+    replacement_blogmark = models.OneToOneField(
+        "Blogmark",
+        null=True,
+        blank=True,
+        editable=False,
+        on_delete=models.PROTECT,
+        related_name="replacement_entry",
+    )
+    replacement_note = models.OneToOneField(
+        "Note",
+        null=True,
+        blank=True,
+        editable=False,
+        on_delete=models.PROTECT,
+        related_name="replacement_entry",
+    )
     title = models.CharField(max_length=255)
     body = models.TextField()
     tweet_html = models.TextField(
@@ -477,6 +494,7 @@ class Quotation(BaseModel):
 
 
 class Blogmark(BaseModel):
+    slug = models.SlugField(max_length=128)
     link_url = models.URLField(max_length=512)
     link_title = models.CharField(max_length=255)
     title = models.CharField(
@@ -523,6 +541,7 @@ class Blogmark(BaseModel):
 
 
 class Note(BaseModel):
+    slug = models.SlugField(max_length=128)
     body = models.TextField()
     title = models.CharField(
         max_length=255, blank=True, default="", help_text="Optional page title"
