@@ -1107,9 +1107,7 @@ class TagSearchTests(TransactionTestCase):
         self.tag.description = description
         self.tag.save()
 
-        response = self.client.get(
-            "/tags-autocomplete/", {"q": "python", "debug": "1"}
-        )
+        response = self.client.get("/tags-autocomplete/", {"q": "python", "debug": "1"})
         self.assertContains(
             response, "&lt;/pre&gt;&lt;script&gt;alert(1)&lt;/script&gt;"
         )
@@ -3472,7 +3470,9 @@ class SightingsListingAndFeedTests(TransactionTestCase):
 
 
 class CommentBeatTests(TransactionTestCase):
-    FAVICON_URL = "https://www.google.com/s2/favicons?domain=news.ycombinator.com&sz=128"
+    FAVICON_URL = (
+        "https://www.google.com/s2/favicons?domain=news.ycombinator.com&sz=128"
+    )
 
     def test_helpers_use_metadata(self):
         beat = CommentBeatFactory()

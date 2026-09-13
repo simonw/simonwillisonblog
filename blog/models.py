@@ -712,9 +712,9 @@ class Beat(BaseModel):
 
     def comment_favicon_url(self):
         """Google favicon service URL for the comment's site, or ''."""
-        domain = self.comment_domain_for_url(
-            self.url
-        ) or self.comment_domain_for_url(self.comment_thread_url())
+        domain = self.comment_domain_for_url(self.url) or self.comment_domain_for_url(
+            self.comment_thread_url()
+        )
         if not domain:
             return ""
         return "https://www.google.com/s2/favicons?domain={}&sz=128".format(

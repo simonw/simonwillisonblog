@@ -250,9 +250,7 @@ class ChapterChangesVisibilityTests(TransactionTestCase):
 
     def test_history_with_unknown_guide_visibility_is_staff_only(self):
         chapter = ChapterFactory(body="LEGACY_PRIVATE_BODY")
-        chapter.changes.update(
-            guide_is_draft=None, change_note="LEGACY_PRIVATE_NOTE"
-        )
+        chapter.changes.update(guide_is_draft=None, change_note="LEGACY_PRIVATE_NOTE")
         url = chapter.get_absolute_url()
         response = self.client.get(url + "changes/")
         self.assertContains(response, "No changes recorded for this chapter.")
