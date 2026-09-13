@@ -358,7 +358,7 @@ class Entry(BaseModel):
         null=True,
         blank=True,
         editable=False,
-        on_delete=models.PROTECT,
+        on_delete=models.SET_NULL,
         related_name="replacement_entry",
     )
     replacement_note = models.OneToOneField(
@@ -366,7 +366,7 @@ class Entry(BaseModel):
         null=True,
         blank=True,
         editable=False,
-        on_delete=models.PROTECT,
+        on_delete=models.SET_NULL,
         related_name="replacement_entry",
     )
     title = models.CharField(max_length=255)

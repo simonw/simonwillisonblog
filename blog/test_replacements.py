@@ -203,3 +203,32 @@ class ReplacementAdminTests(TestCase):
         response = self.client.get(original_url)
         self.assertTemplateUsed(response, "entry.html")
         self.assertContains(response, "Edited replacement content")
+
+    def assert_can_delete_replaced_source(self, source):
+        original_url = source.get_absolute_url()
+        entry = self.convert(source)
+        self.assertEqual(self.client.post(self.live_url(entry)).status_code, 302)
+        model_name = source._meta.model_name
+        delete_url = reverse(f"admin:blog_{model_name}_delete", args=[source.pk])
+        response = self.client.get(delete_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["protected"], [])
+
+        response = self.client.post(delete_url, {"post": "yes"})
+        self.assertRedirects(response, reverse(f"admin:blog_{model_name}_changelist"))
+        self.assertFalse(type(source).objects.filter(pk=source.pk).exists())
+        entry.refresh_from_db()
+        self.assertIsNone(getattr(entry, f"replacement_{model_name}_id"))
+        self.assertFalse(entry.is_draft)
+        self.assertEqual(entry.get_absolute_url(), original_url)
+        response = self.client.get(original_url)
+        self.assertTemplateUsed(response, "entry.html")
+        self.assertContains(response, "Original content")
+
+    def test_delete_replaced_note_preserves_entry(self):
+        self.assert_can_delete_replaced_source(NoteFactory(body="Original content"))
+
+    def test_delete_replaced_blogmark_preserves_entry(self):
+        self.assert_can_delete_replaced_source(
+            BlogmarkFactory(commentary="Original content")
+        )
