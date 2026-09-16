@@ -330,6 +330,9 @@ pre {
   width: 98%;
   margin-bottom: 1.6em;
 }
+code:not(pre code) {
+  overflow-wrap: anywhere;
+}
 a:link {
   color: var(--color-link);
   text-decoration: none;
