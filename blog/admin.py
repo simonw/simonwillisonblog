@@ -292,7 +292,7 @@ class BeatAdminForm(forms.ModelForm):
 
 
 @admin.register(Beat)
-class BeatAdmin(BaseAdmin):
+class BeatAdmin(AutosaveAdminMixin, BaseAdmin):
     form = BeatAdminForm
     search_fields = ("tags__tag", "title", "commentary")
     prepopulated_fields = {"slug": ("title",)}

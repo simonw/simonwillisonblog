@@ -1575,22 +1575,24 @@ class AdminAutosaveTests(TransactionTestCase):
         self.assertEqual(log_entries.count(), 1)
 
     def test_preview_enabled_admin_uses_relative_view_on_site_url(self):
-        quotation = self.make_quotation()
+        for obj in (self.make_quotation(), self.make_beat()):
+            with self.subTest(model=obj._meta.model_name):
+                response = self.client.get(
+                    f"/admin/blog/{obj._meta.model_name}/{obj.pk}/change/"
+                )
 
-        response = self.client.get(f"/admin/blog/quotation/{quotation.pk}/change/")
+                self.assertEqual(response.status_code, 200)
+                self.assertContains(
+                    response,
+                    f'href="{obj.get_absolute_url()}" class="viewsitelink"',
+                )
+                self.assertNotContains(
+                    response,
+                    f"/admin/r/{ContentType.objects.get_for_model(obj).pk}/{obj.pk}/",
+                )
 
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(
-            response,
-            f'href="{quotation.get_absolute_url()}" class="viewsitelink"',
-        )
-        self.assertNotContains(
-            response,
-            f"/admin/r/{ContentType.objects.get_for_model(quotation).pk}/{quotation.pk}/",
-        )
-
-    def test_autosave_marker_on_beat_still_creates_admin_log_entry(self):
-        beat = BeatFactory(
+    def make_beat(self):
+        return BeatFactory(
             created=datetime.datetime(2026, 5, 29, 14, 0, tzinfo=datetime.timezone.utc),
             is_draft=True,
             slug="original-beat",
@@ -1599,34 +1601,51 @@ class AdminAutosaveTests(TransactionTestCase):
             title="Original beat",
             url="https://example.com/",
         )
+
+    def post_beat_change(self, beat, title, autosave=False):
+        data = {
+            "created_0": "2026-05-29",
+            "created_1": "14:00:00",
+            "slug": "original-beat",
+            "metadata": "{}",
+            "card_image": "",
+            "series": "",
+            "is_draft": "on",
+            "beat_type": "release",
+            "title": title,
+            "url": "https://example.com/",
+            "commentary": "",
+            "image_url": "",
+            "image_alt": "",
+            "note": "",
+            "_continue": "1",
+        }
+        if autosave:
+            data["_autosave"] = "1"
+        return self.client.post(f"/admin/blog/beat/{beat.pk}/change/", data)
+
+    def test_beat_autosave_change_does_not_create_admin_log_entry(self):
+        beat = self.make_beat()
         log_entries = self.log_entries_for(beat)
         self.assertEqual(log_entries.count(), 0)
 
-        response = self.client.post(
-            f"/admin/blog/beat/{beat.pk}/change/",
-            {
-                "created_0": "2026-05-29",
-                "created_1": "14:00:00",
-                "slug": "original-beat",
-                "metadata": "{}",
-                "card_image": "",
-                "series": "",
-                "is_draft": "on",
-                "beat_type": "release",
-                "title": "Autosaved beat",
-                "url": "https://example.com/",
-                "commentary": "",
-                "image_url": "",
-                "image_alt": "",
-                "note": "",
-                "_continue": "1",
-                "_autosave": "1",
-            },
-        )
+        response = self.post_beat_change(beat, "Autosaved beat", autosave=True)
+
+        self.assertEqual(response.status_code, 204)
+        beat.refresh_from_db()
+        self.assertEqual(beat.title, "Autosaved beat")
+        self.assertEqual(log_entries.count(), 0)
+
+    def test_beat_normal_change_still_creates_admin_log_entry(self):
+        beat = self.make_beat()
+        log_entries = self.log_entries_for(beat)
+        self.assertEqual(log_entries.count(), 0)
+
+        response = self.post_beat_change(beat, "Saved beat")
 
         self.assertEqual(response.status_code, 302)
         beat.refresh_from_db()
-        self.assertEqual(beat.title, "Autosaved beat")
+        self.assertEqual(beat.title, "Saved beat")
         self.assertEqual(log_entries.count(), 1)
 
 

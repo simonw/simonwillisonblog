@@ -12,7 +12,7 @@
         return;
     }
 
-    const previewModels = ["entry", "blogmark", "quotation", "note"];
+    const previewModels = ["entry", "blogmark", "quotation", "note", "beat"];
     const modelClass = previewModels.find((model) =>
         body.classList.contains(`model-${model}`)
     );
