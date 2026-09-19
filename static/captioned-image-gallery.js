@@ -6,10 +6,10 @@
  * ratio. Handles mixed portrait / landscape mixes naturally.
  *
  * Clicking any image opens a full-screen lightbox with prev / next
- * navigation (arrow keys, swipe on touch devices, on-screen arrows). All
+ * navigation and PhotoSwipe pinch zoom, double-tap zoom, and panning. All
  * <captioned-image-gallery> elements on the page form a single navigation
- * cycle and the figure list is recomputed on every step, so galleries
- * added or removed after load are picked up automatically.
+ * cycle. The figure list is rebuilt each time the viewer opens, including
+ * galleries added after page load.
  *
  * Markup:
  *   <captioned-image-gallery>
@@ -95,146 +95,41 @@ captioned-image-gallery:defined figcaption a:hover {
   border-bottom: none;
 }
 
-dialog.captioned-gallery-modal {
-  border: none;
-  padding: 0;
-  margin: 0;
-  width: 100vw;
-  height: 100vh;
-  max-width: 100vw;
-  max-height: 100vh;
-  background: #000;
-  color: #fff;
-  overflow: hidden;
-}
-
-dialog.captioned-gallery-modal::backdrop {
-  background: rgba(0, 0, 0, 0.95);
-}
-
-.captioned-gallery-modal-stage {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
-  touch-action: pan-y;
-}
-
-.captioned-gallery-modal-img {
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: contain;
-  display: block;
-  user-select: none;
-  -webkit-user-drag: none;
-  pointer-events: none;
-}
-
-.captioned-gallery-modal-btn {
-  position: absolute;
-  background: transparent;
-  border: none;
-  color: rgba(255, 255, 255, 0.55);
-  cursor: pointer;
-  padding: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  transition: color 0.15s ease, background 0.15s ease;
-  z-index: 2;
-  font-family: inherit;
-}
-
-.captioned-gallery-modal-btn:hover,
-.captioned-gallery-modal-btn:focus-visible {
-  color: #fff;
-  background: rgba(255, 255, 255, 0.12);
-  outline: none;
-}
-
-.captioned-gallery-modal-btn svg {
-  width: 24px;
-  height: 24px;
-  display: block;
-}
-
-.captioned-gallery-modal-close {
-  top: 12px;
-  right: 12px;
-  width: 44px;
-  height: 44px;
-}
-
-.captioned-gallery-modal-prev,
-.captioned-gallery-modal-next {
-  top: 50%;
-  transform: translateY(-50%);
-  width: 56px;
-  height: 56px;
-}
-
-.captioned-gallery-modal-prev {
-  left: 8px;
-}
-
-.captioned-gallery-modal-next {
-  right: 8px;
-}
-
-.captioned-gallery-modal-caption-wrap {
+.captioned-gallery-pswp .pswp__gallery-caption {
   position: absolute;
   bottom: 0;
   left: 0;
   right: 0;
+  padding: 12px 16px max(14px, env(safe-area-inset-bottom));
   background: rgba(0, 0, 0, 0.65);
-  padding: 12px 72px;
-  z-index: 1;
+  color: #fff;
+  font-size: 14px;
+  line-height: 1.4;
+  overflow-wrap: break-word;
   pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s ease;
 }
 
-.captioned-gallery-modal-caption a {
+.captioned-gallery-pswp.pswp--ui-visible .pswp__gallery-caption {
+  opacity: 1;
+}
+
+.captioned-gallery-pswp .pswp__gallery-caption a {
   pointer-events: auto;
   color: #9cf;
   text-decoration: underline;
 }
 
-.captioned-gallery-modal-caption a:hover {
-  color: #cfe8ff;
-}
-
-.captioned-gallery-modal-counter {
+.captioned-gallery-pswp .captioned-gallery-counter {
   display: block;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  color: rgba(255, 255, 255, 0.55);
   margin-bottom: 2px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.65);
 }
 
-.captioned-gallery-modal-counter[hidden] {
+.captioned-gallery-pswp .captioned-gallery-counter[hidden] {
   display: none;
-}
-
-.captioned-gallery-modal-caption {
-  font-size: 14px;
-  line-height: 1.4;
-  color: #fff;
-  word-wrap: break-word;
-}
-
-@media (max-width: 600px) {
-  .captioned-gallery-modal-prev,
-  .captioned-gallery-modal-next {
-    width: 44px;
-    height: 44px;
-  }
-
-  .captioned-gallery-modal-caption-wrap {
-    padding: 10px 16px 14px;
-  }
 }
 `;
 
@@ -248,8 +143,9 @@ function injectStyles() {
 
 class CaptionedImageGallery extends HTMLElement {
   static instances = new Set();
-  static modal = null;
-  static currentFigure = null;
+  static viewer = null;
+  static opening = false;
+  static photoSwipeAssets = null;
 
   connectedCallback() {
     this.figures = [...this.querySelectorAll(':scope > figure')];
@@ -264,7 +160,9 @@ class CaptionedImageGallery extends HTMLElement {
       if (a && !a.dataset.captionedGalleryWired) {
         a.dataset.captionedGalleryWired = '1';
         a.addEventListener('click', e => {
+          if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
           e.preventDefault();
+          a.focus({ preventScroll: true });
           CaptionedImageGallery.openFor(figure);
         });
       }
@@ -438,126 +336,131 @@ class CaptionedImageGallery extends HTMLElement {
     return all;
   }
 
-  static openFor(figure) {
-    if (!figure) return;
-    if (!CaptionedImageGallery.modal) CaptionedImageGallery.buildModal();
-    CaptionedImageGallery.currentFigure = figure;
-    CaptionedImageGallery.renderModal();
-    if (!CaptionedImageGallery.modal.open) CaptionedImageGallery.modal.showModal();
+  static loadPhotoSwipe() {
+    if (!this.photoSwipeAssets) {
+      const stylesheet = new Promise((resolve, reject) => {
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = '/static/photoswipe/photoswipe.css';
+        link.onload = resolve;
+        link.onerror = () => {
+          link.remove();
+          reject(new Error('Could not load PhotoSwipe styles'));
+        };
+        document.head.appendChild(link);
+      });
+      this.photoSwipeAssets = Promise.all([
+        import('/static/photoswipe/photoswipe.esm.min.js'),
+        stylesheet,
+      ]).then(([module]) => module.default).catch(error => {
+        this.photoSwipeAssets = null;
+        throw error;
+      });
+    }
+    return this.photoSwipeAssets;
   }
 
-  static step(direction) {
-    // Recompute the list every step so newly-added galleries are picked up
-    const all = CaptionedImageGallery.getAllFigures();
-    if (!all.length) return;
-    const n = all.length;
-    let idx = all.indexOf(CaptionedImageGallery.currentFigure);
-    if (idx < 0) idx = 0; // current figure was removed; restart at 0
-    else idx = (idx + direction + n) % n;
-    CaptionedImageGallery.openFor(all[idx]);
-  }
-
-  static next() { CaptionedImageGallery.step(1); }
-  static prev() { CaptionedImageGallery.step(-1); }
-
-  static renderModal() {
-    const figure = CaptionedImageGallery.currentFigure;
-    if (!figure) return;
-    const a = figure.querySelector('a');
+  static slideData(figure) {
+    const link = figure.querySelector('a');
     const thumb = figure.querySelector('img');
-    const caption = figure.querySelector('figcaption');
-    const fullSrc = a ? a.href : (thumb ? thumb.src : '');
-
-    const img = CaptionedImageGallery.modal.querySelector('.captioned-gallery-modal-img');
-    img.src = fullSrc;
-    img.alt = thumb ? thumb.alt : '';
-
-    const cap = CaptionedImageGallery.modal.querySelector('.captioned-gallery-modal-caption');
-    cap.replaceChildren();
-    if (caption) {
-      for (const node of caption.childNodes) {
-        cap.appendChild(node.cloneNode(true));
-      }
-    }
-
-    // Counter is opt-in via show-counter on the figure's parent gallery
-    const parent = figure.closest('captioned-image-gallery');
-    const showCounter = parent && parent.hasAttribute('show-counter');
-    const counter = CaptionedImageGallery.modal.querySelector('.captioned-gallery-modal-counter');
-    counter.hidden = !showCounter;
-    if (showCounter) {
-      const all = CaptionedImageGallery.getAllFigures();
-      const idx = all.indexOf(figure);
-      counter.textContent = `${idx + 1} / ${all.length}`;
-    } else {
-      counter.textContent = '';
-    }
+    // Stored dimensions describe the original. Older markup may only have
+    // thumbnail dimensions; correct those when the full image finishes loading.
+    return {
+      src: link ? link.href : thumb.src,
+      msrc: thumb.currentSrc || thumb.src,
+      w: Number(thumb.dataset.width) || thumb.naturalWidth || 1,
+      h: Number(thumb.dataset.height) || thumb.naturalHeight || 1,
+      alt: thumb.alt,
+      element: figure,
+    };
   }
 
-  static buildModal() {
-    const dialog = document.createElement('dialog');
-    dialog.className = 'captioned-gallery-modal';
-    dialog.innerHTML = `
-      <div class="captioned-gallery-modal-stage">
-        <img class="captioned-gallery-modal-img" alt="">
-      </div>
-      <button type="button" class="captioned-gallery-modal-btn captioned-gallery-modal-prev" aria-label="Previous image">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 6 9 12 15 18"/></svg>
-      </button>
-      <button type="button" class="captioned-gallery-modal-btn captioned-gallery-modal-next" aria-label="Next image">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
-      </button>
-      <button type="button" class="captioned-gallery-modal-btn captioned-gallery-modal-close" aria-label="Close">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="6" y1="18" x2="18" y2="6"/></svg>
-      </button>
-      <div class="captioned-gallery-modal-caption-wrap">
-        <span class="captioned-gallery-modal-counter" hidden></span>
-        <div class="captioned-gallery-modal-caption"></div>
-      </div>
-    `;
+  static async openFor(figure) {
+    if (!figure || this.viewer || this.opening) return;
+    this.opening = true;
+    try {
+      const PhotoSwipe = await this.loadPhotoSwipe();
+      const figures = this.getAllFigures().filter(f => f.querySelector('img'));
+      const index = figures.indexOf(figure);
+      if (index < 0) return;
 
-    dialog.querySelector('.captioned-gallery-modal-close').addEventListener('click', () => dialog.close());
-    dialog.querySelector('.captioned-gallery-modal-prev').addEventListener('click', () => CaptionedImageGallery.prev());
-    dialog.querySelector('.captioned-gallery-modal-next').addEventListener('click', () => CaptionedImageGallery.next());
+      // PhotoSwipe 5.1 needs at least three slides for looping. Repeat a
+      // two-photo set so swiping still wraps, as it did in the old viewer.
+      const slides = (figures.length === 2 ? [...figures, ...figures] : figures)
+        .map(f => this.slideData(f));
+      const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const viewer = new PhotoSwipe(null, {
+        dataSource: slides,
+        index,
+        mainClass: 'captioned-gallery-pswp',
+        bgOpacity: 1,
+        counter: false,
+        allowMouseDrag: true,
+        allowPanToNext: false,
+        imageClickAction: 'zoom',
+        showHideAnimationType: 'fade',
+        showAnimationDuration: reducedMotion ? 0 : 200,
+        hideAnimationDuration: reducedMotion ? 0 : 200,
+        zoomAnimationDuration: reducedMotion ? 0 : 200,
+        paddingFn: () => ({ top: 60, bottom: 64, left: 16, right: 16 }),
+      });
+      this.viewer = viewer;
 
-    // Tap on stage background (not the image, not buttons) closes the modal
-    const stage = dialog.querySelector('.captioned-gallery-modal-stage');
-    stage.addEventListener('click', e => {
-      if (e.target === stage) dialog.close();
-    });
+      viewer.on('uiRegister', () => {
+        viewer.ui.registerElement({
+          name: 'gallery-caption',
+          appendTo: 'root',
+          onInit: el => {
+            const counter = document.createElement('span');
+            counter.className = 'captioned-gallery-counter';
+            const caption = document.createElement('div');
+            el.append(counter, caption);
+            viewer.on('change', () => {
+              const current = viewer.currSlide.data.element;
+              const original = current.querySelector('figcaption');
+              caption.replaceChildren();
+              if (original) {
+                for (const node of original.childNodes) {
+                  caption.appendChild(node.cloneNode(true));
+                }
+              }
+              counter.hidden = !current.closest('captioned-image-gallery').hasAttribute('show-counter');
+              counter.textContent = `${figures.indexOf(current) + 1} / ${figures.length}`;
+            });
+          },
+        });
+      });
 
-    // Keyboard navigation while open
-    dialog.addEventListener('keydown', e => {
-      if (e.key === 'ArrowLeft') { e.preventDefault(); CaptionedImageGallery.prev(); }
-      else if (e.key === 'ArrowRight') { e.preventDefault(); CaptionedImageGallery.next(); }
-    });
-
-    // Single-finger horizontal swipe
-    let sx = null, sy = null, st = 0;
-    dialog.addEventListener('touchstart', e => {
-      if (e.touches.length === 1) {
-        sx = e.touches[0].clientX;
-        sy = e.touches[0].clientY;
-        st = Date.now();
-      } else {
-        sx = null;
-      }
-    }, { passive: true });
-
-    dialog.addEventListener('touchend', e => {
-      if (sx === null || e.changedTouches.length !== 1) { sx = null; return; }
-      const dx = e.changedTouches[0].clientX - sx;
-      const dy = e.changedTouches[0].clientY - sy;
-      const dt = Date.now() - st;
-      sx = null;
-      if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5 && dt < 600) {
-        if (dx < 0) CaptionedImageGallery.next();
-        else CaptionedImageGallery.prev();
-      }
-    }, { passive: true });
-
-    document.body.appendChild(dialog);
-    CaptionedImageGallery.modal = dialog;
+      const updateDimensions = ({ slide, isError }) => {
+        if (isError) return;
+        // Cached images can finish loading during slide construction.
+        queueMicrotask(() => {
+          if (!viewer.isOpen || viewer.isDestroying) return;
+          const image = slide.content.element;
+          if (!image?.naturalWidth || !image.naturalHeight) return;
+          const { naturalWidth: width, naturalHeight: height } = image;
+          if (slide.width === width && slide.height === height) return;
+          slide.data.w = slide.content.width = slide.width = width;
+          slide.data.h = slide.content.height = slide.height = height;
+          slide.resize();
+        });
+      };
+      viewer.on('loadComplete', updateDimensions);
+      viewer.on('slideActivate', updateDimensions);
+      viewer.on('destroy', () => { this.viewer = null; });
+      viewer.init();
+      viewer.template.setAttribute('aria-label', 'Photo gallery');
+      viewer.template.setAttribute('aria-modal', 'true');
+    } catch (error) {
+      console.error('Could not open photo gallery', error);
+      this.viewer?.destroy();
+      this.viewer = null;
+      // Preserve the image link if the optional viewer cannot load.
+      const link = figure.querySelector('a');
+      if (link) window.location.assign(link.href);
+    } finally {
+      this.opening = false;
+    }
   }
 }
 
