@@ -2,12 +2,26 @@ from django import template
 from django.utils.html import conditional_escape
 from django.utils.safestring import mark_safe
 from xml.etree import ElementTree
+from urllib.parse import urlsplit
 import re
 import datetime
 
 from django.utils import timezone
 
 register = template.Library()
+
+
+@register.filter
+def inaturalist_original_url(url):
+    """Use the original photo in lightboxes without changing stored metadata."""
+    if not url or urlsplit(url).hostname not in {
+        "static.inaturalist.org",
+        "inaturalist-open-data.s3.amazonaws.com",
+    }:
+        return url
+    return re.sub(r"(/photos/\d+)/large(\.[^/?#]+)(?=[?#]|$)", r"\1/original\2", url)
+
+
 entry_stripper = re.compile("^<entry>(.*?)</entry>$", re.DOTALL)
 _script_style_re = re.compile(
     r"(<(?:script|style)[^>]*>)(.*?)(</(?:script|style)>)", re.DOTALL

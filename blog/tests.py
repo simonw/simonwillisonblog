@@ -2245,14 +2245,14 @@ class BeatTests(TransactionTestCase):
                         "scientific_name": "Pelecanus occidentalis",
                         "photos": [
                             {
-                                "small_url": "https://example.com/photos/1/small.jpg",
-                                "large_url": "https://example.com/photos/1/large.jpg",
+                                "small_url": "https://static.inaturalist.org/photos/1/small.jpg",
+                                "large_url": "https://static.inaturalist.org/photos/1/large.jpg",
                                 "width": 2048,
                                 "height": 1365,
                             },
                             {
-                                "small_url": "https://example.com/photos/2/small.jpg",
-                                "large_url": "https://example.com/photos/2/large.jpg",
+                                "small_url": "https://static.inaturalist.org/photos/2/small.jpg",
+                                "large_url": "https://static.inaturalist.org/photos/2/large.jpg",
                             },
                         ],
                     }
@@ -2271,9 +2271,9 @@ class BeatTests(TransactionTestCase):
         )
         self.assertContains(
             response,
-            'href="https://example.com/photos/1/large.jpg"><img src="https://example.com/photos/1/large.jpg"',
+            'href="https://static.inaturalist.org/photos/1/original.jpg"><img src="https://static.inaturalist.org/photos/1/large.jpg"',
         )
-        self.assertNotContains(response, 'src="https://example.com/photos/1/small.jpg"')
+        self.assertNotContains(response, 'src="https://static.inaturalist.org/photos/1/small.jpg"')
         self.assertNotContains(response, "Monthly briefing")
         self.assertNotContains(response, "Recent articles")
         self.assertNotContains(response, "This is a <strong>beat</strong>")
@@ -3175,14 +3175,14 @@ class ImporterViewTests(TransactionTestCase):
                         "scientific_name": "Bothriechis lateralis",
                         "photos": [
                             {
-                                "small_url": "https://example.com/photos/13245173/small.jpg",
-                                "large_url": "https://example.com/photos/13245173/large.jpg",
+                                "small_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/13245173/small.jpg",
+                                "large_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/13245173/large.jpg",
                                 "width": 2048,
                                 "height": 1152,
                             },
                             {
-                                "small_url": "https://example.com/photos/13245174/small.jpg",
-                                "large_url": "https://example.com/photos/13245174/large.jpg",
+                                "small_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/13245174/small.jpg",
+                                "large_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/13245174/large.jpg",
                             },
                         ],
                     }
@@ -3194,8 +3194,8 @@ class ImporterViewTests(TransactionTestCase):
             {"items": [{"type": "beat", "obj": beat}]},
         )
         assert "<captioned-image-gallery" in html
-        assert "https://example.com/photos/13245173/small.jpg" in html
-        assert "https://example.com/photos/13245173/large.jpg" in html
+        assert "https://inaturalist-open-data.s3.amazonaws.com/photos/13245173/small.jpg" in html
+        assert 'href="https://inaturalist-open-data.s3.amazonaws.com/photos/13245173/original.jpg"' in html
         # figcaption with link to the observation
         assert "https://www.inaturalist.org/observations/9687475" in html
         assert 'class="beat-label sighting"' in html
@@ -3205,7 +3205,7 @@ class ImporterViewTests(TransactionTestCase):
         assert 'data-height="1152"' in html
         # Photos without dimensions don't get the attributes
         assert (
-            'src="https://example.com/photos/13245174/small.jpg" alt="Side-striped palm pit viper" loading="lazy">'
+            'src="https://inaturalist-open-data.s3.amazonaws.com/photos/13245174/small.jpg" alt="Side-striped palm pit viper" loading="lazy">'
             in html
         )
         # Location display name appears inline with the species commentary
@@ -3217,7 +3217,7 @@ class ImporterViewTests(TransactionTestCase):
     def test_single_photo_sighting_uses_large_url_for_thumbnail(self):
         """A sighting with exactly one photo renders the large variant as the
         <img src> so the enlarged single-image layout is not upscaled; the
-        thumbnail src and the lightbox <a href> are then the same file."""
+        thumbnail stays large even when the lightbox uses an original."""
         from django.template.loader import render_to_string
         from blog.factories import BeatFactory
 
