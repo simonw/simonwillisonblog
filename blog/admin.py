@@ -1,3 +1,5 @@
+import json
+
 from django.contrib import admin
 from django.contrib.postgres.search import SearchQuery, SearchRank
 from django.db.models.functions import Length
@@ -268,7 +270,10 @@ class BeatAdminForm(forms.ModelForm):
         # entirely (it is in readonly_fields), so it may be absent here.
         if "import_ref" in self.fields:
             self.fields["import_ref"].required = False
-        metadata = (self.instance.metadata or {}) if self.instance.pk else {}
+        # ModelForm initial data includes both instance data and URL-provided values.
+        metadata = self.initial.get("metadata")
+        if not isinstance(metadata, dict):
+            metadata = {}
         self.fields["comment_site"].initial = metadata.get("comment_site", "")
         self.fields["comment_thread_url"].initial = metadata.get("thread_url", "")
 
@@ -298,6 +303,15 @@ class BeatAdmin(AutosaveAdminMixin, BaseAdmin):
     prepopulated_fields = {"slug": ("title",)}
     list_display = ("__str__", "beat_type", "created", "tag_summary", "is_draft")
     list_filter = ("created", "is_draft", "beat_type")
+
+    def get_changeform_initial_data(self, request):
+        initial = super().get_changeform_initial_data(request)
+        if "metadata" in initial:
+            try:
+                initial["metadata"] = json.loads(initial["metadata"])
+            except (json.JSONDecodeError, TypeError):
+                pass
+        return initial
 
 
 @admin.register(Tag)

@@ -3488,6 +3488,93 @@ class SightingsListingAndFeedTests(TransactionTestCase):
         self.assertIn("Found this beautiful snake", summary)
 
 
+class BeatAdminTests(TransactionTestCase):
+    def setUp(self):
+        admin = User.objects.create_superuser("admin", "a@example.com", "password")
+        self.client.force_login(admin)
+
+    def test_add_prefills_metadata_from_query_string(self):
+        metadata = {
+            "thread_url": "https://news.ycombinator.com/item?id=49779329",
+            "comment_site": "Hacker News",
+        }
+        initial = {
+            "beat_type": "comment",
+            "slug": "hn-1234",
+            "title": "Title of post",
+            "url": "https://news.ycombinator.com/item?id=49779329#49779718",
+            "note": "body-of-comment",
+            "metadata": json.dumps(metadata),
+        }
+        response = self.client.get("/admin/blog/beat/add/", initial)
+        self.assertEqual(response.status_code, 200)
+        form = response.context["adminform"].form
+        self.assertEqual(json.loads(form["metadata"].value()), metadata)
+        for name in ("beat_type", "slug", "title", "url", "note"):
+            self.assertEqual(form[name].value(), initial[name])
+        self.assertEqual(form["comment_site"].value(), metadata["comment_site"])
+        self.assertEqual(form["comment_thread_url"].value(), metadata["thread_url"])
+
+        # Submit the prefilled values, as the browser does, and check the saved JSON.
+        data = {name: form[name].value() for name in initial}
+        data.update(
+            created_0="2026-09-21",
+            created_1="12:00:00",
+            comment_site=form["comment_site"].value(),
+            comment_thread_url=form["comment_thread_url"].value(),
+        )
+        response = self.client.post("/admin/blog/beat/add/", data)
+        self.assertEqual(response.status_code, 302)
+        from blog.models import Beat
+
+        beat = Beat.objects.get(slug="hn-1234")
+        self.assertEqual(beat.metadata, metadata)
+        self.assertEqual(beat.beat_type, "comment")
+
+    def test_explicit_comment_initial_values_override_metadata(self):
+        response = self.client.get(
+            "/admin/blog/beat/add/",
+            {
+                "metadata": json.dumps(
+                    {"comment_site": "Hacker News", "thread_url": "https://example.com"}
+                ),
+                "comment_site": "Another site",
+                "comment_thread_url": "https://example.com/another-thread",
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        form = response.context["adminform"].form
+        self.assertEqual(form["comment_site"].value(), "Another site")
+        self.assertEqual(
+            form["comment_thread_url"].value(), "https://example.com/another-thread"
+        )
+
+    def test_add_with_non_object_metadata(self):
+        for metadata in (None, [], "text", 1):
+            with self.subTest(metadata=metadata):
+                response = self.client.get(
+                    "/admin/blog/beat/add/", {"metadata": json.dumps(metadata)}
+                )
+                self.assertEqual(response.status_code, 200)
+                form = response.context["adminform"].form
+                self.assertEqual(form["comment_site"].value(), "")
+                self.assertEqual(form["comment_thread_url"].value(), "")
+
+    def test_add_with_invalid_metadata_query_string(self):
+        response = self.client.get(
+            "/admin/blog/beat/add/", {"metadata": "{invalid json"}
+        )
+        self.assertEqual(response.status_code, 200)
+        form = response.context["adminform"].form
+        self.assertEqual(form.initial["metadata"], "{invalid json")
+
+    def test_add_without_metadata_query_string(self):
+        response = self.client.get("/admin/blog/beat/add/")
+        self.assertEqual(response.status_code, 200)
+        form = response.context["adminform"].form
+        self.assertEqual(json.loads(form["metadata"].value()), {})
+
+
 class CommentBeatTests(TransactionTestCase):
     FAVICON_URL = (
         "https://www.google.com/s2/favicons?domain=news.ycombinator.com&sz=128"
