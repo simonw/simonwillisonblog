@@ -1,3 +1,4 @@
+import datetime
 import json
 
 from django.contrib import admin
@@ -306,6 +307,15 @@ class BeatAdmin(AutosaveAdminMixin, BaseAdmin):
 
     def get_changeform_initial_data(self, request):
         initial = super().get_changeform_initial_data(request)
+        if "created" in initial:
+            value = initial.pop("created")
+            try:
+                initial["created"] = datetime.datetime.fromtimestamp(
+                    int(value), tz=datetime.timezone.utc
+                )
+            except (ValueError, OverflowError, OSError):
+                # Invalid timestamps fall back to the model's current-time default.
+                pass
         if "metadata" in initial:
             try:
                 initial["metadata"] = json.loads(initial["metadata"])

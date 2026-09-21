@@ -3493,6 +3493,46 @@ class BeatAdminTests(TransactionTestCase):
         admin = User.objects.create_superuser("admin", "a@example.com", "password")
         self.client.force_login(admin)
 
+    def test_add_prefills_created_from_query_string(self):
+        expected = datetime.datetime(2026, 9, 21, 18, 40, tzinfo=datetime.timezone.utc)
+        cases = [
+            (str(int(expected.timestamp())), expected),
+            ("0", datetime.datetime(1970, 1, 1, tzinfo=datetime.timezone.utc)),
+            (
+                "-1",
+                datetime.datetime(1969, 12, 31, 23, 59, 59, tzinfo=datetime.timezone.utc),
+            ),
+        ]
+        for value, expected in cases:
+            with self.subTest(created=value):
+                response = self.client.get("/admin/blog/beat/add/", {"created": value})
+                self.assertEqual(response.status_code, 200)
+                form = response.context["adminform"].form
+                self.assertEqual(form.initial["created"], expected)
+                self.assertContains(
+                    response, 'value="{}"'.format(expected.strftime("%Y-%m-%d"))
+                )
+                self.assertContains(
+                    response, 'value="{}"'.format(expected.strftime("%H:%M:%S"))
+                )
+
+    def test_add_ignores_invalid_created_query_string(self):
+        for value in (
+            "",
+            "invalid",
+            "2026-09-21T18:40:00Z",
+            "999999999999999999999999",
+            "1.5",
+        ):
+            with self.subTest(created=value):
+                before = timezone.now()
+                response = self.client.get("/admin/blog/beat/add/", {"created": value})
+                self.assertEqual(response.status_code, 200)
+                form = response.context["adminform"].form
+                self.assertNotIn("created", form.initial)
+                self.assertGreaterEqual(form.instance.created, before)
+                self.assertLessEqual(form.instance.created, timezone.now())
+
     def test_add_prefills_metadata_from_query_string(self):
         metadata = {
             "thread_url": "https://news.ycombinator.com/item?id=49779329",
@@ -3500,6 +3540,7 @@ class BeatAdminTests(TransactionTestCase):
         }
         initial = {
             "beat_type": "comment",
+            "created": "1790016000",
             "slug": "hn-1234",
             "title": "Title of post",
             "url": "https://news.ycombinator.com/item?id=49779329#49779718",
@@ -3516,10 +3557,11 @@ class BeatAdminTests(TransactionTestCase):
         self.assertEqual(form["comment_thread_url"].value(), metadata["thread_url"])
 
         # Submit the prefilled values, as the browser does, and check the saved JSON.
-        data = {name: form[name].value() for name in initial}
+        data = {name: form[name].value() for name in initial if name != "created"}
+        created = form["created"].value()
         data.update(
-            created_0="2026-09-21",
-            created_1="12:00:00",
+            created_0=created.strftime("%Y-%m-%d"),
+            created_1=created.strftime("%H:%M:%S"),
             comment_site=form["comment_site"].value(),
             comment_thread_url=form["comment_thread_url"].value(),
         )
@@ -3530,6 +3572,10 @@ class BeatAdminTests(TransactionTestCase):
         beat = Beat.objects.get(slug="hn-1234")
         self.assertEqual(beat.metadata, metadata)
         self.assertEqual(beat.beat_type, "comment")
+        self.assertEqual(
+            beat.created,
+            datetime.datetime(2026, 9, 21, 18, 40, tzinfo=datetime.timezone.utc),
+        )
 
     def test_explicit_comment_initial_values_override_metadata(self):
         response = self.client.get(
