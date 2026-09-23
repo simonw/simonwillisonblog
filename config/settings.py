@@ -60,6 +60,7 @@ INSTALLED_APPS = [
     "guides",
     "monthly",
     "redirects",
+    "shortener",
     "feedstats",
     "django_http_debug",
     "s3_web_manager_django",

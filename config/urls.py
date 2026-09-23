@@ -116,6 +116,7 @@ def versions(request):
 
 
 urlpatterns = [
+    path("u/", include("shortener.urls")),
     path("monthly/", include("monthly.urls")),
     re_path(r"^card/(.*$)$", blog_views.screenshot_card),
     re_path(r"^$", blog_views.index),
