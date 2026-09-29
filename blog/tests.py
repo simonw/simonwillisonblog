@@ -5152,6 +5152,20 @@ class LivePhotoTests(TransactionTestCase):
             ),
         )
 
+    def test_page_defaults_to_entry_with_polling_turned_on(self):
+        # A live blog that has just started has no updates yet
+        self.newest.poll_live_updates = True
+        self.newest.save()
+        self.client.login(username="admin", password="password")
+        response = self.client.get("/admin/live-photo/")
+        self.assertEqual(response.context["selected_entry"], self.newest)
+        self.assertEqual(
+            [e.pk for e in response.context["entries"]],
+            [self.newest.pk, self.current_live.pk, self.old_live.pk],
+        )
+        self.assertContains(response, "{} (live)".format(self.newest.title))
+        self.assertNotContains(response, "{} (live)".format(self.current_live.title))
+
     def test_page_entry_query_string(self):
         self.client.login(username="admin", password="password")
         response = self.client.get("/admin/live-photo/?entry={}".format(self.newest.pk))

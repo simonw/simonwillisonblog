@@ -164,7 +164,7 @@ button.primary {
 <label class="field" for="entry">Live blog</label>
 <select id="entry">
   {% for entry in entries %}
-  <option value="{{ entry.pk }}" data-url="{{ entry.get_absolute_url }}"{% if entry == selected_entry %} selected{% endif %}>{{ entry.title }}{% if entry.is_draft %} (draft){% endif %} &middot; {% if entry.latest_update %}last update {{ entry.latest_update|date:"j M Y" }}{% else %}no updates, created {{ entry.created|date:"j M Y" }}{% endif %}</option>
+  <option value="{{ entry.pk }}" data-url="{{ entry.get_absolute_url }}"{% if entry == selected_entry %} selected{% endif %}>{{ entry.title }}{% if entry.poll_live_updates %} (live){% endif %}{% if entry.is_draft %} (draft){% endif %} &middot; {% if entry.latest_update %}last update {{ entry.latest_update|date:"j M Y" }}{% else %}no updates, created {{ entry.created|date:"j M Y" }}{% endif %}</option>
   {% endfor %}
 </select>
 <div class="row"><a id="entry-link" class="small-link" href="{{ selected_entry.get_absolute_url }}" target="_blank">View entry</a></div>
