@@ -5037,7 +5037,7 @@ class LivePhotoTests(TransactionTestCase):
             "entry_id": self.current_live.pk,
             "image_url": self.IMAGE_URL,
             "alt": 'A "slide" <with> text',
-            "caption": "The <em>keynote</em>",
+            "caption": "The *keynote* by [Simon](https://simonwillison.net/)",
             "width": 1280,
             "height": 960,
         }
@@ -5104,7 +5104,7 @@ class LivePhotoTests(TransactionTestCase):
         update = self.current_live.updates.order_by("-id").first()
         self.assertEqual(
             update.content,
-            "The <em>keynote</em><br>"
+            'The <em>keynote</em> by <a href="https://simonwillison.net/">Simon</a><br>'
             '<img src="{}" alt="A &quot;slide&quot; &lt;with&gt; text" '
             'width="1280" height="960" style="max-width: 100%; height: auto;">'.format(
                 self.IMAGE_URL
@@ -5115,6 +5115,14 @@ class LivePhotoTests(TransactionTestCase):
         self.assertEqual(
             data["url"],
             "{}#live-update-{}".format(self.current_live.get_absolute_url(), update.pk),
+        )
+
+    def test_create_with_multi_paragraph_caption(self):
+        self.client.login(username="admin", password="password")
+        response = self.create(caption="First\n\nSecond")
+        # The outer <p> tags are stripped, entry_updates.html provides them
+        self.assertTrue(
+            response.json()["content"].startswith("First</p>\n<p>Second<br><img ")
         )
 
     def test_create_without_caption(self):

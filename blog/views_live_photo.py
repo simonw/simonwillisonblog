@@ -8,6 +8,7 @@ from django.shortcuts import render
 from django.utils.html import escape, format_html
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_POST
+from markdown import markdown
 
 from .models import Entry, LiveUpdate
 
@@ -57,11 +58,14 @@ def live_photo_html(image_url, alt, width, height, caption=""):
         width,
         height,
     )
-    # Caption is HTML, like the rest of LiveUpdate.content
     caption = caption.strip()
-    if caption:
-        return "{}<br>{}".format(caption, image)
-    return "<br>{}".format(image)
+    if not caption:
+        return "<br>{}".format(image)
+    rendered = markdown(caption)
+    # Remove leading/trailing <p> tag, the update is already in a <p>
+    if rendered.startswith("<p>") and rendered.endswith("</p>"):
+        rendered = rendered[3:-4]
+    return "{}<br>{}".format(rendered, image)
 
 
 @staff_member_required
