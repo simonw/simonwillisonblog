@@ -1,5 +1,5 @@
 {% extends "item_base.html" %}
-{% load entry_tags %}
+{% load entry_tags static %}
 {% block title %}{{ entry.title|typography }}{% endblock %}
 
 {% block extrahead %}
@@ -20,10 +20,11 @@
 
 {{ entry.body|xhtml|resize_images_to_fit_width:"450"|typography|xhtml2html }}
 
-{% if updates %}
-<div id="live-updates">
+{% if updates or entry.poll_live_updates %}
+<div id="live-updates" data-entry-id="{{ entry.pk }}"{% if entry.poll_live_updates %} data-poll="1"{% endif %}>
 {% include "entry_updates.html" %}
 </div>
+<script src="{% static "live-updates.js" %}"></script>
 {% endif %}
 </div>
 <div class="entryFooter">Posted <a href="/{{ entry.created|date:"Y/M/j/" }}">{{ entry.created|date:"jS F Y" }}</a> at {{ entry.created|date:"f A"|lower }} &middot; Follow me on <a href="https://fedi.simonwillison.net/@simon">Mastodon</a>, <a href="https://bsky.app/profile/simonwillison.net">Bluesky</a>, <a href="https://twitter.com/simonw">Twitter</a> or <a href="https://simonwillison.net/about/#subscribe">subscribe to my newsletter</a></div>
