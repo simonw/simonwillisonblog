@@ -1,0 +1,1135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Live photo</title>
+<style>
+* {
+  box-sizing: border-box;
+}
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  margin: 0 auto;
+  padding: 12px 16px 48px;
+  max-width: 900px;
+  line-height: 1.4;
+  color: #111;
+  background: #fff;
+}
+h1 {
+  font-size: 1.4em;
+  margin: 0 0 12px;
+}
+label.field {
+  display: block;
+  font-weight: 600;
+  margin: 16px 0 4px;
+}
+label.field small {
+  font-weight: normal;
+  color: #666;
+}
+select, textarea, input[type=text] {
+  width: 100%;
+  font: inherit;
+  font-size: 16px; /* Avoids zoom-on-focus in iOS Safari */
+  padding: 8px;
+  border: 1px solid #aaa;
+  border-radius: 6px;
+}
+textarea {
+  resize: vertical;
+}
+button, .choose-photo {
+  display: inline-block;
+  font: inherit;
+  font-size: 16px;
+  padding: 10px 16px;
+  border-radius: 6px;
+  border: 1px solid #0b57d0;
+  background: #fff;
+  color: #0b57d0;
+  cursor: pointer;
+}
+button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+button.primary {
+  background: #0b57d0;
+  color: #fff;
+  width: 100%;
+  padding: 14px;
+  font-weight: 600;
+  margin-top: 20px;
+}
+.choose-photo {
+  margin-top: 16px;
+  width: 100%;
+  text-align: center;
+  background: #0b57d0;
+  color: #fff;
+  font-weight: 600;
+  padding: 14px;
+}
+.choose-photo input {
+  display: none;
+}
+.small-link {
+  font-size: 0.9em;
+}
+.formats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 16px;
+}
+.format {
+  display: block;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  padding: 8px;
+  cursor: pointer;
+}
+.format:has(input:checked) {
+  border-color: #0b57d0;
+  background: #eef3fd;
+}
+.format-name {
+  font-weight: 600;
+}
+.format-info {
+  display: block;
+  font-size: 0.85em;
+  color: #555;
+  margin: 2px 0 6px;
+  min-height: 1.2em;
+}
+.format .retry {
+  padding: 4px 10px;
+  font-size: 14px;
+  margin-bottom: 6px;
+}
+.format img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 4px;
+  background: #f3f3f3;
+}
+.row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 6px;
+  flex-wrap: wrap;
+}
+.muted {
+  color: #666;
+  font-size: 0.9em;
+}
+.filename {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.filename span {
+  color: #666;
+  white-space: nowrap;
+}
+#status {
+  margin-top: 14px;
+  white-space: pre-wrap;
+}
+.error {
+  color: #b00020;
+}
+.success {
+  color: #146c2e;
+  font-weight: 600;
+}
+[hidden] {
+  display: none !important;
+}
+</style>
+</head>
+<body>
+<h1>Live photo</h1>
+
+{% if not entries %}
+<p>There are no entries to post to yet.</p>
+{% else %}
+<label class="field" for="entry">Live blog</label>
+<select id="entry">
+  {% for entry in entries %}
+  <option value="{{ entry.pk }}" data-url="{{ entry.get_absolute_url }}"{% if entry == selected_entry %} selected{% endif %}>{{ entry.title }}{% if entry.is_draft %} (draft){% endif %} &middot; {% if entry.latest_update %}last update {{ entry.latest_update|date:"j M Y" }}{% else %}no updates, created {{ entry.created|date:"j M Y" }}{% endif %}</option>
+  {% endfor %}
+</select>
+<div class="row"><a id="entry-link" class="small-link" href="{{ selected_entry.get_absolute_url }}" target="_blank">View entry</a></div>
+
+<label class="choose-photo">Choose photo<input type="file" id="file" accept="image/*"></label>
+<p id="encoder-status" class="muted"></p>
+<p id="original-info" class="muted" hidden></p>
+
+<div id="editor" hidden>
+  <div class="formats">
+    <label class="format">
+      <input type="radio" name="format" value="avif" disabled>
+      <span class="format-name">AVIF</span>
+      <span class="format-info" data-info="avif"></span>
+      <button type="button" class="retry" data-retry="avif" hidden>Retry</button>
+      <img data-preview="avif" alt="AVIF preview" hidden>
+    </label>
+    <label class="format">
+      <input type="radio" name="format" value="webp" disabled>
+      <span class="format-name">WebP</span>
+      <span class="format-info" data-info="webp"></span>
+      <button type="button" class="retry" data-retry="webp" hidden>Retry</button>
+      <img data-preview="webp" alt="WebP preview" hidden>
+    </label>
+  </div>
+
+  <label class="field" for="alt">Alt text</label>
+  <textarea id="alt" rows="4"></textarea>
+  <div class="row">
+    <button type="button" id="regenerate" disabled>Regenerate alt text</button>
+    <span id="alt-status" class="muted"></span>
+  </div>
+
+  <label class="field" for="caption">Caption <small>(optional, HTML)</small></label>
+  <textarea id="caption" rows="3"></textarea>
+
+  <label class="field" for="name">Filename</label>
+  <div class="filename"><span id="path-prefix"></span><input type="text" id="name" autocapitalize="off" autocorrect="off" spellcheck="false"></div>
+  <p class="muted" id="name-info"></p>
+
+  <button type="button" class="primary" id="publish" disabled>Upload and post</button>
+</div>
+<div id="status"></div>
+{% endif %}
+
+<script>
+{% if entries %}
+(function () {
+  const CSRF_TOKEN = '{{ csrf_token }}';
+  const CREATE_URL = '{% url "live_photo_create" %}';
+  const S3_API = '/tools/s3/api';
+  const PUBLIC_URL_BASE = '{{ public_url_base|escapejs }}';
+  const MAX_WIDTH = 1280;
+  const QUALITY = 0.7;
+  const FORMATS = {
+    avif: {
+      label: 'AVIF',
+      mime: 'image/avif',
+      moduleUrl: 'https://cdn.jsdelivr.net/npm/@jsquash/avif@2.1.1/encode.js/+esm',
+      downloadSize: '3.5 MB'
+    },
+    webp: {
+      label: 'WebP',
+      mime: 'image/webp',
+      moduleUrl: 'https://cdn.jsdelivr.net/npm/@jsquash/webp@1.5.0/encode.js/+esm',
+      downloadSize: '350 KB'
+    }
+  };
+  const OPENAI_MODEL = 'gpt-6-luna';
+  const API_KEY_STORAGE_KEY = 'openai_api_key';
+  const ALT_TEXT_PROMPT = [
+    'Write alt text for this image. It will be published as part of a live blog,',
+    'so describe what matters to a reader who cannot see it: the people, the setting',
+    'and anything that is happening. If the image contains text that matters, such as',
+    'a presentation slide, a sign or a screen, include that text. Keep it concise, one',
+    'to three sentences, unless there is important text to transcribe. Do not start',
+    'with "Image of" or "Photo of". Reply with only the alt text.'
+  ].join(' ');
+  // Tuned for slow and flaky mobile connections
+  const REQUEST_TIMEOUT_MS = 30000;
+  const OPENAI_TIMEOUT_MS = 120000;
+  const UPLOAD_STALL_MS = 30000;
+  const RETRY_DELAYS_MS = [2000, 5000, 10000];
+
+  const $ = selector => document.querySelector(selector);
+  const entrySelect = $('#entry');
+  const entryLink = $('#entry-link');
+  const fileInput = $('#file');
+  const encoderStatusEl = $('#encoder-status');
+  const originalInfo = $('#original-info');
+  const editor = $('#editor');
+  const altInput = $('#alt');
+  const altStatus = $('#alt-status');
+  const regenerateButton = $('#regenerate');
+  const captionInput = $('#caption');
+  const nameInput = $('#name');
+  const nameInfo = $('#name-info');
+  const pathPrefix = $('#path-prefix');
+  const publishButton = $('#publish');
+  const statusEl = $('#status');
+
+  let state = null;
+  let photoCounter = 0;
+  let publishing = false;
+
+  /* ---------- Network helpers ---------- */
+
+  class RequestError extends Error {
+    constructor(message, { retryable = false, status = 0, code = '' } = {}) {
+      super(message);
+      this.retryable = retryable;
+      this.status = status;
+      this.code = code;
+    }
+  }
+
+  function retryableStatus(status) {
+    return status === 408 || status === 429 || status >= 500;
+  }
+
+  // fetch() with a timeout covering the whole response, returning parsed JSON
+  // or throwing a RequestError that says whether it is worth retrying
+  async function requestJson(label, url, options = {}, timeoutMs = REQUEST_TIMEOUT_MS) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    let response;
+    let text;
+    try {
+      response = await fetch(url, { ...options, signal: controller.signal });
+      text = await response.text();
+    } catch (err) {
+      throw new RequestError(`${label}: ${controller.signal.aborted ? 'timed out' : 'network error'}`, { retryable: true });
+    } finally {
+      clearTimeout(timer);
+    }
+    let data = null;
+    try {
+      data = JSON.parse(text);
+    } catch (err) {}
+    if (!response.ok) {
+      const error = data && data.error;
+      const message = typeof error === 'string' ? error : (error && (error.message || error.code)) || `HTTP ${response.status}`;
+      const code = (error && error.code) || '';
+      throw new RequestError(`${label}: ${message}`, {
+        retryable: retryableStatus(response.status) && code !== 'missing_s3_configuration',
+        status: response.status,
+        code
+      });
+    }
+    if (data === null) {
+      // e.g. a wifi captive portal login page
+      throw new RequestError(`${label}: unexpected response, check your connection`);
+    }
+    return data;
+  }
+
+  function jsonPost(body, headers = {}) {
+    return {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...headers },
+      body: JSON.stringify(body)
+    };
+  }
+
+  function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  function waitUntilOnline() {
+    return new Promise(resolve => window.addEventListener('online', resolve, { once: true }));
+  }
+
+  // Retries network errors, timeouts and 5xx/429 responses with backoff,
+  // pausing while the browser reports that it is offline
+  async function withRetries(fn, onRetry) {
+    for (let attempt = 0; ; attempt++) {
+      try {
+        return await fn(attempt);
+      } catch (err) {
+        if (!err.retryable || attempt >= RETRY_DELAYS_MS.length) throw err;
+        if (navigator.onLine === false) {
+          onRetry(`${err.message}. Offline, waiting for a connection…`);
+          await waitUntilOnline();
+        } else {
+          const delay = RETRY_DELAYS_MS[attempt];
+          onRetry(`${err.message}. Retrying in ${delay / 1000}s…`);
+          await sleep(delay);
+        }
+      }
+    }
+  }
+
+  /* ---------- WebP and AVIF encoding ----------
+     Same technique as https://tools.simonwillison.net/image-resize-quality
+     Browsers that cannot encode a format from a canvas silently return a
+     PNG instead: Safari (desktop and iOS) cannot do WebP, and most browsers
+     cannot do AVIF. Mobile Safari can encode AVIF but ignores the quality
+     setting. So each format is feature-detected once, and if the native
+     encoder is missing or ignores quality a jSquash wasm encoder (Squoosh's
+     libwebp or libavif) from jsdelivr is used instead.
+
+     Each wasm encoder runs in its own module worker, started as soon as the
+     page knows it will be needed so the download (3.5 MB for AVIF) happens
+     before a photo is picked. A worker whose download failed is thrown away,
+     so the next attempt starts with a fresh import rather than a cached
+     failure. */
+
+  const nativeChecks = {};
+  function nativeEncoderHonoursQuality(mime) {
+    if (!nativeChecks[mime]) {
+      nativeChecks[mime] = (async () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = 64;
+        canvas.height = 64;
+        if (!canvas.toBlob) return false;
+        // Noise, so that a lower quality has detail to throw away.
+        const ctx = canvas.getContext('2d');
+        const noise = ctx.createImageData(64, 64);
+        for (let i = 0; i < noise.data.length; i++) {
+          noise.data[i] = i % 4 === 3 ? 255 : Math.random() * 256;
+        }
+        ctx.putImageData(noise, 0, 0);
+        const encodeAt = quality => new Promise(resolve => {
+          try {
+            canvas.toBlob(resolve, mime, quality);
+          } catch (err) {
+            resolve(null);
+          }
+        });
+        const [low, high] = await Promise.all([encodeAt(0.2), encodeAt(0.9)]);
+        return Boolean(low && high && low.type === mime && high.type === mime && low.size !== high.size);
+      })();
+    }
+    return nativeChecks[mime];
+  }
+
+  function encoderWorkerSource(moduleUrl) {
+    return `
+      let encoderPromise = null;
+      function loadEncoder() {
+        if (!encoderPromise) {
+          encoderPromise = import(${JSON.stringify(moduleUrl)}).then(async (mod) => {
+            await mod.init();
+            return mod.default;
+          });
+          encoderPromise.then(
+            () => self.postMessage({ type: 'ready' }),
+            () => { encoderPromise = null; }
+          );
+        }
+        return encoderPromise;
+      }
+      // Start downloading straight away, before there is anything to encode
+      loadEncoder().catch(err => {
+        self.postMessage({ type: 'load-error', error: String((err && err.message) || err) });
+      });
+      self.onmessage = async (e) => {
+        const { data, width, height, quality } = e.data;
+        let encode;
+        try {
+          encode = await loadEncoder();
+        } catch (err) {
+          self.postMessage({ type: 'error', loadFailed: true, error: String((err && err.message) || err) });
+          return;
+        }
+        try {
+          const buffer = await encode(new ImageData(data, width, height), { quality });
+          self.postMessage({ type: 'result', buffer }, [buffer]);
+        } catch (err) {
+          self.postMessage({ type: 'error', error: String((err && err.message) || err) });
+        }
+      };
+    `;
+  }
+
+  function makeWasmEncoder(format) {
+    const { label, mime, moduleUrl } = FORMATS[format];
+    let workerUrl = null;
+    let worker = null;
+    let busy = false;
+    // Encodes run one at a time, in the order they were requested.
+    let queue = Promise.resolve();
+
+    function discard(w) {
+      w.terminate();
+      if (worker === w) {
+        worker = null;
+        setEncoderStatus(format, 'failed');
+      }
+    }
+
+    function start() {
+      if (worker) return worker;
+      workerUrl = workerUrl || URL.createObjectURL(new Blob([encoderWorkerSource(moduleUrl)], { type: 'text/javascript' }));
+      const w = new Worker(workerUrl, { type: 'module' });
+      worker = w;
+      setEncoderStatus(format, 'downloading');
+      w.addEventListener('message', e => {
+        if (worker !== w) return;
+        if (e.data.type === 'ready') {
+          setEncoderStatus(format, 'ready');
+        } else if (e.data.type === 'load-error' && !busy) {
+          // A job in progress will report the failure itself
+          discard(w);
+        }
+      });
+      return w;
+    }
+
+    function run(imageData, quality) {
+      const w = start();
+      busy = true;
+      return new Promise((resolve, reject) => {
+        const fail = (message, retryable) => {
+          busy = false;
+          discard(w);
+          const err = new Error(`${label} encoder: ${message}`);
+          err.retryable = retryable;
+          reject(err);
+        };
+        w.onmessage = e => {
+          if (e.data.type === 'result') {
+            busy = false;
+            resolve(new Blob([e.data.buffer], { type: mime }));
+          } else if (e.data.type === 'error') {
+            fail(e.data.error, Boolean(e.data.loadFailed));
+          }
+        };
+        w.onerror = e => {
+          e.preventDefault();
+          fail(e.message || 'worker failed', false);
+        };
+        const { data, width, height } = imageData;
+        w.postMessage({ data, width, height, quality }, [data.buffer]);
+      });
+    }
+
+    return {
+      start,
+      encode(imageData, quality, isCurrent) {
+        const job = queue.then(() => {
+          // Skip jobs for a photo that has since been replaced
+          if (!isCurrent()) throw new DOMException('Encode cancelled', 'AbortError');
+          return run(imageData, quality);
+        });
+        queue = job.catch(() => {});
+        return job;
+      }
+    };
+  }
+
+  const wasmEncoders = { avif: makeWasmEncoder('avif'), webp: makeWasmEncoder('webp') };
+  const wasmAvailable = typeof Worker !== 'undefined' && typeof WebAssembly !== 'undefined';
+  // format -> 'native' | 'downloading' | 'ready' | 'failed'
+  const encoderStatus = {};
+
+  function setEncoderStatus(format, status) {
+    encoderStatus[format] = status;
+    const text = {
+      downloading: `downloading ${FORMATS[format].downloadSize}…`,
+      ready: 'ready',
+      failed: 'download failed, will retry'
+    };
+    encoderStatusEl.textContent = Object.keys(FORMATS)
+      .filter(f => text[encoderStatus[f]])
+      .map(f => `${FORMATS[f].label} encoder ${text[encoderStatus[f]]}`)
+      .join(' · ');
+    refreshEncodingLabels();
+  }
+
+  function canvasToBlob(canvas, mime, quality) {
+    return new Promise((resolve, reject) => {
+      canvas.toBlob(blob => {
+        if (blob && blob.type === mime) resolve(blob);
+        else reject(new Error(`This browser cannot encode ${mime}`));
+      }, mime, quality);
+    });
+  }
+
+  async function encodeFormat(format, canvas, isCurrent) {
+    const { label, mime } = FORMATS[format];
+    if (await nativeEncoderHonoursQuality(mime)) {
+      return canvasToBlob(canvas, mime, QUALITY);
+    }
+    if (!wasmAvailable) throw new Error(`This browser has no ${label} encoder`);
+    // Copy the pixels now, the job may wait in the queue
+    const imageData = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height);
+    return wasmEncoders[format].encode(imageData, Math.round(QUALITY * 100), isCurrent);
+  }
+
+  // JPEG has no transparency, so draw onto white
+  function drawToJpeg(source, width, height, quality) {
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, width, height);
+    ctx.drawImage(source, 0, 0, width, height);
+    return canvasToBlob(canvas, 'image/jpeg', quality);
+  }
+
+  function loadImage(file) {
+    return new Promise((resolve, reject) => {
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        resolve(img);
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        reject(new Error('This browser could not read that image'));
+      };
+      img.src = url;
+    });
+  }
+
+  function resizeToCanvas(img) {
+    const scale = Math.min(1, MAX_WIDTH / img.naturalWidth);
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round(img.naturalWidth * scale));
+    canvas.height = Math.max(1, Math.round(img.naturalHeight * scale));
+    const ctx = canvas.getContext('2d');
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    return canvas;
+  }
+
+  /* ---------- Alt text ---------- */
+
+  function storedApiKey() {
+    try {
+      return localStorage.getItem(API_KEY_STORAGE_KEY);
+    } catch (err) {
+      return null;
+    }
+  }
+
+  function getApiKey(forcePrompt) {
+    let key = forcePrompt ? null : storedApiKey();
+    if (!key) {
+      key = (window.prompt('OpenAI API key (saved in this browser)') || '').trim();
+      if (key) {
+        try {
+          localStorage.setItem(API_KEY_STORAGE_KEY, key);
+        } catch (err) {}
+      }
+    }
+    return key || null;
+  }
+
+  function forgetApiKey() {
+    try {
+      localStorage.removeItem(API_KEY_STORAGE_KEY);
+    } catch (err) {}
+  }
+
+  function blobToDataUrl(blob) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(reader.error);
+      reader.readAsDataURL(blob);
+    });
+  }
+
+  function callOpenAI(key, prompt, dataUrl) {
+    return requestJson('OpenAI', 'https://api.openai.com/v1/responses', jsonPost({
+      model: OPENAI_MODEL,
+      reasoning: { effort: 'low' },
+      input: [{
+        role: 'user',
+        content: [
+          { type: 'input_text', text: prompt },
+          { type: 'input_image', image_url: dataUrl }
+        ]
+      }]
+    }, { Authorization: `Bearer ${key}` }), OPENAI_TIMEOUT_MS);
+  }
+
+  function outputText(data) {
+    if (typeof data.output_text === 'string') return data.output_text;
+    const parts = [];
+    (data.output || []).forEach(item => {
+      if (item.type !== 'message') return;
+      (item.content || []).forEach(part => {
+        if (part.type === 'output_text') parts.push(part.text);
+      });
+    });
+    return parts.join('');
+  }
+
+  async function generateAltText(photo, { replaceEdits }) {
+    if (!photo.altTextBlob) return;
+    let key = getApiKey(false);
+    if (!key) {
+      altStatus.textContent = 'No API key, so no alt text was generated.';
+      regenerateButton.disabled = false;
+      return;
+    }
+    const generation = ++photo.altTextGeneration;
+    const isCurrent = () => state === photo && photo.altTextGeneration === generation;
+    regenerateButton.disabled = true;
+    altStatus.textContent = `Generating alt text with ${OPENAI_MODEL}…`;
+    let prompt = ALT_TEXT_PROMPT;
+    const caption = captionInput.value.trim();
+    if (caption) {
+      prompt += `\n\nThe image will be published with this caption, which may help with context:\n${caption}`;
+    }
+    try {
+      const dataUrl = await blobToDataUrl(photo.altTextBlob);
+      const call = () => withRetries(() => callOpenAI(key, prompt, dataUrl), message => {
+        if (isCurrent()) altStatus.textContent = message;
+      });
+      let data;
+      try {
+        data = await call();
+      } catch (err) {
+        if (err.status !== 401) throw err;
+        forgetApiKey();
+        key = getApiKey(true);
+        if (!key) throw err;
+        data = await call();
+      }
+      const text = outputText(data).trim();
+      if (!text) throw new Error('the model returned no text');
+      if (!isCurrent()) return;
+      // Don't clobber alt text typed while the request was in flight
+      if (replaceEdits || altInput.value.trim() === '' || altInput.value === photo.lastGeneratedAlt) {
+        altInput.value = text;
+        photo.lastGeneratedAlt = text;
+        altStatus.textContent = `Generated from the ${photo.altTextFormat} by ${OPENAI_MODEL}.`;
+      } else {
+        altStatus.textContent = 'New alt text was generated but not used, because you had edited it.';
+      }
+    } catch (err) {
+      if (!isCurrent()) return;
+      altStatus.textContent = '';
+      altStatus.append(errorSpan(`Alt text failed: ${err.message}`));
+    } finally {
+      if (isCurrent()) regenerateButton.disabled = false;
+      updatePublishButton();
+    }
+  }
+
+  /* ---------- Photo selection ---------- */
+
+  function formatBytes(bytes) {
+    if (bytes >= 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+    return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+  }
+
+  function errorSpan(message) {
+    const span = document.createElement('span');
+    span.className = 'error';
+    span.textContent = message;
+    return span;
+  }
+
+  function pad(n) {
+    return String(n).padStart(2, '0');
+  }
+
+  function defaultName(date) {
+    return `live-${date.getFullYear()}${pad(date.getMonth() + 1)}${pad(date.getDate())}` +
+      `-${pad(date.getHours())}${pad(date.getMinutes())}${pad(date.getSeconds())}`;
+  }
+
+  const formatInfo = format => document.querySelector(`[data-info="${format}"]`);
+  const formatPreview = format => document.querySelector(`[data-preview="${format}"]`);
+  const formatRadio = format => document.querySelector(`input[name="format"][value="${format}"]`);
+  const retryButton = format => document.querySelector(`[data-retry="${format}"]`);
+
+  function selectedFormat() {
+    const checked = document.querySelector('input[name="format"]:checked');
+    return checked ? checked.value : null;
+  }
+
+  function refreshEncodingLabels() {
+    if (!state) return;
+    Object.keys(FORMATS).forEach(format => {
+      if (!state.encoding[format]) return;
+      const status = encoderStatus[format];
+      formatInfo(format).textContent = status === 'downloading' || status === 'failed'
+        ? `Downloading encoder (${FORMATS[format].downloadSize})…`
+        : 'Encoding…';
+    });
+  }
+
+  function resetEditor() {
+    Object.keys(FORMATS).forEach(format => {
+      const preview = formatPreview(format);
+      if (preview.src) URL.revokeObjectURL(preview.src);
+      preview.removeAttribute('src');
+      preview.hidden = true;
+      formatInfo(format).textContent = '';
+      retryButton(format).hidden = true;
+      const radio = formatRadio(format);
+      radio.checked = false;
+      radio.disabled = true;
+    });
+    altInput.value = '';
+    altStatus.textContent = '';
+    captionInput.value = '';
+    regenerateButton.disabled = true;
+    setStatus('');
+  }
+
+  function showEncoded(photo, format, blob) {
+    photo.blobs[format] = blob;
+    const preview = formatPreview(format);
+    preview.src = URL.createObjectURL(blob);
+    preview.hidden = false;
+    formatInfo(format).textContent = `${photo.width}×${photo.height} · ${formatBytes(blob.size)}`;
+    formatRadio(format).disabled = false;
+    // Pick the smallest (least to upload), unless the user already chose
+    if (!photo.userChoseFormat) {
+      const smallest = Object.keys(photo.blobs).reduce((a, b) => (
+        photo.blobs[b].size < photo.blobs[a].size ? b : a
+      ));
+      formatRadio(smallest).checked = true;
+      updateNameInfo();
+    }
+    if (format === 'webp') {
+      photo.altTextBlob = blob;
+      photo.altTextFormat = 'WebP';
+    }
+    updatePublishButton();
+  }
+
+  // onFailure is called on the first failed attempt, even if it will retry
+  async function startEncode(photo, format, onFailure) {
+    const isCurrent = () => state === photo;
+    photo.encoding[format] = true;
+    retryButton(format).hidden = true;
+    refreshEncodingLabels();
+    try {
+      const blob = await withRetries(() => encodeFormat(format, photo.canvas, isCurrent), message => {
+        if (!isCurrent()) return;
+        formatInfo(format).textContent = message;
+        if (onFailure) onFailure();
+      });
+      if (!isCurrent()) return null;
+      photo.encoding[format] = false;
+      showEncoded(photo, format, blob);
+      return blob;
+    } catch (err) {
+      if (!isCurrent() || err.name === 'AbortError') return null;
+      photo.encoding[format] = false;
+      console.error(`${FORMATS[format].label} encoding failed`, err);
+      formatInfo(format).textContent = '';
+      formatInfo(format).append(errorSpan(`Failed: ${err.message}`));
+      retryButton(format).hidden = false;
+      if (onFailure) onFailure();
+      return null;
+    }
+  }
+
+  async function handleFile(file) {
+    const photo = {
+      id: ++photoCounter,
+      canvas: null,
+      width: 0,
+      height: 0,
+      year: new Date().getFullYear(),
+      blobs: {},
+      encoding: {},
+      altTextBlob: null,
+      altTextFormat: null,
+      altTextGeneration: 0,
+      lastGeneratedAlt: null,
+      userChoseFormat: false,
+      claimedKey: null,
+      uploadedKey: null
+    };
+    state = photo;
+    const isCurrent = () => state === photo;
+    resetEditor();
+    editor.hidden = false;
+    pathPrefix.textContent = `static/${photo.year}/`;
+    nameInput.value = defaultName(new Date());
+    updateNameInfo();
+    originalInfo.hidden = false;
+    originalInfo.textContent = `Loading ${file.name}…`;
+
+    let img;
+    try {
+      img = await loadImage(file);
+    } catch (err) {
+      if (!isCurrent()) return;
+      editor.hidden = true;
+      originalInfo.textContent = '';
+      originalInfo.append(errorSpan(err.message));
+      return;
+    }
+    if (!isCurrent()) return;
+    originalInfo.textContent = `Original: ${file.name}, ${img.naturalWidth}×${img.naturalHeight}, ${formatBytes(file.size)}`;
+    photo.canvas = resizeToCanvas(img);
+    photo.width = photo.canvas.width;
+    photo.height = photo.canvas.height;
+
+    // Alt text is generated from the WebP. If the WebP encoder fails, send
+    // a JPEG straight away rather than waiting for its retries.
+    let altTextRequested = false;
+    const requestAltText = async useJpeg => {
+      if (altTextRequested || !isCurrent()) return;
+      altTextRequested = true;
+      if (useJpeg) {
+        try {
+          photo.altTextBlob = await drawToJpeg(photo.canvas, photo.width, photo.height, QUALITY);
+          photo.altTextFormat = 'JPEG';
+        } catch (err) {
+          altStatus.textContent = '';
+          altStatus.append(errorSpan(`Could not encode an image for alt text: ${err.message}`));
+          return;
+        }
+      }
+      generateAltText(photo, { replaceEdits: false });
+    };
+
+    // Encode both at once, AVIF is much slower
+    startEncode(photo, 'avif');
+    const webp = await startEncode(photo, 'webp', () => requestAltText(true));
+    if (webp) requestAltText(false);
+  }
+
+  /* ---------- Upload and post ---------- */
+
+  const NAME_RE = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
+
+  function keyFor(photo, format) {
+    return `static/${photo.year}/${nameInput.value.trim()}.${format}`;
+  }
+
+  function publicUrl(key) {
+    return PUBLIC_URL_BASE + key.split('/').map(encodeURIComponent).join('/');
+  }
+
+  function updateNameInfo() {
+    const name = nameInput.value.trim();
+    nameInfo.textContent = NAME_RE.test(name)
+      ? `Uploads ${name}.${selectedFormat() || 'avif'}`
+      : 'Use letters, numbers, dots, dashes and underscores.';
+  }
+
+  function updatePublishButton() {
+    // Picking another photo mid-publish would lose track of this one
+    fileInput.disabled = publishing;
+    const format = selectedFormat();
+    publishButton.disabled = Boolean(
+      publishing || !state || !format || !state.blobs[format] ||
+      !altInput.value.trim() || !NAME_RE.test(nameInput.value.trim()) || !entrySelect.value
+    );
+  }
+
+  function setStatus(message, className) {
+    statusEl.className = className || '';
+    statusEl.textContent = message;
+  }
+
+  // Makes sure we never overwrite an existing file on S3
+  async function claimKey(photo, key, onStatus) {
+    if (photo.claimedKey === key) return;
+    await withRetries(async () => {
+      try {
+        await requestJson('Checking filename', `${S3_API}/object?key=${encodeURIComponent(key)}`);
+      } catch (err) {
+        if (err.status === 404) return;
+        throw err;
+      }
+      throw new RequestError(`${key} already exists on S3, pick a different filename`);
+    }, onStatus);
+    photo.claimedKey = key;
+  }
+
+  // XHR rather than fetch() for upload progress. Aborts if nothing has moved
+  // for UPLOAD_STALL_MS, so a dead connection gets retried instead of hanging.
+  function postForm(url, formData, onProgress) {
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      let lastActivity = Date.now();
+      let stalled = false;
+      const watchdog = setInterval(() => {
+        if (Date.now() - lastActivity > UPLOAD_STALL_MS) {
+          stalled = true;
+          xhr.abort();
+        }
+      }, 1000);
+      const finish = (err) => {
+        clearInterval(watchdog);
+        if (err) reject(err);
+        else resolve();
+      };
+      xhr.open('POST', url);
+      xhr.upload.onprogress = e => {
+        lastActivity = Date.now();
+        if (e.lengthComputable) onProgress(e.loaded / e.total);
+      };
+      xhr.upload.onload = () => { lastActivity = Date.now(); };
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) finish();
+        else finish(new RequestError(`S3 rejected the upload: HTTP ${xhr.status}`, {
+          retryable: retryableStatus(xhr.status),
+          status: xhr.status
+        }));
+      };
+      xhr.onerror = () => finish(new RequestError('Upload: network error', { retryable: true }));
+      xhr.onabort = () => finish(new RequestError(
+        stalled ? 'Upload stalled' : 'Upload cancelled', { retryable: stalled }
+      ));
+      xhr.send(formData);
+    });
+  }
+
+  async function uploadImage(photo, upload, blob, onStatus) {
+    const sign = () => requestJson('Signing upload', `${S3_API}/uploads/sign`, jsonPost({ uploads: [upload] }));
+    // Sign while checking the filename, saving a round trip
+    let [signed] = await Promise.all([withRetries(sign, onStatus), claimKey(photo, upload.key, onStatus)]);
+    await withRetries(async attempt => {
+      // Signed forms expire, so get a fresh one for each retry
+      if (attempt > 0) signed = await sign();
+      const form = signed.forms[0];
+      const formData = new FormData();
+      Object.entries(form.fields).forEach(([name, value]) => formData.append(name, value));
+      // S3 requires the file to be the last field
+      formData.append('file', blob, upload.filename);
+      onStatus(`Uploading ${formatBytes(blob.size)} to S3…`);
+      await postForm(form.url, formData, fraction => {
+        onStatus(`Uploading ${formatBytes(blob.size)} to S3… ${Math.round(fraction * 100)}%`);
+      });
+    }, onStatus);
+    return signed.uploadId;
+  }
+
+  // Only bookkeeping for the S3 manager, so it runs in the background and
+  // a failure doesn't stop the live update from being posted
+  async function completeUpload(uploadId, upload) {
+    try {
+      await withRetries(
+        () => requestJson('Completing upload', `${S3_API}/uploads/complete`, jsonPost({ uploadId, objects: [upload] })),
+        () => {}
+      );
+    } catch (err) {
+      if (err.code !== 'completed_upload') console.warn('Could not mark the upload complete', err);
+    }
+  }
+
+  async function publish() {
+    const photo = state;
+    const format = selectedFormat();
+    if (!photo || !format || !photo.blobs[format]) return;
+    publishing = true;
+    updatePublishButton();
+    const onStatus = message => setStatus(message);
+    try {
+      const key = keyFor(photo, format);
+      // A retry after a failed post doesn't need to upload again
+      if (photo.uploadedKey !== key) {
+        const blob = photo.blobs[format];
+        const upload = {
+          clientId: 'image',
+          kind: 'original',
+          key,
+          filename: key.split('/').pop(),
+          size: blob.size,
+          contentType: blob.type
+        };
+        setStatus('Starting upload…');
+        const uploadId = await uploadImage(photo, upload, blob, onStatus);
+        photo.uploadedKey = key;
+        completeUpload(uploadId, upload);
+      }
+      setStatus('Posting live update…');
+      // Safe to retry: the server won't post the same image URL twice
+      const data = await withRetries(() => requestJson('Posting update', CREATE_URL, jsonPost({
+        entry_id: entrySelect.value,
+        image_url: publicUrl(key),
+        alt: altInput.value.trim(),
+        caption: captionInput.value,
+        width: photo.width,
+        height: photo.height
+      }, { 'X-CSRFToken': CSRF_TOKEN })), onStatus);
+
+      // Done: clear the photo so it can't be posted twice
+      state = null;
+      fileInput.value = '';
+      editor.hidden = true;
+      originalInfo.hidden = true;
+      resetEditor();
+      setStatus('Posted! ', 'success');
+      const link = document.createElement('a');
+      link.href = data.url;
+      link.target = '_blank';
+      link.textContent = 'View update';
+      statusEl.append(link);
+    } catch (err) {
+      setStatus(`${err.message}\nYour photo and text are still here, tap the button to try again.`, 'error');
+    } finally {
+      publishing = false;
+      updatePublishButton();
+    }
+  }
+
+  /* ---------- Wiring ---------- */
+
+  // Start downloading any wasm encoders straight away
+  Object.keys(FORMATS).forEach(async format => {
+    if (await nativeEncoderHonoursQuality(FORMATS[format].mime)) {
+      setEncoderStatus(format, 'native');
+    } else if (wasmAvailable) {
+      wasmEncoders[format].start();
+    }
+  });
+  window.addEventListener('online', () => {
+    Object.keys(FORMATS).forEach(format => {
+      if (encoderStatus[format] === 'failed') wasmEncoders[format].start();
+    });
+  });
+  window.addEventListener('beforeunload', e => {
+    if (publishing) {
+      e.preventDefault();
+      e.returnValue = '';
+    }
+  });
+
+  entrySelect.addEventListener('change', () => {
+    entryLink.href = entrySelect.selectedOptions[0].dataset.url;
+    updatePublishButton();
+  });
+  fileInput.addEventListener('change', () => {
+    const file = fileInput.files[0];
+    if (file) handleFile(file);
+  });
+  document.querySelectorAll('input[name="format"]').forEach(radio => {
+    radio.addEventListener('change', () => {
+      if (state) state.userChoseFormat = true;
+      updateNameInfo();
+      updatePublishButton();
+    });
+  });
+  document.querySelectorAll('[data-retry]').forEach(button => {
+    button.addEventListener('click', async () => {
+      const photo = state;
+      if (!photo) return;
+      const format = button.dataset.retry;
+      const blob = await startEncode(photo, format);
+      // Alt text comes from the WebP, so try again if it hasn't worked yet
+      if (blob && format === 'webp' && state === photo && !altInput.value.trim()) {
+        generateAltText(photo, { replaceEdits: false });
+      }
+    });
+  });
+  regenerateButton.addEventListener('click', () => {
+    if (state) generateAltText(state, { replaceEdits: true });
+  });
+  altInput.addEventListener('input', updatePublishButton);
+  nameInput.addEventListener('input', () => {
+    updateNameInfo();
+    updatePublishButton();
+  });
+  publishButton.addEventListener('click', publish);
+})();
+{% endif %}
+</script>
+</body>
+</html>
