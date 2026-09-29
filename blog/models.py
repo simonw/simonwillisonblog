@@ -389,6 +389,13 @@ class Entry(BaseModel):
     custom_template = models.CharField(max_length=100, null=True, blank=True)
     is_entry = True
     live_timezone = models.CharField(max_length=100, null=True, blank=True)
+    poll_live_updates = models.BooleanField(
+        default=False,
+        help_text=(
+            "Live blog mode: open pages check for new live updates every "
+            "few seconds. Turn off when the event is over."
+        ),
+    )
 
     def next_by_created(self):
         return super().get_next_by_created(is_draft=False)

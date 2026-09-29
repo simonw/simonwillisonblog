@@ -2,7 +2,7 @@ import json
 
 from django.conf import settings
 from django.contrib.admin.views.decorators import staff_member_required
-from django.db.models import Max
+from django.db.models import F, Max
 from django.http import HttpResponseForbidden, JsonResponse
 from django.shortcuts import render
 from django.utils.html import escape, format_html
@@ -19,23 +19,27 @@ def live_photo_entries(requested_id=None):
     """
     Returns (entries, selected_entry) for the live photo entry picker.
 
-    Entries that have live updates come first, most recently updated first,
-    followed by the most recently created entries. The default selection is
-    the entry with the most recent live update, unless requested_id is given.
+    Entries with poll_live_updates turned on come first, then entries that
+    have live updates, most recently updated first, followed by the most
+    recently created entries. The default selection is the first of those,
+    unless requested_id is given.
     """
     annotated = Entry.objects.annotate(latest_update=Max("updates__created")).only(
-        "id", "title", "created", "is_draft"
+        "id", "title", "created", "is_draft", "poll_live_updates"
     )
-    entries = list(
-        annotated.filter(latest_update__isnull=False).order_by("-latest_update")[
-            :RECENT_ENTRY_COUNT
-        ]
-    )
-    seen = {entry.pk for entry in entries}
-    for entry in annotated.order_by("-created")[:RECENT_ENTRY_COUNT]:
-        if entry.pk not in seen:
-            entries.append(entry)
-            seen.add(entry.pk)
+    entries = []
+    seen = set()
+    for queryset in (
+        annotated.filter(poll_live_updates=True).order_by(
+            F("latest_update").desc(nulls_last=True), "-created"
+        ),
+        annotated.filter(latest_update__isnull=False).order_by("-latest_update"),
+        annotated.order_by("-created"),
+    ):
+        for entry in queryset[:RECENT_ENTRY_COUNT]:
+            if entry.pk not in seen:
+                entries.append(entry)
+                seen.add(entry.pk)
 
     selected = None
     if requested_id:

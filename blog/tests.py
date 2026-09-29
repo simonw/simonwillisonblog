@@ -21,7 +21,7 @@ from .factories import (
     SponsorMessageFactory,
 )
 from guides.factories import ChapterFactory, GuideFactory, GuideSectionFactory
-from blog.models import Tag, PreviousTagName, TagMerge
+from blog.models import LiveUpdate, Tag, PreviousTagName, TagMerge
 from guides.models import ChapterChange, GuideSection
 from django.utils import timezone
 import datetime
@@ -5007,6 +5007,84 @@ class CloudflarePurgeTests(TransactionTestCase):
         self.assertContains(response, "/admin/purge-cache/")
 
 
+class LiveUpdateTests(TransactionTestCase):
+    def test_entry_without_live_updates(self):
+        entry = EntryFactory()
+        response = self.client.get(entry.get_absolute_url())
+        self.assertNotContains(response, 'id="live-updates"')
+        self.assertNotContains(response, "/static/live-updates.")
+
+    def test_entry_with_live_updates_not_polling(self):
+        entry = EntryFactory()
+        update = LiveUpdate.objects.create(entry=entry, content="<em>Hello</em>")
+        response = self.client.get(entry.get_absolute_url())
+        self.assertContains(
+            response, '<div id="live-updates" data-entry-id="{}">'.format(entry.pk)
+        )
+        self.assertContains(response, 'data-update-id="{}"'.format(update.pk))
+        self.assertContains(response, "<em>Hello</em>")
+        self.assertContains(response, "/static/live-updates.")
+        self.assertNotContains(response, "data-poll")
+
+    def test_entry_polling_without_updates_yet(self):
+        entry = EntryFactory(poll_live_updates=True)
+        response = self.client.get(entry.get_absolute_url())
+        self.assertContains(
+            response,
+            '<div id="live-updates" data-entry-id="{}" data-poll="1">'.format(entry.pk),
+        )
+        self.assertContains(response, "/static/live-updates.")
+
+    def test_updates_json(self):
+        entry = EntryFactory()
+        update1 = LiveUpdate.objects.create(entry=entry, content="One")
+        update2 = LiveUpdate.objects.create(entry=entry, content="Two")
+        data = self.client.get("/updates/{}.json".format(entry.pk)).json()
+        self.assertIs(data["poll"], False)
+        self.assertEqual([u["id"] for u in data["updates"]], [update1.pk, update2.pk])
+        data = self.client.get(
+            "/updates/{}.json?since={}".format(entry.pk, update1.pk)
+        ).json()
+        self.assertEqual([u["content"] for u in data["updates"]], ["Two"])
+        entry.poll_live_updates = True
+        entry.save()
+        data = self.client.get("/updates/{}.json".format(entry.pk)).json()
+        self.assertIs(data["poll"], True)
+
+    def test_migration_removes_pasted_live_updates_js(self):
+        from django.apps import apps
+        import importlib
+
+        migration = importlib.import_module(
+            "blog.migrations.0053_remove_pasted_live_updates_js"
+        )
+        pasted = (
+            "<script>\r\n"
+            'document.addEventListener("DOMContentLoaded", () => {\r\n'
+            "const entryId = 1;\r\n"
+            "function pollUpdates() {}\r\n"
+            "function addSortToggleLink() {}\r\n"
+            "// pollUpdates();\r\n"
+            "addSortToggleLink();\r\n"
+            "});\r\n"
+            "</script>"
+        )
+        other_script = "<script>console.log('pollUpdates');</script>"
+        pasted_plus_more = pasted + '\n<script src="/other.js"></script>'
+        live = EntryFactory(extra_head_html=pasted)
+        untouched = [
+            EntryFactory(extra_head_html=other_script),
+            EntryFactory(extra_head_html=pasted_plus_more),
+            EntryFactory(extra_head_html=None),
+        ]
+        migration.remove_pasted_live_updates_js(apps, None)
+        live.refresh_from_db()
+        self.assertEqual(live.extra_head_html, "")
+        for entry, expected in zip(untouched, [other_script, pasted_plus_more, None]):
+            entry.refresh_from_db()
+            self.assertEqual(entry.extra_head_html, expected)
+
+
 class LivePhotoTests(TransactionTestCase):
     IMAGE_URL = "https://static.simonwillison.net/static/2026/live-20260929-143212.avif"
 
@@ -5073,6 +5151,20 @@ class LivePhotoTests(TransactionTestCase):
                 self.current_live.pk, self.current_live.get_absolute_url()
             ),
         )
+
+    def test_page_defaults_to_entry_with_polling_turned_on(self):
+        # A live blog that has just started has no updates yet
+        self.newest.poll_live_updates = True
+        self.newest.save()
+        self.client.login(username="admin", password="password")
+        response = self.client.get("/admin/live-photo/")
+        self.assertEqual(response.context["selected_entry"], self.newest)
+        self.assertEqual(
+            [e.pk for e in response.context["entries"]],
+            [self.newest.pk, self.current_live.pk, self.old_live.pk],
+        )
+        self.assertContains(response, "{} (live)".format(self.newest.title))
+        self.assertNotContains(response, "{} (live)".format(self.current_live.title))
 
     def test_page_entry_query_string(self):
         self.client.login(username="admin", password="password")
