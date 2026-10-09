@@ -27,7 +27,36 @@ from .models import (
     LiveUpdate,
     TagMerge,
     SponsorMessage,
+    Newsletter,
 )
+
+
+@admin.register(Newsletter)
+class NewsletterAdmin(admin.ModelAdmin):
+    list_display = ("title", "kind", "created", "is_public", "is_draft")
+    list_filter = ("kind", "is_public", "is_draft")
+    search_fields = ("title", "body", "url")
+    date_hierarchy = "created"
+    prepopulated_fields = {"slug": ("title",)}
+    readonly_fields = ("import_ref", "metadata")
+    list_per_page = 50
+    fieldsets = (
+        (None, {"fields": ("kind", "title", "slug", "created")}),
+        ("Links and image", {"fields": ("url", "card_image")}),
+        (
+            "Content and visibility",
+            {
+                "fields": ("is_draft", "is_public", "preview_headings", "body"),
+                "description": "Draft hides the entire listing. Leave public unchecked for "
+                "sponsors-only issues. Substack issues store links and metadata; "
+                "public monthly issues also need their Markdown content.",
+            },
+        ),
+        (
+            "Import details",
+            {"fields": ("import_ref", "metadata"), "classes": ("collapse",)},
+        ),
+    )
 
 
 class AutosaveAdminMixin:

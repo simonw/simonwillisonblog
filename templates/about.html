@@ -1,8 +1,15 @@
 {% extends "item_base.html" %}
+{% load static %}
 
 {% block title %}About Simon Willison{% endblock %}
 
 {% block rel_canonical %}{% endblock %}
+
+{% block extrahead %}{{ block.super }}<link rel="stylesheet" href="{% static 'css/newsletters.css' %}?v=2">{% endblock %}
+
+{% block secondary %}
+{% include "includes/newsletter_sidebar.html" %}
+{% endblock %}
 
 {% block item_content %}{% load blog_tags %}
 <div id="banner-scheme-picker" style="display:none; background: #f5f3f0; border: 1px solid #ddd; border-radius: 6px; padding: 12px 16px; margin-bottom: 20px;">
@@ -84,7 +91,7 @@
 
 <h2 id="subscribe">Subscribe</h2>
 
-<p>You can subscribe to my blog via email newsletter, using Atom feeds or by following me on Mastodon or Bluesky or Twitter.</p>
+<p>Explore <a href="/newsletters/">my newsletters and past issues</a>, including my weekly-ish Substack and monthly briefing for sponsors. You can also follow my writing using Atom feeds or on Mastodon, Bluesky or Twitter.</p>
 
 <h3 id="newsletter">Free weekly-ish newsletter</h3>
 

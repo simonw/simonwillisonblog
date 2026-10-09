@@ -2,7 +2,16 @@ from django import template
 
 register = template.Library()
 
-from blog.models import Entry, Photo, Quotation, Blogmark, Photoset, Note, Beat
+from blog.models import (
+    Entry,
+    Photo,
+    Quotation,
+    Blogmark,
+    Photoset,
+    Note,
+    Beat,
+    Newsletter,
+)
 from guides.models import Chapter
 import datetime, copy
 
@@ -61,6 +70,7 @@ MODELS_TO_CHECK = (  # Name, model, score
     ("entries", Entry, 4, "created"),
     ("quotes", Quotation, 2, "created"),
     ("notes", Note, 2, "created"),
+    ("newsletters", Newsletter, 2, "created"),
     ("chapters", Chapter, 2, "created"),
     ("photos", Photo, 1, "created"),
     ("photosets", Photoset, 2, "primary__created"),
@@ -96,7 +106,7 @@ def calendar_context(date):
             created_lookup + "__month": date.month,
             created_lookup + "__year": date.year,
         }
-        if model in (Blogmark, Entry, Quotation, Note, Chapter):
+        if model in (Blogmark, Entry, Quotation, Note, Chapter, Newsletter):
             lookup_args["is_draft"] = False
         if model == Chapter:
             lookup_args["guide__is_draft"] = False
@@ -133,7 +143,16 @@ def calendar_context(date):
     # Find next and previous months
     # WARNING: This makes an assumption that I posted at least one thing every
     # month since I started.
-    first_month = Entry.objects.all().order_by("created")[0].created.date()
+    first_dates = [
+        model.objects.filter(is_draft=False)
+        .order_by("created")
+        .values_list("created", flat=True)
+        .first()
+        for model in (Entry, Newsletter)
+    ]
+    first_month = min(
+        (created.date() for created in first_dates if created), default=date
+    )
     if get_next_month(first_month) <= date:
         previous_month = get_previous_month(date)
     else:

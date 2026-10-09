@@ -28,6 +28,7 @@ from .models import (
     Tag,
     PreviousTagName,
     TagMerge,
+    Newsletter,
 )
 from guides.models import Chapter, Guide
 import hashlib
@@ -65,6 +66,44 @@ def set_no_cache(response):
     response["Pragma"] = "no-cache"
     response["Expires"] = "0"
     return response
+
+
+def newsletters(request, year=None):
+    issues = Newsletter.objects.filter(is_draft=False).defer(
+        "search_document", "metadata"
+    )
+    years = issues.dates("created", "year", order="DESC")
+    if year is not None:
+        year = int(year)
+        if year < 1:
+            raise Http404
+        issues = issues.filter(created__year=year)
+        if not issues.exists():
+            raise Http404
+    else:
+        issues = issues[:10]
+    return render(
+        request,
+        "newsletters.html",
+        {"newsletters": issues, "newsletter_years": years, "year": year},
+    )
+
+
+def newsletter_detail(request, slug):
+    newsletter = get_object_or_404(
+        Newsletter,
+        slug=slug,
+        kind=Newsletter.Kind.SPONSOR,
+        is_public=True,
+        is_draft=False,
+    )
+    if not newsletter.body.strip():
+        raise Http404
+    return render(
+        request,
+        "newsletter.html",
+        {"newsletter": newsletter, "item": newsletter},
+    )
 
 
 def archive_item(request, year, month, day, slug):
@@ -367,6 +406,9 @@ def archive_year(request, year):
         note_count = Note.objects.filter(
             created__year=year, created__month=month, is_draft=False
         ).count()
+        newsletter_count = Newsletter.objects.filter(
+            created__year=year, created__month=month, is_draft=False
+        ).count()
         chapter_count = Chapter.objects.filter(
             created__year=year,
             created__month=month,
@@ -380,6 +422,7 @@ def archive_year(request, year):
             + quote_count
             + photo_count
             + note_count
+            + newsletter_count
             + chapter_count
         )
         if month_count:
@@ -389,6 +432,7 @@ def archive_year(request, year):
                 ("photo", photo_count),
                 ("quote", quote_count),
                 ("note", note_count),
+                ("newsletter", newsletter_count),
                 ("chapter", chapter_count),
             ]
             counts_not_0 = [p for p in counts if p[1]]
@@ -432,6 +476,7 @@ def archive_month(request, year, month):
         (Note, "note", "note", "notes"),
         (Beat, "beat", "beat", "beats"),
         (Chapter, "chapter", "chapter", "chapters"),
+        (Newsletter, "newsletter", "newsletter", "newsletters"),
     ):
         extra_filter = {}
         if model == Chapter:
@@ -443,7 +488,9 @@ def archive_month(request, year, month):
             ).values_list("id", flat=True)
         )
         if ids:
-            if model == Chapter:
+            if model == Newsletter:
+                qs = model.objects.in_bulk(ids)
+            elif model == Chapter:
                 qs = (
                     model.objects.select_related("guide")
                     .prefetch_related("tags")
@@ -496,7 +543,7 @@ def _get_adjacent_content_days(current_date):
     previous_date = None
     next_date = None
 
-    for model in (Blogmark, Entry, Quotation, Note, Beat, Chapter):
+    for model in (Blogmark, Entry, Quotation, Note, Beat, Chapter, Newsletter):
         extra_filter = {}
         if model == Chapter:
             extra_filter["guide__is_draft"] = False
@@ -558,6 +605,7 @@ def archive_day(request, year, month, day):
         ("note", Note),
         ("beat", Beat),
         ("chapter", Chapter),
+        ("newsletter", Newsletter),
     ):
         extra_filter = {}
         if model == Chapter:
@@ -1037,7 +1085,9 @@ def bulk_tag(request):
     """
     from blog import search as search_views
 
-    context = search_views.search(request, return_context=True, per_page=200)
+    context = search_views.search(
+        request, return_context=True, per_page=200, include_newsletters=False
+    )
     return render(request, "bulk_tag.html", context)
 
 
@@ -1310,7 +1360,14 @@ IMPORTERS = {
 @staff_member_required
 @never_cache
 def importers(request):
-    return render(request, "importers.html", {"importers": IMPORTERS})
+    return render(
+        request,
+        "importers.html",
+        {
+            "importers": IMPORTERS,
+            "private_monthly_configured": bool(settings.GH_API_SIMONW_PRIVATE_MONTHLY),
+        },
+    )
 
 
 @require_POST
@@ -1326,15 +1383,51 @@ def api_run_importer(request):
         import_tils,
         import_tools,
     )
+    from blog.newsletter_importers import (
+        import_substack,
+        import_substack_archive_page,
+        import_private_monthly,
+        import_public_monthly_page,
+        NewsletterImportRateLimitError,
+    )
 
     try:
         body = json_module.loads(request.body)
     except (json_module.JSONDecodeError, ValueError):
         return JsonResponse({"error": "Invalid JSON"}, status=400)
 
+    if not isinstance(body, dict):
+        return JsonResponse({"error": "Expected a JSON object"}, status=400)
     importer_name = body.get("importer")
-    if importer_name not in IMPORTERS:
+    is_newsletter = importer_name in (
+        "substack_latest",
+        "substack_all",
+        "monthly_private",
+        "monthly_public",
+    )
+    if not isinstance(importer_name, str) or (
+        importer_name not in IMPORTERS and not is_newsletter
+    ):
         return JsonResponse({"error": "Unknown importer"}, status=400)
+
+    if (
+        importer_name == "monthly_private"
+        and not settings.GH_API_SIMONW_PRIVATE_MONTHLY
+    ):
+        return JsonResponse(
+            {"error": "Set GH_API_SIMONW_PRIVATE_MONTHLY to enable this importer."},
+            status=400,
+        )
+
+    offset = body.get("offset", 0)
+    if importer_name == "monthly_public" and (
+        type(offset) is not int or offset < 0 or offset >= 12000
+    ):
+        return JsonResponse({"error": "Invalid archive offset"}, status=400)
+    if importer_name == "substack_all" and (
+        type(offset) is not int or offset < 0 or offset >= 12000 or offset % 12
+    ):
+        return JsonResponse({"error": "Invalid archive offset"}, status=400)
 
     is_draft = bool(body.get("is_draft"))
 
@@ -1348,18 +1441,39 @@ def api_run_importer(request):
     }
 
     try:
-        result = importer_funcs[importer_name](
-            IMPORTERS[importer_name]["url"], is_draft=is_draft
-        )
+        if importer_name == "monthly_private":
+            result = import_private_monthly()
+        elif importer_name == "monthly_public":
+            result = import_public_monthly_page(offset)
+        elif importer_name == "substack_latest":
+            result = import_substack(include_items=True)
+        elif importer_name == "substack_all":
+            result = import_substack_archive_page(offset)
+        else:
+            result = importer_funcs[importer_name](
+                IMPORTERS[importer_name]["url"], is_draft=is_draft
+            )
+    except NewsletterImportRateLimitError as e:
+        return JsonResponse({"error": str(e)}, status=429)
     except Exception as e:
-        return JsonResponse({"error": str(e)}, status=500)
+        error = (
+            "Private newsletter import failed. Check the repository token, its read access, and GitHub availability."
+            if importer_name == "monthly_private"
+            else str(e)
+        )
+        return JsonResponse({"error": error}, status=500)
 
     items = result["items"]
     total = len(items)
     display_items = items[:10]
 
     items_html = render_to_string(
-        "includes/importer_results.html", {"items": display_items}
+        (
+            "includes/newsletter_importer_results.html"
+            if is_newsletter
+            else "includes/importer_results.html"
+        ),
+        {"items": display_items},
     )
 
     return JsonResponse(
@@ -1369,6 +1483,8 @@ def api_run_importer(request):
             "skipped": result.get("skipped", 0),
             "total": total,
             "items_html": items_html,
+            "next_offset": result.get("next_offset"),
+            "source_refs": result.get("source_refs", []),
         }
     )
 

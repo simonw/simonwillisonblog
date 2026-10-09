@@ -28,6 +28,11 @@
   </div>
 </div> <!-- end div.entry -->
 {% endif %}
+{% if item.type == "newsletter" %}
+<div class="newsletter-list-item segment" data-type="newsletter" data-id="{{ item.obj.id }}">
+  {% include "includes/newsletter_listing.html" with newsletter=item.obj %}
+</div>
+{% endif %}
 {% with item.obj.tags.all as all_tags %}
 {% partialdef date-and-tags %}
   <p class="date-and-tags">

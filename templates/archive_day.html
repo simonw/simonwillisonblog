@@ -1,4 +1,6 @@
 {% extends "smallhead.html" %}
+{% load static %}
+{% block extrahead %}<link rel="stylesheet" href="{% static 'css/newsletters.css' %}">{% endblock %}
 
 {% block title %}Archive for {{ date|date:"l, jS F Y" }}{% endblock %}
 

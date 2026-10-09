@@ -1,4 +1,5 @@
-{% extends "smallhead.html" %}{% load humanize %}
+{% extends "smallhead.html" %}{% load humanize static %}
+{% block extrahead %}<link rel="stylesheet" href="{% static 'css/newsletters.css' %}">{% endblock %}
 
 {% block title %}Archive for {{ date|date:"F Y" }}{% endblock %}
 
@@ -16,7 +17,7 @@
 
 <p style="font-size: 0.8em; margin-top: 0.2em;">{{ total|intcomma }} post{{ total|pluralize }}:
     {% for t in type_counts %}
-        <a href="/search/?type={{ t.type }}&year={{ date|date:'Y' }}&month={{ date|date:'n' }}">{{ t.count }} {% if t.count == 1 %}{{ t.singular }}{% else %}{{ t.plural }}{% endif %}</a>{% if not forloop.last %}, {% endif %}
+        {% if t.type != "newsletter" %}<a href="/search/?type={{ t.type }}&year={{ date|date:'Y' }}&month={{ date|date:'n' }}">{% endif %}{{ t.count }} {% if t.count == 1 %}{{ t.singular }}{% else %}{{ t.plural }}{% endif %}{% if t.type != "newsletter" %}</a>{% endif %}{% if not forloop.last %}, {% endif %}
     {% endfor %}
 </p>
 {% endif %}

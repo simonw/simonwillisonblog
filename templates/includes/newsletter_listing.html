@@ -1,0 +1,18 @@
+{% load entry_tags %}
+    {% if newsletter.card_image %}<a class="newsletter-thumbnail" href="{{ newsletter.get_absolute_url }}" tabindex="-1" aria-hidden="true"><img src="{{ newsletter.card_image }}" alt="" loading="lazy" decoding="async" width="112" height="84"></a>{% endif %}
+    <div class="newsletter-list-text">
+      <p class="newsletter-meta"><time datetime="{{ newsletter.created|date:'c' }}">{{ newsletter.created|date:"j F Y" }}</time> &middot; {% if newsletter.kind == "substack" %}Substack{% else %}Monthly newsletter{% endif %}{% if not newsletter.is_public %} &middot; <strong>Sponsors only</strong>{% endif %}</p>
+      <h3><a href="{{ newsletter.get_absolute_url }}">{{ newsletter.title|typography }}</a></h3>
+      {% if show_newsletter_excerpts and newsletter.is_public %}<p class="newsletter-search-excerpt">{{ newsletter.body_rendered|striptags|truncatewords:50|force_escape }}</p>{% endif %}
+      {% if newsletter.kind == "sponsor" and not newsletter.is_public %}
+      {% if newsletter.preview_heading_list %}
+      <ul class="newsletter-preview-headings">
+        {% for heading in newsletter.preview_heading_list %}<li>{{ heading }}</li>{% endfor %}
+      </ul>
+      {% endif %}
+      <div class="newsletter-sponsor-prompt">
+        <p><a class="newsletter-sponsor-link" href="https://github.com/sponsors/simonw/">Sponsor me on GitHub</a> to read this issue early. It becomes public a month after sending.</p>
+        <p class="newsletter-existing-sponsor">Already a sponsor? <a href="{{ newsletter.get_absolute_url }}">Read this issue on GitHub</a>.</p>
+      </div>
+      {% endif %}
+    </div>

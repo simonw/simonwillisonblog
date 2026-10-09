@@ -8,7 +8,16 @@ from django.contrib.postgres.search import SearchQuery, SearchRank
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.http import HttpResponse, Http404
 from django.shortcuts import render
-from blog.models import Beat, Entry, Blogmark, Quotation, Note, Tag, load_mixed_objects
+from blog.models import (
+    Beat,
+    Entry,
+    Blogmark,
+    Quotation,
+    Note,
+    Newsletter,
+    Tag,
+    load_mixed_objects,
+)
 from guides.models import Chapter
 from spellchecker import SpellChecker
 import datetime
@@ -61,7 +70,9 @@ def parse_date_clauses(query):
     return query.strip(), from_date, to_date
 
 
-def search(request, q=None, return_context=False, per_page=30):
+def search(
+    request, q=None, return_context=False, per_page=30, include_newsletters=True
+):
     q = (q or request.GET.get("q", "")).strip()
     search_q, from_date, to_date = parse_date_clauses(q)
     search_q = search_q.strip()
@@ -97,6 +108,7 @@ def search(request, q=None, return_context=False, per_page=30):
         "notes": "note",
         "beats": "beat",
         "chapters": "chapter",
+        "newsletters": "newsletter",
     }
     id_filters = {}  # type_name -> set of int IDs
     for param, type_name in id_filter_param_map.items():
@@ -121,6 +133,10 @@ def search(request, q=None, return_context=False, per_page=30):
         )
         if klass == Chapter:
             qs = qs.filter(guide__is_draft=False)
+        if klass == Newsletter:
+            qs = qs.filter(kind=Newsletter.Kind.SPONSOR, is_public=True).exclude(
+                body=""
+            )
         if selected_year and selected_year.isdigit() and 2000 <= int(selected_year):
             qs = qs.filter(created__year=int(selected_year))
         if (
@@ -138,10 +154,11 @@ def search(request, q=None, return_context=False, per_page=30):
             qs = qs.annotate(rank=rank_annotation)
         if selected_beat and type_name == "beat":
             qs = qs.filter(beat_type=selected_beat)
-        for tag in selected_tags:
-            qs = qs.filter(tags__tag=tag)
-        for exclude_tag in excluded_tags:
-            qs = qs.exclude(tags__tag=exclude_tag)
+        if klass != Newsletter:
+            for tag in selected_tags:
+                qs = qs.filter(tags__tag=tag)
+            for exclude_tag in excluded_tags:
+                qs = qs.exclude(tags__tag=exclude_tag)
         return qs.order_by()
 
     # Start with a .none() queryset just so we can union stuff onto it
@@ -165,7 +182,11 @@ def search(request, q=None, return_context=False, per_page=30):
         (Note, "note", "note"),
         (Beat, "beat", "beat"),
         (Chapter, "chapter", "guides_chapter_set"),
+        (Newsletter, "newsletter", None),
     ):
+        # Newsletters have no tags. Excluding a tag still permits untagged content.
+        if klass == Newsletter and (selected_tags or not include_newsletters):
+            continue
         # Determine if this type should be included based on selected_type
         if selected_type:
             if selected_beat_subtype:
@@ -195,12 +216,13 @@ def search(request, q=None, return_context=False, per_page=30):
             type_count = klass_qs.count()
             if type_count:
                 type_counts_raw[type_name] = type_count
-        for tag, count in (
-            Tag.objects.filter(**{"%s__in" % tag_filter_name: klass_qs})
-            .annotate(n=models.Count("tag"))
-            .values_list("tag", "n")
-        ):
-            tag_counts_raw[tag] = tag_counts_raw.get(tag, 0) + count
+        if tag_filter_name:
+            for tag, count in (
+                Tag.objects.filter(**{"%s__in" % tag_filter_name: klass_qs})
+                .annotate(n=models.Count("tag"))
+                .values_list("tag", "n")
+            ):
+                tag_counts_raw[tag] = tag_counts_raw.get(tag, 0) + count
         for row in (
             klass_qs.order_by()
             .annotate(year=TruncYear("created"))
@@ -254,6 +276,7 @@ def search(request, q=None, return_context=False, per_page=30):
         "quotation": "Quotation",
         "note": "Note",
         "chapter": "Chapter",
+        "newsletter": "Newsletter",
     }
     # Add beat subtype labels: beat:release -> Release, etc.
     for bt_value, bt_label in Beat.BeatType.choices:
@@ -351,6 +374,7 @@ def search(request, q=None, return_context=False, per_page=30):
         "note": "Notes",
         "beat": "Elsewhere",
         "chapter": "Chapters",
+        "newsletter": "Newsletters",
     }
     sel_type = selected.get("type", "")
     if sel_type.startswith("beat:"):
@@ -392,7 +416,12 @@ def search(request, q=None, return_context=False, per_page=30):
     num_corrected_results = 0
     if not results and search_q and not return_context:
         suggestion = get_suggestion(search_q)
-        corrected_context = search(request, suggestion, return_context=True)
+        corrected_context = search(
+            request,
+            suggestion,
+            return_context=True,
+            include_newsletters=include_newsletters,
+        )
         num_corrected_results = corrected_context["total"]
 
     # Build id_filter_params for template (preserving raw values)
@@ -411,8 +440,17 @@ def search(request, q=None, return_context=False, per_page=30):
         "note": "notes",
         "beat": "beats",
         "chapter": "chapters",
+        "newsletter": "newsletters",
     }
-    for type_name in ("entry", "blogmark", "quotation", "note", "beat", "chapter"):
+    for type_name in (
+        "entry",
+        "blogmark",
+        "quotation",
+        "note",
+        "beat",
+        "chapter",
+        "newsletter",
+    ):
         if type_name in id_filters:
             id_filter_type_names.append(type_display_names[type_name])
 
@@ -437,6 +475,7 @@ def search(request, q=None, return_context=False, per_page=30):
         "id_filters": id_filters,
         "id_filter_params": id_filter_params,
         "id_filter_type_names": id_filter_type_names,
+        "show_newsletter_excerpts": True,
     }
 
     if return_context:

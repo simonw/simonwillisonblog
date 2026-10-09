@@ -1,0 +1,6 @@
+{% for item in items %}
+<div class="imported-item">
+  <p><strong>Newsletter:</strong> <a href="{{ item.get_absolute_url }}">{{ item.title }}</a>{% if item.is_draft %} (draft){% endif %}<br>
+  {{ item.created|date:"F j, Y" }} · <a href="{% url 'admin:blog_newsletter_change' item.pk %}">Edit</a></p>
+</div>
+{% endfor %}
