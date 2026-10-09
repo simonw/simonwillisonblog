@@ -13,8 +13,7 @@ def blog_mixed_list(context, items):
 
 @register.inclusion_tag("includes/blog_mixed_list.html", takes_context=True)
 def blog_mixed_list_with_dates(
-    context, items, year_headers=False, day_headers=False, day_links=False,
-    day_header_format="DATE_FORMAT",
+    context, items, year_headers=False, day_headers=False, day_links=False
 ):
     context.update(
         {
@@ -23,7 +22,6 @@ def blog_mixed_list_with_dates(
             "year_headers": year_headers,
             "day_headers": day_headers,
             "day_links": day_links,
-            "day_header_format": day_header_format,
         }
     )
     return context
