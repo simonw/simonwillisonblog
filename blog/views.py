@@ -326,6 +326,7 @@ def entry_updates_json(request, entry_id):
         updates = updates.filter(id__gt=since_id)
     response = JsonResponse(
         {
+            "poll": entry.poll_live_updates,
             "updates": [
                 {
                     "id": update.id,
@@ -342,7 +343,7 @@ def entry_updates_json(request, entry_id):
                     "content": update.content,
                 }
                 for update in updates
-            ]
+            ],
         }
     )
     response["Cache-Control"] = "s-maxage=10"

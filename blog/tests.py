@@ -21,7 +21,7 @@ from .factories import (
     SponsorMessageFactory,
 )
 from guides.factories import ChapterFactory, GuideFactory, GuideSectionFactory
-from blog.models import Tag, PreviousTagName, TagMerge
+from blog.models import LiveUpdate, Tag, PreviousTagName, TagMerge
 from guides.models import ChapterChange, GuideSection
 from django.utils import timezone
 import datetime
@@ -5015,3 +5015,273 @@ class CloudflarePurgeTests(TransactionTestCase):
         response = self.client.get("/admin/")
         self.assertContains(response, "Purge Cloudflare cache")
         self.assertContains(response, "/admin/purge-cache/")
+
+
+class LiveUpdateTests(TransactionTestCase):
+    def test_entry_without_live_updates(self):
+        entry = EntryFactory()
+        response = self.client.get(entry.get_absolute_url())
+        self.assertNotContains(response, 'id="live-updates"')
+        self.assertNotContains(response, "/static/live-updates.")
+
+    def test_entry_with_live_updates_not_polling(self):
+        entry = EntryFactory()
+        update = LiveUpdate.objects.create(entry=entry, content="<em>Hello</em>")
+        response = self.client.get(entry.get_absolute_url())
+        self.assertContains(
+            response, '<div id="live-updates" data-entry-id="{}">'.format(entry.pk)
+        )
+        self.assertContains(response, 'data-update-id="{}"'.format(update.pk))
+        self.assertContains(response, "<em>Hello</em>")
+        self.assertContains(response, "/static/live-updates.")
+        self.assertNotContains(response, "data-poll")
+
+    def test_entry_polling_without_updates_yet(self):
+        entry = EntryFactory(poll_live_updates=True)
+        response = self.client.get(entry.get_absolute_url())
+        self.assertContains(
+            response,
+            '<div id="live-updates" data-entry-id="{}" data-poll="1">'.format(entry.pk),
+        )
+        self.assertContains(response, "/static/live-updates.")
+
+    def test_updates_json(self):
+        entry = EntryFactory()
+        update1 = LiveUpdate.objects.create(entry=entry, content="One")
+        update2 = LiveUpdate.objects.create(entry=entry, content="Two")
+        data = self.client.get("/updates/{}.json".format(entry.pk)).json()
+        self.assertIs(data["poll"], False)
+        self.assertEqual([u["id"] for u in data["updates"]], [update1.pk, update2.pk])
+        data = self.client.get(
+            "/updates/{}.json?since={}".format(entry.pk, update1.pk)
+        ).json()
+        self.assertEqual([u["content"] for u in data["updates"]], ["Two"])
+        entry.poll_live_updates = True
+        entry.save()
+        data = self.client.get("/updates/{}.json".format(entry.pk)).json()
+        self.assertIs(data["poll"], True)
+
+    def test_migration_removes_pasted_live_updates_js(self):
+        from django.apps import apps
+        import importlib
+
+        migration = importlib.import_module(
+            "blog.migrations.0053_remove_pasted_live_updates_js"
+        )
+        pasted = (
+            "<script>\r\n"
+            'document.addEventListener("DOMContentLoaded", () => {\r\n'
+            "const entryId = 1;\r\n"
+            "function pollUpdates() {}\r\n"
+            "function addSortToggleLink() {}\r\n"
+            "// pollUpdates();\r\n"
+            "addSortToggleLink();\r\n"
+            "});\r\n"
+            "</script>"
+        )
+        other_script = "<script>console.log('pollUpdates');</script>"
+        pasted_plus_more = pasted + '\n<script src="/other.js"></script>'
+        live = EntryFactory(extra_head_html=pasted)
+        untouched = [
+            EntryFactory(extra_head_html=other_script),
+            EntryFactory(extra_head_html=pasted_plus_more),
+            EntryFactory(extra_head_html=None),
+        ]
+        migration.remove_pasted_live_updates_js(apps, None)
+        live.refresh_from_db()
+        self.assertEqual(live.extra_head_html, "")
+        for entry, expected in zip(untouched, [other_script, pasted_plus_more, None]):
+            entry.refresh_from_db()
+            self.assertEqual(entry.extra_head_html, expected)
+
+
+class LivePhotoTests(TransactionTestCase):
+    IMAGE_URL = "https://static.simonwillison.net/static/2026/live-20260929-143212.avif"
+
+    def setUp(self):
+        from blog.models import LiveUpdate
+
+        self.superuser = User.objects.create_superuser(
+            username="admin", password="password", email="admin@example.com"
+        )
+        now = timezone.now()
+        self.old_live = EntryFactory(
+            title="Old live blog", created=now - timedelta(days=30)
+        )
+        self.current_live = EntryFactory(
+            title="Current live blog", created=now - timedelta(days=20)
+        )
+        self.newest = EntryFactory(
+            title="Newest entry", created=now - timedelta(days=1)
+        )
+        for entry, age in ((self.old_live, 25), (self.current_live, 2)):
+            update = LiveUpdate.objects.create(entry=entry, content="Hello")
+            LiveUpdate.objects.filter(pk=update.pk).update(
+                created=now - timedelta(days=age)
+            )
+
+    def create(self, **overrides):
+        data = {
+            "entry_id": self.current_live.pk,
+            "image_url": self.IMAGE_URL,
+            "alt": 'A "slide" <with> text',
+            "caption": "The *keynote* by [Simon](https://simonwillison.net/)",
+            "width": 1280,
+            "height": 960,
+        }
+        data.update(overrides)
+        return self.client.post(
+            "/admin/live-photo/create/",
+            json.dumps(data),
+            content_type="application/json",
+        )
+
+    def test_page_requires_login(self):
+        response = self.client.get("/admin/live-photo/")
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("/admin/login/", response["Location"])
+
+    def test_page_requires_superuser(self):
+        User.objects.create_user(username="staff", password="password", is_staff=True)
+        self.client.login(username="staff", password="password")
+        self.assertEqual(self.client.get("/admin/live-photo/").status_code, 403)
+
+    def test_page_defaults_to_most_recently_updated_entry(self):
+        self.client.login(username="admin", password="password")
+        response = self.client.get("/admin/live-photo/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["selected_entry"], self.current_live)
+        self.assertEqual(
+            [e.pk for e in response.context["entries"]],
+            [self.current_live.pk, self.old_live.pk, self.newest.pk],
+        )
+        self.assertContains(
+            response,
+            '<option value="{}" data-url="{}" selected>'.format(
+                self.current_live.pk, self.current_live.get_absolute_url()
+            ),
+        )
+
+    def test_page_defaults_to_entry_with_polling_turned_on(self):
+        # A live blog that has just started has no updates yet
+        self.newest.poll_live_updates = True
+        self.newest.save()
+        self.client.login(username="admin", password="password")
+        response = self.client.get("/admin/live-photo/")
+        self.assertEqual(response.context["selected_entry"], self.newest)
+        self.assertEqual(
+            [e.pk for e in response.context["entries"]],
+            [self.newest.pk, self.current_live.pk, self.old_live.pk],
+        )
+        self.assertContains(response, "{} (live)".format(self.newest.title))
+        self.assertNotContains(response, "{} (live)".format(self.current_live.title))
+
+    def test_page_entry_query_string(self):
+        self.client.login(username="admin", password="password")
+        response = self.client.get("/admin/live-photo/?entry={}".format(self.newest.pk))
+        self.assertEqual(response.context["selected_entry"], self.newest)
+        # Entries outside the recent list are added to the top
+        older = EntryFactory(created=timezone.now() - timedelta(days=400))
+        for _ in range(10):
+            EntryFactory()
+        response = self.client.get("/admin/live-photo/?entry={}".format(older.pk))
+        self.assertEqual(response.context["selected_entry"], older)
+        self.assertEqual(response.context["entries"][0], older)
+        # Unknown IDs fall back to the default
+        response = self.client.get("/admin/live-photo/?entry=999999")
+        self.assertEqual(response.context["selected_entry"], self.current_live)
+
+    def test_page_with_no_entries(self):
+        from blog.models import Entry
+
+        Entry.objects.all().delete()
+        self.client.login(username="admin", password="password")
+        response = self.client.get("/admin/live-photo/")
+        self.assertContains(response, "There are no entries to post to yet.")
+
+    def test_create_live_update(self):
+        self.client.login(username="admin", password="password")
+        response = self.create()
+        self.assertEqual(response.status_code, 200)
+        update = self.current_live.updates.order_by("-id").first()
+        self.assertEqual(
+            update.content,
+            'The <em>keynote</em> by <a href="https://simonwillison.net/">Simon</a><br>'
+            '<img src="{}" alt="A &quot;slide&quot; &lt;with&gt; text" '
+            'width="1280" height="960" style="max-width: 100%; height: auto;">'.format(
+                self.IMAGE_URL
+            ),
+        )
+        data = response.json()
+        self.assertEqual(data["id"], update.pk)
+        self.assertEqual(
+            data["url"],
+            "{}#live-update-{}".format(self.current_live.get_absolute_url(), update.pk),
+        )
+
+    def test_create_with_multi_paragraph_caption(self):
+        self.client.login(username="admin", password="password")
+        response = self.create(caption="First\n\nSecond")
+        # The outer <p> tags are stripped, entry_updates.html provides them
+        self.assertTrue(
+            response.json()["content"].startswith("First</p>\n<p>Second<br><img ")
+        )
+
+    def test_create_without_caption(self):
+        self.client.login(username="admin", password="password")
+        response = self.create(caption="  ")
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.json()["content"].startswith('<br><img src="'))
+
+    def test_create_is_idempotent_for_same_image(self):
+        self.client.login(username="admin", password="password")
+        first = self.create().json()
+        second = self.create().json()
+        self.assertEqual(first["id"], second["id"])
+        self.assertEqual(self.current_live.updates.count(), 2)
+
+    def test_create_validation(self):
+        self.client.login(username="admin", password="password")
+        for overrides, status, error in (
+            ({"entry_id": 999999}, 404, "Entry not found"),
+            ({"entry_id": "nope"}, 404, "Entry not found"),
+            (
+                {"image_url": "https://example.com/evil.avif"},
+                400,
+                "image_url must start with https://static.simonwillison.net/",
+            ),
+            ({"alt": "   "}, 400, "Alt text is required"),
+            ({"width": "wide"}, 400, "width and height must be integers"),
+            ({"height": 0}, 400, "width and height are out of range"),
+        ):
+            with self.subTest(overrides=overrides):
+                response = self.create(**overrides)
+                self.assertEqual(response.status_code, status)
+                self.assertEqual(response.json(), {"error": error})
+        response = self.client.post(
+            "/admin/live-photo/create/", "not json", content_type="application/json"
+        )
+        self.assertEqual(response.json(), {"error": "Request body must be JSON"})
+        self.assertEqual(self.current_live.updates.count(), 1)
+
+    def test_create_requires_superuser(self):
+        User.objects.create_user(username="staff", password="password", is_staff=True)
+        self.client.login(username="staff", password="password")
+        self.assertEqual(self.create().status_code, 403)
+        self.client.logout()
+        self.assertEqual(self.create().status_code, 302)
+        self.assertEqual(self.current_live.updates.count(), 1)
+
+    def test_create_requires_csrf_token(self):
+        from django.test import Client
+
+        client = Client(enforce_csrf_checks=True)
+        client.login(username="admin", password="password")
+        response = client.post(
+            "/admin/live-photo/create/", "{}", content_type="application/json"
+        )
+        self.assertEqual(response.status_code, 403)
+
+    def test_admin_index_links_to_live_photo(self):
+        self.client.login(username="admin", password="password")
+        self.assertContains(self.client.get("/admin/"), 'href="/admin/live-photo/"')

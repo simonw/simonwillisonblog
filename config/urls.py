@@ -10,6 +10,7 @@ from django.conf import settings
 import django_sql_dashboard
 import djp
 from blog import views as blog_views
+from blog import views_live_photo as live_photo_views
 from blog import search as search_views
 from blog import tag_views
 from blog import feeds
@@ -221,6 +222,12 @@ urlpatterns = [
     path("admin/bulk-tag/", blog_views.bulk_tag, name="bulk_tag"),
     path("admin/merge-tags/", blog_views.merge_tags, name="merge_tags"),
     path("admin/importers/", blog_views.importers, name="importers"),
+    path("admin/live-photo/", live_photo_views.live_photo, name="live_photo"),
+    path(
+        "admin/live-photo/create/",
+        live_photo_views.live_photo_create,
+        name="live_photo_create",
+    ),
     path(
         "admin/purge-cache/",
         blog_views.admin_purge_cache,
