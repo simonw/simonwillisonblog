@@ -29,14 +29,13 @@ jobs:
           cache: pip
       - name: Install dependencies
         run: |
-          pip install -r requirements.txt
-      - name: Set up database
+          pip install uv
+      - name: Check Django and static assets
         run: |
-          sudo apt-get install -y postgresql-client
           export DATABASE_URL=postgres://postgres:@localhost/test_db
-          python manage.py migrate --noinput
-          python manage.py collectstatic --noinput
+          uv run --with-requirements requirements.txt ./manage.py check
+          uv run --with-requirements requirements.txt ./manage.py collectstatic --noinput
       - name: Run tests
         run: |
           export DATABASE_URL=postgres://postgres:@localhost/test_db
-          python manage.py test -v3
+          uv run --with-requirements requirements.txt pytest -v
