@@ -630,14 +630,7 @@ div.entry h2 {
   margin: 0 0 0.8em 0;
 }
 div.entry h2 a {
-  margin-left: -27px;
-  padding-left: 27px;
   text-decoration: none;
-}
-div.entry h2 a:hover {
-  background: url(/static/css/img/arrow.png);
-  background-repeat: no-repeat;
-  background-position: 0 3px;
 }
 div.entry h3,
 div.entry h4 {
