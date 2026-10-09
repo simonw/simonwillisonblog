@@ -160,6 +160,10 @@ def archive_item(request, year, month, day, slug):
                     .rsplit(":", 1)[0]
                 )
 
+        recent_articles = Entry.objects.filter(is_draft=False)
+        if isinstance(obj, Entry):
+            recent_articles = recent_articles.exclude(pk=obj.pk)
+
         response = render(
             request,
             template,
@@ -169,9 +173,8 @@ def archive_item(request, year, month, day, slug):
                 "object_id": obj.id,
                 "previously_hosted": previously_hosted,
                 "item": obj,
-                "recent_articles": Entry.objects.filter(is_draft=False)
-                .prefetch_related("tags")
-                .order_by("-created")[0:3],
+                "recent_articles": recent_articles.prefetch_related("tags")
+                .order_by("-created")[0:4],
                 "is_draft": obj.is_draft,
                 "updates": updates,
             },

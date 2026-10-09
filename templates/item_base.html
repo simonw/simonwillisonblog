@@ -28,9 +28,9 @@
 <div class="recent-articles">
 <h2>{% block recent_articles_header %}Recent articles{% endblock %}</h2>
 <ul class="bullets">
-  {% for article in recent_articles %}{% if article != item %}
+  {% for article in recent_articles %}
     <li><a href="{{ article.get_absolute_url }}">{{ article }}</a> - {{ article.created|date:"jS F Y" }}</li>
-  {% endif %}{% endfor %}
+  {% endfor %}
 </ul>
 </div>
 {% endif %}
