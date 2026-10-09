@@ -5,8 +5,9 @@ uv_run := "uv run --with-requirements requirements.txt"
 # Run tests
 @default: test
 
-# Run tracked apps' tests with supplied options (e.g. just test -k test_homepage)
+# Refresh static assets and run tracked apps' tests (e.g. just test -k test_homepage)
 @test *options:
+  {{uv_run}} ./manage.py collectstatic --noinput --verbosity 0
   {{uv_run}} ./manage.py test blog feedstats guides monthly redirects --keepdb {{options}}
 
 # Run development server (e.g. just server 8001)
