@@ -3,6 +3,7 @@
     <div class="newsletter-list-text">
       <p class="newsletter-meta"><time datetime="{{ newsletter.created|date:'c' }}">{{ newsletter.created|date:"j F Y" }}</time> &middot; {% if newsletter.kind == "substack" %}Substack{% else %}Monthly newsletter{% endif %}{% if not newsletter.is_public %} &middot; <strong>Sponsors only</strong>{% endif %}</p>
       <h3><a href="{{ newsletter.get_absolute_url }}">{{ newsletter.title|typography }}</a></h3>
+      {% if newsletter.subtitle %}<p class="newsletter-subtitle">{{ newsletter.subtitle }}</p>{% endif %}
       {% if show_newsletter_excerpts and newsletter.is_public %}<p class="newsletter-search-excerpt">{{ newsletter.body_rendered|striptags|truncatewords:50|force_escape }}</p>{% endif %}
       {% if newsletter.kind == "sponsor" %}
       {% if newsletter.preview_heading_list and not show_newsletter_excerpts %}

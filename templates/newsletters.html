@@ -1,7 +1,7 @@
 {% extends "smallhead.html" %}
 {% load entry_tags static %}
 {% block title %}Newsletters{% if year %}: {{ year }}{% endif %} - Simon Willison's Weblog{% endblock %}
-{% block extrahead %}<link rel="stylesheet" href="{% static 'css/newsletters.css' %}?v=2">{% endblock %}
+{% block extrahead %}<link rel="stylesheet" href="{% static 'css/newsletters.css' %}?v=4">{% endblock %}
 
 {% block primary %}
 <h2 class="archive-h2">{% if year %}<a href="{% url 'newsletters' %}">Newsletters</a>: {{ year }}{% else %}Newsletters{% endif %}</h2>

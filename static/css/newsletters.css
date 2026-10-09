@@ -44,7 +44,7 @@
   align-items: flex-start;
   gap: 1em;
   margin: 0;
-  padding: 1.2em 0;
+  padding: 0.9em 0;
   border-bottom: 1px solid var(--color-border);
 }
 .newsletter-list-text {
@@ -52,8 +52,8 @@
   flex: 1;
 }
 .newsletter-list-item h3 {
-  margin: 0.35em 0 0;
-  line-height: 1.35;
+  margin: 0.2em 0 0;
+  line-height: 1.25;
   font-size: 1.2em;
   overflow-wrap: anywhere;
 }
@@ -67,6 +67,13 @@
   margin: 0.6em 0 0;
   font-size: 0.95em;
   line-height: 1.5;
+}
+.newsletter-subtitle {
+  margin: 0.25em 0 0;
+  color: var(--color-text-muted);
+  font-size: 0.95em;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
 }
 a.newsletter-thumbnail {
   flex: 0 0 112px;

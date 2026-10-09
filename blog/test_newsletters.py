@@ -19,6 +19,7 @@ from .newsletter_importers import (
     monthly_records,
     MONTHLY_RAW,
     save_records,
+    substack_archive_records,
     substack_records,
 )
 
@@ -26,7 +27,7 @@ FEED = b"""<rss version="2.0"><channel><item>
 <title>A &amp; B</title><link>https://simonw.substack.com/p/a-b</link>
 <pubDate>Mon, 05 Oct 2026 17:16:45 GMT</pubDate>
 <enclosure url="https://example.com/image.jpg" type="image/jpeg"/>
-<description>Duplicate content should not be stored</description>
+<description><![CDATA[Plus we&#8217;re discussing A &amp; B]]></description>
 </item></channel></rss>"""
 
 
@@ -81,6 +82,7 @@ class NewsletterTests(TestCase):
         )
         obj = Newsletter.objects.get()
         self.assertEqual(obj.title, "A & B")
+        self.assertEqual(obj.subtitle, "Plus we’re discussing A & B")
         self.assertEqual(obj.card_image, "https://example.com/image.jpg")
         self.assertEqual(obj.body, "")
         self.assertEqual(obj.created.isoformat(), "2026-10-05T17:16:45+00:00")
@@ -90,9 +92,11 @@ class NewsletterTests(TestCase):
         obj.metadata["editor_note"] = "Keep this"
         obj.save()
         records[0]["title"] = "Updated title"
+        records[0]["subtitle"] = "Updated subtitle"
         self.assertEqual(save_records(records)["updated"], 1)
         obj.refresh_from_db()
         self.assertEqual(obj.slug, "my-custom-slug")
+        self.assertEqual(obj.subtitle, "Updated subtitle")
         self.assertTrue(obj.is_draft)
         self.assertEqual(obj.metadata["editor_note"], "Keep this")
 
@@ -106,6 +110,23 @@ class NewsletterTests(TestCase):
         self.assertEqual(records[0]["card_image"], "")
         with self.assertRaises(ValueError):
             substack_records(b"<html/>")
+
+    def test_missing_and_empty_subtitles(self):
+        for description in (b"", b"<description/>", b"<description> </description>"):
+            feed = FEED.replace(
+                b"<description><![CDATA[Plus we&#8217;re discussing A &amp; B]]></description>",
+                description,
+            )
+            self.assertEqual(substack_records(feed)[0]["subtitle"], "")
+        post = {
+            "title": "A & B",
+            "canonical_url": "https://simonw.substack.com/p/a-b",
+            "post_date": "2026-10-05T17:16:45Z",
+        }
+        for fields in ({}, {"subtitle": None}, {"subtitle": ""}):
+            self.assertEqual(
+                substack_archive_records([{**post, **fields}])[0]["subtitle"], ""
+            )
 
     def test_dry_run_and_invalid_batch_write_nothing(self):
         records = substack_records(FEED)
@@ -139,6 +160,7 @@ class NewsletterTests(TestCase):
         response = self.client.get(f"/admin/blog/newsletter/{obj.pk}/change/")
         self.assertContains(response, "Content and visibility")
         self.assertContains(response, "Import details")
+        self.assertContains(response, 'name="subtitle"')
         self.assertNotContains(response, 'name="search_document"')
         self.assertContains(
             self.client.get("/admin/blog/newsletter/?kind__exact=sponsor&q=pangolin"),
@@ -184,6 +206,7 @@ class NewsletterTests(TestCase):
     def test_archive_pagination_and_rss_share_identity(self, get):
         post = {
             "title": "A & B",
+            "subtitle": "Plus we’re discussing A & B",
             "canonical_url": "https://simonw.substack.com/p/a-b",
             "post_date": "2026-10-05T17:16:45.123Z",
             "cover_image": "https://example.com/image.jpg",
@@ -402,6 +425,7 @@ class NewsletterImporterViewTests(TestCase):
     def test_all_pages_rss_identity_and_end(self, get):
         post = {
             "title": "A & B",
+            "subtitle": "Plus we’re discussing A & B",
             "canonical_url": "https://simonw.substack.com/p/a-b",
             "post_date": "2026-10-05T17:16:45.123Z",
             "cover_image": "https://example.com/image.jpg",
@@ -429,6 +453,37 @@ class NewsletterImporterViewTests(TestCase):
             [call.kwargs["params"]["offset"] for call in get.call_args_list],
             [0, 12, 24],
         )
+
+    @patch("blog.newsletter_importers.requests.get")
+    def test_import_all_backfills_existing_subtitle_and_is_repeatable(self, get):
+        save_records(substack_records(FEED))
+        obj = Newsletter.objects.get()
+        obj.subtitle = ""
+        obj.slug = "custom-slug"
+        obj.is_draft = True
+        obj.save()
+        get.return_value = Mock(
+            json=Mock(
+                return_value=[
+                    {
+                        "title": obj.title,
+                        "subtitle": "Plus we’re discussing A & B",
+                        "canonical_url": obj.url,
+                        "post_date": obj.created.isoformat(),
+                        "cover_image": obj.card_image,
+                    }
+                ]
+            )
+        )
+        result = self.post("substack_all").json()
+        self.assertEqual(result["updated"], 1)
+        self.assertEqual(result["created"], 0)
+        obj.refresh_from_db()
+        self.assertEqual(obj.subtitle, "Plus we’re discussing A & B")
+        self.assertEqual(obj.slug, "custom-slug")
+        self.assertTrue(obj.is_draft)
+        self.assertEqual(self.post("substack_all").json()["skipped"], 1)
+        self.assertEqual(Newsletter.objects.count(), 1)
 
     @patch("blog.newsletter_importers.requests.get")
     def test_failed_batch_and_validation(self, get):
@@ -502,6 +557,30 @@ class NewsletterPageTests(TestCase):
         self.assertEqual(public.get_absolute_url(), "/newsletters/monthly-example/")
         self.assertEqual(external.get_absolute_url(), external.url)
         self.assertEqual(private.get_absolute_url(), private.url)
+
+    def test_subtitles_render_as_plain_text_in_listings(self):
+        self.issue(
+            kind="substack",
+            slug="with-subtitle",
+            body="",
+            subtitle='Plus <script>alert("hello")</script> & more',
+        )
+        self.issue(slug="without-subtitle")
+        for url in (
+            "/newsletters/",
+            "/newsletters/2026/",
+            "/2026/Sep/",
+            "/2026/Sep/4/",
+        ):
+            with self.subTest(url=url):
+                soup = BeautifulSoup(self.client.get(url).content, "html.parser")
+                subtitles = soup.select(".newsletter-subtitle")
+                self.assertEqual(len(subtitles), 1)
+                self.assertEqual(
+                    subtitles[0].get_text(),
+                    'Plus <script>alert("hello")</script> & more',
+                )
+                self.assertIsNone(subtitles[0].find("script"))
 
     def test_index_latest_ten_and_complete_year_pages(self):
         for i in range(55):

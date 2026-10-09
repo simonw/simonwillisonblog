@@ -3,6 +3,7 @@
 import datetime
 import re
 from email.utils import parsedate_to_datetime
+from html import unescape
 from urllib.parse import urlparse
 from xml.etree import ElementTree
 
@@ -83,6 +84,7 @@ def substack_records(feed_xml):
                 "import_ref": "substack:" + url,
                 "kind": Newsletter.Kind.SUBSTACK,
                 "title": title,
+                "subtitle": unescape(item.findtext("description", "")).strip(),
                 "slug": "substack-"
                 + slugify(urlparse(url).path.rstrip("/").split("/")[-1]),
                 "created": date,
@@ -223,6 +225,7 @@ def substack_archive_records(posts):
                 "import_ref": "substack:" + url,
                 "kind": Newsletter.Kind.SUBSTACK,
                 "title": post["title"],
+                "subtitle": (post.get("subtitle") or "").strip(),
                 "slug": "substack-"
                 + slugify(urlparse(url).path.rstrip("/").split("/")[-1]),
                 # Match RSS precision so an RSS refresh doesn't change the send date.

@@ -35,13 +35,13 @@ from .models import (
 class NewsletterAdmin(admin.ModelAdmin):
     list_display = ("title", "kind", "created", "is_public", "is_draft")
     list_filter = ("kind", "is_public", "is_draft")
-    search_fields = ("title", "body", "url")
+    search_fields = ("title", "subtitle", "body", "url")
     date_hierarchy = "created"
     prepopulated_fields = {"slug": ("title",)}
     readonly_fields = ("import_ref", "metadata")
     list_per_page = 50
     fieldsets = (
-        (None, {"fields": ("kind", "title", "slug", "created")}),
+        (None, {"fields": ("kind", "title", "subtitle", "slug", "created")}),
         ("Links and image", {"fields": ("url", "card_image")}),
         (
             "Content and visibility",

@@ -324,6 +324,9 @@ class Newsletter(models.Model):
 
     kind = models.CharField(max_length=10, choices=Kind.choices)
     title = models.CharField(max_length=255)
+    subtitle = models.TextField(
+        blank=True, help_text="Plain-text newsletter subheading."
+    )
     slug = models.SlugField(max_length=255, unique=True)
     created = models.DateTimeField(
         default=timezone.now,
