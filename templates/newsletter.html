@@ -17,9 +17,9 @@
 {% endblock %}
 
 {% block secondary %}
+{% include "_sponsor_promo.html" %}
 <div class="metabox">
 <p class="this-is">This is <strong>{{ newsletter.title|typography }}</strong> by Simon Willison, originally sent to sponsors on {{ newsletter.created|date:"jS F Y" }} and now publicly available.</p>
-<p><a href="https://github.com/sponsors/simonw/">Sponsor my work</a> to receive future monthly newsletters when they come out.</p>
 <p><a href="{% url 'newsletters' %}">All newsletters</a></p>
 </div>
 {% endblock %}
