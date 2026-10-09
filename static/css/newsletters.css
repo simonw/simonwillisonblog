@@ -1,4 +1,35 @@
 /* Newsletter archive */
+.newsletter-substack-signup {
+  border: 2px solid #c45120;
+  border-radius: 8px;
+  margin: 1.5rem 0;
+  padding: 1rem 1.25rem;
+}
+#secondary .newsletter-substack-signup h3 {
+  font-family: "Helvetica Neue", helvetica, sans-serif;
+  margin: 0 0 0.75rem;
+  font-size: 1.25rem;
+}
+.newsletter-substack-signup p {
+  margin: 0 0 1rem;
+  line-height: 1.4;
+}
+#secondary a.newsletter-substack-button {
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  background: #b84315;
+  color: #fff;
+  font-weight: 600;
+  text-decoration: none;
+}
+#secondary a.newsletter-substack-button:hover {
+  background: #943510;
+}
+#secondary a.newsletter-substack-button:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+}
 .newsletter-intro {
   margin: 1em 0 1.5em;
   line-height: 1.5;

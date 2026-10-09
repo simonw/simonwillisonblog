@@ -1,11 +1,11 @@
 {% extends "smallhead.html" %}
 {% load entry_tags static %}
 {% block title %}Newsletters{% if year %}: {{ year }}{% endif %} - Simon Willison's Weblog{% endblock %}
-{% block extrahead %}<link rel="stylesheet" href="{% static 'css/newsletters.css' %}">{% endblock %}
+{% block extrahead %}<link rel="stylesheet" href="{% static 'css/newsletters.css' %}?v=2">{% endblock %}
 
 {% block primary %}
 <h2 class="archive-h2">{% if year %}<a href="{% url 'newsletters' %}">Newsletters</a>: {{ year }}{% else %}Newsletters{% endif %}</h2>
-<p class="newsletter-intro">{% if year %}My newsletters sent in {{ year }}, newest first.{% else %}The latest ten issues of my Substack newsletter and monthly updates for sponsors.{% endif %} Monthly updates become public a month after they are sent.</p>
+<p class="newsletter-intro">{% if year %}My newsletters sent in {{ year }}, newest first. Monthly updates become public a month after they are sent.{% else %}The most recent issues of my newsletters.{% endif %}</p>
 
 <ol class="newsletter-list">
 {% for newsletter in newsletters %}
@@ -28,9 +28,10 @@
 {% endblock %}
 
 {% block secondary %}
-<div class="metabox">
-<h3>Subscribe</h3>
-<p><a href="https://simonw.substack.com/">My Substack newsletter</a> collects recent writing from my blog.</p>
-<p><a href="https://github.com/sponsors/simonw/">Sponsor my work</a> to receive the monthly newsletter when it comes out. Public copies appear here a month later.</p>
-</div>
+<section class="newsletter-substack-signup" aria-labelledby="substack-signup-title">
+  <h3 id="substack-signup-title">Get my latest writing by email</h3>
+  <p>A roundup of recent posts from my blog, delivered to your inbox roughly once a week.</p>
+  <a class="newsletter-substack-button" href="https://simonw.substack.com/subscribe">Subscribe on Substack</a>
+</section>
+{% include "_sponsor_promo.html" %}
 {% endblock %}
