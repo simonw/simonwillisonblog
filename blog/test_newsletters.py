@@ -666,12 +666,15 @@ class NewsletterPageTests(TestCase):
 
     def test_detail_renders_markdown_with_entry_layout_and_one_title(self):
         issue = self.issue()
+        issue.body += "\n\n### Subsection\n\nMore content."
+        issue.save()
         response = self.client.get(issue.get_absolute_url())
         self.assertTemplateUsed(response, "item_base.html")
         soup = BeautifulSoup(response.content, "html.parser")
         body = soup.select_one(".newsletter-body")
         self.assertEqual(body.select_one("strong").text, "world")
-        self.assertEqual(body.select_one("h2#section").text, "Section")
+        self.assertEqual(body.select_one("h3#section").text, "Section")
+        self.assertEqual(body.select_one("h4#subsection").text, "Subsection")
         self.assertIsNotNone(body.select_one("table"))
         self.assertIsNotNone(body.select_one("pre code.language-python"))
         self.assertIsNone(body.select_one("h1"))

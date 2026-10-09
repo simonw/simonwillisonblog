@@ -374,7 +374,13 @@ class Newsletter(models.Model):
         heading = re.match(r"\A\s*# ([^\n]+)\n?", body)
         if heading and heading.group(1).strip() == self.title:
             body = body[heading.end() :]
-        return mark_safe(markdown(body, extensions=["extra", "toc"]))
+        return mark_safe(
+            markdown(
+                body,
+                extensions=["extra", "toc"],
+                extension_configs={"toc": {"baselevel": 2}},
+            )
+        )
 
     def preview_heading_list(self):
         return [
