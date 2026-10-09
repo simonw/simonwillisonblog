@@ -529,7 +529,6 @@ class NewsletterPageTests(TestCase):
         )
         response = self.client.get("/newsletters/2026/")
         self.assertEqual(len(response.context["newsletters"]), 55)
-        self.assertContains(response, "My newsletters sent in 2026")
         self.assertNotContains(response, "Older issue")
         self.assertEqual(
             list(self.client.get("/newsletters/2025/").context["newsletters"]), [older]

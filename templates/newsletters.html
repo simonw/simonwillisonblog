@@ -5,7 +5,7 @@
 
 {% block primary %}
 <h2 class="archive-h2">{% if year %}<a href="{% url 'newsletters' %}">Newsletters</a>: {{ year }}{% else %}Newsletters{% endif %}</h2>
-<p class="newsletter-intro">{% if year %}My newsletters sent in {{ year }}, newest first. Monthly updates become public a month after they are sent.{% else %}The most recent issues of my newsletters.{% endif %}</p>
+{% if not year %}<p class="newsletter-intro">The most recent issues of my newsletters.</p>{% endif %}
 
 <ol class="newsletter-list">
 {% for newsletter in newsletters %}
