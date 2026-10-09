@@ -336,7 +336,7 @@ class Newsletter(models.Model):
     )
     preview_headings = models.TextField(
         blank=True,
-        help_text="Public preview for sponsors-only issues. One plain-text heading per line.",
+        help_text="Preview for monthly newsletter listings. One plain-text heading per line.",
     )
     is_public = models.BooleanField(
         default=False, help_text="The content is publicly available, not sponsors only."

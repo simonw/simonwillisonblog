@@ -137,6 +137,7 @@ def monthly_records(dated_issues=None):
         response = requests.get(f"{MONTHLY_RAW}/{filename}", timeout=20)
         response.raise_for_status()
         body = response.content.decode("utf-8").strip()
+        headings = BeautifulSoup(markdown(body, extensions=["extra"]), "html.parser")
         heading = re.search(r"^# (.+)$", body, re.MULTILINE)
         issue_date = datetime.date.fromisoformat(filename[:7] + "-01")
         title = (
@@ -151,6 +152,9 @@ def monthly_records(dated_issues=None):
                 "created": created,
                 "url": f"{MONTHLY_REPOSITORY}/blob/main/{filename}",
                 "body": body,
+                "preview_headings": "\n".join(
+                    heading.get_text() for heading in headings.find_all("h2")
+                ),
                 "is_public": True,
                 "metadata": {
                     "issue_month": filename[:7],
@@ -179,6 +183,8 @@ def save_records(records, dry_run=False, include_items=False):
         if existing:
             # Preserve editorial choices unrelated to the imported source.
             data.pop("slug", None)
+            if existing.preview_headings.strip():
+                data.pop("preview_headings", None)
             data["metadata"] = {**obj.metadata, **data.get("metadata", {})}
         changed = any(getattr(obj, key) != value for key, value in data.items())
         for key, value in data.items():

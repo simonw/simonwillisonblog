@@ -630,7 +630,7 @@ class NewsletterPageTests(TestCase):
             self.assertEqual(response.status_code, 200)
             self.assertNotContains(response, "Newsletter stays separate")
 
-    def test_preview_headings_are_plain_text_and_only_shown_for_private_issues(self):
+    def test_preview_headings_are_plain_text_and_shown_for_all_monthly_issues(self):
         issue = self.issue(
             is_public=False,
             body="",
@@ -653,7 +653,11 @@ class NewsletterPageTests(TestCase):
         issue.is_public = True
         issue.body = "Public content"
         issue.save()
-        self.assertNotContains(self.client.get("/newsletters/"), "First topic")
+        for url in ("/newsletters/", "/newsletters/2026/"):
+            response = self.client.get(url)
+            self.assertContains(response, "First topic")
+            self.assertContains(response, "A &lt;script&gt;heading&lt;/script&gt;")
+            self.assertNotContains(response, "Read this issue on GitHub")
         self.assertNotIn("First topic", issue.index_components()["C"])
         issue.kind = "substack"
         issue.is_public = False
@@ -891,7 +895,7 @@ class NewsletterSearchTests(TestCase):
 
 class MonthlyImportTests(TestCase):
     filename = "2026-08-august.md"
-    body = "# August digest\n\nPublic **content**. Revised.\n"
+    body = "# August digest\n\nPublic **content**. Revised.\n\n## First **topic**\n\n```md\n## Not a heading\n```\n\n### Subsection\n\n## Second [topic](https://example.com/)\n"
 
     def response(self, data=None, text="", links=None):
         return Mock(
@@ -915,6 +919,7 @@ class MonthlyImportTests(TestCase):
         self.assertEqual(issue.created.isoformat(), "2026-09-04T05:50:18+00:00")
         self.assertEqual(issue.body, self.body.strip())
         self.assertEqual(issue.title, "August digest")
+        self.assertEqual(issue.preview_heading_list(), ["First topic", "Second topic"])
         self.assertTrue(issue.is_public)
         self.assertIsNotNone(issue.search_document)
         self.assertEqual(issue.metadata["issue_month"], "2026-08")
@@ -933,6 +938,26 @@ class MonthlyImportTests(TestCase):
         ]
         self.assertEqual(import_monthly()["skipped"], 1)
         self.assertEqual(get.call_count, 2)
+
+    @patch("blog.newsletter_importers.requests.get")
+    def test_public_reimport_backfills_missing_headings(self, get):
+        existing = Newsletter.objects.create(
+            import_ref="monthly:" + self.filename,
+            kind="sponsor",
+            title="August digest",
+            slug="existing-public-monthly",
+            url=MONTHLY_RAW + "/" + self.filename,
+            is_public=True,
+            body=self.body,
+        )
+        get.side_effect = [
+            self.response([self.index_entry()]),
+            self.response(text=self.body),
+        ]
+        self.assertEqual(import_monthly()["updated"], 1)
+        existing.refresh_from_db()
+        self.assertEqual(existing.preview_heading_list(), ["First topic", "Second topic"])
+        self.assertEqual(Newsletter.objects.count(), 1)
 
     @patch("blog.newsletter_importers.requests.get")
     def test_public_promotion_preserves_editorial_fields_and_date(self, get):
