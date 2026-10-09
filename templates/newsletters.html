@@ -1,0 +1,36 @@
+{% extends "smallhead.html" %}
+{% load entry_tags static %}
+{% block title %}Newsletters{% if year %}: {{ year }}{% endif %} - Simon Willison's Weblog{% endblock %}
+{% block extrahead %}<link rel="stylesheet" href="{% static 'css/newsletters.css' %}">{% endblock %}
+
+{% block primary %}
+<h2 class="archive-h2">{% if year %}<a href="{% url 'newsletters' %}">Newsletters</a>: {{ year }}{% else %}Newsletters{% endif %}</h2>
+<p class="newsletter-intro">{% if year %}My newsletters sent in {{ year }}, newest first.{% else %}The latest ten issues of my Substack newsletter and monthly updates for sponsors.{% endif %} Monthly updates become public a month after they are sent.</p>
+
+<ol class="newsletter-list">
+{% for newsletter in newsletters %}
+  <li class="newsletter-list-item{% if newsletter.kind == 'sponsor' and not newsletter.is_public %} newsletter-sponsors-only{% endif %}">
+    {% include "includes/newsletter_listing.html" %}
+  </li>
+{% empty %}
+  <li>No newsletters yet.</li>
+{% endfor %}
+</ol>
+{% if newsletter_years %}
+<nav class="newsletter-years" aria-label="Newsletter archives by year">
+  <h3>Newsletters by year</h3>
+  <ul>
+    {% for date in newsletter_years %}<li><a href="{% url 'newsletters_year' year=date.year %}"{% if date.year == year %} aria-current="page"{% endif %}>{{ date.year }}</a></li>{% endfor %}
+  </ul>
+  {% if year %}<p><a href="{% url 'newsletters' %}">Latest newsletters</a></p>{% endif %}
+</nav>
+{% endif %}
+{% endblock %}
+
+{% block secondary %}
+<div class="metabox">
+<h3>Subscribe</h3>
+<p><a href="https://simonw.substack.com/">My Substack newsletter</a> collects recent writing from my blog.</p>
+<p><a href="https://github.com/sponsors/simonw/">Sponsor my work</a> to receive the monthly newsletter when it comes out. Public copies appear here a month later.</p>
+</div>
+{% endblock %}

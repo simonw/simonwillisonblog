@@ -1,10 +1,21 @@
 {% extends "item_base.html" %}
 
-{% block title %}Beat Importers{% endblock %}
+{% block title %}Importers{% endblock %}
 
 {% block rel_canonical %}{% endblock %}
 
 {% block item_content %}
+<h2>Newsletter Importers</h2>
+<div class="importer-section" id="importer-substack" style="margin-bottom: 2em; padding: 1em; border: 1px solid #ddd; border-radius: 6px;">
+  <h3>Substack newsletters</h3>
+  <p>Import titles, send dates, links, and thumbnails from <a href="https://simonw.substack.com/">Simon Willison’s Newsletter</a>.</p>
+  <p>Import latest reads the <a href="https://simonw.substack.com/feed">RSS feed</a> (the latest 20 issues). Import all reads the complete archive. Existing issues are updated without creating duplicates; draft status and custom slugs are preserved.</p>
+  <button class="run-import-btn" data-importer="substack_latest" style="padding: 0.4em 1em; cursor: pointer;">Import latest</button>
+  <button class="run-import-btn" data-importer="substack_all" style="padding: 0.4em 1em; cursor: pointer;">Import all</button>
+  <p>Keep this page open until the import finishes.</p>
+  <div class="importer-status" role="status" style="margin-top: 0.5em;"></div>
+  <div class="importer-results" style="margin-top: 0.5em;"></div>
+</div>
 <h2>Beat Importers</h2>
 
 {% for key, importer in importers.items %}
@@ -23,57 +34,70 @@
 
 <p><a href="https://github.com/simonw/simonw/actions/workflows/build.yml">Trigger build</a></p>
 
+{% csrf_token %}
 <script>
 document.querySelectorAll('.run-import-btn').forEach(function(btn) {
-  btn.addEventListener('click', function() {
+  btn.addEventListener('click', async function() {
     var importer = btn.dataset.importer;
     var section = btn.closest('.importer-section');
     var statusEl = section.querySelector('.importer-status');
     var resultsEl = section.querySelector('.importer-results');
     var draftCheckbox = section.querySelector('.draft-checkbox');
+    var buttons = section.querySelectorAll('.run-import-btn');
+    var originalLabel = btn.textContent;
+    var counts = {created: 0, updated: 0, skipped: 0};
+    var total = 0;
+    var displayed = 0;
+    var seen = new Set();
+    var offset = 0;
+    function summary() {
+      return 'Created ' + counts.created + ', updated ' + counts.updated + ', skipped ' + counts.skipped;
+    }
 
-    btn.disabled = true;
+    buttons.forEach(function(button) { button.disabled = true; });
     btn.textContent = 'Running...';
-    statusEl.textContent = '';
+    statusEl.textContent = 'Importing...';
     resultsEl.innerHTML = '';
-
-    fetch('/api/run-importer/', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRFToken': document.cookie.match(/csrftoken=([^;]+)/)[1]
-      },
-      body: JSON.stringify({importer: importer, is_draft: draftCheckbox.checked})
-    })
-    .then(function(response) { return response.json().then(function(data) { return {ok: response.ok, data: data}; }); })
-    .then(function(result) {
-      btn.disabled = false;
-      btn.textContent = 'Run Import';
-
-      if (!result.ok) {
-        statusEl.innerHTML = '<strong style="color: red;">Error:</strong> ' + (result.data.error || 'Unknown error');
-        return;
+    try {
+      do {
+        var response = await fetch('/api/run-importer/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+          },
+          body: JSON.stringify({importer: importer, offset: offset, is_draft: !!(draftCheckbox && draftCheckbox.checked)})
+        });
+        var data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Import failed');
+        (data.source_refs || []).forEach(function(ref) {
+          if (seen.has(ref)) throw new Error('Substack returned overlapping archive pages. Please retry the import.');
+          seen.add(ref);
+        });
+        ['created', 'updated', 'skipped'].forEach(function(key) { counts[key] += data[key] || 0; });
+        total += data.total || 0;
+        if (data.items_html && displayed < 10) {
+          var fragment = document.createElement('div');
+          fragment.innerHTML = data.items_html;
+          Array.from(fragment.children).slice(0, 10 - displayed).forEach(function(item) {
+            resultsEl.appendChild(item);
+            displayed++;
+          });
+        }
+        offset = data.next_offset;
+        statusEl.textContent = summary() + (offset != null ? ' — importing more...' : ' — complete.');
+      } while (offset != null);
+      if (total > 10) {
+        var more = document.createElement('p');
+        more.textContent = '... and ' + (total - 10) + ' more';
+        resultsEl.appendChild(more);
       }
-
-      var data = result.data;
-      var parts = [];
-      if (data.created) parts.push('Created ' + data.created);
-      if (data.updated) parts.push('Updated ' + data.updated);
-      if (data.skipped) parts.push('Skipped ' + data.skipped);
-      statusEl.innerHTML = '<strong>' + (parts.join(', ') || 'No changes') + '</strong>';
-
-      if (data.items_html) {
-        resultsEl.innerHTML = data.items_html;
-      }
-      if (data.total > 10) {
-        resultsEl.innerHTML += '<p>... and ' + (data.total - 10) + ' more</p>';
-      }
-    })
-    .catch(function(err) {
-      btn.disabled = false;
-      btn.textContent = 'Run Import';
-      statusEl.innerHTML = '<strong style="color: red;">Error:</strong> ' + err.message;
-    });
+    } catch (err) {
+      statusEl.textContent = summary() + '. Import stopped: ' + err.message + '. Completed imports are saved; you can retry safely.';
+    } finally {
+      buttons.forEach(function(button) { button.disabled = false; });
+      btn.textContent = originalLabel;
+    }
   });
 });
 </script>

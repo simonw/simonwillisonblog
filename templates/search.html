@@ -1,4 +1,5 @@
-{% extends "item_base.html" %}{% load humanize %}
+{% extends "item_base.html" %}{% load humanize static %}
+{% block extrahead %}{{ block.super }}<link rel="stylesheet" href="{% static 'css/newsletters.css' %}">{% endblock %}
 
 {% block title %}{{ title }}{% endblock %}
 

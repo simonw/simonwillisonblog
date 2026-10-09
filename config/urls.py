@@ -144,6 +144,17 @@ urlpatterns = [
     path(".well-known/nodeinfo", wellknown_nodeinfo),
     path("@simon", username_redirect),
     re_path(r"^newsletter/?$", newsletter_redirect),
+    path("newsletters/", blog_views.newsletters, name="newsletters"),
+    re_path(
+        r"^newsletters/(?P<year>\d{4})/$",
+        blog_views.newsletters,
+        name="newsletters_year",
+    ),
+    path(
+        "newsletters/<slug:slug>/",
+        blog_views.newsletter_detail,
+        name="newsletter_detail",
+    ),
     re_path(r"^projects/?$", projects_redirect),
     re_path(r"^versions/$", versions),
     re_path(r"^robots\.txt$", robots_txt),

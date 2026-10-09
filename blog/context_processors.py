@@ -1,4 +1,4 @@
-from blog.models import Entry, Blogmark, Quotation, Note, SponsorMessage
+from blog.models import Entry, Blogmark, Quotation, Note, SponsorMessage, Newsletter
 from django.conf import settings
 from django.core.cache import cache
 from django.utils import timezone
@@ -25,7 +25,7 @@ def current_sponsor_message():
 
 
 def years_with_content():
-    cache_key = "years-with-content-3"
+    cache_key = "years-with-content-4"
     years = cache.get(cache_key)
     if not years:
         years = list(
@@ -34,6 +34,11 @@ def years_with_content():
                 + list(Blogmark.objects.datetimes("created", "year"))
                 + list(Quotation.objects.datetimes("created", "year"))
                 + list(Note.objects.datetimes("created", "year"))
+                + list(
+                    Newsletter.objects.filter(is_draft=False).datetimes(
+                        "created", "year"
+                    )
+                )
             )
         )
         years.sort()

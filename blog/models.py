@@ -317,6 +317,95 @@ class SponsorMessage(models.Model):
         ordering = ["-pk"]
 
 
+class Newsletter(models.Model):
+    class Kind(models.TextChoices):
+        SUBSTACK = "substack", "Substack"
+        SPONSOR = "sponsor", "Monthly sponsors"
+
+    kind = models.CharField(max_length=10, choices=Kind.choices)
+    title = models.CharField(max_length=255)
+    slug = models.SlugField(max_length=255, unique=True)
+    created = models.DateTimeField(
+        default=timezone.now,
+        help_text="Original send date, not the public release date.",
+    )
+    url = models.URLField(max_length=2048, help_text="Substack or GitHub source URL.")
+    card_image = models.URLField(max_length=2048, blank=True)
+    body = models.TextField(
+        blank=True, help_text="Monthly newsletter content in Markdown."
+    )
+    preview_headings = models.TextField(
+        blank=True,
+        help_text="Public preview for sponsors-only issues. One plain-text heading per line.",
+    )
+    is_public = models.BooleanField(
+        default=False, help_text="The content is publicly available, not sponsors only."
+    )
+    is_draft = models.BooleanField(
+        default=False,
+        help_text="Hide the entire listing, including its title and link.",
+    )
+    import_ref = models.TextField(null=True, blank=True, unique=True)
+    metadata = models.JSONField(default=dict, blank=True)
+    search_document = SearchVectorField(null=True, editable=False)
+
+    class Meta:
+        ordering = ("-created", "-pk")
+        indexes = [GinIndex(fields=["search_document"])]
+
+    def __str__(self):
+        return self.title
+
+    def clean(self):
+        from django.core.exceptions import ValidationError
+
+        super().clean()
+        if re.fullmatch(r"\d{4}", self.slug):
+            raise ValidationError(
+                {"slug": "Four-digit slugs are reserved for newsletter year archives."}
+            )
+        if self.kind == self.Kind.SUBSTACK and self.body:
+            raise ValidationError({"body": "Substack issues store metadata only."})
+        if self.kind == self.Kind.SPONSOR and self.is_public and not self.body.strip():
+            raise ValidationError({"body": "Public sponsor issues need their content."})
+
+    def body_rendered(self):
+        body = self.body
+        heading = re.match(r"\A\s*# ([^\n]+)\n?", body)
+        if heading and heading.group(1).strip() == self.title:
+            body = body[heading.end() :]
+        return mark_safe(markdown(body, extensions=["extra", "toc"]))
+
+    def preview_heading_list(self):
+        return [
+            line.strip() for line in self.preview_headings.splitlines() if line.strip()
+        ]
+
+    def get_absolute_url(self):
+        from django.urls import reverse
+
+        if self.kind == self.Kind.SPONSOR and self.is_public and self.body.strip():
+            return reverse("newsletter_detail", args=[self.slug])
+        return self.url
+
+    def edit_url(self):
+        from django.urls import reverse
+
+        return reverse("admin:blog_newsletter_change", args=[self.pk])
+
+    def created_unixtimestamp(self):
+        return int(self.created.timestamp())
+
+    @property
+    def is_searchable(self):
+        return self.kind == self.Kind.SPONSOR and self.is_public and not self.is_draft
+
+    def index_components(self):
+        if not self.is_searchable:
+            return {}
+        return {"A": self.title, "C": strip_tags(self.body_rendered())}
+
+
 class BaseModel(models.Model):
     created = models.DateTimeField(default=timezone.now)
     tags = models.ManyToManyField(Tag, blank=True)
@@ -941,9 +1030,12 @@ def load_mixed_objects(dicts):
         ("note", Note),
         ("beat", Beat),
         ("chapter", GuidesChapter),
+        ("newsletter", Newsletter),
     ):
         ids = to_fetch.get(key) or []
-        if key == "chapter":
+        if key == "newsletter":
+            objects = model.objects.filter(pk__in=ids)
+        elif key == "chapter":
             objects = (
                 model.objects.select_related("guide")
                 .prefetch_related("tags")

@@ -2273,7 +2273,9 @@ class BeatTests(TransactionTestCase):
             response,
             'href="https://static.inaturalist.org/photos/1/original.jpg"><img src="https://static.inaturalist.org/photos/1/large.jpg"',
         )
-        self.assertNotContains(response, 'src="https://static.inaturalist.org/photos/1/small.jpg"')
+        self.assertNotContains(
+            response, 'src="https://static.inaturalist.org/photos/1/small.jpg"'
+        )
         self.assertNotContains(response, "Monthly briefing")
         self.assertNotContains(response, "Recent articles")
         self.assertNotContains(response, "This is a <strong>beat</strong>")
@@ -3194,8 +3196,14 @@ class ImporterViewTests(TransactionTestCase):
             {"items": [{"type": "beat", "obj": beat}]},
         )
         assert "<captioned-image-gallery" in html
-        assert "https://inaturalist-open-data.s3.amazonaws.com/photos/13245173/small.jpg" in html
-        assert 'href="https://inaturalist-open-data.s3.amazonaws.com/photos/13245173/original.jpg"' in html
+        assert (
+            "https://inaturalist-open-data.s3.amazonaws.com/photos/13245173/small.jpg"
+            in html
+        )
+        assert (
+            'href="https://inaturalist-open-data.s3.amazonaws.com/photos/13245173/original.jpg"'
+            in html
+        )
         # figcaption with link to the observation
         assert "https://www.inaturalist.org/observations/9687475" in html
         assert 'class="beat-label sighting"' in html
@@ -3500,7 +3508,9 @@ class BeatAdminTests(TransactionTestCase):
             ("0", datetime.datetime(1970, 1, 1, tzinfo=datetime.timezone.utc)),
             (
                 "-1",
-                datetime.datetime(1969, 12, 31, 23, 59, 59, tzinfo=datetime.timezone.utc),
+                datetime.datetime(
+                    1969, 12, 31, 23, 59, 59, tzinfo=datetime.timezone.utc
+                ),
             ),
         ]
         for value, expected in cases:

@@ -3,14 +3,14 @@ from django.db.models.signals import post_save, m2m_changed
 from django.db.models import Value, TextField
 from django.contrib.postgres.search import SearchVector
 from django.db import transaction
-from blog.models import BaseModel, Tag
+from blog.models import BaseModel, Newsletter, Tag
 import operator
 from functools import reduce
 
 
 @receiver(post_save)
 def on_save(sender, **kwargs):
-    if not issubclass(sender, BaseModel):
+    if not issubclass(sender, (BaseModel, Newsletter)):
         return
     transaction.on_commit(make_updater(kwargs["instance"]))
 
@@ -37,7 +37,9 @@ def make_updater(instance):
                 SearchVector(Value(text, output_field=TextField()), weight=weight)
             )
         instance.__class__.objects.filter(pk=pk).update(
-            search_document=reduce(operator.add, search_vectors)
+            search_document=(
+                reduce(operator.add, search_vectors) if search_vectors else None
+            )
         )
 
     return on_commit

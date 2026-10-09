@@ -1,0 +1,25 @@
+{% extends "item_base.html" %}
+{% load entry_tags static %}
+{% block extrahead %}{{ block.super }}<link rel="stylesheet" href="{% static 'css/newsletters.css' %}">{% endblock %}
+{% block title %}{{ newsletter.title|typography }}{% endblock %}
+{% block card_title %}{{ newsletter.title|typography }}{% endblock %}
+{% block card_description %}{{ newsletter.body_rendered|striptags|truncatewords:30|force_escape }}{% endblock %}
+
+{% block item_content %}
+<div class="newsletter-body" data-permalink-context="{{ newsletter.get_absolute_url }}">
+<nav class="newsletter-breadcrumb" aria-label="Breadcrumb"><a href="{% url 'newsletters' %}">Newsletters</a> &rsaquo; <a href="{% url 'newsletters_year' year=newsletter.created.year %}">{{ newsletter.created|date:"Y" }}</a> &rsaquo; <span aria-current="page">{{ newsletter.title|typography }}</span></nav>
+<h2>{{ newsletter.title|typography }}</h2>
+<p class="newsletter-meta">Sent <time datetime="{{ newsletter.created|date:'c' }}">{{ newsletter.created|date:"jS F Y" }}</time></p>
+{{ newsletter.body_rendered }}
+</div>
+<div class="entryFooter">Originally sent to my sponsors on {{ newsletter.created|date:"jS F Y" }}. <a href="{% url 'newsletters' %}">Browse all newsletters</a>.</div>
+<p class="edit-page-link" data-admin-url="{{ newsletter.edit_url }}" style="display: none;"></p>
+{% endblock %}
+
+{% block secondary %}
+<div class="metabox">
+<p class="this-is">This is <strong>{{ newsletter.title|typography }}</strong> by Simon Willison, originally sent to sponsors on {{ newsletter.created|date:"jS F Y" }} and now publicly available.</p>
+<p><a href="https://github.com/sponsors/simonw/">Sponsor my work</a> to receive future monthly newsletters when they come out.</p>
+<p><a href="{% url 'newsletters' %}">All newsletters</a></p>
+</div>
+{% endblock %}
