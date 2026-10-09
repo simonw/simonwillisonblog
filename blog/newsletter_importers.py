@@ -2,7 +2,6 @@
 
 import datetime
 import re
-import subprocess
 from email.utils import parsedate_to_datetime
 from urllib.parse import urlparse
 from xml.etree import ElementTree
@@ -95,16 +94,6 @@ def substack_records(feed_xml):
             }
         )
     return records
-
-
-def _git(checkout, *args):
-    return subprocess.run(
-        ["git", "-C", str(checkout), *args],
-        check=True,
-        capture_output=True,
-        text=True,
-        timeout=60,
-    ).stdout.strip()
 
 
 def monthly_index():
@@ -281,71 +270,8 @@ def import_substack_archive(dry_run=False):
     raise ValueError("Substack archive pagination exceeded the import limit")
 
 
-def private_monthly_records(checkout, public_records):
-    """Import only listing metadata for issues not already available publicly."""
-    public_refs = {record["import_ref"] for record in public_records}
-    public_refs.update(
-        Newsletter.objects.filter(kind=Newsletter.Kind.SPONSOR, is_public=True)
-        .exclude(import_ref=None)
-        .values_list("import_ref", flat=True)
-    )
-    revision = _git(checkout, "rev-parse", "HEAD")
-    filenames = _git(checkout, "ls-tree", "--name-only", revision).splitlines()
-    records = []
-    for filename in filenames:
-        if not re.fullmatch(r"\d{4}-\d{2}-[a-z]+\.md", filename):
-            continue
-        import_ref = "monthly:" + filename
-        if import_ref in public_refs:
-            continue
-        # The private body is never stored in the blog database or metadata.
-        first_line = _git(checkout, "show", f"{revision}:{filename}").split("\n", 1)[0]
-        issue_date = datetime.date.fromisoformat(filename[:7] + "-01")
-        title = (
-            first_line[2:].strip()
-            if first_line.startswith("# ")
-            else f"LLM digest: {issue_date:%B %Y}"
-        )
-        dates = _git(
-            checkout,
-            "log",
-            "--follow",
-            "--diff-filter=A",
-            "--format=%cI",
-            revision,
-            "--",
-            filename,
-        ).splitlines()
-        if not dates:
-            raise ValueError(f"Missing original commit date for {filename}")
-        records.append(
-            {
-                "import_ref": import_ref,
-                "kind": Newsletter.Kind.SPONSOR,
-                "title": title,
-                "slug": "monthly-" + filename[:-3],
-                "created": datetime.datetime.fromisoformat(dates[-1]),
-                "url": f"{PRIVATE_MONTHLY_REPOSITORY}/blob/main/{filename}",
-                "is_public": False,
-                "metadata": {
-                    "issue_month": filename[:7],
-                    "date_source": "original_source_commit",
-                    "source_filename": filename,
-                    "source_revision": revision,
-                    "title_source": (
-                        "heading" if first_line.startswith("# ") else "issue_month"
-                    ),
-                },
-            }
-        )
-    return records
-
-
-def import_monthly(dry_run=False, private_checkout=None):
-    records = monthly_records()
-    if private_checkout:
-        records.extend(private_monthly_records(private_checkout, records))
-    return save_records(records, dry_run=dry_run)
+def import_monthly(dry_run=False):
+    return save_records(monthly_records(), dry_run=dry_run)
 
 
 def import_public_monthly_page(offset=0):

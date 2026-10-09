@@ -1,10 +1,6 @@
 import datetime
 import io
 import json
-import os
-import subprocess
-import tempfile
-from pathlib import Path
 from unittest.mock import Mock, patch
 
 from django.contrib.auth.models import User
@@ -908,12 +904,8 @@ class MonthlyImportTests(TestCase):
     def index_entry(self, filename=None, sent_at="2026-09-04T05:50:18Z"):
         return {"filename": filename or self.filename, "sent_at": sent_at}
 
-    @patch(
-        "blog.newsletter_importers.subprocess.run",
-        side_effect=AssertionError("No Git for public imports"),
-    )
     @patch("blog.newsletter_importers.requests.get")
-    def test_public_http_import_dates_and_repeat(self, get, git):
+    def test_public_http_import_dates_and_repeat(self, get):
         get.side_effect = [
             self.response([self.index_entry()]),
             self.response(text=self.body),
@@ -942,7 +934,6 @@ class MonthlyImportTests(TestCase):
         ]
         self.assertEqual(import_monthly()["skipped"], 1)
         self.assertEqual(get.call_count, 2)
-        git.assert_not_called()
 
     @patch("blog.newsletter_importers.requests.get")
     def test_public_promotion_preserves_editorial_fields_and_date(self, get):
@@ -1028,87 +1019,6 @@ class MonthlyImportTests(TestCase):
                 import_monthly()
             self.assertEqual(get.call_count, 1)
         self.assertFalse(Newsletter.objects.exists())
-
-    @patch("blog.newsletter_importers.requests.get")
-    def test_private_metadata_import_and_later_publication(self, get):
-        # Only the private importer still uses a local Git checkout.
-        with tempfile.TemporaryDirectory() as directory:
-            private = Path(directory)
-            filename = "2026-09-september.md"
-            self.git(private, "init")
-            (private / filename).write_text(
-                "# September digest\n\nPRIVATE CONTENT MUST NOT BE IMPORTED"
-            )
-            self.git(private, "add", ".")
-            self.git(
-                private,
-                "commit",
-                "-m",
-                "September issue",
-                date="2026-10-03T14:21:39-07:00",
-            )
-            get.return_value = self.response([])
-            self.assertEqual(
-                import_monthly(dry_run=True, private_checkout=private)["created"], 1
-            )
-            self.assertFalse(Newsletter.objects.exists())
-            with self.captureOnCommitCallbacks(execute=True):
-                self.assertEqual(import_monthly(private_checkout=private)["created"], 1)
-            issue = Newsletter.objects.get()
-            pk = issue.pk
-            self.assertEqual(issue.title, "September digest")
-            self.assertEqual(issue.created.isoformat(), "2026-10-03T21:21:39+00:00")
-            self.assertEqual(issue.body, "")
-            self.assertFalse(issue.is_public)
-            self.assertIsNone(issue.search_document)
-            self.assertNotIn("PRIVATE CONTENT", json.dumps(issue.metadata))
-            self.assertEqual(import_monthly(private_checkout=private)["skipped"], 1)
-            self.assertContains(
-                self.client.get("/newsletters/"), "Sponsor me on GitHub"
-            )
-            get.side_effect = [
-                self.response(
-                    [self.index_entry(filename, "2026-10-03T14:21:39-07:00")]
-                ),
-                self.response(text="# September digest\n\nNow published **content**."),
-            ]
-            with self.captureOnCommitCallbacks(execute=True):
-                self.assertEqual(import_monthly(private_checkout=private)["updated"], 1)
-            issue.refresh_from_db()
-            self.assertEqual(issue.pk, pk)
-            self.assertEqual(Newsletter.objects.count(), 1)
-            self.assertTrue(issue.is_public)
-            self.assertIsNotNone(issue.search_document)
-            self.assertEqual(
-                issue.get_absolute_url(), "/newsletters/monthly-2026-09-september/"
-            )
-            self.assertNotContains(
-                self.client.get("/newsletters/"), "to read this issue early"
-            )
-            # An empty public index must never let a private import demote an issue.
-            get.side_effect = None
-            get.return_value = self.response([])
-            import_monthly(private_checkout=private)
-            issue.refresh_from_db()
-            self.assertTrue(issue.is_public)
-
-    def git(self, path, *args, date="2026-09-04T05:50:18+00:00"):
-        env = {
-            **os.environ,
-            "GIT_AUTHOR_DATE": date,
-            "GIT_COMMITTER_DATE": date,
-            "GIT_AUTHOR_NAME": "Test",
-            "GIT_COMMITTER_NAME": "Test",
-            "GIT_AUTHOR_EMAIL": "test@example.com",
-            "GIT_COMMITTER_EMAIL": "test@example.com",
-        }
-        return subprocess.run(
-            ["git", "-C", str(path), *args],
-            env=env,
-            check=True,
-            capture_output=True,
-            text=True,
-        ).stdout
 
 
 @override_settings(GH_API_SIMONW_PRIVATE_MONTHLY="example-secret-token")
