@@ -1,24 +1,67 @@
 """Repeatable imports for newsletter metadata and public monthly content."""
 
 import datetime
-import json
 import re
 import subprocess
-import tempfile
 from email.utils import parsedate_to_datetime
-from pathlib import Path
 from urllib.parse import urlparse
 from xml.etree import ElementTree
 
 import requests
+from bs4 import BeautifulSoup
+from markdown import markdown
+from django.conf import settings
 from django.db import transaction
 from django.utils.text import slugify
+from django.utils import timezone
 
 from .models import Newsletter
 
 SUBSTACK_FEED = "https://simonw.substack.com/feed"
 MONTHLY_REPOSITORY = "https://github.com/simonw/monthly-newsletter-archive"
+MONTHLY_RAW = "https://raw.githubusercontent.com/simonw/monthly-newsletter-archive/main"
 PRIVATE_MONTHLY_REPOSITORY = "https://github.com/simonw-private/monthly"
+
+
+class NewsletterImportRateLimitError(Exception):
+    """A safe, user-facing error containing only rate-limit timing details."""
+
+
+def check_github_rate_limit(response):
+    if response.status_code not in (403, 429):
+        return
+    limited = (
+        response.status_code == 429
+        or response.headers.get("X-RateLimit-Remaining") == "0"
+        or bool(response.headers.get("Retry-After"))
+    )
+    if not limited:
+        try:
+            data = response.json()
+            limited = (
+                isinstance(data, dict)
+                and "rate limit" in str(data.get("message", "")).lower()
+            )
+        except ValueError:
+            pass
+    if not limited:
+        return
+    message = "GitHub API rate limit exceeded."
+    retry_after = response.headers.get("Retry-After", "")
+    reset = response.headers.get("X-RateLimit-Reset", "")
+    if retry_after.isdigit():
+        message += f" Try again in {int(retry_after)} seconds."
+    elif reset.isdigit():
+        try:
+            reset_time = timezone.localtime(
+                datetime.datetime.fromtimestamp(int(reset), datetime.timezone.utc)
+            )
+            message += f" Try again after {reset_time:%B %d at %I:%M %p %Z}."
+        except (ValueError, OverflowError, OSError):
+            pass
+    if message == "GitHub API rate limit exceeded.":
+        message += " Please try again later."
+    raise NewsletterImportRateLimitError(message)
 
 
 def substack_records(feed_xml):
@@ -64,37 +107,52 @@ def _git(checkout, *args):
     ).stdout.strip()
 
 
-def monthly_records(checkout):
-    """Read committed public content; archive commits retain original source dates."""
-    revision = _git(checkout, "rev-parse", "HEAD")
-    filenames = json.loads(_git(checkout, "show", f"{revision}:index.json"))
-    if not isinstance(filenames, list):
-        raise ValueError("Monthly archive index must be a list of filenames")
-    records = []
-    for filename in filenames:
+def monthly_index():
+    """Read and validate the public index before fetching any issue bodies."""
+    response = requests.get(f"{MONTHLY_RAW}/index.json", timeout=20)
+    response.raise_for_status()
+    issues = response.json()
+    if not isinstance(issues, list):
+        raise ValueError("Monthly archive index must be a list of dated issues")
+    seen = set()
+    dated_issues = []
+    for issue in issues:
+        if not isinstance(issue, dict):
+            raise ValueError(
+                "Monthly archive index needs filename and sent_at for each issue"
+            )
+        filename = issue.get("filename")
         if not isinstance(filename, str) or not re.fullmatch(
             r"\d{4}-\d{2}-[a-z]+\.md", filename
         ):
             raise ValueError(f"Unexpected monthly newsletter filename: {filename!r}")
-        body = _git(checkout, "show", f"{revision}:{filename}")
+        if filename in seen:
+            raise ValueError("Monthly archive index contains duplicate filenames")
+        seen.add(filename)
+        sent_at = issue.get("sent_at")
+        if not isinstance(sent_at, str):
+            raise ValueError(f"Missing send date for {filename}")
+        created = datetime.datetime.fromisoformat(sent_at)
+        if created.tzinfo is None:
+            raise ValueError(f"Send date must include a timezone for {filename}")
+        dated_issues.append((filename, created))
+    return dated_issues
+
+
+def monthly_records(dated_issues=None):
+    """Fetch the public index and Markdown over HTTP, with no local checkout."""
+    if dated_issues is None:
+        dated_issues = monthly_index()
+    records = []
+    for filename, created in dated_issues:
+        response = requests.get(f"{MONTHLY_RAW}/{filename}", timeout=20)
+        response.raise_for_status()
+        body = response.content.decode("utf-8").strip()
         heading = re.search(r"^# (.+)$", body, re.MULTILINE)
         issue_date = datetime.date.fromisoformat(filename[:7] + "-01")
         title = (
             heading.group(1).strip() if heading else f"LLM digest: {issue_date:%B %Y}"
         )
-        dates = _git(
-            checkout,
-            "log",
-            "--follow",
-            "--diff-filter=A",
-            "--format=%cI",
-            revision,
-            "--",
-            filename,
-        ).splitlines()
-        if not dates:
-            raise ValueError(f"Missing original commit date for {filename}")
-        created = datetime.datetime.fromisoformat(dates[-1])
         records.append(
             {
                 "import_ref": "monthly:" + filename,
@@ -109,7 +167,6 @@ def monthly_records(checkout):
                     "issue_month": filename[:7],
                     "date_source": "original_source_commit",
                     "source_filename": filename,
-                    "source_revision": revision,
                     "title_source": "heading" if heading else "issue_month",
                 },
             }
@@ -284,21 +341,119 @@ def private_monthly_records(checkout, public_records):
     return records
 
 
-def import_monthly(checkout=None, dry_run=False, private_checkout=None):
-    def import_checkout(public_checkout):
-        records = monthly_records(public_checkout)
-        if private_checkout:
-            records.extend(private_monthly_records(private_checkout, records))
-        return save_records(records, dry_run=dry_run)
+def import_monthly(dry_run=False, private_checkout=None):
+    records = monthly_records()
+    if private_checkout:
+        records.extend(private_monthly_records(private_checkout, records))
+    return save_records(records, dry_run=dry_run)
 
-    if checkout:
-        return import_checkout(Path(checkout))
-    with tempfile.TemporaryDirectory(prefix="monthly-newsletters-") as directory:
-        subprocess.run(
-            ["git", "clone", "--quiet", MONTHLY_REPOSITORY + ".git", directory],
-            check=True,
-            capture_output=True,
-            text=True,
-            timeout=60,
+
+def import_public_monthly_page(offset=0):
+    # One issue per request keeps admin imports short and safely repeatable.
+    issues = monthly_index()
+    records = monthly_records(issues[offset : offset + 1])
+    result = save_records(records, include_items=True)
+    result["next_offset"] = offset + 1 if offset + 1 < len(issues) else None
+    result["source_refs"] = [record["import_ref"] for record in records]
+    return result
+
+
+def import_private_monthly():
+    """Fetch only the latest unpublished issue's listing and preview headings."""
+    token = settings.GH_API_SIMONW_PRIVATE_MONTHLY
+    if not token:
+        raise ValueError("Set GH_API_SIMONW_PRIVATE_MONTHLY to enable this importer.")
+
+    def github(path, params=None, raw=False):
+        response = requests.get(
+            "https://api.github.com/repos/simonw-private/monthly/" + path,
+            params=params,
+            headers={
+                "Authorization": "Bearer " + token,
+                "Accept": (
+                    "application/vnd.github.raw+json"
+                    if raw
+                    else "application/vnd.github+json"
+                ),
+            },
+            timeout=10,
+            allow_redirects=False,
         )
-        return import_checkout(directory)
+        # Do not include private response contents or credentials in errors.
+        check_github_rate_limit(response)
+        if response.status_code != 200:
+            raise ValueError(
+                f"Private GitHub import failed (HTTP {response.status_code}). Check the repository token and its Contents read permission."
+            )
+        return response
+
+    public_refs = {"monthly:" + filename for filename, date in monthly_index()}
+    public_refs.update(
+        Newsletter.objects.filter(
+            kind=Newsletter.Kind.SPONSOR, is_public=True
+        ).values_list("import_ref", flat=True)
+    )
+    entries = github("contents", {"ref": "main"}).json()
+    if not isinstance(entries, list):
+        raise ValueError("Expected a private repository file listing")
+    filenames = sorted(
+        entry["name"]
+        for entry in entries
+        if entry.get("type") == "file"
+        and re.fullmatch(r"\d{4}-\d{2}-[a-z]+\.md", entry.get("name", ""))
+        and "monthly:" + entry["name"] not in public_refs
+    )
+    if not filenames:
+        return {"created": 0, "updated": 0, "skipped": 0, "items": []}
+    filename = filenames[-1]
+    existing = Newsletter.objects.filter(import_ref="monthly:" + filename).first()
+    if existing:
+        created = existing.created
+    else:
+        oldest = None
+        for page in range(1, 101):
+            response = github(
+                "commits",
+                {"sha": "main", "path": filename, "per_page": 100, "page": page},
+            )
+            commits = response.json()
+            if not isinstance(commits, list):
+                raise ValueError("Expected private issue commit history")
+            if commits:
+                oldest = commits[-1]
+            if "next" not in response.links:
+                break
+        else:
+            raise ValueError("Private issue commit history exceeded pagination limit")
+        if oldest is None:
+            raise ValueError("Missing original send date for private issue")
+        created = datetime.datetime.fromisoformat(oldest["commit"]["committer"]["date"])
+        if created.tzinfo is None:
+            raise ValueError("Private issue send date must include a timezone")
+    response = github("contents/" + filename, {"ref": "main"}, raw=True)
+    # Parse headings in memory; never store the private Markdown or rendered body.
+    headings = BeautifulSoup(
+        markdown(response.content.decode("utf-8"), extensions=["extra"]), "html.parser"
+    )
+    title = headings.find("h1")
+    issue_date = datetime.date.fromisoformat(filename[:7] + "-01")
+    record = {
+        "import_ref": "monthly:" + filename,
+        "kind": Newsletter.Kind.SPONSOR,
+        "title": title.get_text() if title else f"LLM digest: {issue_date:%B %Y}",
+        "slug": "monthly-" + filename[:-3],
+        "created": created,
+        "url": f"{PRIVATE_MONTHLY_REPOSITORY}/blob/main/{filename}",
+        "is_public": False,
+        "metadata": {
+            "issue_month": filename[:7],
+            "date_source": "original_source_commit",
+            "source_filename": filename,
+            "title_source": "heading" if title else "issue_month",
+        },
+    }
+    if not existing or not existing.preview_headings.strip():
+        record["preview_headings"] = "\n".join(
+            heading.get_text() for heading in headings.find_all("h2")
+        )
+    return save_records([record], include_items=True)

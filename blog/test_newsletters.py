@@ -11,7 +11,7 @@ from django.contrib.auth.models import User
 from django.contrib.postgres.search import SearchQuery
 from django.core.exceptions import ValidationError
 from django.core.management import call_command
-from django.test import TestCase, RequestFactory
+from django.test import TestCase, RequestFactory, override_settings
 from django.urls import reverse
 from bs4 import BeautifulSoup
 
@@ -21,6 +21,7 @@ from .newsletter_importers import (
     import_substack_archive,
     import_monthly,
     monthly_records,
+    MONTHLY_RAW,
     save_records,
     substack_records,
 )
@@ -255,6 +256,129 @@ class NewsletterImporterViewTests(TestCase):
             ).status_code,
             403,
         )
+
+    @override_settings(GH_API_SIMONW_PRIVATE_MONTHLY="")
+    @patch("blog.newsletter_importers.requests.get")
+    def test_private_button_disabled_without_token(self, get):
+        response = self.client.get("/admin/importers/")
+        button = BeautifulSoup(response.content, "html.parser").select_one(
+            '[data-importer="monthly_private"]'
+        )
+        self.assertTrue(button.has_attr("disabled"))
+        self.assertContains(response, "GH_API_SIMONW_PRIVATE_MONTHLY")
+        self.assertEqual(self.post("monthly_private").status_code, 400)
+        get.assert_not_called()
+
+    @override_settings(GH_API_SIMONW_PRIVATE_MONTHLY="example-secret-token")
+    @patch("blog.newsletter_importers.import_private_monthly")
+    def test_private_button_enabled_without_exposing_token(self, importer):
+        response = self.client.get("/admin/importers/")
+        button = BeautifulSoup(response.content, "html.parser").select_one(
+            '[data-importer="monthly_private"]'
+        )
+        self.assertFalse(button.has_attr("disabled"))
+        self.assertNotContains(response, "example-secret-token")
+        importer.return_value = {"created": 0, "updated": 0, "skipped": 0, "items": []}
+        self.assertEqual(self.post("monthly_private").status_code, 200)
+        importer.assert_called_once_with()
+        importer.side_effect = ValueError(
+            "example-secret-token private response content"
+        )
+        response = self.post("monthly_private")
+        self.assertEqual(response.status_code, 500)
+        self.assertNotIn("example-secret-token", response.content.decode())
+        self.client.logout()
+        self.assertEqual(self.post("monthly_private").status_code, 302)
+
+    @override_settings(GH_API_SIMONW_PRIVATE_MONTHLY="")
+    @patch("blog.newsletter_importers.requests.get")
+    def test_public_monthly_button_imports_batches_without_token(self, get):
+        page = self.client.get("/admin/importers/")
+        button = BeautifulSoup(page.content, "html.parser").select_one(
+            '[data-importer="monthly_public"]'
+        )
+        self.assertIsNotNone(button)
+        self.assertFalse(button.has_attr("disabled"))
+        index = [
+            {"filename": "2026-08-august.md", "sent_at": "2026-09-04T05:50:18Z"},
+            {"filename": "2026-09-september.md", "sent_at": "2026-10-03T21:21:39Z"},
+        ]
+        get.side_effect = [
+            Mock(json=Mock(return_value=index)),
+            Mock(content=b"# August digest\n\nPublic pangolin content."),
+            Mock(json=Mock(return_value=index)),
+            Mock(content=b"# September digest\n\nMore content."),
+        ]
+        with self.captureOnCommitCallbacks(execute=True):
+            response = self.post("monthly_public")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["created"], 1)
+        self.assertEqual(response.json()["next_offset"], 1)
+        self.assertIn("August digest", response.json()["items_html"])
+        issue = Newsletter.objects.get()
+        self.assertIsNotNone(issue.search_document)
+        self.assertIn(issue.get_absolute_url(), response.json()["items_html"])
+        response = self.post("monthly_public", offset=1)
+        self.assertEqual(response.json()["created"], 1)
+        self.assertIsNone(response.json()["next_offset"])
+        self.assertEqual(Newsletter.objects.count(), 2)
+        self.assertTrue(
+            all(call.args[0].startswith(MONTHLY_RAW) for call in get.call_args_list)
+        )
+        get.reset_mock()
+        get.side_effect = [Mock(json=Mock(return_value=[]))]
+        self.assertIsNone(self.post("monthly_public").json()["next_offset"])
+        for offset in (-1, "0", True, 12000):
+            self.assertEqual(
+                self.post("monthly_public", offset=offset).status_code, 400
+            )
+        self.assertEqual(get.call_count, 1)
+
+    @override_settings(
+        GH_API_SIMONW_PRIVATE_MONTHLY="example-secret-token", TIME_ZONE="UTC"
+    )
+    @patch("blog.newsletter_importers.monthly_index", return_value=[])
+    @patch("blog.newsletter_importers.requests.get")
+    def test_private_rate_limit_messages(self, get, index):
+        cases = [
+            (
+                403,
+                {"X-RateLimit-Remaining": "0", "X-RateLimit-Reset": "1791517857"},
+                {},
+                "October 09 at 03:50 AM UTC",
+            ),
+            (429, {"Retry-After": "60"}, {}, "Try again in 60 seconds"),
+            (
+                403,
+                {},
+                {"message": "API rate limit exceeded: example-secret-token"},
+                "Please try again later",
+            ),
+            (
+                403,
+                {"X-RateLimit-Remaining": "0", "X-RateLimit-Reset": "invalid"},
+                {},
+                "Please try again later",
+            ),
+        ]
+        for status, headers, data, expected in cases:
+            get.return_value = Mock(
+                status_code=status, headers=headers, json=Mock(return_value=data)
+            )
+            response = self.post("monthly_private")
+            self.assertEqual(response.status_code, 429)
+            self.assertIn("GitHub API rate limit exceeded", response.json()["error"])
+            self.assertIn(expected, response.json()["error"])
+            self.assertNotIn("example-secret-token", response.content.decode())
+        get.return_value = Mock(
+            status_code=403,
+            headers={},
+            json=Mock(return_value={"message": "Resource not accessible"}),
+        )
+        response = self.post("monthly_private")
+        self.assertEqual(response.status_code, 500)
+        self.assertNotIn("rate limit", response.json()["error"])
+        self.assertFalse(Newsletter.objects.exists())
 
     @patch("blog.newsletter_importers.requests.get")
     def test_latest_repeat_and_editorial_preservation(self, get):
@@ -771,17 +895,147 @@ class NewsletterSearchTests(TestCase):
 
 
 class MonthlyImportTests(TestCase):
-    def test_private_metadata_import_and_later_publication(self):
+    filename = "2026-08-august.md"
+    body = "# August digest\n\nPublic **content**. Revised.\n"
+
+    def response(self, data=None, text="", links=None):
+        return Mock(
+            json=Mock(return_value=data),
+            content=text.encode("utf-8"),
+            links=links or {},
+        )
+
+    def index_entry(self, filename=None, sent_at="2026-09-04T05:50:18Z"):
+        return {"filename": filename or self.filename, "sent_at": sent_at}
+
+    @patch(
+        "blog.newsletter_importers.subprocess.run",
+        side_effect=AssertionError("No Git for public imports"),
+    )
+    @patch("blog.newsletter_importers.requests.get")
+    def test_public_http_import_dates_and_repeat(self, get, git):
+        get.side_effect = [
+            self.response([self.index_entry()]),
+            self.response(text=self.body),
+        ]
+        with self.captureOnCommitCallbacks(execute=True):
+            self.assertEqual(import_monthly()["created"], 1)
+        issue = Newsletter.objects.get()
+        self.assertEqual(issue.created.isoformat(), "2026-09-04T05:50:18+00:00")
+        self.assertEqual(issue.body, self.body.strip())
+        self.assertEqual(issue.title, "August digest")
+        self.assertTrue(issue.is_public)
+        self.assertIsNotNone(issue.search_document)
+        self.assertEqual(issue.metadata["issue_month"], "2026-08")
+        self.assertEqual(
+            [c.args[0] for c in get.call_args_list],
+            [
+                MONTHLY_RAW + "/index.json",
+                MONTHLY_RAW + "/" + self.filename,
+            ],
+        )
+        # Reimports use the established send date, with no API request.
+        get.reset_mock()
+        get.side_effect = [
+            self.response([self.index_entry()]),
+            self.response(text=self.body),
+        ]
+        self.assertEqual(import_monthly()["skipped"], 1)
+        self.assertEqual(get.call_count, 2)
+        git.assert_not_called()
+
+    @patch("blog.newsletter_importers.requests.get")
+    def test_public_promotion_preserves_editorial_fields_and_date(self, get):
+        date = datetime.datetime(2026, 9, 4, 5, 50, 18, tzinfo=datetime.timezone.utc)
+        existing = Newsletter.objects.create(
+            import_ref="monthly:" + self.filename,
+            kind="sponsor",
+            title="Coming soon",
+            slug="existing-monthly",
+            url="https://github.com/example/private",
+            is_public=False,
+            created=date,
+            preview_headings="A preview",
+            metadata={"editor_note": "Keep"},
+        )
+        get.side_effect = [
+            self.response([self.index_entry()]),
+            self.response(text=self.body),
+        ]
+        with self.captureOnCommitCallbacks(execute=True):
+            self.assertEqual(import_monthly()["updated"], 1)
+        existing.refresh_from_db()
+        self.assertEqual(Newsletter.objects.count(), 1)
+        self.assertTrue(existing.is_searchable)
+        self.assertIsNotNone(existing.search_document)
+        self.assertEqual(existing.slug, "existing-monthly")
+        self.assertEqual(existing.created, date)
+        self.assertEqual(existing.preview_headings, "A preview")
+        self.assertEqual(existing.metadata["editor_note"], "Keep")
+
+    @patch("blog.newsletter_importers.requests.get")
+    def test_dry_run_fallback_title_and_index_date(self, get):
+        get.side_effect = [
+            self.response([self.index_entry()]),
+            self.response(text="An issue without a heading. Café."),
+        ]
+        records = monthly_records()
+        self.assertEqual(records[0]["title"], "LLM digest: August 2026")
+        self.assertIn("Café", records[0]["body"])
+        self.assertEqual(records[0]["created"].day, 4)
+        self.assertEqual(save_records(records, dry_run=True)["created"], 1)
+        self.assertFalse(Newsletter.objects.exists())
+
+    @patch("blog.newsletter_importers.requests.get")
+    def test_invalid_index_is_rejected_before_fetching_content(self, get):
+        for index in (
+            {},
+            [self.filename],
+            [123],
+            [self.index_entry("../secret.md")],
+            [self.index_entry(), self.index_entry()],
+        ):
+            get.reset_mock()
+            get.return_value = self.response(index)
+            with self.assertRaises(ValueError):
+                import_monthly()
+            self.assertEqual(get.call_count, 1)
+        self.assertFalse(Newsletter.objects.exists())
+
+    @patch("blog.newsletter_importers.requests.get")
+    def test_http_failure_leaves_whole_batch_unsaved(self, get):
+        import requests
+
+        failed = self.response()
+        failed.raise_for_status.side_effect = requests.HTTPError("404")
+        get.side_effect = [
+            self.response(
+                [self.index_entry(), self.index_entry("2026-09-september.md")]
+            ),
+            self.response(text=self.body),
+            failed,
+        ]
+        with self.assertRaises(requests.HTTPError):
+            import_monthly()
+        self.assertFalse(Newsletter.objects.exists())
+
+    @patch("blog.newsletter_importers.requests.get")
+    def test_missing_or_invalid_send_date_is_not_guessed(self, get):
+        for sent_at in (None, "", "invalid", "2026-09-04T00:00:00"):
+            get.reset_mock()
+            get.return_value = self.response([self.index_entry(sent_at=sent_at)])
+            with self.assertRaises(ValueError):
+                import_monthly()
+            self.assertEqual(get.call_count, 1)
+        self.assertFalse(Newsletter.objects.exists())
+
+    @patch("blog.newsletter_importers.requests.get")
+    def test_private_metadata_import_and_later_publication(self, get):
+        # Only the private importer still uses a local Git checkout.
         with tempfile.TemporaryDirectory() as directory:
-            public = Path(directory) / "public"
-            private = Path(directory) / "private"
+            private = Path(directory)
             filename = "2026-09-september.md"
-            for path in (public, private):
-                path.mkdir()
-                self.git(path, "init")
-                (path / "index.json").write_text("[]")
-                self.git(path, "add", ".")
-                self.git(path, "commit", "-m", "Initial")
+            self.git(private, "init")
             (private / filename).write_text(
                 "# September digest\n\nPRIVATE CONTENT MUST NOT BE IMPORTED"
             )
@@ -793,17 +1047,13 @@ class MonthlyImportTests(TestCase):
                 "September issue",
                 date="2026-10-03T14:21:39-07:00",
             )
+            get.return_value = self.response([])
             self.assertEqual(
-                import_monthly(public, dry_run=True, private_checkout=private)[
-                    "created"
-                ],
-                1,
+                import_monthly(dry_run=True, private_checkout=private)["created"], 1
             )
             self.assertFalse(Newsletter.objects.exists())
             with self.captureOnCommitCallbacks(execute=True):
-                self.assertEqual(
-                    import_monthly(public, private_checkout=private)["created"], 1
-                )
+                self.assertEqual(import_monthly(private_checkout=private)["created"], 1)
             issue = Newsletter.objects.get()
             pk = issue.pk
             self.assertEqual(issue.title, "September digest")
@@ -812,28 +1062,18 @@ class MonthlyImportTests(TestCase):
             self.assertFalse(issue.is_public)
             self.assertIsNone(issue.search_document)
             self.assertNotIn("PRIVATE CONTENT", json.dumps(issue.metadata))
-            self.assertEqual(
-                issue.get_absolute_url(),
-                "https://github.com/simonw-private/monthly/blob/main/2026-09-september.md",
-            )
-            self.assertEqual(
-                import_monthly(public, private_checkout=private)["skipped"], 1
-            )
+            self.assertEqual(import_monthly(private_checkout=private)["skipped"], 1)
             self.assertContains(
                 self.client.get("/newsletters/"), "Sponsor me on GitHub"
             )
-            (public / filename).write_text(
-                "# September digest\n\nNow published **content**."
-            )
-            (public / "index.json").write_text(json.dumps([filename]))
-            self.git(public, "add", ".")
-            self.git(
-                public, "commit", "-m", "Public copy", date="2026-10-03T14:21:39-07:00"
-            )
+            get.side_effect = [
+                self.response(
+                    [self.index_entry(filename, "2026-10-03T14:21:39-07:00")]
+                ),
+                self.response(text="# September digest\n\nNow published **content**."),
+            ]
             with self.captureOnCommitCallbacks(execute=True):
-                self.assertEqual(
-                    import_monthly(public, private_checkout=private)["updated"], 1
-                )
+                self.assertEqual(import_monthly(private_checkout=private)["updated"], 1)
             issue.refresh_from_db()
             self.assertEqual(issue.pk, pk)
             self.assertEqual(Newsletter.objects.count(), 1)
@@ -845,11 +1085,10 @@ class MonthlyImportTests(TestCase):
             self.assertNotContains(
                 self.client.get("/newsletters/"), "to read this issue early"
             )
-            # A private source can never demote a locally published issue.
-            (public / "index.json").write_text("[]")
-            self.git(public, "add", ".")
-            self.git(public, "commit", "-m", "Empty public index")
-            import_monthly(public, private_checkout=private)
+            # An empty public index must never let a private import demote an issue.
+            get.side_effect = None
+            get.return_value = self.response([])
+            import_monthly(private_checkout=private)
             issue.refresh_from_db()
             self.assertTrue(issue.is_public)
 
@@ -871,55 +1110,80 @@ class MonthlyImportTests(TestCase):
             text=True,
         ).stdout
 
-    def test_monthly_public_body_original_history_and_promotion(self):
-        with tempfile.TemporaryDirectory() as directory:
-            public = Path(directory) / "public"
-            filename = "2026-08-august.md"
-            for path in (public,):
-                path.mkdir()
-                self.git(path, "init")
-                (path / "index.json").write_text(json.dumps([filename]))
-                (path / filename).write_text("# August digest\n\nPublic **content**.\n")
-                self.git(path, "add", ".")
-                self.git(path, "commit", "-m", "Initial")
-            # A later edit must not replace the first-add send date.
-            (public / filename).write_text(
-                "# August digest\n\nPublic **content**. Revised.\n"
+
+@override_settings(GH_API_SIMONW_PRIVATE_MONTHLY="example-secret-token")
+class PrivateMonthlyApiTests(TestCase):
+    @patch("blog.newsletter_importers.requests.get")
+    def test_import_metadata_headings_and_repeat(self, get):
+        from blog.newsletter_importers import import_private_monthly
+
+        filename = "2026-09-september.md"
+
+        def response(data=None, content=b""):
+            return Mock(
+                status_code=200, json=Mock(return_value=data), content=content, links={}
             )
-            self.git(public, "add", ".")
-            self.git(public, "commit", "-m", "Edit", date="2026-09-05T00:00:00+00:00")
-            records = monthly_records(public)
-            self.assertEqual(
-                records[0]["created"].isoformat(), "2026-09-04T05:50:18+00:00"
-            )
-            self.assertIn("Public **content**", records[0]["body"])
-            self.assertNotIn("private version", records[0]["body"])
-            self.assertEqual(records[0]["metadata"]["issue_month"], "2026-08")
-            existing = Newsletter.objects.create(
-                import_ref="monthly:" + filename,
-                kind="sponsor",
-                title="Coming soon",
-                slug="existing-monthly",
-                url="https://github.com/example/private",
-                is_public=False,
-            )
-            with self.captureOnCommitCallbacks(execute=True):
-                self.assertEqual(save_records(records)["updated"], 1)
-            existing.refresh_from_db()
-            self.assertTrue(existing.is_public)
-            self.assertTrue(existing.is_searchable)
-            self.assertEqual(existing.slug, "existing-monthly")
-            self.assertEqual(save_records(records)["skipped"], 1)
-            (public / filename).write_text("An issue without a heading.")
-            self.git(public, "add", ".")
-            self.git(public, "commit", "-m", "Remove heading")
-            self.assertEqual(
-                monthly_records(public)[0]["title"], "LLM digest: August 2026"
-            )
-            # Reject unexpected paths from the remote index.
-            with patch(
-                "blog.newsletter_importers._git",
-                side_effect=["revision", '["../secret.md"]'],
-            ):
-                with self.assertRaises(ValueError):
-                    monthly_records(public)
+
+        public_index = response(
+            [{"filename": "2026-08-august.md", "sent_at": "2026-09-04T05:50:18Z"}]
+        )
+        listing = response(
+            [
+                {"type": "file", "name": "2026-08-august.md"},
+                {"type": "file", "name": filename},
+                {"type": "file", "name": "README.md"},
+            ]
+        )
+        body = response(
+            content=b"# September digest\n\nPRIVATE BODY\n\n## First **heading**\n\n```md\n## Not a heading\n```\n\n## Second heading\n"
+        )
+        get.side_effect = [
+            public_index,
+            listing,
+            response([{"commit": {"committer": {"date": "2026-10-03T21:21:39Z"}}}]),
+            body,
+        ]
+        with self.captureOnCommitCallbacks(execute=True):
+            self.assertEqual(import_private_monthly()["created"], 1)
+        issue = Newsletter.objects.get()
+        self.assertEqual(issue.title, "September digest")
+        self.assertEqual(
+            issue.preview_heading_list(), ["First heading", "Second heading"]
+        )
+        self.assertEqual(issue.created.isoformat(), "2026-10-03T21:21:39+00:00")
+        self.assertEqual(issue.body, "")
+        self.assertFalse(issue.is_public)
+        self.assertIsNone(issue.search_document)
+        self.assertNotIn("PRIVATE BODY", json.dumps(issue.metadata))
+        for call in get.call_args_list:
+            if call.args[0].startswith("https://api.github.com/"):
+                self.assertEqual(
+                    call.kwargs["headers"]["Authorization"],
+                    "Bearer example-secret-token",
+                )
+                self.assertFalse(call.kwargs["allow_redirects"])
+            else:
+                self.assertNotIn("headers", call.kwargs)
+        issue.preview_headings = "Curated preview"
+        issue.save()
+        get.side_effect = [public_index, listing, body]
+        self.assertEqual(import_private_monthly()["skipped"], 1)
+        issue.refresh_from_db()
+        self.assertEqual(issue.preview_headings, "Curated preview")
+        # Already-public local issues must not be demoted even if the public index is stale.
+        issue.is_public = True
+        issue.body = "Now public"
+        issue.save()
+        get.side_effect = [public_index, listing]
+        self.assertEqual(import_private_monthly()["created"], 0)
+        issue.refresh_from_db()
+        self.assertTrue(issue.is_public)
+
+    @override_settings(GH_API_SIMONW_PRIVATE_MONTHLY="")
+    @patch("blog.newsletter_importers.requests.get")
+    def test_missing_token_never_requests_sources(self, get):
+        from blog.newsletter_importers import import_private_monthly
+
+        with self.assertRaisesMessage(ValueError, "GH_API_SIMONW_PRIVATE_MONTHLY"):
+            import_private_monthly()
+        get.assert_not_called()

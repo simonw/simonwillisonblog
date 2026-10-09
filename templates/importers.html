@@ -5,34 +5,83 @@
 {% block rel_canonical %}{% endblock %}
 
 {% block item_content %}
-<h2>Newsletter Importers</h2>
-<div class="importer-section" id="importer-substack" style="margin-bottom: 2em; padding: 1em; border: 1px solid #ddd; border-radius: 6px;">
-  <h3>Substack newsletters</h3>
-  <p>Import titles, send dates, links, and thumbnails from <a href="https://simonw.substack.com/">Simon Willison’s Newsletter</a>.</p>
-  <p>Import latest reads the <a href="https://simonw.substack.com/feed">RSS feed</a> (the latest 20 issues). Import all reads the complete archive. Existing issues are updated without creating duplicates; draft status and custom slugs are preserved.</p>
-  <button class="run-import-btn" data-importer="substack_latest" style="padding: 0.4em 1em; cursor: pointer;">Import latest</button>
-  <button class="run-import-btn" data-importer="substack_all" style="padding: 0.4em 1em; cursor: pointer;">Import all</button>
-  <p>Keep this page open until the import finishes.</p>
-  <div class="importer-status" role="status" style="margin-top: 0.5em;"></div>
-  <div class="importer-results" style="margin-top: 0.5em;"></div>
-</div>
+<style>
+  .importer-section {
+    display: grid;
+    gap: 1rem;
+    margin: 1rem 0 1.5rem;
+    padding: 1.25rem;
+    border: 1px solid var(--color-border, #ddd);
+    border-radius: 6px;
+  }
+  div.entry .importer-section > h3,
+  div.entry .importer-section > p { margin: 0; }
+  .importer-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem; }
+  .run-import-btn { padding: 0.5em 1em; cursor: pointer; }
+  .run-import-btn:disabled { cursor: not-allowed; }
+  .importer-hint { font-size: 0.9em; color: var(--color-text-muted); }
+  .importer-status, .importer-results { min-width: 0; overflow-wrap: anywhere; }
+  .importer-status:empty, .importer-results:empty { display: none; }
+
+  .importer-status.importer-error { color: #b91c1c; }
+  [data-theme="dark"] .importer-status.importer-error { color: #f87171; }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .importer-status.importer-error { color: #f87171; }
+  }
+</style>
 <h2>Beat Importers</h2>
 
 {% for key, importer in importers.items %}
-<div class="importer-section" id="importer-{{ key }}" style="margin-bottom: 2em; padding: 1em; border: 1px solid #ddd; border-radius: 6px;">
+<div class="importer-section" id="importer-{{ key }}">
   <h3>{{ importer.name }}</h3>
   <p>{{ importer.description }}</p>
   <p style="font-size: 0.85em; word-break: break-all;">Source: <a href="{{ importer.url }}">{{ importer.url }}</a></p>
-  <label style="display: inline-block; margin-right: 1em;">
+  <div class="importer-actions">
+  <label>
     <input type="checkbox" class="draft-checkbox"> Mark imported items as draft
   </label>
-  <button class="run-import-btn" data-importer="{{ key }}" style="padding: 0.4em 1em; cursor: pointer;">Run Import</button>
-  <div class="importer-status" style="margin-top: 0.5em;"></div>
-  <div class="importer-results" style="margin-top: 0.5em;"></div>
+  <button class="run-import-btn" data-importer="{{ key }}">Run Import</button>
+  </div>
+  <div class="importer-status"></div>
+  <div class="importer-results"></div>
 </div>
 {% endfor %}
 
 <p><a href="https://github.com/simonw/simonw/actions/workflows/build.yml">Trigger build</a></p>
+
+<h2>Newsletter Importers</h2>
+<div class="importer-section" id="importer-substack">
+  <h3>Substack newsletters</h3>
+  <p>Import titles, send dates, links, and thumbnails from <a href="https://simonw.substack.com/">Simon Willison’s Newsletter</a>.</p>
+  <p>Import latest reads the <a href="https://simonw.substack.com/feed">RSS feed</a> (the latest 20 issues). Import all reads the complete archive. Existing issues are updated without creating duplicates; draft status and custom slugs are preserved.</p>
+  <div class="importer-actions">
+  <button class="run-import-btn" data-importer="substack_latest">Import latest</button>
+  <button class="run-import-btn" data-importer="substack_all">Import all</button>
+  </div>
+  <p class="importer-hint">Keep this page open until the import finishes.</p>
+  <div class="importer-status" role="status"></div>
+  <div class="importer-results"></div>
+</div>
+<div class="importer-section" id="importer-monthly-public">
+  <h3>Public monthly newsletters</h3>
+  <p>Import all published monthly newsletters, including their content and original send dates, from the <a href="https://github.com/simonw/monthly-newsletter-archive">public archive</a>. Existing sponsors-only issues become public when their content appears in the archive.</p>
+  <div class="importer-actions">
+  <button class="run-import-btn" data-importer="monthly_public">Import public newsletters</button>
+  </div>
+  <p class="importer-hint">Keep this page open until the import finishes.</p>
+  <div class="importer-status" role="status"></div>
+  <div class="importer-results"></div>
+</div>
+<div class="importer-section" id="importer-monthly-private">
+  <h3>Private monthly newsletter</h3>
+  <p>Import the latest sponsors-only issue’s title, send date, GitHub link, and preview headings. Existing preview headings are preserved.</p>
+  <div class="importer-actions">
+  <button class="run-import-btn" data-importer="monthly_private" {% if not private_monthly_configured %}disabled aria-describedby="private-monthly-unavailable"{% endif %}>Import private newsletter</button>
+  </div>
+  {% if not private_monthly_configured %}<p class="importer-hint" id="private-monthly-unavailable">Set <code>GH_API_SIMONW_PRIVATE_MONTHLY</code> on the server to enable this importer.</p>{% endif %}
+  <div class="importer-status" role="status"></div>
+  <div class="importer-results"></div>
+</div>
 
 {% csrf_token %}
 <script>
@@ -56,6 +105,7 @@ document.querySelectorAll('.run-import-btn').forEach(function(btn) {
 
     buttons.forEach(function(button) { button.disabled = true; });
     btn.textContent = 'Running...';
+    statusEl.classList.remove('importer-error');
     statusEl.textContent = 'Importing...';
     resultsEl.innerHTML = '';
     try {
@@ -93,7 +143,8 @@ document.querySelectorAll('.run-import-btn').forEach(function(btn) {
         resultsEl.appendChild(more);
       }
     } catch (err) {
-      statusEl.textContent = summary() + '. Import stopped: ' + err.message + '. Completed imports are saved; you can retry safely.';
+      statusEl.classList.add('importer-error');
+      statusEl.textContent = summary() + '. Import stopped: ' + err.message.replace(/[.!?]\s*$/, '') + '. Completed imports are saved; you can retry safely.';
     } finally {
       buttons.forEach(function(button) { button.disabled = false; });
       btn.textContent = originalLabel;

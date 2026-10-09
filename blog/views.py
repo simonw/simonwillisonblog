@@ -1359,7 +1359,14 @@ IMPORTERS = {
 @staff_member_required
 @never_cache
 def importers(request):
-    return render(request, "importers.html", {"importers": IMPORTERS})
+    return render(
+        request,
+        "importers.html",
+        {
+            "importers": IMPORTERS,
+            "private_monthly_configured": bool(settings.GH_API_SIMONW_PRIVATE_MONTHLY),
+        },
+    )
 
 
 @require_POST
@@ -1375,7 +1382,13 @@ def api_run_importer(request):
         import_tils,
         import_tools,
     )
-    from blog.newsletter_importers import import_substack, import_substack_archive_page
+    from blog.newsletter_importers import (
+        import_substack,
+        import_substack_archive_page,
+        import_private_monthly,
+        import_public_monthly_page,
+        NewsletterImportRateLimitError,
+    )
 
     try:
         body = json_module.loads(request.body)
@@ -1385,13 +1398,31 @@ def api_run_importer(request):
     if not isinstance(body, dict):
         return JsonResponse({"error": "Expected a JSON object"}, status=400)
     importer_name = body.get("importer")
-    is_newsletter = importer_name in ("substack_latest", "substack_all")
+    is_newsletter = importer_name in (
+        "substack_latest",
+        "substack_all",
+        "monthly_private",
+        "monthly_public",
+    )
     if not isinstance(importer_name, str) or (
         importer_name not in IMPORTERS and not is_newsletter
     ):
         return JsonResponse({"error": "Unknown importer"}, status=400)
 
+    if (
+        importer_name == "monthly_private"
+        and not settings.GH_API_SIMONW_PRIVATE_MONTHLY
+    ):
+        return JsonResponse(
+            {"error": "Set GH_API_SIMONW_PRIVATE_MONTHLY to enable this importer."},
+            status=400,
+        )
+
     offset = body.get("offset", 0)
+    if importer_name == "monthly_public" and (
+        type(offset) is not int or offset < 0 or offset >= 12000
+    ):
+        return JsonResponse({"error": "Invalid archive offset"}, status=400)
     if importer_name == "substack_all" and (
         type(offset) is not int or offset < 0 or offset >= 12000 or offset % 12
     ):
@@ -1409,7 +1440,11 @@ def api_run_importer(request):
     }
 
     try:
-        if importer_name == "substack_latest":
+        if importer_name == "monthly_private":
+            result = import_private_monthly()
+        elif importer_name == "monthly_public":
+            result = import_public_monthly_page(offset)
+        elif importer_name == "substack_latest":
             result = import_substack(include_items=True)
         elif importer_name == "substack_all":
             result = import_substack_archive_page(offset)
@@ -1417,8 +1452,15 @@ def api_run_importer(request):
             result = importer_funcs[importer_name](
                 IMPORTERS[importer_name]["url"], is_draft=is_draft
             )
+    except NewsletterImportRateLimitError as e:
+        return JsonResponse({"error": str(e)}, status=429)
     except Exception as e:
-        return JsonResponse({"error": str(e)}, status=500)
+        error = (
+            "Private newsletter import failed. Check the repository token, its read access, and GitHub availability."
+            if importer_name == "monthly_private"
+            else str(e)
+        )
+        return JsonResponse({"error": error}, status=500)
 
     items = result["items"]
     total = len(items)
