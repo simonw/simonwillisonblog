@@ -27,16 +27,10 @@ The separate `Newsletter` model stores Substack listing metadata and monthly spo
 
 On `/admin/importers/`, the Substack **Import latest** button imports the RSS feed’s latest 20 issues. **Import all** walks the complete Substack archive in batches, showing cumulative results. Keep the page open until it completes. Each batch is saved independently, so an interrupted import can be rerun safely. Both buttons fetch fresh source data and preserve existing draft status and custom slugs. No local data export is needed to import Substack on production.
 
-Import public monthly issues from [simonw/monthly-newsletter-archive](https://github.com/simonw/monthly-newsletter-archive), plus the recent Substack RSS feed:
+Both Substack import methods use the same source identity and store no post body. The full archive uses Substack's public website endpoint, which is not a documented stable API.
 
-```bash
-DATABASE_URL=postgres:///simonwillisonblog uv run --with-requirements requirements.txt ./manage.py import_newsletters all
-```
+The monthly import helpers in `blog/newsletter_importers.py` read committed content from [simonw/monthly-newsletter-archive](https://github.com/simonw/monthly-newsletter-archive), using its `index.json` and each file's original first-add commit date as the send date. The archive preserves these dates from the original source repository. Missing titles use `LLM digest: Month Year`, with that choice recorded in metadata. Repeated imports update existing source records without duplicating them and preserve locally edited slugs, draft status, and unrelated metadata. Monthly importer buttons are not yet implemented.
 
-Use `monthly` or `substack` instead of `all` to import one source. Add `--dry-run` to validate and report changes without saving. Add `--substack-archive` to backfill the complete Substack history using its public website archive endpoint; this endpoint is not a documented stable API. RSS contains only the latest 20 issues. Both Substack import methods use the same source identity and store no post body.
-
-The monthly importer clones the public repository, reads the files listed in its committed `index.json`, and uses each file's original first-add commit date as the send date. The archive's sync script preserves these dates from the original source repository. Missing titles use `LLM digest: Month Year`, with that choice recorded in metadata. `--monthly-checkout /path/to/monthly-newsletter-archive` uses an existing public checkout instead; it reads committed files at HEAD. Repeated imports update existing source records without duplicating them and preserve locally edited slugs, draft status, and unrelated metadata.
-
-Add `--private-checkout /path/to/monthly` to a monthly import to include unreleased issues from the private repository. This imports only titles, original commit dates, and private GitHub links; private bodies are not stored. These issues display a sponsorship callout on the index and have no public content page or search document. When a matching filename appears in the public archive, the same record gains its public body and local permalink, and the callout disappears. A private import never changes an already-public issue back to sponsors only.
+The private monthly helper imports only titles, original commit dates, and private GitHub links from a local checkout; private bodies are not stored. These issues display a sponsorship note and have no public content page or search document. When a matching filename appears in the public archive, the same record gains its public body and local permalink. A private import never changes an already-public issue back to sponsors only.
 
 The admin's `Preview headings` field accepts one plain-text heading per line. These render as a bulleted preview beneath sponsors-only issues on the latest and year pages, above the sponsorship note. They are not part of the search document, and imports preserve this manually edited field.

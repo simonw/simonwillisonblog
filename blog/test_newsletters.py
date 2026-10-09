@@ -120,11 +120,9 @@ class NewsletterTests(TestCase):
         self.assertFalse(Newsletter.objects.exists())
 
     @patch("blog.newsletter_importers.requests.get")
-    def test_command_and_http_failure(self, get):
+    def test_substack_import_and_http_failure(self, get):
         get.return_value = Mock(content=FEED)
-        output = io.StringIO()
-        call_command("import_newsletters", "substack", stdout=output)
-        self.assertIn("created 1", output.getvalue())
+        self.assertEqual(import_substack()["created"], 1)
         get.assert_called_once_with("https://simonw.substack.com/feed", timeout=30)
         get.return_value.raise_for_status.assert_called_once()
         get.return_value.raise_for_status.side_effect = ValueError("Failed download")
