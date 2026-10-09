@@ -12,64 +12,34 @@ This project uses Django's built-in test framework with PostgreSQL.
 2. PostgreSQL database running
 3. Dependencies installed: `pip install -r requirements.txt`
 
-### Setting up Python 3.12 with uv
-
-If your system doesn't have Python 3.12+, use `uv` to install it:
-
-```bash
-# Install Python 3.12
-uv python install 3.12
-
-# Create a virtual environment with Python 3.12
-uv venv --python 3.12 .venv312
-
-# Activate and install dependencies
-source .venv312/bin/activate
-uv pip install -r requirements.txt
-```
-
-### Database Setup
-
-Set the `DATABASE_URL` environment variable:
-
-```bash
-export DATABASE_URL=postgres://postgres:@localhost/test_db
-```
-
-Run migrations before testing:
-
-```bash
-python manage.py migrate --noinput
-```
-
 ### Running Tests
 
-Run all tests:
+Use `uv run` with the pinned requirements; do not create or activate a virtual environment manually. PostgreSQL must be running locally.
+
+Run Django's system checks and all tracked tests:
 
 ```bash
-python manage.py test
+just
 ```
 
-Run tests with verbose output:
+Run pytest directly with an explicit database URL:
 
 ```bash
-python manage.py test -v3
+DATABASE_URL=postgres:///simonwillisonblog uv run --with-requirements requirements.txt pytest
 ```
 
-Run tests for a specific app:
+Run tests with verbose output, for an app, or for a specific class or method:
 
 ```bash
-python manage.py test blog
-python manage.py test feedstats
-python manage.py test monthly
+just test -v
+just test blog
+just test feedstats
+just test monthly
+just test blog/tests.py::TestBlog
+just test blog/tests.py::TestBlog::test_homepage
 ```
 
-Run a specific test class or method:
-
-```bash
-python manage.py test blog.tests.BlogTests
-python manage.py test blog.tests.BlogTests.test_homepage
-```
+The pytest configuration reuses the test database. Pass `--create-db` after schema changes. Tests use fast password hashing and omit production static-file serving, so `collectstatic` is not needed. See [AGENTS.md](AGENTS.md) for the database and commit-callback fixtures to use when writing tests.
 
 ## Project Structure
 

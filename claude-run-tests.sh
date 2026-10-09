@@ -7,19 +7,6 @@ set -e
 # Change to project directory
 cd "$(dirname "$0")"
 
-# Create virtual environment if it doesn't exist
-if [ ! -d ".venv" ]; then
-    echo "Creating virtual environment..."
-    uv venv --python 3.12 .venv
-fi
-
-# Activate virtual environment
-source .venv/bin/activate
-
-# Install dependencies (uv pip install is idempotent)
-echo "Installing dependencies..."
-uv pip install -r requirements.txt --quiet
-
 # Start PostgreSQL if not running
 if ! pg_isready -q 2>/dev/null; then
     echo "Starting PostgreSQL..."
@@ -36,10 +23,6 @@ sudo -u postgres createdb test_db 2>/dev/null || true
 # Set database URL
 export DATABASE_URL=postgres://postgres:postgres@localhost/test_db
 
-# Run migrations (idempotent)
-echo "Running migrations..."
-python manage.py migrate --noinput
-
-# Run tests
-echo "Running tests..."
-python manage.py test "$@"
+# Run Django system checks and pytest (pytest-django manages test migrations).
+uv run --with-requirements requirements.txt ./manage.py check
+exec uv run --with-requirements requirements.txt pytest "$@"
