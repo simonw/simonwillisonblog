@@ -956,7 +956,9 @@ class MonthlyImportTests(TestCase):
         ]
         self.assertEqual(import_monthly()["updated"], 1)
         existing.refresh_from_db()
-        self.assertEqual(existing.preview_heading_list(), ["First topic", "Second topic"])
+        self.assertEqual(
+            existing.preview_heading_list(), ["First topic", "Second topic"]
+        )
         self.assertEqual(Newsletter.objects.count(), 1)
 
     @patch("blog.newsletter_importers.requests.get")
