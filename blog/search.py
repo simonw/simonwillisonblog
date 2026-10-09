@@ -8,6 +8,7 @@ from django.contrib.postgres.search import SearchQuery, SearchRank
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.http import HttpResponse, Http404
 from django.shortcuts import render
+from django.utils import timezone
 from blog.models import (
     Beat,
     Entry,
@@ -75,6 +76,18 @@ def search(
 ):
     q = (q or request.GET.get("q", "")).strip()
     search_q, from_date, to_date = parse_date_clauses(q)
+    # Keep dates for display, but compare timestamps with aware midnight boundaries.
+    from_datetime, to_datetime = (
+        (
+            timezone.make_aware(
+                datetime.datetime.combine(date, datetime.time.min),
+                timezone.get_default_timezone(),
+            )
+            if date is not None
+            else None
+        )
+        for date in (from_date, to_date)
+    )
     search_q = search_q.strip()
     start = time.time()
 
@@ -145,10 +158,10 @@ def search(
             and 1 <= int(selected_month) <= 12
         ):
             qs = qs.filter(created__month=int(selected_month))
-        if from_date:
-            qs = qs.filter(created__gte=from_date)
-        if to_date:
-            qs = qs.filter(created__lt=to_date)
+        if from_datetime:
+            qs = qs.filter(created__gte=from_datetime)
+        if to_datetime:
+            qs = qs.filter(created__lt=to_datetime)
         if search_q:
             qs = qs.filter(search_document=query)
             qs = qs.annotate(rank=rank_annotation)

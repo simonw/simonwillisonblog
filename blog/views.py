@@ -173,8 +173,9 @@ def archive_item(request, year, month, day, slug):
                 "object_id": obj.id,
                 "previously_hosted": previously_hosted,
                 "item": obj,
-                "recent_articles": recent_articles.prefetch_related("tags")
-                .order_by("-created")[0:4],
+                "recent_articles": recent_articles.prefetch_related("tags").order_by(
+                    "-created"
+                )[0:4],
                 "is_draft": obj.is_draft,
                 "updates": updates,
             },

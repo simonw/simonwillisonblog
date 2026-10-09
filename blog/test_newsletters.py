@@ -1,6 +1,7 @@
 import datetime
 import io
 import json
+import warnings
 from unittest.mock import Mock, patch
 
 from django.contrib.auth.models import User
@@ -9,6 +10,7 @@ from django.core.exceptions import ValidationError
 from django.core.management import call_command
 from django.test import TestCase, RequestFactory, override_settings
 from django.urls import reverse
+from django.utils import timezone
 from bs4 import BeautifulSoup
 
 from .models import Newsletter
@@ -887,6 +889,34 @@ class NewsletterSearchTests(TestCase):
         self.assertEqual(
             self.context(q="capybara from:2026-01-02 to:2026-01-03")["total"], 1
         )
+
+    @override_settings(TIME_ZONE="America/Los_Angeles")
+    def test_date_filter_boundaries_are_aware_and_use_default_timezone(self):
+        start = datetime.datetime(2026, 1, 2, 8, tzinfo=datetime.timezone.utc)
+        end = start + datetime.timedelta(days=1)
+        before = self.issue(created=start - datetime.timedelta(seconds=1))
+        at_start = self.issue(created=start)
+        before_end = self.issue(created=end - datetime.timedelta(seconds=1))
+        at_end = self.issue(created=end)
+        cases = (
+            ("from:2026-01-02", {at_start.pk, before_end.pk, at_end.pk}),
+            ("to:2026-01-03", {before.pk, at_start.pk, before_end.pk}),
+            ("from:2026-01-02 to:2026-01-03", {at_start.pk, before_end.pk}),
+        )
+        with warnings.catch_warnings(), timezone.override("Asia/Tokyo"):
+            warnings.filterwarnings(
+                "error", r"DateTimeField .* received a naive datetime", RuntimeWarning
+            )
+            for query, expected in cases:
+                with self.subTest(query=query):
+                    context = self.context(q=query)
+                    self.assertEqual(
+                        {result["obj"].pk for result in context["results"]}, expected
+                    )
+                    if "from:" in query:
+                        self.assertEqual(context["selected"]["from_date"], start.date())
+                    if "to:" in query:
+                        self.assertEqual(context["selected"]["to_date"], end.date())
 
     def test_tags_exclude_untagged_newsletters_but_negative_filters_allow_them(self):
         from .factories import EntryFactory
