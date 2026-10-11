@@ -805,6 +805,11 @@ div#bigheadcontainer {
     width: 100%;
     box-sizing: border-box;
     padding: 0 10px;
+    overflow-wrap: anywhere;
+  }
+  /* Long labels must wrap or they push the page wider than the viewport */
+  #sponsored-banner .sponsor-learn-more-label {
+    white-space: normal;
   }
 }
 div#band {
