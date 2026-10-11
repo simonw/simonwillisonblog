@@ -1,25 +1,33 @@
 import datetime
 import io
 import json
+import re
 import warnings
 from unittest.mock import Mock, patch
 
+import pytest
+from bs4 import BeautifulSoup
 from django.contrib.auth.models import User
 from django.contrib.postgres.search import SearchQuery
 from django.core.exceptions import ValidationError
 from django.core.management import call_command
-from django.test import TestCase, RequestFactory, override_settings
+from django.test import RequestFactory, override_settings
 from django.urls import reverse
 from django.utils import timezone
-from bs4 import BeautifulSoup
+from pytest_django.asserts import (
+    assertContains,
+    assertNotContains,
+    assertRedirects,
+    assertTemplateUsed,
+)
 
 from .models import Newsletter
 from .newsletter_importers import (
+    MONTHLY_RAW,
+    import_monthly,
     import_substack,
     import_substack_archive,
-    import_monthly,
     monthly_records,
-    MONTHLY_RAW,
     save_records,
     substack_archive_records,
     substack_records,
@@ -33,7 +41,13 @@ FEED = b"""<rss version="2.0"><channel><item>
 </item></channel></rss>"""
 
 
-class NewsletterTests(TestCase):
+@pytest.mark.django_db
+class TestNewsletter:
+    @pytest.fixture(autouse=True)
+    def setup(self, client, commit_callbacks):
+        self.client = client
+        self.commit_callbacks = commit_callbacks
+
     def sponsor(self, **overrides):
         fields = dict(
             kind=Newsletter.Kind.SPONSOR,
@@ -49,11 +63,11 @@ class NewsletterTests(TestCase):
 
     def test_only_public_sponsor_content_is_indexed_and_unpublishing_clears_it(self):
         obj = self.sponsor()
-        with self.captureOnCommitCallbacks(execute=True):
+        with self.commit_callbacks():
             obj.save()
-        self.assertTrue(
-            Newsletter.objects.filter(search_document=SearchQuery("pangolin")).exists()
-        )
+        assert Newsletter.objects.filter(
+            search_document=SearchQuery("pangolin")
+        ).exists()
         for fields in (
             {"is_public": False},
             {"is_public": True, "is_draft": True},
@@ -61,46 +75,44 @@ class NewsletterTests(TestCase):
         ):
             for key, value in fields.items():
                 setattr(obj, key, value)
-            with self.captureOnCommitCallbacks(execute=True):
+            with self.commit_callbacks():
                 obj.save()
             obj.refresh_from_db()
-            self.assertIsNone(obj.search_document)
+            assert obj.search_document is None
 
     def test_validation_separates_listing_and_public_body(self):
         obj = self.sponsor(is_public=False, body="")
         obj.full_clean()
         obj.is_public = True
-        with self.assertRaises(ValidationError):
+        with pytest.raises(ValidationError):
             obj.full_clean()
         obj.kind = Newsletter.Kind.SUBSTACK
         obj.body = "Not metadata"
-        with self.assertRaises(ValidationError):
+        with pytest.raises(ValidationError):
             obj.full_clean()
 
     def test_substack_import_is_repeatable_and_metadata_only(self):
         records = substack_records(FEED)
-        self.assertEqual(
-            save_records(records), {"created": 1, "updated": 0, "skipped": 0}
-        )
+        assert save_records(records) == {"created": 1, "updated": 0, "skipped": 0}
         obj = Newsletter.objects.get()
-        self.assertEqual(obj.title, "A & B")
-        self.assertEqual(obj.subtitle, "Plus we’re discussing A & B")
-        self.assertEqual(obj.card_image, "https://example.com/image.jpg")
-        self.assertEqual(obj.body, "")
-        self.assertEqual(obj.created.isoformat(), "2026-10-05T17:16:45+00:00")
-        self.assertEqual(save_records(records)["skipped"], 1)
+        assert obj.title == "A & B"
+        assert obj.subtitle == "Plus we’re discussing A & B"
+        assert obj.card_image == "https://example.com/image.jpg"
+        assert obj.body == ""
+        assert obj.created.isoformat() == "2026-10-05T17:16:45+00:00"
+        assert save_records(records)["skipped"] == 1
         obj.slug = "my-custom-slug"
         obj.is_draft = True
         obj.metadata["editor_note"] = "Keep this"
         obj.save()
         records[0]["title"] = "Updated title"
         records[0]["subtitle"] = "Updated subtitle"
-        self.assertEqual(save_records(records)["updated"], 1)
+        assert save_records(records)["updated"] == 1
         obj.refresh_from_db()
-        self.assertEqual(obj.slug, "my-custom-slug")
-        self.assertEqual(obj.subtitle, "Updated subtitle")
-        self.assertTrue(obj.is_draft)
-        self.assertEqual(obj.metadata["editor_note"], "Keep this")
+        assert obj.slug == "my-custom-slug"
+        assert obj.subtitle == "Updated subtitle"
+        assert obj.is_draft
+        assert obj.metadata["editor_note"] == "Keep this"
 
     def test_optional_thumbnail_and_invalid_feed(self):
         records = substack_records(
@@ -109,8 +121,8 @@ class NewsletterTests(TestCase):
                 b"",
             )
         )
-        self.assertEqual(records[0]["card_image"], "")
-        with self.assertRaises(ValueError):
+        assert records[0]["card_image"] == ""
+        with pytest.raises(ValueError):
             substack_records(b"<html/>")
 
     def test_missing_and_empty_subtitles(self):
@@ -119,36 +131,34 @@ class NewsletterTests(TestCase):
                 b"<description><![CDATA[Plus we&#8217;re discussing A &amp; B]]></description>",
                 description,
             )
-            self.assertEqual(substack_records(feed)[0]["subtitle"], "")
+            assert substack_records(feed)[0]["subtitle"] == ""
         post = {
             "title": "A & B",
             "canonical_url": "https://simonw.substack.com/p/a-b",
             "post_date": "2026-10-05T17:16:45Z",
         }
         for fields in ({}, {"subtitle": None}, {"subtitle": ""}):
-            self.assertEqual(
-                substack_archive_records([{**post, **fields}])[0]["subtitle"], ""
-            )
+            assert substack_archive_records([{**post, **fields}])[0]["subtitle"] == ""
 
     def test_dry_run_and_invalid_batch_write_nothing(self):
         records = substack_records(FEED)
-        self.assertEqual(save_records(records, dry_run=True)["created"], 1)
-        self.assertFalse(Newsletter.objects.exists())
+        assert save_records(records, dry_run=True)["created"] == 1
+        assert not Newsletter.objects.exists()
         invalid = {**records[0], "import_ref": "invalid", "title": "x" * 256}
-        with self.assertRaises(ValidationError):
+        with pytest.raises(ValidationError):
             save_records([*records, invalid])
-        self.assertFalse(Newsletter.objects.exists())
+        assert not Newsletter.objects.exists()
 
     @patch("blog.newsletter_importers.requests.get")
     def test_substack_import_and_http_failure(self, get):
         get.return_value = Mock(content=FEED)
-        self.assertEqual(import_substack()["created"], 1)
+        assert import_substack()["created"] == 1
         get.assert_called_once_with("https://simonw.substack.com/feed", timeout=30)
         get.return_value.raise_for_status.assert_called_once()
         get.return_value.raise_for_status.side_effect = ValueError("Failed download")
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             import_substack()
-        self.assertEqual(Newsletter.objects.count(), 1)
+        assert Newsletter.objects.count() == 1
 
     def test_admin_can_inspect_imported_content(self):
         obj = self.sponsor()
@@ -156,15 +166,13 @@ class NewsletterTests(TestCase):
         self.client.force_login(
             User.objects.create_superuser("newsletters", "n@example.com", "pw")
         )
-        self.assertContains(
-            self.client.get("/admin/blog/newsletter/"), "Sponsor digest"
-        )
+        assertContains(self.client.get("/admin/blog/newsletter/"), "Sponsor digest")
         response = self.client.get(f"/admin/blog/newsletter/{obj.pk}/change/")
-        self.assertContains(response, "Content and visibility")
-        self.assertContains(response, "Import details")
-        self.assertContains(response, 'name="subtitle"')
-        self.assertNotContains(response, 'name="search_document"')
-        self.assertContains(
+        assertContains(response, "Content and visibility")
+        assertContains(response, "Import details")
+        assertContains(response, 'name="subtitle"')
+        assertNotContains(response, 'name="search_document"')
+        assertContains(
             self.client.get("/admin/blog/newsletter/?kind__exact=sponsor&q=pangolin"),
             "Sponsor digest",
         )
@@ -188,21 +196,21 @@ class NewsletterTests(TestCase):
             "_save": "Save",
         }
         response = self.client.post(url, data)
-        self.assertContains(response, "Public sponsor issues need their content.")
+        assertContains(response, "Public sponsor issues need their content.")
         obj.refresh_from_db()
-        self.assertFalse(obj.is_public)
+        assert not obj.is_public
         data["body"] = "Public pangolin content."
-        with self.captureOnCommitCallbacks(execute=True):
+        with self.commit_callbacks():
             response = self.client.post(url, data)
-        self.assertEqual(response.status_code, 302)
+        assert response.status_code == 302
         obj.refresh_from_db()
-        self.assertTrue(obj.is_public)
-        self.assertIsNotNone(obj.search_document)
+        assert obj.is_public
+        assert obj.search_document is not None
         data["is_draft"] = "on"
-        with self.captureOnCommitCallbacks(execute=True):
-            self.assertEqual(self.client.post(url, data).status_code, 302)
+        with self.commit_callbacks():
+            assert self.client.post(url, data).status_code == 302
         obj.refresh_from_db()
-        self.assertIsNone(obj.search_document)
+        assert obj.search_document is None
 
     @patch("blog.newsletter_importers.requests.get")
     def test_archive_pagination_and_rss_share_identity(self, get):
@@ -223,23 +231,28 @@ class NewsletterTests(TestCase):
             Mock(json=Mock(return_value=[older])),
             Mock(json=Mock(return_value=[])),
         ]
-        self.assertEqual(import_substack_archive()["created"], 2)
-        self.assertEqual(
-            [call.kwargs["params"]["offset"] for call in get.call_args_list],
-            [0, 12, 24],
-        )
-        self.assertEqual(save_records(substack_records(FEED))["skipped"], 1)
+        assert import_substack_archive()["created"] == 2
+        assert [call.kwargs["params"]["offset"] for call in get.call_args_list] == [
+            0,
+            12,
+            24,
+        ]
+        assert save_records(substack_records(FEED))["skipped"] == 1
         get.side_effect = [
             Mock(json=Mock(return_value=[post])),
             Mock(json=Mock(return_value=[post])),
         ]
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             import_substack_archive()
-        self.assertEqual(Newsletter.objects.count(), 2)
+        assert Newsletter.objects.count() == 2
 
 
-class NewsletterImporterViewTests(TestCase):
-    def setUp(self):
+@pytest.mark.django_db
+class TestNewsletterImporterView:
+    @pytest.fixture(autouse=True)
+    def setup(self, client, commit_callbacks, db):
+        self.client = client
+        self.commit_callbacks = commit_callbacks
         self.admin = User.objects.create_superuser(
             "importer", "importer@example.com", "pw"
         )
@@ -254,28 +267,28 @@ class NewsletterImporterViewTests(TestCase):
 
     def test_buttons_and_staff_access(self):
         response = self.client.get("/admin/importers/")
-        self.assertContains(response, 'data-importer="substack_latest"')
-        self.assertContains(response, 'data-importer="substack_all"')
-        self.assertContains(response, "Import latest")
-        self.assertContains(response, "Import all")
-        self.assertContains(response, "Beat Importers")
+        assertContains(response, 'data-importer="substack_latest"')
+        assertContains(response, 'data-importer="substack_all"')
+        assertContains(response, "Import latest")
+        assertContains(response, "Import all")
+        assertContains(response, "Beat Importers")
         self.client.logout()
-        self.assertEqual(self.post("substack_latest").status_code, 302)
+        assert self.post("substack_latest").status_code == 302
         self.client.force_login(User.objects.create_user("reader"))
-        self.assertEqual(self.post("substack_all").status_code, 302)
+        assert self.post("substack_all").status_code == 302
         self.client.force_login(self.admin)
-        self.assertEqual(self.client.get("/api/run-importer/").status_code, 405)
+        assert self.client.get("/api/run-importer/").status_code == 405
         from django.test import Client
 
         csrf_client = Client(enforce_csrf_checks=True)
         csrf_client.force_login(self.admin)
-        self.assertEqual(
+        assert (
             csrf_client.post(
                 "/api/run-importer/",
                 {"importer": "substack_all"},
                 content_type="application/json",
-            ).status_code,
-            403,
+            ).status_code
+            == 403
         )
 
     @override_settings(GH_API_SIMONW_PRIVATE_MONTHLY="")
@@ -285,9 +298,9 @@ class NewsletterImporterViewTests(TestCase):
         button = BeautifulSoup(response.content, "html.parser").select_one(
             '[data-importer="monthly_private"]'
         )
-        self.assertTrue(button.has_attr("disabled"))
-        self.assertContains(response, "GH_API_SIMONW_PRIVATE_MONTHLY")
-        self.assertEqual(self.post("monthly_private").status_code, 400)
+        assert button.has_attr("disabled")
+        assertContains(response, "GH_API_SIMONW_PRIVATE_MONTHLY")
+        assert self.post("monthly_private").status_code == 400
         get.assert_not_called()
 
     @override_settings(GH_API_SIMONW_PRIVATE_MONTHLY="example-secret-token")
@@ -297,19 +310,19 @@ class NewsletterImporterViewTests(TestCase):
         button = BeautifulSoup(response.content, "html.parser").select_one(
             '[data-importer="monthly_private"]'
         )
-        self.assertFalse(button.has_attr("disabled"))
-        self.assertNotContains(response, "example-secret-token")
+        assert not button.has_attr("disabled")
+        assertNotContains(response, "example-secret-token")
         importer.return_value = {"created": 0, "updated": 0, "skipped": 0, "items": []}
-        self.assertEqual(self.post("monthly_private").status_code, 200)
+        assert self.post("monthly_private").status_code == 200
         importer.assert_called_once_with()
         importer.side_effect = ValueError(
             "example-secret-token private response content"
         )
         response = self.post("monthly_private")
-        self.assertEqual(response.status_code, 500)
-        self.assertNotIn("example-secret-token", response.content.decode())
+        assert response.status_code == 500
+        assert "example-secret-token" not in response.content.decode()
         self.client.logout()
-        self.assertEqual(self.post("monthly_private").status_code, 302)
+        assert self.post("monthly_private").status_code == 302
 
     @override_settings(GH_API_SIMONW_PRIVATE_MONTHLY="")
     @patch("blog.newsletter_importers.requests.get")
@@ -318,8 +331,8 @@ class NewsletterImporterViewTests(TestCase):
         button = BeautifulSoup(page.content, "html.parser").select_one(
             '[data-importer="monthly_public"]'
         )
-        self.assertIsNotNone(button)
-        self.assertFalse(button.has_attr("disabled"))
+        assert button is not None
+        assert not button.has_attr("disabled")
         index = [
             {"filename": "2026-08-august.md", "sent_at": "2026-09-04T05:50:18Z"},
             {"filename": "2026-09-september.md", "sent_at": "2026-10-03T21:21:39Z"},
@@ -330,30 +343,28 @@ class NewsletterImporterViewTests(TestCase):
             Mock(json=Mock(return_value=index)),
             Mock(content=b"# September digest\n\nMore content."),
         ]
-        with self.captureOnCommitCallbacks(execute=True):
+        with self.commit_callbacks():
             response = self.post("monthly_public")
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["created"], 1)
-        self.assertEqual(response.json()["next_offset"], 1)
-        self.assertIn("August digest", response.json()["items_html"])
+        assert response.status_code == 200
+        assert response.json()["created"] == 1
+        assert response.json()["next_offset"] == 1
+        assert "August digest" in response.json()["items_html"]
         issue = Newsletter.objects.get()
-        self.assertIsNotNone(issue.search_document)
-        self.assertIn(issue.get_absolute_url(), response.json()["items_html"])
+        assert issue.search_document is not None
+        assert issue.get_absolute_url() in response.json()["items_html"]
         response = self.post("monthly_public", offset=1)
-        self.assertEqual(response.json()["created"], 1)
-        self.assertIsNone(response.json()["next_offset"])
-        self.assertEqual(Newsletter.objects.count(), 2)
-        self.assertTrue(
-            all(call.args[0].startswith(MONTHLY_RAW) for call in get.call_args_list)
+        assert response.json()["created"] == 1
+        assert response.json()["next_offset"] is None
+        assert Newsletter.objects.count() == 2
+        assert all(
+            (call.args[0].startswith(MONTHLY_RAW) for call in get.call_args_list)
         )
         get.reset_mock()
         get.side_effect = [Mock(json=Mock(return_value=[]))]
-        self.assertIsNone(self.post("monthly_public").json()["next_offset"])
+        assert self.post("monthly_public").json()["next_offset"] is None
         for offset in (-1, "0", True, 12000):
-            self.assertEqual(
-                self.post("monthly_public", offset=offset).status_code, 400
-            )
-        self.assertEqual(get.call_count, 1)
+            assert self.post("monthly_public", offset=offset).status_code == 400
+        assert get.call_count == 1
 
     @override_settings(
         GH_API_SIMONW_PRIVATE_MONTHLY="example-secret-token", TIME_ZONE="UTC"
@@ -387,40 +398,40 @@ class NewsletterImporterViewTests(TestCase):
                 status_code=status, headers=headers, json=Mock(return_value=data)
             )
             response = self.post("monthly_private")
-            self.assertEqual(response.status_code, 429)
-            self.assertIn("GitHub API rate limit exceeded", response.json()["error"])
-            self.assertIn(expected, response.json()["error"])
-            self.assertNotIn("example-secret-token", response.content.decode())
+            assert response.status_code == 429
+            assert "GitHub API rate limit exceeded" in response.json()["error"]
+            assert expected in response.json()["error"]
+            assert "example-secret-token" not in response.content.decode()
         get.return_value = Mock(
             status_code=403,
             headers={},
             json=Mock(return_value={"message": "Resource not accessible"}),
         )
         response = self.post("monthly_private")
-        self.assertEqual(response.status_code, 500)
-        self.assertNotIn("rate limit", response.json()["error"])
-        self.assertFalse(Newsletter.objects.exists())
+        assert response.status_code == 500
+        assert "rate limit" not in response.json()["error"]
+        assert not Newsletter.objects.exists()
 
     @patch("blog.newsletter_importers.requests.get")
     def test_latest_repeat_and_editorial_preservation(self, get):
         get.return_value = Mock(content=FEED)
         result = self.post("substack_latest").json()
-        self.assertEqual(result["created"], 1)
-        self.assertEqual(result["total"], 1)
-        self.assertIn("A &amp; B", result["items_html"])
+        assert result["created"] == 1
+        assert result["total"] == 1
+        assert "A &amp; B" in result["items_html"]
         obj = Newsletter.objects.get()
-        self.assertIn(f"/admin/blog/newsletter/{obj.pk}/change/", result["items_html"])
+        assert f"/admin/blog/newsletter/{obj.pk}/change/" in result["items_html"]
         obj.slug = "custom"
         obj.is_draft = True
         obj.save()
-        self.assertEqual(self.post("substack_latest").json()["skipped"], 1)
+        assert self.post("substack_latest").json()["skipped"] == 1
         get.return_value = Mock(content=FEED.replace(b"A &amp; B", b"Revised title"))
-        self.assertEqual(self.post("substack_latest").json()["updated"], 1)
+        assert self.post("substack_latest").json()["updated"] == 1
         obj.refresh_from_db()
-        self.assertEqual(obj.slug, "custom")
-        self.assertTrue(obj.is_draft)
-        self.assertEqual(obj.body, "")
-        self.assertEqual(Newsletter.objects.count(), 1)
+        assert obj.slug == "custom"
+        assert obj.is_draft
+        assert obj.body == ""
+        assert Newsletter.objects.count() == 1
         get.assert_called_with("https://simonw.substack.com/feed", timeout=30)
 
     @patch("blog.newsletter_importers.requests.get")
@@ -435,8 +446,8 @@ class NewsletterImporterViewTests(TestCase):
         save_records(substack_records(FEED))
         get.return_value = Mock(json=Mock(return_value=[post]))
         first = self.post("substack_all").json()
-        self.assertEqual(first["skipped"], 1)
-        self.assertEqual(first["next_offset"], 12)
+        assert first["skipped"] == 1
+        assert first["next_offset"] == 12
         get.return_value = Mock(
             json=Mock(
                 return_value=[
@@ -445,16 +456,17 @@ class NewsletterImporterViewTests(TestCase):
             )
         )
         second = self.post("substack_all", offset=12).json()
-        self.assertEqual(second["created"], 1)
-        self.assertEqual(second["next_offset"], 24)
+        assert second["created"] == 1
+        assert second["next_offset"] == 24
         get.return_value = Mock(json=Mock(return_value=[]))
         last = self.post("substack_all", offset=24).json()
-        self.assertIsNone(last["next_offset"])
-        self.assertEqual(Newsletter.objects.count(), 2)
-        self.assertEqual(
-            [call.kwargs["params"]["offset"] for call in get.call_args_list],
-            [0, 12, 24],
-        )
+        assert last["next_offset"] is None
+        assert Newsletter.objects.count() == 2
+        assert [call.kwargs["params"]["offset"] for call in get.call_args_list] == [
+            0,
+            12,
+            24,
+        ]
 
     @patch("blog.newsletter_importers.requests.get")
     def test_import_all_backfills_existing_subtitle_and_is_repeatable(self, get):
@@ -478,29 +490,34 @@ class NewsletterImporterViewTests(TestCase):
             )
         )
         result = self.post("substack_all").json()
-        self.assertEqual(result["updated"], 1)
-        self.assertEqual(result["created"], 0)
+        assert result["updated"] == 1
+        assert result["created"] == 0
         obj.refresh_from_db()
-        self.assertEqual(obj.subtitle, "Plus we’re discussing A & B")
-        self.assertEqual(obj.slug, "custom-slug")
-        self.assertTrue(obj.is_draft)
-        self.assertEqual(self.post("substack_all").json()["skipped"], 1)
-        self.assertEqual(Newsletter.objects.count(), 1)
+        assert obj.subtitle == "Plus we’re discussing A & B"
+        assert obj.slug == "custom-slug"
+        assert obj.is_draft
+        assert self.post("substack_all").json()["skipped"] == 1
+        assert Newsletter.objects.count() == 1
 
     @patch("blog.newsletter_importers.requests.get")
     def test_failed_batch_and_validation(self, get):
         get.return_value = Mock(json=Mock(return_value={"error": "broken"}))
         response = self.post("substack_all")
-        self.assertEqual(response.status_code, 500)
-        self.assertIn("Expected a list", response.json()["error"])
-        self.assertEqual(Newsletter.objects.count(), 0)
+        assert response.status_code == 500
+        assert "Expected a list" in response.json()["error"]
+        assert Newsletter.objects.count() == 0
         get.reset_mock()
         for offset in (-12, 1, 12000, "12", True):
-            self.assertEqual(self.post("substack_all", offset=offset).status_code, 400)
+            assert self.post("substack_all", offset=offset).status_code == 400
         get.assert_not_called()
 
 
-class NewsletterPageTests(TestCase):
+@pytest.mark.django_db
+class TestNewsletterPage:
+    @pytest.fixture(autouse=True)
+    def setup(self, client):
+        self.client = client
+
     def issue(self, **overrides):
         fields = dict(
             kind="sponsor",
@@ -534,33 +551,29 @@ class NewsletterPageTests(TestCase):
         )
         self.issue(slug="draft", title="Hidden draft", is_draft=True)
         response = self.client.get(reverse("newsletters"))
-        self.assertEqual(
-            list(response.context["newsletters"]), [external, private, public]
-        )
+        assert list(response.context["newsletters"]) == [external, private, public]
         soup = BeautifulSoup(response.content, "html.parser")
         links = [a["href"] for a in soup.select(".newsletter-list h3 a")]
-        self.assertEqual(
-            links, [external.url, private.url, "/newsletters/monthly-example/"]
-        )
-        self.assertEqual(soup.select_one(".newsletter-list img")["loading"], "lazy")
-        self.assertContains(response, "Sponsors only")
+        assert links == [external.url, private.url, "/newsletters/monthly-example/"]
+        assert soup.select_one(".newsletter-list img")["loading"] == "lazy"
+        assertContains(response, "Sponsors only")
         prompt = soup.select_one(".newsletter-sponsors-only")
-        self.assertIn("Private issue", prompt.text)
-        self.assertEqual(
-            prompt.select_one(".newsletter-sponsor-link")["href"],
-            "https://github.com/sponsors/simonw/",
+        assert "Private issue" in prompt.text
+        assert (
+            prompt.select_one(".newsletter-sponsor-link")["href"]
+            == "https://github.com/sponsors/simonw/"
         )
-        self.assertEqual(
-            prompt.select_one(".newsletter-existing-sponsor a")["href"], private.url
+        assert (
+            prompt.select_one(".newsletter-existing-sponsor a")["href"] == private.url
         )
-        self.assertEqual(len(soup.select(".newsletter-sponsor-prompt")), 1)
-        self.assertNotContains(response, "Hidden draft")
-        self.assertNotContains(response, "Unreleased secret content")
-        self.assertEqual(public.get_absolute_url(), "/newsletters/monthly-example/")
-        self.assertEqual(external.get_absolute_url(), external.url)
-        self.assertEqual(private.get_absolute_url(), private.url)
+        assert len(soup.select(".newsletter-sponsor-prompt")) == 1
+        assertNotContains(response, "Hidden draft")
+        assertNotContains(response, "Unreleased secret content")
+        assert public.get_absolute_url() == "/newsletters/monthly-example/"
+        assert external.get_absolute_url() == external.url
+        assert private.get_absolute_url() == private.url
 
-    def test_subtitles_render_as_plain_text_in_listings(self):
+    def test_subtitles_render_as_plain_text_in_listings(self, subtests):
         self.issue(
             kind="substack",
             slug="with-subtitle",
@@ -574,15 +587,15 @@ class NewsletterPageTests(TestCase):
             "/2026/Sep/",
             "/2026/Sep/4/",
         ):
-            with self.subTest(url=url):
+            with subtests.test(url=url):
                 soup = BeautifulSoup(self.client.get(url).content, "html.parser")
                 subtitles = soup.select(".newsletter-subtitle")
-                self.assertEqual(len(subtitles), 1)
-                self.assertEqual(
-                    subtitles[0].get_text(),
-                    'Plus <script>alert("hello")</script> & more',
+                assert len(subtitles) == 1
+                assert (
+                    subtitles[0].get_text()
+                    == 'Plus <script>alert("hello")</script> & more'
                 )
-                self.assertIsNone(subtitles[0].find("script"))
+                assert subtitles[0].find("script") is None
 
     def test_index_latest_ten_and_complete_year_pages(self):
         for i in range(55):
@@ -598,30 +611,29 @@ class NewsletterPageTests(TestCase):
             created=datetime.datetime(2024, 1, 1, tzinfo=datetime.timezone.utc),
         )
         response = self.client.get(reverse("newsletters"), {"page": 2})
-        self.assertEqual(
-            [n.slug for n in response.context["newsletters"]],
-            [f"issue-{i}" for i in range(54, 44, -1)],
-        )
-        self.assertNotIn("page_obj", response.context)
+        assert [n.slug for n in response.context["newsletters"]] == [
+            f"issue-{i}" for i in range(54, 44, -1)
+        ]
+        assert "page_obj" not in response.context
         soup = BeautifulSoup(response.content, "html.parser")
-        self.assertEqual(
-            [a["href"] for a in soup.select(".newsletter-years li a")],
-            ["/newsletters/2026/", "/newsletters/2025/"],
-        )
+        assert [a["href"] for a in soup.select(".newsletter-years li a")] == [
+            "/newsletters/2026/",
+            "/newsletters/2025/",
+        ]
         response = self.client.get("/newsletters/2026/")
-        self.assertEqual(len(response.context["newsletters"]), 55)
-        self.assertNotContains(response, "Older issue")
-        self.assertEqual(
-            list(self.client.get("/newsletters/2025/").context["newsletters"]), [older]
-        )
+        assert len(response.context["newsletters"]) == 55
+        assertNotContains(response, "Older issue")
+        assert list(self.client.get("/newsletters/2025/").context["newsletters"]) == [
+            older
+        ]
         for year in (2024, 2023, "0000"):
-            self.assertEqual(self.client.get(f"/newsletters/{year}/").status_code, 404)
+            assert self.client.get(f"/newsletters/{year}/").status_code == 404
 
     def test_year_slugs_are_reserved(self):
         issue = Newsletter(
             kind="substack", title="Example", slug="2026", url="https://example.com/"
         )
-        with self.assertRaises(ValidationError):
+        with pytest.raises(ValidationError):
             issue.full_clean()
 
     def test_day_and_month_archives_include_newsletter_listings_without_bodies(self):
@@ -644,26 +656,26 @@ class NewsletterPageTests(TestCase):
         self.issue(slug="draft", title="Draft newsletter", is_draft=True)
         for url in ("/2026/Sep/4/", "/2026/Sep/"):
             response = self.client.get(url)
-            self.assertEqual(response.status_code, 200)
+            assert response.status_code == 200
             items = response.context["items"]
-            self.assertEqual(
-                {item["obj"].pk for item in items}, {public.pk, private.pk, substack.pk}
-            )
+            assert {item["obj"].pk for item in items} == {
+                public.pk,
+                private.pk,
+                substack.pk,
+            }
             soup = BeautifulSoup(response.content, "html.parser")
-            self.assertEqual(len(soup.select('[data-type="newsletter"]')), 3)
-            self.assertContains(response, public.get_absolute_url())
-            self.assertContains(response, private.url)
-            self.assertContains(response, substack.url)
-            self.assertContains(response, "Public preview heading")
-            self.assertNotContains(response, "Private body must not leak")
-            self.assertNotContains(response, "Full public body")
-            self.assertNotContains(response, "Draft newsletter")
-            self.assertEqual(
-                soup.select_one('[data-type="newsletter"] img')["loading"], "lazy"
-            )
-            self.assertContains(response, 'title="3 newsletters"')
-        self.assertContains(response, "3 newsletters")
-        self.assertNotContains(response, "/search/?type=newsletter")
+            assert len(soup.select('[data-type="newsletter"]')) == 3
+            assertContains(response, public.get_absolute_url())
+            assertContains(response, private.url)
+            assertContains(response, substack.url)
+            assertContains(response, "Public preview heading")
+            assertNotContains(response, "Private body must not leak")
+            assertNotContains(response, "Full public body")
+            assertNotContains(response, "Draft newsletter")
+            assert soup.select_one('[data-type="newsletter"] img')["loading"] == "lazy"
+            assertContains(response, 'title="3 newsletters"')
+        assertContains(response, "3 newsletters")
+        assertNotContains(response, "/search/?type=newsletter")
 
     def test_year_archive_counts_newsletters_without_listing_titles(self):
         self.issue(title="Never list this title")
@@ -674,16 +686,12 @@ class NewsletterPageTests(TestCase):
             created=datetime.datetime(2026, 10, 3, tzinfo=datetime.timezone.utc),
         )
         response = self.client.get("/2026/")
-        self.assertContains(response, "2 newsletters")
-        self.assertContains(response, "1 newsletter")
-        self.assertNotContains(response, "Never list this title")
-        self.assertNotContains(response, "Second newsletter")
-        self.assertEqual(
-            [month["date"].month for month in response.context["months"]], [9, 10]
-        )
-        self.assertTrue(
-            all(not month["entries"] for month in response.context["months"])
-        )
+        assertContains(response, "2 newsletters")
+        assertContains(response, "1 newsletter")
+        assertNotContains(response, "Never list this title")
+        assertNotContains(response, "Second newsletter")
+        assert [month["date"].month for month in response.context["months"]] == [9, 10]
+        assert all((not month["entries"] for month in response.context["months"]))
 
     def test_day_navigation_and_calendar_skip_draft_newsletters(self):
         for day, draft in ((2, False), (3, True), (4, False), (5, True), (6, False)):
@@ -693,11 +701,11 @@ class NewsletterPageTests(TestCase):
                 created=datetime.datetime(2026, 9, day, tzinfo=datetime.timezone.utc),
             )
         response = self.client.get("/2026/Sep/4/")
-        self.assertEqual(response.context["previous_day"], datetime.date(2026, 9, 2))
-        self.assertEqual(response.context["next_day"], datetime.date(2026, 9, 6))
-        self.assertNotContains(response, 'href="/2026/Sep/3/"')
-        self.assertNotContains(response, 'href="/2026/Sep/5/"')
-        self.assertEqual(self.client.get("/2026/Sep/3/").status_code, 404)
+        assert response.context["previous_day"] == datetime.date(2026, 9, 2)
+        assert response.context["next_day"] == datetime.date(2026, 9, 6)
+        assertNotContains(response, 'href="/2026/Sep/3/"')
+        assertNotContains(response, 'href="/2026/Sep/5/"')
+        assert self.client.get("/2026/Sep/3/").status_code == 404
 
     def test_newsletters_remain_absent_from_homepage_and_tag_pages(self):
         from .factories import EntryFactory
@@ -708,8 +716,8 @@ class NewsletterPageTests(TestCase):
         self.issue(title="Newsletter stays separate")
         for url in ("/", "/tags/example/"):
             response = self.client.get(url)
-            self.assertEqual(response.status_code, 200)
-            self.assertNotContains(response, "Newsletter stays separate")
+            assert response.status_code == 200
+            assertNotContains(response, "Newsletter stays separate")
 
     def test_preview_headings_are_plain_text_and_shown_for_all_monthly_issues(self):
         issue = self.issue(
@@ -717,60 +725,56 @@ class NewsletterPageTests(TestCase):
             body="",
             preview_headings=" First topic \n\nA <script>heading</script>\nLast topic",
         )
-        self.assertEqual(
-            issue.preview_heading_list(),
-            ["First topic", "A <script>heading</script>", "Last topic"],
-        )
+        assert issue.preview_heading_list() == [
+            "First topic",
+            "A <script>heading</script>",
+            "Last topic",
+        ]
         for url in ("/newsletters/", "/newsletters/2026/"):
             response = self.client.get(url)
-            self.assertContains(response, "A &lt;script&gt;heading&lt;/script&gt;")
+            assertContains(response, "A &lt;script&gt;heading&lt;/script&gt;")
             soup = BeautifulSoup(response.content, "html.parser")
-            self.assertEqual(
-                [li.text for li in soup.select(".newsletter-preview-headings li")],
-                issue.preview_heading_list(),
-            )
-            self.assertIsNone(soup.select_one(".newsletter-preview-headings script"))
-        self.assertEqual(issue.index_components(), {})
+            assert [
+                li.text for li in soup.select(".newsletter-preview-headings li")
+            ] == issue.preview_heading_list()
+            assert soup.select_one(".newsletter-preview-headings script") is None
+        assert issue.index_components() == {}
         issue.is_public = True
         issue.body = "Public content"
         issue.save()
         for url in ("/newsletters/", "/newsletters/2026/"):
             response = self.client.get(url)
-            self.assertContains(response, "First topic")
-            self.assertContains(response, "A &lt;script&gt;heading&lt;/script&gt;")
-            self.assertNotContains(response, "Read this issue on GitHub")
-        self.assertNotIn("First topic", issue.index_components()["C"])
+            assertContains(response, "First topic")
+            assertContains(response, "A &lt;script&gt;heading&lt;/script&gt;")
+            assertNotContains(response, "Read this issue on GitHub")
+        assert "First topic" not in issue.index_components()["C"]
         issue.kind = "substack"
         issue.is_public = False
         issue.save()
-        self.assertNotContains(self.client.get("/newsletters/"), "First topic")
+        assertNotContains(self.client.get("/newsletters/"), "First topic")
 
     def test_detail_renders_markdown_with_entry_layout_and_one_title(self):
         issue = self.issue()
         issue.body += "\n\n### Subsection\n\nMore content."
         issue.save()
         response = self.client.get(issue.get_absolute_url())
-        self.assertTemplateUsed(response, "item_base.html")
+        assertTemplateUsed(response, "item_base.html")
         soup = BeautifulSoup(response.content, "html.parser")
         body = soup.select_one(".newsletter-body")
-        self.assertEqual(body.select_one("strong").text, "world")
-        self.assertEqual(body.select_one("h3#section").text, "Section")
-        self.assertEqual(body.select_one("h4#subsection").text, "Subsection")
-        self.assertIsNotNone(body.select_one("table"))
-        self.assertIsNotNone(body.select_one("pre code.language-python"))
-        self.assertIsNone(body.select_one("h1"))
-        self.assertEqual(
-            len([h for h in body.select("h2") if h.text == issue.title]), 1
-        )
-        self.assertContains(response, 'href="/newsletters/"')
+        assert body.select_one("strong").text == "world"
+        assert body.select_one("h3#section").text == "Section"
+        assert body.select_one("h4#subsection").text == "Subsection"
+        assert body.select_one("table") is not None
+        assert body.select_one("pre code.language-python") is not None
+        assert body.select_one("h1") is None
+        assert len([h for h in body.select("h2") if h.text == issue.title]) == 1
+        assertContains(response, 'href="/newsletters/"')
         breadcrumbs = soup.select_one('nav[aria-label="Breadcrumb"]')
-        self.assertEqual(
-            [a["href"] for a in breadcrumbs.select("a")],
-            ["/newsletters/", "/newsletters/2026/"],
-        )
-        self.assertEqual(
-            breadcrumbs.select_one('[aria-current="page"]').text, issue.title
-        )
+        assert [a["href"] for a in breadcrumbs.select("a")] == [
+            "/newsletters/",
+            "/newsletters/2026/",
+        ]
+        assert breadcrumbs.select_one('[aria-current="page"]').text == issue.title
 
     def test_unreleased_drafts_external_and_missing_issues_have_no_local_page(self):
         for overrides in (
@@ -781,20 +785,26 @@ class NewsletterPageTests(TestCase):
         ):
             issue = self.issue(slug=f"issue-{Newsletter.objects.count()}", **overrides)
             response = self.client.get(reverse("newsletter_detail", args=[issue.slug]))
-            self.assertEqual(response.status_code, 404)
-            self.assertNotContains(response, "Hello", status_code=404)
-        self.assertEqual(self.client.get("/newsletters/missing/").status_code, 404)
+            assert response.status_code == 404
+            assertNotContains(response, "Hello", status_code=404)
+        assert self.client.get("/newsletters/missing/").status_code == 404
 
     def test_empty_index_and_existing_substack_shortcut(self):
-        self.assertContains(self.client.get("/newsletters/"), "No newsletters yet.")
-        self.assertRedirects(
+        assertContains(self.client.get("/newsletters/"), "No newsletters yet.")
+        assertRedirects(
             self.client.get("/newsletter/"),
             "https://simonw.substack.com/",
             fetch_redirect_response=False,
         )
 
 
-class NewsletterSearchTests(TestCase):
+@pytest.mark.django_db
+class TestNewsletterSearch:
+    @pytest.fixture(autouse=True)
+    def setup(self, client, commit_callbacks):
+        self.client = client
+        self.commit_callbacks = commit_callbacks
+
     def issue(self, **overrides):
         fields = dict(
             kind="sponsor",
@@ -808,7 +818,7 @@ class NewsletterSearchTests(TestCase):
             metadata={"issue_month": "2025-12"},
         )
         fields.update(overrides)
-        with self.captureOnCommitCallbacks(execute=True):
+        with self.commit_callbacks():
             issue = Newsletter.objects.create(**fields)
         issue.refresh_from_db()
         return issue
@@ -822,27 +832,28 @@ class NewsletterSearchTests(TestCase):
         from .factories import EntryFactory
 
         issue = self.issue()
-        with self.captureOnCommitCallbacks(execute=True):
+        with self.commit_callbacks():
             entry = EntryFactory(
                 title="Pangolin article", body="<p>A regular article.</p>"
             )
         response = self.client.get("/search/", {"q": "pangolin"})
-        self.assertEqual(response.context["total"], 2)
-        self.assertEqual(
-            {result["type"] for result in response.context["results"]},
-            {"entry", "newsletter"},
-        )
-        self.assertContains(response, issue.get_absolute_url())
-        self.assertContains(response, entry.get_absolute_url())
-        self.assertContains(response, "Monthly newsletter")
-        self.assertContains(response, "A capybara and a quokka.")
-        self.assertNotContains(response, "Hiddenpreviewtoken")
-        self.assertIn(
-            {"type": "newsletter", "label": "Newsletter", "n": 1},
-            response.context["type_counts"],
-        )
-        self.assertEqual(self.context(q="capybara")["total"], 1)
-        self.assertEqual(self.context(q="hiddenpreviewtoken")["total"], 0)
+        assert response.context["total"] == 2
+        assert {result["type"] for result in response.context["results"]} == {
+            "entry",
+            "newsletter",
+        }
+        assertContains(response, issue.get_absolute_url())
+        assertContains(response, entry.get_absolute_url())
+        assertContains(response, "Monthly newsletter")
+        assertContains(response, "A capybara and a quokka.")
+        assertNotContains(response, "Hiddenpreviewtoken")
+        assert {
+            "type": "newsletter",
+            "label": "Newsletter",
+            "n": 1,
+        } in response.context["type_counts"]
+        assert self.context(q="capybara")["total"] == 1
+        assert self.context(q="hiddenpreviewtoken")["total"] == 0
 
     def test_private_draft_and_substack_excluded_even_with_stale_vectors(self):
         public = self.issue()
@@ -863,35 +874,32 @@ class NewsletterSearchTests(TestCase):
             {"q": "pangolin", "type": "newsletter"},
         ):
             context = self.context(**params)
-            self.assertEqual(context["total"], 1)
-            self.assertEqual(context["results"][0]["obj"].pk, public.pk)
-            self.assertEqual(
-                context["type_counts"],
-                [{"type": "newsletter", "label": "Newsletter", "n": 1}],
-            )
+            assert context["total"] == 1
+            assert context["results"][0]["obj"].pk == public.pk
+            assert context["type_counts"] == [
+                {"type": "newsletter", "label": "Newsletter", "n": 1}
+            ]
 
     def test_type_and_date_filters_use_original_send_date(self):
         issue = self.issue()
         january = self.context(type="newsletter", year="2026", month="1")
-        self.assertEqual(january["total"], 1)
-        self.assertEqual(january["selected"]["type_label"], "Newsletter")
-        self.assertEqual(january["title"], "Newsletters in January, 2026")
-        self.assertEqual(january["year_counts"][0]["year"].year, 2026)
-        self.assertEqual(january["month_counts"][0]["month"].month, 1)
-        self.assertEqual(january["tag_counts"], [])
+        assert january["total"] == 1
+        assert january["selected"]["type_label"] == "Newsletter"
+        assert january["title"] == "Newsletters in January, 2026"
+        assert january["year_counts"][0]["year"].year == 2026
+        assert january["month_counts"][0]["month"].month == 1
+        assert january["tag_counts"] == []
         for params in (
             {"type": "entry"},
             {"year": "2025"},
             {"month": "12"},
             {"q": "capybara to:2026-01-02"},
         ):
-            self.assertEqual(self.context(**params)["total"], 0)
-        self.assertEqual(
-            self.context(q="capybara from:2026-01-02 to:2026-01-03")["total"], 1
-        )
+            assert self.context(**params)["total"] == 0
+        assert self.context(q="capybara from:2026-01-02 to:2026-01-03")["total"] == 1
 
     @override_settings(TIME_ZONE="America/Los_Angeles")
-    def test_date_filter_boundaries_are_aware_and_use_default_timezone(self):
+    def test_date_filter_boundaries_are_aware_and_use_default_timezone(self, subtests):
         start = datetime.datetime(2026, 1, 2, 8, tzinfo=datetime.timezone.utc)
         end = start + datetime.timedelta(days=1)
         before = self.issue(created=start - datetime.timedelta(seconds=1))
@@ -908,15 +916,15 @@ class NewsletterSearchTests(TestCase):
                 "error", r"DateTimeField .* received a naive datetime", RuntimeWarning
             )
             for query, expected in cases:
-                with self.subTest(query=query):
+                with subtests.test(query=query):
                     context = self.context(q=query)
-                    self.assertEqual(
-                        {result["obj"].pk for result in context["results"]}, expected
-                    )
+                    assert {
+                        result["obj"].pk for result in context["results"]
+                    } == expected
                     if "from:" in query:
-                        self.assertEqual(context["selected"]["from_date"], start.date())
+                        assert context["selected"]["from_date"] == start.date()
                     if "to:" in query:
-                        self.assertEqual(context["selected"]["to_date"], end.date())
+                        assert context["selected"]["to_date"] == end.date()
 
     def test_tags_exclude_untagged_newsletters_but_negative_filters_allow_them(self):
         from .factories import EntryFactory
@@ -924,33 +932,31 @@ class NewsletterSearchTests(TestCase):
 
         self.issue()
         tag = Tag.objects.create(tag="animals")
-        with self.captureOnCommitCallbacks(execute=True):
+        with self.commit_callbacks():
             entry = EntryFactory(title="Pangolin article", body="<p>capybara</p>")
             entry.tags.add(tag)
         context = self.context(q="pangolin", tag="animals")
-        self.assertEqual([result["type"] for result in context["results"]], ["entry"])
-        self.assertEqual(self.context(type="newsletter", tag="animals")["total"], 0)
+        assert [result["type"] for result in context["results"]] == ["entry"]
+        assert self.context(type="newsletter", tag="animals")["total"] == 0
         context = self.context(q="pangolin", **{"exclude.tag": "animals"})
-        self.assertEqual(
-            [result["type"] for result in context["results"]], ["newsletter"]
-        )
+        assert [result["type"] for result in context["results"]] == ["newsletter"]
 
     def test_search_changes_when_issue_is_published_edited_or_hidden(self):
         issue = self.issue(is_public=False)
-        self.assertEqual(self.context(q="capybara")["total"], 0)
+        assert self.context(q="capybara")["total"] == 0
         issue.is_public = True
-        with self.captureOnCommitCallbacks(execute=True):
+        with self.commit_callbacks():
             issue.save()
-        self.assertEqual(self.context(q="capybara")["total"], 1)
+        assert self.context(q="capybara")["total"] == 1
         issue.body = "An aardvark"
-        with self.captureOnCommitCallbacks(execute=True):
+        with self.commit_callbacks():
             issue.save()
-        self.assertEqual(self.context(q="capybara")["total"], 0)
-        self.assertEqual(self.context(q="aardvark")["total"], 1)
+        assert self.context(q="capybara")["total"] == 0
+        assert self.context(q="aardvark")["total"] == 1
         issue.is_draft = True
-        with self.captureOnCommitCallbacks(execute=True):
+        with self.commit_callbacks():
             issue.save()
-        self.assertEqual(self.context(q="aardvark")["total"], 0)
+        assert self.context(q="aardvark")["total"] == 0
 
     def test_bulk_tagging_excludes_newsletters(self):
         self.issue()
@@ -958,9 +964,9 @@ class NewsletterSearchTests(TestCase):
             User.objects.create_superuser("tagger", "t@example.com", "pw")
         )
         response = self.client.get("/admin/bulk-tag/", {"q": "pangolin"})
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.context["total"], 0)
-        self.assertEqual(response.context["type_counts"], [])
+        assert response.status_code == 200
+        assert response.context["total"] == 0
+        assert response.context["type_counts"] == []
 
     def test_id_filter_and_pagination(self):
         from .search import search
@@ -972,23 +978,21 @@ class NewsletterSearchTests(TestCase):
             for day in range(1, 4)
         ]
         response = self.client.get("/search/", {"newsletters": str(issues[0].pk)})
-        self.assertEqual(response.context["total"], 1)
-        self.assertContains(response, "Filtered to specific newsletters")
-        self.assertEqual(
+        assert response.context["total"] == 1
+        assertContains(response, "Filtered to specific newsletters")
+        assert (
             BeautifulSoup(response.content, "html.parser").select_one(
                 ".id-filter-notice a"
-            )["href"],
-            "?",
+            )["href"]
+            == "?"
         )
         context = search(
             RequestFactory().get("/search/", {"type": "newsletter", "page": 2}),
             return_context=True,
             per_page=2,
         )
-        self.assertEqual(context["total"], 3)
-        self.assertEqual(
-            [result["obj"].pk for result in context["results"]], [issues[0].pk]
-        )
+        assert context["total"] == 3
+        assert [result["obj"].pk for result in context["results"]] == [issues[0].pk]
 
     def test_reindex_all_rebuilds_public_and_clears_private_documents(self):
         public = self.issue()
@@ -997,15 +1001,20 @@ class NewsletterSearchTests(TestCase):
             search_document=public.search_document
         )
         Newsletter.objects.filter(pk=public.pk).update(search_document=None)
-        with self.captureOnCommitCallbacks(execute=True):
+        with self.commit_callbacks():
             call_command("reindex_all", stdout=io.StringIO())
         public.refresh_from_db()
         private.refresh_from_db()
-        self.assertIsNotNone(public.search_document)
-        self.assertIsNone(private.search_document)
+        assert public.search_document is not None
+        assert private.search_document is None
 
 
-class MonthlyImportTests(TestCase):
+@pytest.mark.django_db
+class TestMonthlyImport:
+    @pytest.fixture(autouse=True)
+    def setup(self, commit_callbacks):
+        self.commit_callbacks = commit_callbacks
+
     filename = "2026-08-august.md"
     body = "# August digest\n\nPublic **content**. Revised.\n\n## First **topic**\n\n```md\n## Not a heading\n```\n\n### Subsection\n\n## Second [topic](https://example.com/)\n"
 
@@ -1025,31 +1034,28 @@ class MonthlyImportTests(TestCase):
             self.response([self.index_entry()]),
             self.response(text=self.body),
         ]
-        with self.captureOnCommitCallbacks(execute=True):
-            self.assertEqual(import_monthly()["created"], 1)
+        with self.commit_callbacks():
+            assert import_monthly()["created"] == 1
         issue = Newsletter.objects.get()
-        self.assertEqual(issue.created.isoformat(), "2026-09-04T05:50:18+00:00")
-        self.assertEqual(issue.body, self.body.strip())
-        self.assertEqual(issue.title, "August digest")
-        self.assertEqual(issue.preview_heading_list(), ["First topic", "Second topic"])
-        self.assertTrue(issue.is_public)
-        self.assertIsNotNone(issue.search_document)
-        self.assertEqual(issue.metadata["issue_month"], "2026-08")
-        self.assertEqual(
-            [c.args[0] for c in get.call_args_list],
-            [
-                MONTHLY_RAW + "/index.json",
-                MONTHLY_RAW + "/" + self.filename,
-            ],
-        )
+        assert issue.created.isoformat() == "2026-09-04T05:50:18+00:00"
+        assert issue.body == self.body.strip()
+        assert issue.title == "August digest"
+        assert issue.preview_heading_list() == ["First topic", "Second topic"]
+        assert issue.is_public
+        assert issue.search_document is not None
+        assert issue.metadata["issue_month"] == "2026-08"
+        assert [c.args[0] for c in get.call_args_list] == [
+            MONTHLY_RAW + "/index.json",
+            MONTHLY_RAW + "/" + self.filename,
+        ]
         # Reimports use the established send date, with no API request.
         get.reset_mock()
         get.side_effect = [
             self.response([self.index_entry()]),
             self.response(text=self.body),
         ]
-        self.assertEqual(import_monthly()["skipped"], 1)
-        self.assertEqual(get.call_count, 2)
+        assert import_monthly()["skipped"] == 1
+        assert get.call_count == 2
 
     @patch("blog.newsletter_importers.requests.get")
     def test_public_reimport_backfills_missing_headings(self, get):
@@ -1066,12 +1072,10 @@ class MonthlyImportTests(TestCase):
             self.response([self.index_entry()]),
             self.response(text=self.body),
         ]
-        self.assertEqual(import_monthly()["updated"], 1)
+        assert import_monthly()["updated"] == 1
         existing.refresh_from_db()
-        self.assertEqual(
-            existing.preview_heading_list(), ["First topic", "Second topic"]
-        )
-        self.assertEqual(Newsletter.objects.count(), 1)
+        assert existing.preview_heading_list() == ["First topic", "Second topic"]
+        assert Newsletter.objects.count() == 1
 
     @patch("blog.newsletter_importers.requests.get")
     def test_public_promotion_preserves_editorial_fields_and_date(self, get):
@@ -1091,16 +1095,16 @@ class MonthlyImportTests(TestCase):
             self.response([self.index_entry()]),
             self.response(text=self.body),
         ]
-        with self.captureOnCommitCallbacks(execute=True):
-            self.assertEqual(import_monthly()["updated"], 1)
+        with self.commit_callbacks():
+            assert import_monthly()["updated"] == 1
         existing.refresh_from_db()
-        self.assertEqual(Newsletter.objects.count(), 1)
-        self.assertTrue(existing.is_searchable)
-        self.assertIsNotNone(existing.search_document)
-        self.assertEqual(existing.slug, "existing-monthly")
-        self.assertEqual(existing.created, date)
-        self.assertEqual(existing.preview_headings, "A preview")
-        self.assertEqual(existing.metadata["editor_note"], "Keep")
+        assert Newsletter.objects.count() == 1
+        assert existing.is_searchable
+        assert existing.search_document is not None
+        assert existing.slug == "existing-monthly"
+        assert existing.created == date
+        assert existing.preview_headings == "A preview"
+        assert existing.metadata["editor_note"] == "Keep"
 
     @patch("blog.newsletter_importers.requests.get")
     def test_dry_run_fallback_title_and_index_date(self, get):
@@ -1109,11 +1113,11 @@ class MonthlyImportTests(TestCase):
             self.response(text="An issue without a heading. Café."),
         ]
         records = monthly_records()
-        self.assertEqual(records[0]["title"], "LLM digest: August 2026")
-        self.assertIn("Café", records[0]["body"])
-        self.assertEqual(records[0]["created"].day, 4)
-        self.assertEqual(save_records(records, dry_run=True)["created"], 1)
-        self.assertFalse(Newsletter.objects.exists())
+        assert records[0]["title"] == "LLM digest: August 2026"
+        assert "Café" in records[0]["body"]
+        assert records[0]["created"].day == 4
+        assert save_records(records, dry_run=True)["created"] == 1
+        assert not Newsletter.objects.exists()
 
     @patch("blog.newsletter_importers.requests.get")
     def test_invalid_index_is_rejected_before_fetching_content(self, get):
@@ -1126,10 +1130,10 @@ class MonthlyImportTests(TestCase):
         ):
             get.reset_mock()
             get.return_value = self.response(index)
-            with self.assertRaises(ValueError):
+            with pytest.raises(ValueError):
                 import_monthly()
-            self.assertEqual(get.call_count, 1)
-        self.assertFalse(Newsletter.objects.exists())
+            assert get.call_count == 1
+        assert not Newsletter.objects.exists()
 
     @patch("blog.newsletter_importers.requests.get")
     def test_http_failure_leaves_whole_batch_unsaved(self, get):
@@ -1144,23 +1148,28 @@ class MonthlyImportTests(TestCase):
             self.response(text=self.body),
             failed,
         ]
-        with self.assertRaises(requests.HTTPError):
+        with pytest.raises(requests.HTTPError):
             import_monthly()
-        self.assertFalse(Newsletter.objects.exists())
+        assert not Newsletter.objects.exists()
 
     @patch("blog.newsletter_importers.requests.get")
     def test_missing_or_invalid_send_date_is_not_guessed(self, get):
         for sent_at in (None, "", "invalid", "2026-09-04T00:00:00"):
             get.reset_mock()
             get.return_value = self.response([self.index_entry(sent_at=sent_at)])
-            with self.assertRaises(ValueError):
+            with pytest.raises(ValueError):
                 import_monthly()
-            self.assertEqual(get.call_count, 1)
-        self.assertFalse(Newsletter.objects.exists())
+            assert get.call_count == 1
+        assert not Newsletter.objects.exists()
 
 
-@override_settings(GH_API_SIMONW_PRIVATE_MONTHLY="example-secret-token")
-class PrivateMonthlyApiTests(TestCase):
+@pytest.mark.django_db
+class TestPrivateMonthlyApi:
+    @pytest.fixture(autouse=True)
+    def setup(self, commit_callbacks, settings):
+        self.commit_callbacks = commit_callbacks
+        settings.GH_API_SIMONW_PRIVATE_MONTHLY = "example-secret-token"
+
     @patch("blog.newsletter_importers.requests.get")
     def test_import_metadata_headings_and_repeat(self, get):
         from blog.newsletter_importers import import_private_monthly
@@ -1191,47 +1200,47 @@ class PrivateMonthlyApiTests(TestCase):
             response([{"commit": {"committer": {"date": "2026-10-03T21:21:39Z"}}}]),
             body,
         ]
-        with self.captureOnCommitCallbacks(execute=True):
-            self.assertEqual(import_private_monthly()["created"], 1)
+        with self.commit_callbacks():
+            assert import_private_monthly()["created"] == 1
         issue = Newsletter.objects.get()
-        self.assertEqual(issue.title, "September digest")
-        self.assertEqual(
-            issue.preview_heading_list(), ["First heading", "Second heading"]
-        )
-        self.assertEqual(issue.created.isoformat(), "2026-10-03T21:21:39+00:00")
-        self.assertEqual(issue.body, "")
-        self.assertFalse(issue.is_public)
-        self.assertIsNone(issue.search_document)
-        self.assertNotIn("PRIVATE BODY", json.dumps(issue.metadata))
+        assert issue.title == "September digest"
+        assert issue.preview_heading_list() == ["First heading", "Second heading"]
+        assert issue.created.isoformat() == "2026-10-03T21:21:39+00:00"
+        assert issue.body == ""
+        assert not issue.is_public
+        assert issue.search_document is None
+        assert "PRIVATE BODY" not in json.dumps(issue.metadata)
         for call in get.call_args_list:
             if call.args[0].startswith("https://api.github.com/"):
-                self.assertEqual(
-                    call.kwargs["headers"]["Authorization"],
-                    "Bearer example-secret-token",
+                assert (
+                    call.kwargs["headers"]["Authorization"]
+                    == "Bearer example-secret-token"
                 )
-                self.assertFalse(call.kwargs["allow_redirects"])
+                assert not call.kwargs["allow_redirects"]
             else:
-                self.assertNotIn("headers", call.kwargs)
+                assert "headers" not in call.kwargs
         issue.preview_headings = "Curated preview"
         issue.save()
         get.side_effect = [public_index, listing, body]
-        self.assertEqual(import_private_monthly()["skipped"], 1)
+        assert import_private_monthly()["skipped"] == 1
         issue.refresh_from_db()
-        self.assertEqual(issue.preview_headings, "Curated preview")
+        assert issue.preview_headings == "Curated preview"
         # Already-public local issues must not be demoted even if the public index is stale.
         issue.is_public = True
         issue.body = "Now public"
         issue.save()
         get.side_effect = [public_index, listing]
-        self.assertEqual(import_private_monthly()["created"], 0)
+        assert import_private_monthly()["created"] == 0
         issue.refresh_from_db()
-        self.assertTrue(issue.is_public)
+        assert issue.is_public
 
     @override_settings(GH_API_SIMONW_PRIVATE_MONTHLY="")
     @patch("blog.newsletter_importers.requests.get")
     def test_missing_token_never_requests_sources(self, get):
         from blog.newsletter_importers import import_private_monthly
 
-        with self.assertRaisesMessage(ValueError, "GH_API_SIMONW_PRIVATE_MONTHLY"):
+        with pytest.raises(
+            ValueError, match=re.escape("GH_API_SIMONW_PRIVATE_MONTHLY")
+        ):
             import_private_monthly()
         get.assert_not_called()

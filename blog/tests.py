@@ -1,9 +1,18 @@
+import datetime
+import json
 import re
+import xml.etree.ElementTree as ET
+from datetime import timedelta
 
-from django.test import TransactionTestCase
+import pytest
 from django.contrib.admin.models import LogEntry
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
+from django.test import override_settings
+from django.utils import timezone
+from pytest_django.asserts import assertContains, assertNotContains, assertTemplateUsed
+
+from blog.models import LiveUpdate, PreviousTagName, Tag, TagMerge
 from blog.templatetags.entry_tags import (
     do_typography_string,
     first_three_paragraphs,
@@ -11,26 +20,22 @@ from blog.templatetags.entry_tags import (
     xhtml,
 )
 from blog.templatetags.tag_cloud import _tag_cloud_helper
+from guides.factories import ChapterFactory, GuideFactory, GuideSectionFactory
+from guides.models import ChapterChange
+
 from .factories import (
-    EntryFactory,
-    BlogmarkFactory,
-    QuotationFactory,
-    NoteFactory,
     BeatFactory,
+    BlogmarkFactory,
     CommentBeatFactory,
+    EntryFactory,
+    NoteFactory,
+    QuotationFactory,
     SponsorMessageFactory,
 )
-from guides.factories import ChapterFactory, GuideFactory, GuideSectionFactory
-from blog.models import LiveUpdate, Tag, PreviousTagName, TagMerge
-from guides.models import ChapterChange, GuideSection
-from django.utils import timezone
-import datetime
-from datetime import timedelta
-import json
-import xml.etree.ElementTree as ET
 
 
-class HomepageWeightedBudgetTests(TransactionTestCase):
+@pytest.mark.django_db
+class TestHomepageWeightedBudget:
     """Tests for the weighted-budget homepage logic.
 
     Weight rules:
@@ -40,6 +45,10 @@ class HomepageWeightedBudgetTests(TransactionTestCase):
 
     Total budget: 30.0
     """
+
+    @pytest.fixture(autouse=True)
+    def setup(self, client):
+        self.client = client
 
     def _homepage_items(self):
         response = self.client.get("/")
@@ -64,8 +73,8 @@ class HomepageWeightedBudgetTests(TransactionTestCase):
         items = self._homepage_items()
         beats = [i for i in items if i["type"] == "beat"]
         entries = [i for i in items if i["type"] == "entry"]
-        self.assertEqual(len(beats), 20)
-        self.assertEqual(len(entries), 26)
+        assert len(beats) == 20
+        assert len(entries) == 26
 
     def test_beats_with_note_cost_0_8(self):
         """Beats with a note cost 0.8 each.
@@ -84,8 +93,8 @@ class HomepageWeightedBudgetTests(TransactionTestCase):
         items = self._homepage_items()
         beats = [i for i in items if i["type"] == "beat"]
         entries = [i for i in items if i["type"] == "entry"]
-        self.assertEqual(len(beats), 10)
-        self.assertEqual(len(entries), 22)
+        assert len(beats) == 10
+        assert len(entries) == 22
 
     def test_non_beat_types_always_cost_1_0(self):
         """Blogmarks, quotations, notes all cost 1.0.
@@ -96,7 +105,7 @@ class HomepageWeightedBudgetTests(TransactionTestCase):
         for i in range(35):
             BlogmarkFactory(created=base + timedelta(hours=i))
         items = self._homepage_items()
-        self.assertEqual(len(items), 30)
+        assert len(items) == 30
 
     def test_bare_beats_do_not_crowd_out_entries(self):
         """Even with a flood of bare beats, entries still appear.
@@ -117,8 +126,8 @@ class HomepageWeightedBudgetTests(TransactionTestCase):
         items = self._homepage_items()
         entries = [i for i in items if i["type"] == "entry"]
         beats = [i for i in items if i["type"] == "beat"]
-        self.assertEqual(len(entries), 5)
-        self.assertEqual(len(beats), 100)
+        assert len(entries) == 5
+        assert len(beats) == 100
 
     def test_mixed_beat_weights(self):
         """Mix of bare and note beats with entries.
@@ -148,11 +157,16 @@ class HomepageWeightedBudgetTests(TransactionTestCase):
         items = self._homepage_items()
         beats = [i for i in items if i["type"] == "beat"]
         entries = [i for i in items if i["type"] == "entry"]
-        self.assertEqual(len(beats), 10)
-        self.assertEqual(len(entries), 25)
+        assert len(beats) == 10
+        assert len(entries) == 25
 
 
-class BlogTests(TransactionTestCase):
+@pytest.mark.django_db
+class TestBlog:
+    @pytest.fixture(autouse=True)
+    def setup(self, client):
+        self.client = client
+
     def test_homepage(self):
         db_entries = [
             EntryFactory(),
@@ -164,14 +178,13 @@ class BlogTests(TransactionTestCase):
         NoteFactory()
         response = self.client.get("/")
         entries = response.context["entries"]
-        self.assertEqual(
-            [e.pk for e in entries],
-            [e.pk for e in sorted(db_entries, key=lambda e: e.created, reverse=True)],
-        )
+        assert [e.pk for e in entries] == [
+            e.pk for e in sorted(db_entries, key=lambda e: e.created, reverse=True)
+        ]
 
     def test_django_header_plugin(self):
         response = self.client.get("/")
-        self.assertIn("Django-Composition", response)
+        assert "Django-Composition" in response
 
     def test_other_pages(self):
         entry = EntryFactory()
@@ -194,26 +207,26 @@ class BlogTests(TransactionTestCase):
     def test_entry(self):
         entry = EntryFactory()
         response = self.client.get(entry.get_absolute_url())
-        self.assertTemplateUsed(response, "entry.html")
-        self.assertEqual(response.context["entry"].pk, entry.pk)
+        assertTemplateUsed(response, "entry.html")
+        assert response.context["entry"].pk == entry.pk
 
     def test_blogmark(self):
         blogmark = BlogmarkFactory()
         response = self.client.get(blogmark.get_absolute_url())
-        self.assertTemplateUsed(response, "blogmark.html")
-        self.assertEqual(response.context["blogmark"].pk, blogmark.pk)
+        assertTemplateUsed(response, "blogmark.html")
+        assert response.context["blogmark"].pk == blogmark.pk
 
     def test_quotation(self):
         quotation = QuotationFactory()
         response = self.client.get(quotation.get_absolute_url())
-        self.assertTemplateUsed(response, "quotation.html")
-        self.assertEqual(response.context["quotation"].pk, quotation.pk)
+        assertTemplateUsed(response, "quotation.html")
+        assert response.context["quotation"].pk == quotation.pk
 
     def test_note(self):
         note = NoteFactory()
         response = self.client.get(note.get_absolute_url())
-        self.assertTemplateUsed(response, "note.html")
-        self.assertEqual(response.context["note"].pk, note.pk)
+        assertTemplateUsed(response, "note.html")
+        assert response.context["note"].pk == note.pk
 
     def test_cache_header_for_old_content(self):
         old_date = timezone.now() - datetime.timedelta(days=181)
@@ -229,8 +242,8 @@ class BlogTests(TransactionTestCase):
     def test_archive_year(self):
         quotation = QuotationFactory()
         response = self.client.get("/{}/".format(quotation.created.year))
-        self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, "archive_year.html")
+        assert response.status_code == 200
+        assertTemplateUsed(response, "archive_year.html")
 
     def test_markup(self):
         entry = EntryFactory(
@@ -238,14 +251,14 @@ class BlogTests(TransactionTestCase):
             body="<p>First paragraph</p><p>Second paragraph</p>",
         )
         response = self.client.get(entry.get_absolute_url())
-        self.assertContains(
+        assertContains(
             response,
             """
             <h2>Hello &amp; goodbye</h2>
         """,
             html=True,
         )
-        self.assertContains(
+        assertContains(
             response,
             """
             <p>First paragraph</p><p>Second paragraph</p>
@@ -274,24 +287,24 @@ class BlogTests(TransactionTestCase):
                 'Should you pin your library\'s dependencies using "click>=7,<8" or "click~=7.0"? Henry Schreiner\'s short answer is no, and his long answer is an exhaustive essay covering every conceivable aspect of this thorny Python packaging problem.',
             ),
         ):
-            self.assertEqual(do_typography_string(input), expected)
+            assert do_typography_string(input) == expected
 
     def test_typography_skips_script_tags(self):
         input_html = """<p>He said "hello" and it's nice</p><script>var x = "don't touch";</script><p>"more" text</p>"""
         result = str(typography(xhtml(input_html)))
         # Quotes in <p> tags should be converted to curly quotes
-        self.assertIn("\u201chello\u201d", result)  # curly double quotes in prose
-        self.assertIn("it\u2019s", result)  # curly single quote in prose
+        assert "“hello”" in result  # curly double quotes in prose
+        assert "it’s" in result  # curly single quote in prose
         # Content inside <script> should be untouched
-        self.assertIn("""var x = "don't touch";""", result)
+        assert 'var x = "don\'t touch";' in result
 
     def test_script_preserves_special_characters(self):
         input_html = """<script>console.log(years.map(y => y * 100))</script>"""
         result = str(typography(xhtml(input_html)))
-        self.assertIn("y => y * 100", result)
-        self.assertNotIn("&gt;", result)
-        self.assertNotIn("&lt;", result)
-        self.assertNotIn("&amp;", result)
+        assert "y => y * 100" in result
+        assert "&gt;" not in result
+        assert "&lt;" not in result
+        assert "&amp;" not in result
 
     def test_script_preserves_ampersands(self):
         # In valid XHTML, ampersands in script tags are &amp;
@@ -299,14 +312,14 @@ class BlogTests(TransactionTestCase):
             """<p>"hello"</p><script>if (a &amp;&amp; b) { c &amp;= d; }</script>"""
         )
         result = str(typography(xhtml(input_html)))
-        self.assertIn("a && b", result)
-        self.assertIn("c &= d", result)
+        assert "a && b" in result
+        assert "c &= d" in result
 
     def test_typography_skips_style_tags(self):
         input_html = """<p>"hello"</p><style>content: "don't change"</style>"""
         result = str(typography(xhtml(input_html)))
-        self.assertIn("\u201chello\u201d", result)  # curly quotes in prose
-        self.assertIn("""content: "don't change\"""", result)
+        assert "“hello”" in result  # curly quotes in prose
+        assert 'content: "don\'t change"' in result
 
     def test_rename_tag_creates_previous_tag_name(self):
         tag = Tag.objects.create(tag="old-name")
@@ -318,49 +331,52 @@ class BlogTests(TransactionTestCase):
         assert self.client.get("/tags/old-name/").status_code == 200
         assert self.client.get("/tags/new-name/").status_code == 404
         tag.rename_tag("new-name")
-        self.assertEqual(tag.tag, "new-name")
+        assert tag.tag == "new-name"
         previous_tag_name = PreviousTagName.objects.get(tag=tag)
-        self.assertEqual(previous_tag_name.previous_name, "old-name")
+        assert previous_tag_name.previous_name == "old-name"
         assert self.client.get("/tags/old-name/").status_code == 301
         assert self.client.get("/tags/new-name/").status_code == 200
 
     def test_tag_with_hyphen(self):
         tag = Tag.objects.create(tag="tag-with-hyphen")
-        self.assertEqual(tag.tag, "tag-with-hyphen")
+        assert tag.tag == "tag-with-hyphen"
 
     def test_tag_cloud_formats_large_counts(self):
         context = _tag_cloud_helper(["sqlite"] * 1000 + ["python"])
         rendered = "".join(str(tag) for tag in context["tags"])
-        self.assertIn('title="1,000 items"', rendered)
-        self.assertIn("<span>1,000</span>", rendered)
+        assert 'title="1,000 items"' in rendered
+        assert "<span>1,000</span>" in rendered
 
-    def test_draft_items_not_displayed(self):
-        draft_entry = EntryFactory(is_draft=True, title="draftentry")
-        draft_blogmark = BlogmarkFactory(is_draft=True, link_title="draftblogmark")
-        draft_quotation = QuotationFactory(is_draft=True, source="draftquotation")
-        draft_note = NoteFactory(is_draft=True, body="draftnote")
-        testing = Tag.objects.get_or_create(tag="testing")[0]
+    def test_draft_items_not_displayed(self, commit_callbacks):
+        with commit_callbacks():
+            draft_entry = EntryFactory(is_draft=True, title="draftentry")
+            draft_blogmark = BlogmarkFactory(is_draft=True, link_title="draftblogmark")
+            draft_quotation = QuotationFactory(is_draft=True, source="draftquotation")
+            draft_note = NoteFactory(is_draft=True, body="draftnote")
+            testing = Tag.objects.get_or_create(tag="testing")[0]
 
-        live_entry = EntryFactory(title="publishedentry", created=draft_entry.created)
-        live_blogmark = BlogmarkFactory(
-            link_title="publishedblogmark", created=draft_blogmark.created
-        )
-        live_quotation = QuotationFactory(
-            source="publishedquotation", created=draft_quotation.created
-        )
-        live_note = NoteFactory(body="publishednote", created=draft_note.created)
+            live_entry = EntryFactory(
+                title="publishedentry", created=draft_entry.created
+            )
+            live_blogmark = BlogmarkFactory(
+                link_title="publishedblogmark", created=draft_blogmark.created
+            )
+            live_quotation = QuotationFactory(
+                source="publishedquotation", created=draft_quotation.created
+            )
+            live_note = NoteFactory(body="publishednote", created=draft_note.created)
 
-        for obj in (
-            draft_entry,
-            draft_blogmark,
-            draft_quotation,
-            draft_note,
-            live_entry,
-            live_blogmark,
-            live_quotation,
-            live_note,
-        ):
-            obj.tags.add(testing)
+            for obj in (
+                draft_entry,
+                draft_blogmark,
+                draft_quotation,
+                draft_note,
+                live_entry,
+                live_blogmark,
+                live_quotation,
+                live_note,
+            ):
+                obj.tags.add(testing)
 
         paths = (
             "/",  # Homepage
@@ -398,15 +414,15 @@ class BlogTests(TransactionTestCase):
 
         for path in paths:
             response = self.client.get(path)
-            self.assertNotContains(response, "draftentry")
+            assertNotContains(response, "draftentry")
 
         robots_fragment = '<meta name="robots" content="noindex">'
         draft_warning_fragment = "This is a draft post"
 
         for obj in (draft_entry, draft_blogmark, draft_quotation, draft_note):
             response2 = self.client.get(obj.get_absolute_url())
-            self.assertContains(response2, robots_fragment)
-            self.assertContains(response2, draft_warning_fragment)
+            assertContains(response2, robots_fragment)
+            assertContains(response2, draft_warning_fragment)
             assert (
                 response2.headers["cache-control"]
                 == "private, no-cache, no-store, must-revalidate"
@@ -414,11 +430,12 @@ class BlogTests(TransactionTestCase):
 
             # Publish it
             obj.is_draft = False
-            obj.save()
+            with commit_callbacks():
+                obj.save()
 
             response3 = self.client.get(obj.get_absolute_url())
-            self.assertNotContains(response3, robots_fragment)
-            self.assertNotContains(response3, draft_warning_fragment)
+            assertNotContains(response3, robots_fragment)
+            assertNotContains(response3, draft_warning_fragment)
             assert "cache-control" not in response3.headers
 
         counts2 = json.loads(self.client.get("/tags-autocomplete/?q=testing").content)
@@ -441,7 +458,7 @@ class BlogTests(TransactionTestCase):
 
         for path in paths:
             response4 = self.client.get(path)
-            self.assertContains(response4, "draftentry")
+            assertContains(response4, "draftentry")
 
     def test_draft_items_not_in_feeds(self):
         draft_entry = EntryFactory(is_draft=True, title="draftentry")
@@ -449,15 +466,15 @@ class BlogTests(TransactionTestCase):
         draft_quotation = QuotationFactory(is_draft=True, source="draftquotation")
 
         response1 = self.client.get("/atom/entries/")
-        self.assertNotContains(response1, draft_entry.title)
+        assertNotContains(response1, draft_entry.title)
 
         response2 = self.client.get("/atom/links/")
-        self.assertNotContains(response2, draft_blogmark.link_title)
+        assertNotContains(response2, draft_blogmark.link_title)
 
         response3 = self.client.get("/atom/everything/")
-        self.assertNotContains(response3, draft_entry.title)
-        self.assertNotContains(response3, draft_blogmark.link_title)
-        self.assertNotContains(response3, draft_quotation.source)
+        assertNotContains(response3, draft_entry.title)
+        assertNotContains(response3, draft_blogmark.link_title)
+        assertNotContains(response3, draft_quotation.source)
 
         # Change draft status and check they show up
         draft_entry.is_draft = False
@@ -470,36 +487,33 @@ class BlogTests(TransactionTestCase):
         draft_quotation.save()
 
         response4 = self.client.get("/atom/entries/")
-        self.assertContains(response4, draft_entry.title)
+        assertContains(response4, draft_entry.title)
 
         response5 = self.client.get("/atom/links/")
-        self.assertContains(response5, draft_blogmark.link_title)
+        assertContains(response5, draft_blogmark.link_title)
 
         response6 = self.client.get("/atom/everything/")
-        self.assertContains(response6, draft_entry.title)
-        self.assertContains(response6, draft_blogmark.link_title)
-        self.assertContains(response6, draft_quotation.source)
+        assertContains(response6, draft_entry.title)
+        assertContains(response6, draft_blogmark.link_title)
+        assertContains(response6, draft_quotation.source)
 
     def test_entries_feed_includes_subscribe_note(self):
         EntryFactory()
         response = self.client.get("/atom/entries/")
-        self.assertIn(
-            "You are only seeing the",
-            response.content.decode(),
-        )
+        assert "You are only seeing the" in response.content.decode()
 
     def test_atom_feed_links_have_no_tracking_fragments(self):
         EntryFactory()
         for path in ("/atom/entries/", "/atom/everything/"):
             response = self.client.get(path)
-            self.assertNotContains(response, "#atom-")
+            assertNotContains(response, "#atom-")
 
     def test_og_description_strips_markdown(self):
         blogmark = BlogmarkFactory(
             commentary="This **has** *markdown*", use_markdown=True
         )
         response = self.client.get(blogmark.get_absolute_url())
-        self.assertContains(
+        assertContains(
             response,
             '<meta property="og:description" content="This has markdown"',
             html=False,
@@ -507,7 +521,7 @@ class BlogTests(TransactionTestCase):
 
         note = NoteFactory(body="A note with **bold** text")
         response2 = self.client.get(note.get_absolute_url())
-        self.assertContains(
+        assertContains(
             response2,
             '<meta property="og:description" content="A note with bold text"',
             html=False,
@@ -518,7 +532,7 @@ class BlogTests(TransactionTestCase):
             commentary='Fun new "live music model" release', use_markdown=True
         )
         response = self.client.get(blogmark.get_absolute_url())
-        self.assertContains(
+        assertContains(
             response,
             '<meta property="og:description" content="Fun new &quot;live music model&quot; release"',
             html=False,
@@ -532,33 +546,33 @@ class BlogTests(TransactionTestCase):
 
         # Page title uses custom title if provided
         response = self.client.get(blogmark_with_title.get_absolute_url())
-        self.assertContains(response, "<title>Custom Title</title>", html=False)
+        assertContains(response, "<title>Custom Title</title>", html=False)
 
         response2 = self.client.get(blogmark_without_title.get_absolute_url())
-        self.assertContains(response2, "<title>Another Link</title>", html=False)
+        assertContains(response2, "<title>Another Link</title>", html=False)
 
         # Atom feeds use title if present otherwise link_title
         feed_response = self.client.get("/atom/links/")
         root = ET.fromstring(feed_response.content)
         ns = {"atom": "http://www.w3.org/2005/Atom"}
         titles = [e.find("atom:title", ns).text for e in root.findall("atom:entry", ns)]
-        self.assertIn("Custom Title", titles)
-        self.assertIn("Another Link", titles)
-        self.assertNotIn("Link Title", titles)
+        assert "Custom Title" in titles
+        assert "Another Link" in titles
+        assert "Link Title" not in titles
 
         feed_response2 = self.client.get("/atom/everything/")
         root2 = ET.fromstring(feed_response2.content)
         titles2 = [
             e.find("atom:title", ns).text for e in root2.findall("atom:entry", ns)
         ]
-        self.assertIn("Custom Title", titles2)
-        self.assertIn("Another Link", titles2)
-        self.assertNotIn("Link Title", titles2)
+        assert "Custom Title" in titles2
+        assert "Another Link" in titles2
+        assert "Link Title" not in titles2
 
     def test_og_description_escapes_quotes_entry(self):
         entry = EntryFactory(body='<p>Entry with "quotes" in it</p>')
         response = self.client.get(entry.get_absolute_url())
-        self.assertContains(
+        assertContains(
             response,
             '<meta property="og:description" content="Entry with “quotes” in it"',
             html=False,
@@ -567,7 +581,7 @@ class BlogTests(TransactionTestCase):
     def test_og_description_escapes_quotes_note(self):
         note = NoteFactory(body='Note with "quotes" inside')
         response = self.client.get(note.get_absolute_url())
-        self.assertContains(
+        assertContains(
             response,
             '<meta property="og:description" content="Note with &quot;quotes&quot; inside"',
             html=False,
@@ -576,7 +590,7 @@ class BlogTests(TransactionTestCase):
     def test_og_description_escapes_quotes_quotation(self):
         quotation = QuotationFactory(quotation='A "quoted" statement', source="Someone")
         response = self.client.get(quotation.get_absolute_url())
-        self.assertContains(
+        assertContains(
             response,
             '<meta property="og:description" content="A &quot;quoted&quot; statement"',
             html=False,
@@ -587,7 +601,7 @@ class BlogTests(TransactionTestCase):
         entry = EntryFactory()
         entry.tags.add(tag)
         response = self.client.get("/tags/test/")
-        self.assertContains(
+        assertContains(
             response,
             '<meta property="og:description" content="1 posts tagged ‘test’. Tag with &quot;quotes&quot;"',
             html=False,
@@ -608,18 +622,16 @@ class BlogTests(TransactionTestCase):
 
         response = self.client.get("/tags/mixed/?size=2")
 
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.context["total"], 3)
-        self.assertEqual(
-            [(item["type"], item["obj"].pk) for item in response.context["items"]],
-            [("blogmark", blogmark.pk), ("quotation", quotation.pk)],
-        )
+        assert response.status_code == 200
+        assert response.context["total"] == 3
+        assert [
+            (item["type"], item["obj"].pk) for item in response.context["items"]
+        ] == [("blogmark", blogmark.pk), ("quotation", quotation.pk)]
 
         response = self.client.get("/tags/mixed/?size=2&page=2")
-        self.assertEqual(
-            [(item["type"], item["obj"].pk) for item in response.context["items"]],
-            [("entry", entry.pk)],
-        )
+        assert [
+            (item["type"], item["obj"].pk) for item in response.context["items"]
+        ] == [("entry", entry.pk)]
 
     def test_tag_page_intersects_multiple_tags(self):
         python = Tag.objects.create(tag="python")
@@ -631,11 +643,10 @@ class BlogTests(TransactionTestCase):
 
         response = self.client.get("/tags/python+django/")
 
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(
-            [(item["type"], item["obj"].pk) for item in response.context["items"]],
-            [("entry", matching.pk)],
-        )
+        assert response.status_code == 200
+        assert [
+            (item["type"], item["obj"].pk) for item in response.context["items"]
+        ] == [("entry", matching.pk)]
 
     def test_top_tags_page(self):
         for i in range(1, 12):
@@ -646,11 +657,11 @@ class BlogTests(TransactionTestCase):
         response = self.client.get("/top-tags/")
         assert response.status_code == 200
         tags_info = response.context["tags_info"]
-        self.assertEqual(len(tags_info), 10)
-        self.assertEqual(tags_info[0]["tag"].tag, "tag11")
-        self.assertFalse(any(info["tag"].tag == "tag1" for info in tags_info))
+        assert len(tags_info) == 10
+        assert tags_info[0]["tag"].tag == "tag11"
+        assert not any((info["tag"].tag == "tag1" for info in tags_info))
         latest = Tag.objects.get(tag="tag11").entry_set.order_by("-created")[0].title
-        self.assertContains(response, latest)
+        assertContains(response, latest)
 
     def test_search_title_displays_full_month_name(self):
         tag = Tag.objects.create(tag="llm-release")
@@ -659,7 +670,7 @@ class BlogTests(TransactionTestCase):
         )
         entry.tags.add(tag)
         response = self.client.get("/search/?tag=llm-release&year=2025&month=7")
-        self.assertContains(
+        assertContains(
             response,
             "Posts tagged llm-release in July, 2025",
         )
@@ -670,29 +681,29 @@ class BlogTests(TransactionTestCase):
         tagged.tags.add(tag)
         untagged = EntryFactory(title="Entry without that tag")
         response = self.client.get("/search/?exclude.tag=ai")
-        self.assertEqual(response.status_code, 200)
+        assert response.status_code == 200
         results = [(r["type"], r["obj"].pk) for r in response.context["results"]]
-        self.assertIn(("entry", untagged.pk), results)
-        self.assertNotIn(("entry", tagged.pk), results)
-        self.assertEqual(response.context["sort"], "date")
-        self.assertContains(response, "Entry without that tag")
-        self.assertContains(response, "Posts excluding ai")
+        assert ("entry", untagged.pk) in results
+        assert ("entry", tagged.pk) not in results
+        assert response.context["sort"] == "date"
+        assertContains(response, "Entry without that tag")
+        assertContains(response, "Posts excluding ai")
 
     def test_quotations_feed(self):
         quotation = QuotationFactory(source="Test Source")
         response = self.client.get("/atom/quotations/")
-        self.assertEqual(response.status_code, 200)
-        self.assertIn("application/xml", response["Content-Type"])
-        self.assertContains(response, "Quotations")
-        self.assertContains(response, "Test Source")
+        assert response.status_code == 200
+        assert "application/xml" in response["Content-Type"]
+        assertContains(response, "Quotations")
+        assertContains(response, "Test Source")
 
     def test_notes_feed(self):
         note = NoteFactory(body="Test note body content")
         response = self.client.get("/atom/notes/")
-        self.assertEqual(response.status_code, 200)
-        self.assertIn("application/xml", response["Content-Type"])
-        self.assertContains(response, "Notes")
-        self.assertContains(response, "Test note body content")
+        assert response.status_code == 200
+        assert "application/xml" in response["Content-Type"]
+        assertContains(response, "Notes")
+        assertContains(response, "Test note body content")
 
     def test_everything_but_beats_feed(self):
         EntryFactory(title="Feed entry")
@@ -704,25 +715,23 @@ class BlogTests(TransactionTestCase):
 
         response = self.client.get("/atom/everything-but-beats/")
 
-        self.assertEqual(response.status_code, 200)
-        self.assertIn("application/xml", response["Content-Type"])
+        assert response.status_code == 200
+        assert "application/xml" in response["Content-Type"]
         root = ET.fromstring(response.content)
         ns = {"atom": "http://www.w3.org/2005/Atom"}
         titles = [e.find("atom:title", ns).text for e in root.findall("atom:entry", ns)]
-        self.assertIn("Feed entry", titles)
-        self.assertIn("Feed blogmark", titles)
-        self.assertIn("Quoting Feed quotation source", titles)
-        self.assertIn("Feed note", titles)
-        self.assertIn("Feed chapter", titles)
-        self.assertNotIn("Feed beat", titles)
+        assert "Feed entry" in titles
+        assert "Feed blogmark" in titles
+        assert "Quoting Feed quotation source" in titles
+        assert "Feed note" in titles
+        assert "Feed chapter" in titles
+        assert "Feed beat" not in titles
 
     def test_about_page_documents_everything_but_beats_feed(self):
         response = self.client.get("/about/")
 
-        self.assertContains(
-            response, "https://simonwillison.net/atom/everything-but-beats/"
-        )
-        self.assertContains(
+        assertContains(response, "https://simonwillison.net/atom/everything-but-beats/")
+        assertContains(
             response,
             '<a href="https://simonwillison.net/2026/Feb/20/beats/">beats</a>',
             html=False,
@@ -731,32 +740,32 @@ class BlogTests(TransactionTestCase):
     def test_draft_items_not_in_quotations_feed(self):
         draft_quotation = QuotationFactory(is_draft=True, source="draftquotationsource")
         response = self.client.get("/atom/quotations/")
-        self.assertNotContains(response, "draftquotationsource")
+        assertNotContains(response, "draftquotationsource")
         draft_quotation.is_draft = False
         draft_quotation.save()
         response2 = self.client.get("/atom/quotations/")
-        self.assertContains(response2, "draftquotationsource")
+        assertContains(response2, "draftquotationsource")
 
     def test_draft_items_not_in_notes_feed(self):
         draft_note = NoteFactory(is_draft=True, body="draftnotebody")
         response = self.client.get("/atom/notes/")
-        self.assertNotContains(response, "draftnotebody")
+        assertNotContains(response, "draftnotebody")
         draft_note.is_draft = False
         draft_note.save()
         response2 = self.client.get("/atom/notes/")
-        self.assertContains(response2, "draftnotebody")
+        assertContains(response2, "draftnotebody")
 
     def test_quotations_feed_has_cors_and_cache_headers(self):
         QuotationFactory()
         response = self.client.get("/atom/quotations/")
-        self.assertEqual(response["Access-Control-Allow-Origin"], "*")
-        self.assertIn("s-maxage", response["Cache-Control"])
+        assert response["Access-Control-Allow-Origin"] == "*"
+        assert "s-maxage" in response["Cache-Control"]
 
     def test_notes_feed_has_cors_and_cache_headers(self):
         NoteFactory()
         response = self.client.get("/atom/notes/")
-        self.assertEqual(response["Access-Control-Allow-Origin"], "*")
-        self.assertIn("s-maxage", response["Cache-Control"])
+        assert response["Access-Control-Allow-Origin"] == "*"
+        assert "s-maxage" in response["Cache-Control"]
 
     def test_archive_month_shows_search_and_counts(self):
         created = datetime.datetime(2025, 7, 1, tzinfo=datetime.timezone.utc)
@@ -765,28 +774,28 @@ class BlogTests(TransactionTestCase):
         BlogmarkFactory(created=created)
         QuotationFactory(created=created)
         response = self.client.get("/2025/Jul/")
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(
+        assert response.status_code == 200
+        assertContains(
             response,
             '<input type="hidden" name="year" value="2025">',
         )
-        self.assertContains(
+        assertContains(
             response,
             '<input type="hidden" name="month" value="7">',
         )
-        self.assertContains(response, "4 posts:")
-        self.assertContains(response, ">2 entries</a>")
-        self.assertContains(response, ">1 link</a>")
-        self.assertContains(response, ">1 quote</a>")
-        self.assertContains(
+        assertContains(response, "4 posts:")
+        assertContains(response, ">2 entries</a>")
+        assertContains(response, ">1 link</a>")
+        assertContains(response, ">1 quote</a>")
+        assertContains(
             response,
             "/search/?type=entry&year=2025&month=7",
         )
-        self.assertContains(
+        assertContains(
             response,
             "/search/?type=blogmark&year=2025&month=7",
         )
-        self.assertContains(
+        assertContains(
             response,
             "/search/?type=quotation&year=2025&month=7",
         )
@@ -794,8 +803,8 @@ class BlogTests(TransactionTestCase):
         # should not mention notes since none were created.
         soup = response.content.decode()
         summary_match = re.search(r"(\d+ posts?:.*?)</p>", soup, re.DOTALL)
-        self.assertIsNotNone(summary_match)
-        self.assertNotIn("note", summary_match.group(1))
+        assert summary_match is not None
+        assert "note" not in summary_match.group(1)
 
     def test_archive_month_includes_notes(self):
         created = datetime.datetime(2025, 7, 1, tzinfo=datetime.timezone.utc)
@@ -807,10 +816,10 @@ class BlogTests(TransactionTestCase):
         QuotationFactory(created=created)
         BlogmarkFactory(created=created)
         response = self.client.get("/2025/Jul/")
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "3 posts:")
-        self.assertContains(response, ">1 note</a>")
-        self.assertContains(
+        assert response.status_code == 200
+        assertContains(response, "3 posts:")
+        assertContains(response, ">1 note</a>")
+        assertContains(
             response,
             "/search/?type=note&year=2025&month=7",
         )
@@ -829,23 +838,23 @@ class BlogTests(TransactionTestCase):
 
         # Middle day: should have both previous and next
         response = self.client.get("/2024/Dec/22/")
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "/2024/Dec/20/")
-        self.assertContains(response, "Friday, 20th December 2024")
-        self.assertContains(response, "/2024/Dec/25/")
-        self.assertContains(response, "Wednesday, 25th December 2024")
+        assert response.status_code == 200
+        assertContains(response, "/2024/Dec/20/")
+        assertContains(response, "Friday, 20th December 2024")
+        assertContains(response, "/2024/Dec/25/")
+        assertContains(response, "Wednesday, 25th December 2024")
 
         # First day: should have next but no previous
         response = self.client.get("/2024/Dec/20/")
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "/2024/Dec/22/")
-        self.assertNotContains(response, "&larr;")
+        assert response.status_code == 200
+        assertContains(response, "/2024/Dec/22/")
+        assertNotContains(response, "&larr;")
 
         # Last day: should have previous but no next
         response = self.client.get("/2024/Dec/25/")
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "/2024/Dec/22/")
-        self.assertNotContains(response, "&rarr;")
+        assert response.status_code == 200
+        assertContains(response, "/2024/Dec/22/")
+        assertNotContains(response, "&rarr;")
 
     def test_archive_day_navigation_across_months(self):
         """Day navigation works across month boundaries."""
@@ -857,8 +866,8 @@ class BlogTests(TransactionTestCase):
         )
 
         response = self.client.get("/2024/Dec/1/")
-        self.assertContains(response, "/2024/Nov/30/")
-        self.assertContains(response, "Saturday, 30th November 2024")
+        assertContains(response, "/2024/Nov/30/")
+        assertContains(response, "Saturday, 30th November 2024")
 
     def test_archive_day_navigation_skips_draft_only_days(self):
         """Navigation should skip days that only have draft content."""
@@ -876,8 +885,8 @@ class BlogTests(TransactionTestCase):
         )
 
         response = self.client.get("/2024/Dec/22/")
-        self.assertContains(response, "/2024/Dec/20/")
-        self.assertNotContains(response, "/2024/Dec/21/")
+        assertContains(response, "/2024/Dec/20/")
+        assertNotContains(response, "/2024/Dec/21/")
 
     def test_archive_day_navigation_across_model_types(self):
         """Navigation finds adjacent days across different content types."""
@@ -892,57 +901,62 @@ class BlogTests(TransactionTestCase):
         )
 
         response = self.client.get("/2024/Dec/22/")
-        self.assertContains(response, "/2024/Dec/18/")
-        self.assertContains(response, "/2024/Dec/28/")
+        assertContains(response, "/2024/Dec/18/")
+        assertContains(response, "/2024/Dec/28/")
 
 
-class TypeListingTests(TransactionTestCase):
+@pytest.mark.django_db
+class TestTypeListing:
+    @pytest.fixture(autouse=True)
+    def setup(self, client):
+        self.client = client
+
     def test_entries_page(self):
         entry = EntryFactory()
         BlogmarkFactory()
         response = self.client.get("/entries/")
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Entries")
-        self.assertEqual(response.context["selected"]["type"], "entry")
-        self.assertTrue(response.context["fixed_type"])
+        assert response.status_code == 200
+        assertContains(response, "Entries")
+        assert response.context["selected"]["type"] == "entry"
+        assert response.context["fixed_type"]
 
     def test_blogmarks_page(self):
         BlogmarkFactory()
         EntryFactory()
         response = self.client.get("/blogmarks/")
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Blogmarks")
-        self.assertEqual(response.context["selected"]["type"], "blogmark")
+        assert response.status_code == 200
+        assertContains(response, "Blogmarks")
+        assert response.context["selected"]["type"] == "blogmark"
 
     def test_quotations_page(self):
         QuotationFactory()
         response = self.client.get("/quotations/")
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Quotations")
-        self.assertEqual(response.context["selected"]["type"], "quotation")
+        assert response.status_code == 200
+        assertContains(response, "Quotations")
+        assert response.context["selected"]["type"] == "quotation"
 
     def test_notes_page(self):
         NoteFactory()
         response = self.client.get("/notes/")
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Notes")
-        self.assertEqual(response.context["selected"]["type"], "note")
+        assert response.status_code == 200
+        assertContains(response, "Notes")
+        assert response.context["selected"]["type"] == "note"
 
     def test_pagination(self):
         for _ in range(35):
             EntryFactory()
         response = self.client.get("/entries/")
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.context["results"]), 30)
+        assert response.status_code == 200
+        assert len(response.context["results"]) == 30
         response2 = self.client.get("/entries/?page=2")
-        self.assertEqual(response2.status_code, 200)
-        self.assertEqual(len(response2.context["results"]), 5)
+        assert response2.status_code == 200
+        assert len(response2.context["results"]) == 5
 
     def test_search_within_type(self):
         EntryFactory(title="Unique findable title")
         EntryFactory(title="Other entry")
         response = self.client.get("/entries/?q=findable")
-        self.assertEqual(response.status_code, 200)
+        assert response.status_code == 200
 
     def test_tag_filtering(self):
         tag = Tag.objects.create(tag="test-listing")
@@ -950,76 +964,76 @@ class TypeListingTests(TransactionTestCase):
         entry.tags.add(tag)
         EntryFactory()  # no tag
         response = self.client.get("/entries/?tag=test-listing")
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.context["total"], 1)
+        assert response.status_code == 200
+        assert response.context["total"] == 1
 
     def test_type_facet_hidden(self):
         EntryFactory()
         response = self.client.get("/entries/")
-        self.assertNotContains(response, 'id="facet-types"')
+        assertNotContains(response, 'id="facet-types"')
 
     def test_type_pill_hidden(self):
         EntryFactory()
         response = self.client.get("/entries/")
-        self.assertNotContains(response, "Type: entry")
+        assertNotContains(response, "Type: entry")
 
     def test_pagination_no_type_in_query_string(self):
         for _ in range(35):
             EntryFactory()
         response = self.client.get("/entries/")
-        self.assertContains(response, "?page=2")
+        assertContains(response, "?page=2")
         # Pagination links should not include type=entry
-        self.assertNotContains(response, "?type=entry&amp;page=")
-        self.assertNotContains(response, "?page=2&amp;type=entry")
+        assertNotContains(response, "?type=entry&amp;page=")
+        assertNotContains(response, "?page=2&amp;type=entry")
 
     def test_form_action_points_to_search(self):
         EntryFactory()
         response = self.client.get("/entries/")
-        self.assertContains(response, 'action="/search/"')
+        assertContains(response, 'action="/search/"')
 
     def test_year_facet_links_to_search(self):
         EntryFactory()
         response = self.client.get("/entries/")
         content = response.content.decode()
         # Year facet links should go to /search/ with type=entry
-        self.assertIn("/search/?", content)
-        self.assertIn("type=entry", content)
+        assert "/search/?" in content
+        assert "type=entry" in content
 
     def test_entries_page_has_feed_icon(self):
         EntryFactory()
         response = self.client.get("/entries/")
-        self.assertContains(response, "/atom/entries/")
-        self.assertContains(response, "Atom feed")
+        assertContains(response, "/atom/entries/")
+        assertContains(response, "Atom feed")
 
     def test_blogmarks_page_has_feed_icon(self):
         BlogmarkFactory()
         response = self.client.get("/blogmarks/")
-        self.assertContains(response, "/atom/links/")
-        self.assertContains(response, "Atom feed")
+        assertContains(response, "/atom/links/")
+        assertContains(response, "Atom feed")
 
     def test_quotations_page_has_feed_icon(self):
         QuotationFactory()
         response = self.client.get("/quotations/")
-        self.assertContains(response, "/atom/quotations/")
-        self.assertContains(response, "Atom feed")
+        assertContains(response, "/atom/quotations/")
+        assertContains(response, "Atom feed")
 
     def test_notes_page_has_feed_icon(self):
         NoteFactory()
         response = self.client.get("/notes/")
-        self.assertContains(response, "/atom/notes/")
-        self.assertContains(response, "Atom feed")
+        assertContains(response, "/atom/notes/")
+        assertContains(response, "Atom feed")
 
     def test_beats_page_has_feed_icon(self):
         BeatFactory()
         response = self.client.get("/elsewhere/")
-        self.assertContains(response, "/atom/beats/")
-        self.assertContains(response, "Atom feed")
+        assertContains(response, "/atom/beats/")
+        assertContains(response, "Atom feed")
 
     def test_beat_type_listing_page_has_feed_icon(self):
         BeatFactory(title="Tool beat", beat_type="tool")
         response = self.client.get("/elsewhere/tool/")
-        self.assertContains(response, "/atom/beats/tool/")
-        self.assertContains(response, "Atom feed")
+        assertContains(response, "/atom/beats/tool/")
+        assertContains(response, "Atom feed")
 
     def test_beat_type_listing_all_types_have_feed_icon(self):
         for beat_type in [
@@ -1033,12 +1047,12 @@ class TypeListingTests(TransactionTestCase):
         ]:
             BeatFactory(beat_type=beat_type)
             response = self.client.get(f"/elsewhere/{beat_type}/")
-            self.assertContains(
+            assertContains(
                 response,
                 f"/atom/beats/{beat_type}/",
                 msg_prefix=f"Missing feed link for {beat_type}",
             )
-            self.assertContains(
+            assertContains(
                 response,
                 "Atom feed",
                 msg_prefix=f"Missing Atom feed icon for {beat_type}",
@@ -1048,42 +1062,44 @@ class TypeListingTests(TransactionTestCase):
         BeatFactory(title="Tool One", beat_type="tool")
         BeatFactory(title="Release One", beat_type="release")
         response = self.client.get("/atom/beats/tool/")
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Tool One")
-        self.assertNotContains(response, "Release One")
+        assert response.status_code == 200
+        assertContains(response, "Tool One")
+        assertNotContains(response, "Release One")
 
     def test_atom_beats_by_type_feed_invalid_type_404s(self):
         response = self.client.get("/atom/beats/notarealtype/")
-        self.assertEqual(response.status_code, 404)
+        assert response.status_code == 404
 
 
-class TagSearchTests(TransactionTestCase):
-    def setUp(self):
+@pytest.mark.django_db
+class TestTagSearch:
+    @pytest.fixture(autouse=True)
+    def setup(self, client, db):
+        self.client = client
         self.tag = Tag.objects.create(tag="python")
         for name in ("legacy-python", "legacy-python-2", "historic"):
             PreviousTagName.objects.create(tag=self.tag, previous_name=name)
         Tag.objects.create(tag="ruby")
 
-    def test_public_search_matches_current_and_previous_names(self):
+    def test_public_search_matches_current_and_previous_names(self, subtests):
         for query in ("python", "PYTH", "legacy", "ACY-PY", "historic", " legacy "):
-            with self.subTest(query=query):
+            with subtests.test(query=query):
                 response = self.client.get("/tags-autocomplete/", {"q": query})
-                self.assertEqual(response.status_code, 200)
-                self.assertEqual(
-                    [(tag["id"], tag["tag"]) for tag in response.json()["tags"]],
-                    [(self.tag.pk, "python")],
-                )
+                assert response.status_code == 200
+                assert [(tag["id"], tag["tag"]) for tag in response.json()["tags"]] == [
+                    (self.tag.pk, "python")
+                ]
                 response = self.client.get("/tools/search-tags/", {"q": query})
-                self.assertEqual(response.json(), {"tags": ["python"]})
+                assert response.json() == {"tags": ["python"]}
 
-    def test_public_search_empty_or_unmatched_query(self):
+    def test_public_search_empty_or_unmatched_query(self, subtests):
         for path in ("/tags-autocomplete/", "/tools/search-tags/"):
             for query in ("", "  ", "missing"):
-                with self.subTest(path=path, query=query):
+                with subtests.test(path=path, query=query):
                     response = self.client.get(path, {"q": query})
-                    self.assertEqual(response.json(), {"tags": []})
+                    assert response.json() == {"tags": []}
 
-    def test_public_autocomplete_debug_escapes_query(self):
+    def test_public_autocomplete_debug_escapes_query(self, subtests):
         for query, escaped_query in (
             (
                 "<script>alert(1)</script>",
@@ -1094,13 +1110,13 @@ class TagSearchTests(TransactionTestCase):
                 "&lt;/code&gt;&lt;svg/onload=alert(1)&gt;",
             ),
         ):
-            with self.subTest(query=query):
+            with subtests.test(query=query):
                 response = self.client.get(
                     "/tags-autocomplete/", {"q": query, "debug": "1"}
                 )
-                self.assertContains(response, escaped_query)
-                self.assertNotContains(response, query)
-                self.assertContains(response, "<pre>[]</pre>")
+                assertContains(response, escaped_query)
+                assertNotContains(response, query)
+                assertContains(response, "<pre>[]</pre>")
 
     def test_public_autocomplete_debug_escapes_results(self):
         description = '</pre><script>alert(1)</script><p>"Fish & chips"</p>'
@@ -1108,16 +1124,14 @@ class TagSearchTests(TransactionTestCase):
         self.tag.save()
 
         response = self.client.get("/tags-autocomplete/", {"q": "python", "debug": "1"})
-        self.assertContains(
-            response, "&lt;/pre&gt;&lt;script&gt;alert(1)&lt;/script&gt;"
-        )
-        self.assertContains(response, "Fish &amp; chips")
-        self.assertContains(response, "SELECT")
-        self.assertNotContains(response, "<script>")
+        assertContains(response, "&lt;/pre&gt;&lt;script&gt;alert(1)&lt;/script&gt;")
+        assertContains(response, "Fish &amp; chips")
+        assertContains(response, "SELECT")
+        assertNotContains(response, "<script>")
 
         response = self.client.get("/tags-autocomplete/", {"q": "python"})
-        self.assertEqual(response["Content-Type"], "application/json")
-        self.assertEqual(response.json()["tags"][0]["description"], description)
+        assert response["Content-Type"] == "application/json"
+        assert response.json()["tags"][0]["description"] == description
 
     def test_public_autocomplete_counts_are_not_multiplied_by_aliases(self):
         for factory in (
@@ -1132,10 +1146,10 @@ class TagSearchTests(TransactionTestCase):
 
         response = self.client.get("/tags-autocomplete/", {"q": "python"})
         tags = response.json()["tags"]
-        self.assertEqual(len(tags), 1)
-        self.assertEqual(tags[0]["count"], 5)
+        assert len(tags) == 1
+        assert tags[0]["count"] == 5
         for content_type in ("entry", "blogmark", "quotation", "note", "beat"):
-            self.assertEqual(tags[0]["total_" + content_type], 1)
+            assert tags[0]["total_" + content_type] == 1
 
     def test_exact_previous_name_is_prioritized_before_result_limit(self):
         entry = EntryFactory()
@@ -1144,17 +1158,17 @@ class TagSearchTests(TransactionTestCase):
 
         response = self.client.get("/tags-autocomplete/", {"q": "LEGACY-PYTHON"})
         tags = response.json()["tags"]
-        self.assertEqual(len(tags), 5)
-        self.assertEqual(tags[0]["id"], self.tag.pk)
-        self.assertEqual(tags[0]["is_exact_match"], 1)
+        assert len(tags) == 5
+        assert tags[0]["id"] == self.tag.pk
+        assert tags[0]["is_exact_match"] == 1
 
     def test_tools_search_keeps_length_ordering(self):
         short_tag = Tag.objects.create(tag="py")
         PreviousTagName.objects.create(tag=short_tag, previous_name="legacy-py")
         response = self.client.get("/tools/search-tags/", {"q": "legacy"})
-        self.assertEqual(response.json(), {"tags": ["py", "python"]})
+        assert response.json() == {"tags": ["py", "python"]}
 
-    def test_admin_autocomplete_matches_current_and_previous_prefixes(self):
+    def test_admin_autocomplete_matches_current_and_previous_prefixes(self, subtests):
         admin = User.objects.create_superuser("admin", "a@example.com", "password")
         self.client.force_login(admin)
         for app_label, model in (
@@ -1166,7 +1180,7 @@ class TagSearchTests(TransactionTestCase):
             ("guides", "chapter"),
         ):
             for query in ("py", "python", "LEGACY", "historic", " legacy "):
-                with self.subTest(model=model, query=query):
+                with subtests.test(model=model, query=query):
                     response = self.client.get(
                         "/admin/autocomplete/",
                         {
@@ -1176,19 +1190,17 @@ class TagSearchTests(TransactionTestCase):
                             "term": query,
                         },
                     )
-                    self.assertEqual(response.status_code, 200)
-                    self.assertEqual(
-                        response.json(),
-                        {
-                            "results": [{"id": str(self.tag.pk), "text": "python"}],
-                            "pagination": {"more": False},
-                        },
-                    )
+                    assert response.status_code == 200
+                    assert response.json() == {
+                        "results": [{"id": str(self.tag.pk), "text": "python"}],
+                        "pagination": {"more": False},
+                    }
 
     def test_admin_search_preserves_queryset_and_prefix_matching(self):
-        from blog.admin import TagAdmin
         from django.contrib import admin
         from django.test import RequestFactory
+
+        from blog.admin import TagAdmin
 
         tag_admin = TagAdmin(Tag, admin.site)
         request = RequestFactory().get("/admin/blog/tag/")
@@ -1198,27 +1210,27 @@ class TagSearchTests(TransactionTestCase):
         results, may_have_duplicates = tag_admin.get_search_results(
             request, Tag.objects.all(), "legacy"
         )
-        self.assertEqual(list(results), [short_tag, self.tag])
-        self.assertFalse(may_have_duplicates)
+        assert list(results) == [short_tag, self.tag]
+        assert not may_have_duplicates
 
         results, _ = tag_admin.get_search_results(
             request, Tag.objects.exclude(pk=self.tag.pk), "historic"
         )
-        self.assertFalse(results.exists())
+        assert not results.exists()
 
         for query in ("egacy", "missing"):
             results, _ = tag_admin.get_search_results(request, Tag.objects.all(), query)
-            self.assertFalse(results.exists())
+            assert not results.exists()
 
         results, _ = tag_admin.get_search_results(request, Tag.objects.all(), "  ")
-        self.assertEqual(set(results), set(Tag.objects.all()))
+        assert set(results) == set(Tag.objects.all())
 
     def test_admin_tag_changelist_searches_previous_names(self):
         admin = User.objects.create_superuser("admin", "a@example.com", "password")
         self.client.force_login(admin)
         response = self.client.get("/admin/blog/tag/", {"q": "legacy"})
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(list(response.context["cl"].result_list), [self.tag])
+        assert response.status_code == 200
+        assert list(response.context["cl"].result_list) == [self.tag]
 
     def test_tag_index_includes_previous_names_for_filtering(self):
         from bs4 import BeautifulSoup
@@ -1228,19 +1240,23 @@ class TagSearchTests(TransactionTestCase):
         EntryFactory().tags.add(Tag.objects.get(tag="ruby"))
 
         response = self.client.get("/tags/")
-        self.assertEqual(response.status_code, 200)
+        assert response.status_code == 200
         soup = BeautifulSoup(response.content, "html.parser")
         tags = soup.select('#tagcloud a[href="/tags/python/"]')
-        self.assertEqual(len(tags), 1)
-        self.assertEqual(
-            set(tags[0]["data-previous-names"].split()),
-            {"legacy-python", "legacy-python-2", "historic"},
-        )
-        self.assertEqual(tags[0].get_text(), "python 2")
+        assert len(tags) == 1
+        assert set(tags[0]["data-previous-names"].split()) == {
+            "legacy-python",
+            "legacy-python-2",
+            "historic",
+        }
+        assert tags[0].get_text() == "python 2"
 
 
-class MergeTagsTests(TransactionTestCase):
-    def setUp(self):
+@pytest.mark.django_db
+class TestMergeTags:
+    @pytest.fixture(autouse=True)
+    def setup(self, client, db):
+        self.client = client
         self.staff_user = User.objects.create_user(
             username="staff", password="password", is_staff=True
         )
@@ -1251,19 +1267,19 @@ class MergeTagsTests(TransactionTestCase):
     def test_merge_tags_requires_staff(self):
         """Non-staff users should be redirected to login."""
         response = self.client.get("/admin/merge-tags/")
-        self.assertEqual(response.status_code, 302)
-        self.assertIn("/admin/login/", response.url)
+        assert response.status_code == 302
+        assert "/admin/login/" in response.url
 
         self.client.login(username="regular", password="password")
         response = self.client.get("/admin/merge-tags/")
-        self.assertEqual(response.status_code, 302)
+        assert response.status_code == 302
 
     def test_merge_tags_page_loads_for_staff(self):
         """Staff users can access the merge tags page."""
         self.client.login(username="staff", password="password")
         response = self.client.get("/admin/merge-tags/")
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Merge Tags")
+        assert response.status_code == 200
+        assertContains(response, "Merge Tags")
 
     def test_merge_tags_shows_confirmation(self):
         """Selecting two tags shows a confirmation screen with counts."""
@@ -1279,10 +1295,10 @@ class MergeTagsTests(TransactionTestCase):
         response = self.client.get(
             "/admin/merge-tags/?source=source-tag&destination=dest-tag"
         )
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Confirm Tag Merge")
-        self.assertContains(response, "source-tag")
-        self.assertContains(response, "dest-tag")
+        assert response.status_code == 200
+        assertContains(response, "Confirm Tag Merge")
+        assertContains(response, "source-tag")
+        assertContains(response, "dest-tag")
 
     def test_merge_tags_performs_merge(self):
         """Merging tags re-tags content and deletes the source tag."""
@@ -1303,11 +1319,11 @@ class MergeTagsTests(TransactionTestCase):
             "/admin/merge-tags/",
             {"source": "old-tag", "destination": "new-tag", "confirm": "yes"},
         )
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Successfully merged")
+        assert response.status_code == 200
+        assertContains(response, "Successfully merged")
 
         # Verify source tag was deleted
-        self.assertFalse(Tag.objects.filter(tag="old-tag").exists())
+        assert not Tag.objects.filter(tag="old-tag").exists()
 
         # Verify content is now tagged with destination tag
         entry.refresh_from_db()
@@ -1315,12 +1331,12 @@ class MergeTagsTests(TransactionTestCase):
         quotation.refresh_from_db()
         note.refresh_from_db()
 
-        self.assertIn(dest_tag, entry.tags.all())
-        self.assertIn(dest_tag, blogmark.tags.all())
-        self.assertIn(dest_tag, quotation.tags.all())
-        self.assertIn(dest_tag, note.tags.all())
+        assert dest_tag in entry.tags.all()
+        assert dest_tag in blogmark.tags.all()
+        assert dest_tag in quotation.tags.all()
+        assert dest_tag in note.tags.all()
 
-        self.assertNotIn(source_tag, entry.tags.all())
+        assert source_tag not in entry.tags.all()
 
     def test_merge_creates_previous_tag_name(self):
         """Merging tags creates a PreviousTagName for redirects."""
@@ -1338,14 +1354,14 @@ class MergeTagsTests(TransactionTestCase):
 
         # Verify PreviousTagName was created
         previous = PreviousTagName.objects.get(previous_name="redirect-from")
-        self.assertEqual(previous.tag.tag, "redirect-to")
+        assert previous.tag.tag == "redirect-to"
 
         # Verify redirect works (redirects to /tag/ which then redirects to /tags/)
         response = self.client.get("/tags/redirect-from/")
-        self.assertEqual(response.status_code, 301)
-        self.assertIn("redirect-to", response.url)
+        assert response.status_code == 301
+        assert "redirect-to" in response.url
 
-    def test_previous_names_survive_repeated_merges(self):
+    def test_previous_names_survive_repeated_merges(self, subtests):
         source = Tag.objects.create(tag="original")
         source.rename_tag("renamed")
         Tag.objects.create(tag="intermediate")
@@ -1367,19 +1383,19 @@ class MergeTagsTests(TransactionTestCase):
                     "confirm": "yes",
                 },
             )
-            self.assertContains(response, "Successfully merged")
+            assertContains(response, "Successfully merged")
 
         for name in ("original", "renamed", "intermediate"):
-            with self.subTest(name=name):
-                self.assertEqual(
-                    PreviousTagName.objects.get(previous_name=name).tag, destination
+            with subtests.test(name=name):
+                assert (
+                    PreviousTagName.objects.get(previous_name=name).tag == destination
                 )
                 response = self.client.get("/tags-autocomplete/", {"q": name})
-                self.assertEqual(
-                    [tag["tag"] for tag in response.json()["tags"]], ["destination"]
-                )
+                assert [tag["tag"] for tag in response.json()["tags"]] == [
+                    "destination"
+                ]
                 response = self.client.get("/tools/search-tags/", {"q": name})
-                self.assertEqual(response.json(), {"tags": ["destination"]})
+                assert response.json() == {"tags": ["destination"]}
                 response = self.client.get(
                     "/admin/autocomplete/",
                     {
@@ -1389,13 +1405,12 @@ class MergeTagsTests(TransactionTestCase):
                         "term": name,
                     },
                 )
-                self.assertEqual(
-                    response.json()["results"],
-                    [{"id": str(destination.pk), "text": "destination"}],
-                )
+                assert response.json()["results"] == [
+                    {"id": str(destination.pk), "text": "destination"}
+                ]
                 response = self.client.get(f"/tags/{name}/", follow=True)
-                self.assertEqual(response.redirect_chain[-1][0], "/tags/destination/")
-                self.assertEqual(response.status_code, 200)
+                assert response.redirect_chain[-1][0] == "/tags/destination/"
+                assert response.status_code == 200
 
     def test_merge_creates_tag_merge_record(self):
         """Merging tags creates a TagMerge record with details."""
@@ -1415,10 +1430,10 @@ class MergeTagsTests(TransactionTestCase):
 
         # Verify TagMerge record was created
         merge_record = TagMerge.objects.get(source_tag_name="merge-source")
-        self.assertEqual(merge_record.destination_tag_name, "merge-dest")
-        self.assertEqual(merge_record.destination_tag, dest_tag)
-        self.assertIn(entry.pk, merge_record.details["entries"]["added"])
-        self.assertIn(blogmark.pk, merge_record.details["blogmarks"]["added"])
+        assert merge_record.destination_tag_name == "merge-dest"
+        assert merge_record.destination_tag == dest_tag
+        assert entry.pk in merge_record.details["entries"]["added"]
+        assert blogmark.pk in merge_record.details["blogmarks"]["added"]
 
     def test_merge_handles_items_already_tagged(self):
         """Items that already have the destination tag are tracked separately."""
@@ -1439,27 +1454,27 @@ class MergeTagsTests(TransactionTestCase):
             "/admin/merge-tags/",
             {"source": "old-tag", "destination": "new-tag", "confirm": "yes"},
         )
-        self.assertEqual(response.status_code, 200)
+        assert response.status_code == 200
 
         # Verify the success message differentiates
-        self.assertContains(response, "Added &#x27;new-tag&#x27; tag to 1 item(s)")
-        self.assertContains(
+        assertContains(response, "Added &#x27;new-tag&#x27; tag to 1 item(s)")
+        assertContains(
             response, "Removed &#x27;old-tag&#x27; from 1 item(s) that already had"
         )
 
         # Verify TagMerge record has correct structure
         merge_record = TagMerge.objects.get(source_tag_name="old-tag")
-        self.assertIn(entry_needs_tag.pk, merge_record.details["entries"]["added"])
-        self.assertIn(
-            blogmark_has_both.pk, merge_record.details["blogmarks"]["already_tagged"]
+        assert entry_needs_tag.pk in merge_record.details["entries"]["added"]
+        assert (
+            blogmark_has_both.pk in merge_record.details["blogmarks"]["already_tagged"]
         )
 
         # Verify both items now have only dest_tag
         entry_needs_tag.refresh_from_db()
         blogmark_has_both.refresh_from_db()
-        self.assertIn(dest_tag, entry_needs_tag.tags.all())
-        self.assertIn(dest_tag, blogmark_has_both.tags.all())
-        self.assertFalse(Tag.objects.filter(tag="old-tag").exists())
+        assert dest_tag in entry_needs_tag.tags.all()
+        assert dest_tag in blogmark_has_both.tags.all()
+        assert not Tag.objects.filter(tag="old-tag").exists()
 
     def test_merge_same_tag_error(self):
         """Merging a tag into itself should show an error."""
@@ -1469,8 +1484,8 @@ class MergeTagsTests(TransactionTestCase):
         response = self.client.get(
             "/admin/merge-tags/?source=same-tag&destination=same-tag"
         )
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Source and destination tags must be different")
+        assert response.status_code == 200
+        assertContains(response, "Source and destination tags must be different")
 
     def test_merge_nonexistent_tag_error(self):
         """Merging with a nonexistent tag should show an error."""
@@ -1480,8 +1495,8 @@ class MergeTagsTests(TransactionTestCase):
         response = self.client.get(
             "/admin/merge-tags/?source=nonexistent&destination=existing-tag"
         )
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Source tag &#x27;nonexistent&#x27; not found")
+        assert response.status_code == 200
+        assertContains(response, "Source tag &#x27;nonexistent&#x27; not found")
 
     def test_tag_merge_admin_change_page(self):
         """The TagMerge admin change page should load without errors."""
@@ -1504,13 +1519,16 @@ class MergeTagsTests(TransactionTestCase):
 
         self.client.login(username="admin", password="adminpass")
         response = self.client.get(f"/admin/blog/tagmerge/{merge_record.pk}/change/")
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "source-tag")
-        self.assertContains(response, "dest-tag")
+        assert response.status_code == 200
+        assertContains(response, "source-tag")
+        assertContains(response, "dest-tag")
 
 
-class AdminAutosaveTests(TransactionTestCase):
-    def setUp(self):
+@pytest.mark.django_db
+class TestAdminAutosave:
+    @pytest.fixture(autouse=True)
+    def setup(self, client, db):
+        self.client = client
         self.admin = User.objects.create_superuser("admin", "a@b.com", "password")
         self.client.force_login(self.admin)
 
@@ -1551,42 +1569,42 @@ class AdminAutosaveTests(TransactionTestCase):
     def test_autosave_change_does_not_create_admin_log_entry(self):
         quotation = self.make_quotation()
         log_entries = self.log_entries_for(quotation)
-        self.assertEqual(log_entries.count(), 0)
+        assert log_entries.count() == 0
 
         response = self.post_quotation_change(
             quotation, "Autosaved quote", autosave=True
         )
 
-        self.assertEqual(response.status_code, 204)
+        assert response.status_code == 204
         quotation.refresh_from_db()
-        self.assertEqual(quotation.quotation, "Autosaved quote")
-        self.assertEqual(log_entries.count(), 0)
+        assert quotation.quotation == "Autosaved quote"
+        assert log_entries.count() == 0
 
     def test_normal_change_still_creates_admin_log_entry(self):
         quotation = self.make_quotation()
         log_entries = self.log_entries_for(quotation)
-        self.assertEqual(log_entries.count(), 0)
+        assert log_entries.count() == 0
 
         response = self.post_quotation_change(quotation, "Saved quote")
 
-        self.assertEqual(response.status_code, 302)
+        assert response.status_code == 302
         quotation.refresh_from_db()
-        self.assertEqual(quotation.quotation, "Saved quote")
-        self.assertEqual(log_entries.count(), 1)
+        assert quotation.quotation == "Saved quote"
+        assert log_entries.count() == 1
 
-    def test_preview_enabled_admin_uses_relative_view_on_site_url(self):
+    def test_preview_enabled_admin_uses_relative_view_on_site_url(self, subtests):
         for obj in (self.make_quotation(), self.make_beat()):
-            with self.subTest(model=obj._meta.model_name):
+            with subtests.test(model=obj._meta.model_name):
                 response = self.client.get(
                     f"/admin/blog/{obj._meta.model_name}/{obj.pk}/change/"
                 )
 
-                self.assertEqual(response.status_code, 200)
-                self.assertContains(
+                assert response.status_code == 200
+                assertContains(
                     response,
                     f'href="{obj.get_absolute_url()}" class="viewsitelink"',
                 )
-                self.assertNotContains(
+                assertNotContains(
                     response,
                     f"/admin/r/{ContentType.objects.get_for_model(obj).pk}/{obj.pk}/",
                 )
@@ -1627,29 +1645,30 @@ class AdminAutosaveTests(TransactionTestCase):
     def test_beat_autosave_change_does_not_create_admin_log_entry(self):
         beat = self.make_beat()
         log_entries = self.log_entries_for(beat)
-        self.assertEqual(log_entries.count(), 0)
+        assert log_entries.count() == 0
 
         response = self.post_beat_change(beat, "Autosaved beat", autosave=True)
 
-        self.assertEqual(response.status_code, 204)
+        assert response.status_code == 204
         beat.refresh_from_db()
-        self.assertEqual(beat.title, "Autosaved beat")
-        self.assertEqual(log_entries.count(), 0)
+        assert beat.title == "Autosaved beat"
+        assert log_entries.count() == 0
 
     def test_beat_normal_change_still_creates_admin_log_entry(self):
         beat = self.make_beat()
         log_entries = self.log_entries_for(beat)
-        self.assertEqual(log_entries.count(), 0)
+        assert log_entries.count() == 0
 
         response = self.post_beat_change(beat, "Saved beat")
 
-        self.assertEqual(response.status_code, 302)
+        assert response.status_code == 302
         beat.refresh_from_db()
-        self.assertEqual(beat.title, "Saved beat")
-        self.assertEqual(log_entries.count(), 1)
+        assert beat.title == "Saved beat"
+        assert log_entries.count() == 1
 
 
-class TagThroughModelStrTests(TransactionTestCase):
+@pytest.mark.django_db
+class TestTagThroughModelStr:
     """Tests for the monkey-patched __str__ methods on tag through models."""
 
     def test_entry_tag_through_str(self):
@@ -1663,10 +1682,10 @@ class TagThroughModelStrTests(TransactionTestCase):
         through_obj = Entry.tags.through.objects.get(entry=entry, tag=tag)
         str_repr = str(through_obj)
 
-        self.assertIn("Entry:", str_repr)
-        self.assertIn("My Test Entry Title", str_repr)
-        self.assertIn(f"/admin/blog/entry/{entry.pk}/change/", str_repr)
-        self.assertIn("<a href=", str_repr)
+        assert "Entry:" in str_repr
+        assert "My Test Entry Title" in str_repr
+        assert f"/admin/blog/entry/{entry.pk}/change/" in str_repr
+        assert "<a href=" in str_repr
 
     def test_blogmark_tag_through_str(self):
         """Blogmark tag through model __str__ includes link_title and admin link."""
@@ -1679,9 +1698,9 @@ class TagThroughModelStrTests(TransactionTestCase):
         through_obj = Blogmark.tags.through.objects.get(blogmark=blogmark, tag=tag)
         str_repr = str(through_obj)
 
-        self.assertIn("Blogmark:", str_repr)
-        self.assertIn("Interesting Article", str_repr)
-        self.assertIn(f"/admin/blog/blogmark/{blogmark.pk}/change/", str_repr)
+        assert "Blogmark:" in str_repr
+        assert "Interesting Article" in str_repr
+        assert f"/admin/blog/blogmark/{blogmark.pk}/change/" in str_repr
 
     def test_quotation_tag_through_str(self):
         """Quotation tag through model __str__ includes source and admin link."""
@@ -1694,9 +1713,9 @@ class TagThroughModelStrTests(TransactionTestCase):
         through_obj = Quotation.tags.through.objects.get(quotation=quotation, tag=tag)
         str_repr = str(through_obj)
 
-        self.assertIn("Quotation:", str_repr)
-        self.assertIn("Famous Person", str_repr)
-        self.assertIn(f"/admin/blog/quotation/{quotation.pk}/change/", str_repr)
+        assert "Quotation:" in str_repr
+        assert "Famous Person" in str_repr
+        assert f"/admin/blog/quotation/{quotation.pk}/change/" in str_repr
 
     def test_note_tag_through_str(self):
         """Note tag through model __str__ includes truncated body and admin link."""
@@ -1709,9 +1728,9 @@ class TagThroughModelStrTests(TransactionTestCase):
         through_obj = Note.tags.through.objects.get(note=note, tag=tag)
         str_repr = str(through_obj)
 
-        self.assertIn("Note:", str_repr)
-        self.assertIn("This is a short note", str_repr)
-        self.assertIn(f"/admin/blog/note/{note.pk}/change/", str_repr)
+        assert "Note:" in str_repr
+        assert "This is a short note" in str_repr
+        assert f"/admin/blog/note/{note.pk}/change/" in str_repr
 
     def test_note_tag_through_str_truncates_long_body(self):
         """Note tag through model __str__ truncates long body to 50 chars."""
@@ -1726,15 +1745,18 @@ class TagThroughModelStrTests(TransactionTestCase):
         str_repr = str(through_obj)
 
         # Should have first 50 chars + "..."
-        self.assertIn("A" * 50 + "...", str_repr)
+        assert "A" * 50 + "..." in str_repr
         # Should not have the full 100 chars
-        self.assertNotIn("A" * 100, str_repr)
+        assert "A" * 100 not in str_repr
 
 
-class TagAdminDeleteTests(TransactionTestCase):
+@pytest.mark.django_db
+class TestTagAdminDelete:
     """Tests for the tag admin delete confirmation page."""
 
-    def setUp(self):
+    @pytest.fixture(autouse=True)
+    def setup(self, client, db):
+        self.client = client
         self.superuser = User.objects.create_superuser(
             username="admin", password="adminpass", email="admin@example.com"
         )
@@ -1747,11 +1769,11 @@ class TagAdminDeleteTests(TransactionTestCase):
         entry.tags.add(tag)
 
         response = self.client.get(f"/admin/blog/tag/{tag.pk}/delete/")
-        self.assertEqual(response.status_code, 200)
+        assert response.status_code == 200
 
         # Should show the entry title, not just "Entry_tags object (123)"
-        self.assertContains(response, "Entry To Be Affected")
-        self.assertContains(response, f"/admin/blog/entry/{entry.pk}/change/")
+        assertContains(response, "Entry To Be Affected")
+        assertContains(response, f"/admin/blog/entry/{entry.pk}/change/")
 
     def test_tag_delete_confirmation_shows_blogmark_titles(self):
         """Tag delete confirmation page shows blogmark titles with admin links."""
@@ -1760,10 +1782,10 @@ class TagAdminDeleteTests(TransactionTestCase):
         blogmark.tags.add(tag)
 
         response = self.client.get(f"/admin/blog/tag/{tag.pk}/delete/")
-        self.assertEqual(response.status_code, 200)
+        assert response.status_code == 200
 
-        self.assertContains(response, "Blogmark Link Title")
-        self.assertContains(response, f"/admin/blog/blogmark/{blogmark.pk}/change/")
+        assertContains(response, "Blogmark Link Title")
+        assertContains(response, f"/admin/blog/blogmark/{blogmark.pk}/change/")
 
     def test_tag_delete_confirmation_shows_quotation_sources(self):
         """Tag delete confirmation page shows quotation sources with admin links."""
@@ -1772,10 +1794,10 @@ class TagAdminDeleteTests(TransactionTestCase):
         quotation.tags.add(tag)
 
         response = self.client.get(f"/admin/blog/tag/{tag.pk}/delete/")
-        self.assertEqual(response.status_code, 200)
+        assert response.status_code == 200
 
-        self.assertContains(response, "Quotation Source Name")
-        self.assertContains(response, f"/admin/blog/quotation/{quotation.pk}/change/")
+        assertContains(response, "Quotation Source Name")
+        assertContains(response, f"/admin/blog/quotation/{quotation.pk}/change/")
 
     def test_tag_delete_confirmation_shows_note_body(self):
         """Tag delete confirmation page shows note body with admin links."""
@@ -1784,10 +1806,10 @@ class TagAdminDeleteTests(TransactionTestCase):
         note.tags.add(tag)
 
         response = self.client.get(f"/admin/blog/tag/{tag.pk}/delete/")
-        self.assertEqual(response.status_code, 200)
+        assert response.status_code == 200
 
-        self.assertContains(response, "Note body content here")
-        self.assertContains(response, f"/admin/blog/note/{note.pk}/change/")
+        assertContains(response, "Note body content here")
+        assertContains(response, f"/admin/blog/note/{note.pk}/change/")
 
     def test_tag_delete_confirmation_shows_multiple_content_types(self):
         """Tag delete confirmation shows all content types with proper titles."""
@@ -1804,23 +1826,28 @@ class TagAdminDeleteTests(TransactionTestCase):
         note.tags.add(tag)
 
         response = self.client.get(f"/admin/blog/tag/{tag.pk}/delete/")
-        self.assertEqual(response.status_code, 200)
+        assert response.status_code == 200
 
         # All content should be shown with meaningful titles
-        self.assertContains(response, "Test Entry")
-        self.assertContains(response, "Test Blogmark")
-        self.assertContains(response, "Test Quotation")
-        self.assertContains(response, "Test Note")
+        assertContains(response, "Test Entry")
+        assertContains(response, "Test Blogmark")
+        assertContains(response, "Test Quotation")
+        assertContains(response, "Test Note")
 
         # All admin links should be present
-        self.assertContains(response, f"/admin/blog/entry/{entry.pk}/change/")
-        self.assertContains(response, f"/admin/blog/blogmark/{blogmark.pk}/change/")
-        self.assertContains(response, f"/admin/blog/quotation/{quotation.pk}/change/")
-        self.assertContains(response, f"/admin/blog/note/{note.pk}/change/")
+        assertContains(response, f"/admin/blog/entry/{entry.pk}/change/")
+        assertContains(response, f"/admin/blog/blogmark/{blogmark.pk}/change/")
+        assertContains(response, f"/admin/blog/quotation/{quotation.pk}/change/")
+        assertContains(response, f"/admin/blog/note/{note.pk}/change/")
 
 
-class RandomTagRedirectTests(TransactionTestCase):
+@pytest.mark.django_db
+class TestRandomTagRedirect:
     """Tests for the /random/TAG/ endpoint."""
+
+    @pytest.fixture(autouse=True)
+    def setup(self, client):
+        self.client = client
 
     def test_random_tag_redirect_returns_all_types(self):
         """
@@ -1854,7 +1881,7 @@ class RandomTagRedirectTests(TransactionTestCase):
         max_iterations = 1000
         for i in range(max_iterations):
             response = self.client.get("/random/random-test-tag/")
-            self.assertEqual(response.status_code, 302)
+            assert response.status_code == 302
 
             # Get the redirect URL
             redirect_url = response.url
@@ -1867,7 +1894,7 @@ class RandomTagRedirectTests(TransactionTestCase):
             if len(seen_types) == 4:
                 break
         else:
-            self.fail(
+            pytest.fail(
                 f"Did not see all 4 content types after {max_iterations} iterations. "
                 f"Only saw: {seen_types}"
             )
@@ -1879,24 +1906,24 @@ class RandomTagRedirectTests(TransactionTestCase):
         entry.tags.add(tag)
 
         response = self.client.get("/random/cache-test-tag/")
-        self.assertEqual(response.status_code, 302)
-        self.assertEqual(
-            response.headers["Cache-Control"],
-            "private, no-cache, no-store, must-revalidate",
+        assert response.status_code == 302
+        assert (
+            response.headers["Cache-Control"]
+            == "private, no-cache, no-store, must-revalidate"
         )
-        self.assertEqual(response.headers["Pragma"], "no-cache")
-        self.assertEqual(response.headers["Expires"], "0")
+        assert response.headers["Pragma"] == "no-cache"
+        assert response.headers["Expires"] == "0"
 
     def test_random_tag_redirect_404_for_nonexistent_tag(self):
         """Test that /random/TAG/ returns 404 for nonexistent tag."""
         response = self.client.get("/random/nonexistent-tag/")
-        self.assertEqual(response.status_code, 404)
+        assert response.status_code == 404
 
     def test_random_tag_redirect_404_for_empty_tag(self):
         """Test that /random/TAG/ returns 404 for tag with no items."""
         tag = Tag.objects.create(tag="empty-tag")
         response = self.client.get("/random/empty-tag/")
-        self.assertEqual(response.status_code, 404)
+        assert response.status_code == 404
 
     def test_random_tag_redirect_excludes_drafts(self):
         """Test that /random/TAG/ excludes draft items."""
@@ -1908,7 +1935,7 @@ class RandomTagRedirectTests(TransactionTestCase):
 
         # Should get 404 since only draft items exist
         response = self.client.get("/random/draft-test-tag/")
-        self.assertEqual(response.status_code, 404)
+        assert response.status_code == 404
 
         # Now add a published item
         published_entry = EntryFactory(is_draft=False)
@@ -1916,14 +1943,17 @@ class RandomTagRedirectTests(TransactionTestCase):
 
         # Should redirect to the published item
         response = self.client.get("/random/draft-test-tag/")
-        self.assertEqual(response.status_code, 302)
-        self.assertEqual(response.url, published_entry.get_absolute_url())
+        assert response.status_code == 302
+        assert response.url == published_entry.get_absolute_url()
 
 
-class BulkTagIdFilterTests(TransactionTestCase):
+@pytest.mark.django_db
+class TestBulkTagIdFilter:
     """Tests for filtering search/bulk-tag results by specific IDs."""
 
-    def setUp(self):
+    @pytest.fixture(autouse=True)
+    def setup(self, client, db):
+        self.client = client
         self.staff_user = User.objects.create_user(
             username="staff", password="password", is_staff=True
         )
@@ -1947,34 +1977,34 @@ class BulkTagIdFilterTests(TransactionTestCase):
         """Filtering by entries= should only show those entries."""
         ids = f"{self.entry1.pk},{self.entry3.pk}"
         response = self.client.get(f"/admin/bulk-tag/?entries={ids}")
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.context["total"], 2)
+        assert response.status_code == 200
+        assert response.context["total"] == 2
         result_types = {r["type"] for r in response.context["results"]}
-        self.assertEqual(result_types, {"entry"})
+        assert result_types == {"entry"}
         result_pks = {r["obj"].pk for r in response.context["results"]}
-        self.assertIn(self.entry1.pk, result_pks)
-        self.assertIn(self.entry3.pk, result_pks)
-        self.assertNotIn(self.entry2.pk, result_pks)
+        assert self.entry1.pk in result_pks
+        assert self.entry3.pk in result_pks
+        assert self.entry2.pk not in result_pks
 
     def test_filter_notes_by_id(self):
         """Filtering by notes= should only show those notes."""
         ids = f"{self.note1.pk}"
         response = self.client.get(f"/admin/bulk-tag/?notes={ids}")
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.context["total"], 1)
+        assert response.status_code == 200
+        assert response.context["total"] == 1
         result_pks = {r["obj"].pk for r in response.context["results"]}
-        self.assertIn(self.note1.pk, result_pks)
-        self.assertNotIn(self.note2.pk, result_pks)
+        assert self.note1.pk in result_pks
+        assert self.note2.pk not in result_pks
 
     def test_filter_multiple_types_by_id(self):
         """Filtering by entries= and notes= should show both types."""
         response = self.client.get(
             f"/admin/bulk-tag/?entries={self.entry1.pk}&notes={self.note2.pk}"
         )
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.context["total"], 2)
+        assert response.status_code == 200
+        assert response.context["total"] == 2
         result_types = {r["type"] for r in response.context["results"]}
-        self.assertEqual(result_types, {"entry", "note"})
+        assert result_types == {"entry", "note"}
 
     def test_filter_all_four_types_by_id(self):
         """Filtering by all four type params should show all specified items."""
@@ -1984,87 +2014,86 @@ class BulkTagIdFilterTests(TransactionTestCase):
             f"&quotations={self.quotation1.pk}"
             f"&blogmarks={self.blogmark1.pk}"
         )
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.context["total"], 4)
+        assert response.status_code == 200
+        assert response.context["total"] == 4
         result_types = {r["type"] for r in response.context["results"]}
-        self.assertEqual(result_types, {"entry", "note", "quotation", "blogmark"})
+        assert result_types == {"entry", "note", "quotation", "blogmark"}
 
-    def test_id_filter_combined_with_search_query(self):
+    def test_id_filter_combined_with_search_query(self, commit_callbacks):
         """ID filters combined with q= should search within filtered items."""
-        entry_a = EntryFactory(title="Unique findable alpha term")
-        entry_b = EntryFactory(title="Something else entirely")
+        with commit_callbacks():
+            entry_a = EntryFactory(title="Unique findable alpha term")
+            entry_b = EntryFactory(title="Something else entirely")
         response = self.client.get(
             f"/admin/bulk-tag/?entries={entry_a.pk},{entry_b.pk}&q=alpha"
         )
-        self.assertEqual(response.status_code, 200)
+        assert response.status_code == 200
         # Only entry_a should match because q=alpha filters within the ID set
-        self.assertEqual(response.context["total"], 1)
-        self.assertEqual(response.context["results"][0]["obj"].pk, entry_a.pk)
+        assert response.context["total"] == 1
+        assert response.context["results"][0]["obj"].pk == entry_a.pk
 
     def test_id_filter_shows_filter_message(self):
         """When filtering by IDs, a message should appear indicating active filters."""
         response = self.client.get(
             f"/admin/bulk-tag/?entries={self.entry1.pk}&notes={self.note1.pk}"
         )
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Filtered to specific entries, notes")
+        assert response.status_code == 200
+        assertContains(response, "Filtered to specific entries, notes")
 
     def test_id_filter_message_shows_only_active_types(self):
         """Filter message should only list the types being filtered."""
         response = self.client.get(f"/admin/bulk-tag/?entries={self.entry1.pk}")
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Filtered to specific entries")
-        self.assertNotContains(response, "notes")
-        self.assertNotContains(response, "quotations")
-        self.assertNotContains(response, "blogmarks")
+        assert response.status_code == 200
+        assertContains(response, "Filtered to specific entries")
+        assertNotContains(response, "notes")
+        assertNotContains(response, "quotations")
+        assertNotContains(response, "blogmarks")
 
     def test_id_filter_message_has_clear_link(self):
         """Filter message should include a way to clear the filter."""
         response = self.client.get(f"/admin/bulk-tag/?entries={self.entry1.pk}")
-        self.assertEqual(response.status_code, 200)
+        assert response.status_code == 200
         # Should contain × (cross icon) to clear filters
-        self.assertContains(response, "&#x00D7;")
+        assertContains(response, "&#x00D7;")
 
     def test_id_filter_works_on_search_page(self):
         """ID filtering should also work on /search/."""
         response = self.client.get(
             f"/search/?entries={self.entry1.pk},{self.entry2.pk}"
         )
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.context["total"], 2)
+        assert response.status_code == 200
+        assert response.context["total"] == 2
         result_pks = {r["obj"].pk for r in response.context["results"]}
-        self.assertIn(self.entry1.pk, result_pks)
-        self.assertIn(self.entry2.pk, result_pks)
-        self.assertNotIn(self.entry3.pk, result_pks)
+        assert self.entry1.pk in result_pks
+        assert self.entry2.pk in result_pks
+        assert self.entry3.pk not in result_pks
 
     def test_id_filter_excludes_unspecified_types(self):
         """When ID filters are active, types not mentioned should be excluded."""
         response = self.client.get(f"/admin/bulk-tag/?entries={self.entry1.pk}")
-        self.assertEqual(response.status_code, 200)
+        assert response.status_code == 200
         # Should only have entry results, no notes/blogmarks/quotations
         result_types = {r["type"] for r in response.context["results"]}
-        self.assertEqual(result_types, {"entry"})
+        assert result_types == {"entry"}
 
     def test_id_filter_invalid_ids_ignored(self):
         """Invalid (non-numeric) IDs should be ignored."""
         response = self.client.get(
             f"/admin/bulk-tag/?entries={self.entry1.pk},abc,999999"
         )
-        self.assertEqual(response.status_code, 200)
+        assert response.status_code == 200
         # Only the valid existing entry should be found
-        self.assertEqual(response.context["total"], 1)
+        assert response.context["total"] == 1
 
     def test_id_filter_preserves_hidden_fields_in_form(self):
         """ID filter params should be preserved as hidden form fields."""
         response = self.client.get(
             f"/admin/bulk-tag/?entries={self.entry1.pk},{self.entry2.pk}&notes={self.note1.pk}"
         )
-        self.assertEqual(response.status_code, 200)
+        assert response.status_code == 200
         content = response.content.decode()
-        self.assertIn(
-            f'name="entries" value="{self.entry1.pk},{self.entry2.pk}"', content
-        )
-        self.assertIn(f'name="notes" value="{self.note1.pk}"', content)
+        assert f'name="entries" value="{self.entry1.pk},{self.entry2.pk}"' in content
+        assert f'name="notes" value="{self.note1.pk}"' in content
 
     def test_filter_chapters_by_id(self):
         """Filtering by chapters= should only show those chapters."""
@@ -2073,19 +2102,22 @@ class BulkTagIdFilterTests(TransactionTestCase):
         chapter2 = ChapterFactory(guide=guide, title="Chapter Two")
         ids = f"{chapter1.pk}"
         response = self.client.get(f"/admin/bulk-tag/?chapters={ids}")
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.context["total"], 1)
+        assert response.status_code == 200
+        assert response.context["total"] == 1
         result_types = {r["type"] for r in response.context["results"]}
-        self.assertEqual(result_types, {"chapter"})
+        assert result_types == {"chapter"}
         result_pks = {r["obj"].pk for r in response.context["results"]}
-        self.assertIn(chapter1.pk, result_pks)
-        self.assertNotIn(chapter2.pk, result_pks)
+        assert chapter1.pk in result_pks
+        assert chapter2.pk not in result_pks
 
 
-class BulkTagChapterApiTests(TransactionTestCase):
+@pytest.mark.django_db
+class TestBulkTagChapterApi:
     """Tests for the api_add_tag endpoint with chapters."""
 
-    def setUp(self):
+    @pytest.fixture(autouse=True)
+    def setup(self, client, db):
+        self.client = client
         self.staff_user = User.objects.create_user(
             username="staff", password="password", is_staff=True
         )
@@ -2099,46 +2131,51 @@ class BulkTagChapterApiTests(TransactionTestCase):
             "/api/add-tag/",
             {"content_type": "chapter", "object_id": chapter.pk, "tag": "testtag"},
         )
-        self.assertEqual(response.status_code, 200)
+        assert response.status_code == 200
         data = json.loads(response.content)
-        self.assertTrue(data["success"])
-        self.assertEqual(data["tag"], "testtag")
+        assert data["success"]
+        assert data["tag"] == "testtag"
         # Verify the tag was actually added
         chapter.refresh_from_db()
-        self.assertEqual(list(chapter.tags.values_list("tag", flat=True)), ["testtag"])
+        assert list(chapter.tags.values_list("tag", flat=True)) == ["testtag"]
 
     def test_api_add_tag_to_chapter_creates_new_tag(self):
         """Tagging a chapter with a new tag should create that tag."""
         guide = GuideFactory()
         chapter = ChapterFactory(guide=guide)
-        self.assertFalse(Tag.objects.filter(tag="brandnewtag").exists())
+        assert not Tag.objects.filter(tag="brandnewtag").exists()
         response = self.client.post(
             "/api/add-tag/",
             {"content_type": "chapter", "object_id": chapter.pk, "tag": "brandnewtag"},
         )
-        self.assertEqual(response.status_code, 200)
-        self.assertTrue(Tag.objects.filter(tag="brandnewtag").exists())
+        assert response.status_code == 200
+        assert Tag.objects.filter(tag="brandnewtag").exists()
 
 
-class BeatTests(TransactionTestCase):
+@pytest.mark.django_db
+class TestBeat:
+    @pytest.fixture(autouse=True)
+    def setup(self, client):
+        self.client = client
+
     def test_beat_on_homepage(self):
         """Beat should appear on the homepage in the mixed timeline."""
         beat = BeatFactory(title="llm-anthropic 0.24", beat_type="release")
         response = self.client.get("/")
-        self.assertContains(response, "llm-anthropic 0.24")
+        assertContains(response, "llm-anthropic 0.24")
 
     def test_beat_on_homepage_with_beat_label(self):
         """Beat should render with the correct beat-label CSS class."""
         beat = BeatFactory(title="Test Release Beat", beat_type="release")
         response = self.client.get("/")
-        self.assertContains(response, 'class="beat-label release"')
-        self.assertContains(response, "Release")
+        assertContains(response, 'class="beat-label release"')
+        assertContains(response, "Release")
 
     def test_beat_detail_label_links_to_beat_type_listing(self):
         """Beat detail labels should link to their beat type listing page."""
         beat = BeatFactory(title="Test Release Beat", beat_type="release")
         response = self.client.get(beat.get_absolute_url())
-        self.assertContains(
+        assertContains(
             response,
             '<a class="beat-label release" href="/elsewhere/release/">Release</a>',
             html=True,
@@ -2152,16 +2189,16 @@ class BeatTests(TransactionTestCase):
             commentary="Added async streaming",
         )
         response = self.client.get("/")
-        self.assertContains(response, 'class="beat-label til-update"')
-        self.assertContains(response, "til-update-suffix")
-        self.assertContains(response, "Added async streaming")
+        assertContains(response, 'class="beat-label til-update"')
+        assertContains(response, "til-update-suffix")
+        assertContains(response, "Added async streaming")
 
     def test_beat_commentary_optional(self):
         """Beat without commentary should not render beat-commit span."""
         beat = BeatFactory(title="Test Release", beat_type="release", commentary="")
         response = self.client.get("/")
-        self.assertContains(response, "Test Release")
-        self.assertNotContains(response, "beat-commit")
+        assertContains(response, "Test Release")
+        assertNotContains(response, "beat-commit")
 
     def test_beat_commentary_shown(self):
         """Beat with commentary should render beat-commit span."""
@@ -2171,8 +2208,8 @@ class BeatTests(TransactionTestCase):
             commentary="Updated section on async",
         )
         response = self.client.get("/")
-        self.assertContains(response, "beat-commit")
-        self.assertContains(response, "Updated section on async")
+        assertContains(response, "beat-commit")
+        assertContains(response, "Updated section on async")
 
     def test_beat_on_archive_month(self):
         """Beat should appear on month archive pages."""
@@ -2185,7 +2222,7 @@ class BeatTests(TransactionTestCase):
             created=datetime.datetime(2025, 7, 15, tzinfo=datetime.timezone.utc),
         )
         response = self.client.get("/2025/Jul/")
-        self.assertContains(response, "Archive Beat")
+        assertContains(response, "Archive Beat")
 
     def test_beat_on_archive_day(self):
         """Beat should appear on day archive pages."""
@@ -2198,7 +2235,7 @@ class BeatTests(TransactionTestCase):
             created=datetime.datetime(2025, 7, 15, tzinfo=datetime.timezone.utc),
         )
         response = self.client.get("/2025/Jul/15/")
-        self.assertContains(response, "Day Beat")
+        assertContains(response, "Day Beat")
 
     def test_beat_on_tag_page(self):
         """Beat should appear on tag pages."""
@@ -2206,25 +2243,25 @@ class BeatTests(TransactionTestCase):
         beat = BeatFactory(title="Tagged Beat", beat_type="til")
         beat.tags.add(tag)
         response = self.client.get("/tags/cloudflare/")
-        self.assertContains(response, "Tagged Beat")
+        assertContains(response, "Tagged Beat")
 
     def test_beat_in_search(self):
         """Beat should appear in search results."""
         beat = BeatFactory(title="Searchable Beat Title", beat_type="release")
         response = self.client.get("/search/?type=beat")
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Searchable Beat Title")
+        assert response.status_code == 200
+        assertContains(response, "Searchable Beat Title")
 
     def test_beat_detail_page(self):
         """Beat should have its own detail page at the standard URL pattern."""
         EntryFactory()  # Needed for calendar widget
         beat = BeatFactory(title="Detail Beat", beat_type="release")
         response = self.client.get(beat.get_absolute_url())
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Detail Beat")
-        self.assertContains(response, "Monthly briefing")
-        self.assertContains(response, "Recent articles")
-        self.assertContains(response, "This is a <strong>beat</strong>")
+        assert response.status_code == 200
+        assertContains(response, "Detail Beat")
+        assertContains(response, "Monthly briefing")
+        assertContains(response, "Recent articles")
+        assertContains(response, "This is a <strong>beat</strong>")
 
     def test_sighting_detail_page_uses_large_gallery_images(self):
         """Sighting detail pages use larger inline photos while preserving the
@@ -2262,23 +2299,21 @@ class BeatTests(TransactionTestCase):
 
         response = self.client.get(beat.get_absolute_url())
 
-        self.assertContains(
-            response, 'class="smallhead entry-wide sighting-detail-page"'
-        )
-        self.assertContains(
+        assertContains(response, 'class="smallhead entry-wide sighting-detail-page"')
+        assertContains(
             response,
             '<captioned-image-gallery class="sighting-detail-gallery" max-row-items="2">',
         )
-        self.assertContains(
+        assertContains(
             response,
             'href="https://static.inaturalist.org/photos/1/original.jpg"><img src="https://static.inaturalist.org/photos/1/large.jpg"',
         )
-        self.assertNotContains(
+        assertNotContains(
             response, 'src="https://static.inaturalist.org/photos/1/small.jpg"'
         )
-        self.assertNotContains(response, "Monthly briefing")
-        self.assertNotContains(response, "Recent articles")
-        self.assertNotContains(response, "This is a <strong>beat</strong>")
+        assertNotContains(response, "Monthly briefing")
+        assertNotContains(response, "Recent articles")
+        assertNotContains(response, "This is a <strong>beat</strong>")
 
     def test_sighting_beat_note_on_homepage(self):
         """Sighting beat note should be rendered on the homepage timeline."""
@@ -2294,14 +2329,14 @@ class BeatTests(TransactionTestCase):
             },
         )
         response = self.client.get("/")
-        self.assertContains(response, "A unique sighting note for the homepage test.")
-        self.assertContains(response, 'class="beat-note blogmark-body"')
+        assertContains(response, "A unique sighting note for the homepage test.")
+        assertContains(response, 'class="beat-note blogmark-body"')
 
     def test_beat_draft_not_on_homepage(self):
         """Draft beats should not appear on the homepage."""
         beat = BeatFactory(title="draftbeat", beat_type="release", is_draft=True)
         response = self.client.get("/")
-        self.assertNotContains(response, "draftbeat")
+        assertNotContains(response, "draftbeat")
 
     def test_beat_draft_detail_page_has_warning(self):
         """Draft beats should show a draft warning on their detail page."""
@@ -2310,33 +2345,33 @@ class BeatTests(TransactionTestCase):
             title="Draft Beat Detail", beat_type="release", is_draft=True
         )
         response = self.client.get(beat.get_absolute_url())
-        self.assertContains(response, "This is a draft post")
+        assertContains(response, "This is a draft post")
 
     def test_beat_excluded_from_everything_feed(self):
         """Beat should not appear in the everything Atom feed."""
         beat = BeatFactory(title="Feed Beat Title", beat_type="release")
         response = self.client.get("/atom/everything/")
-        self.assertNotContains(response, "Feed Beat Title")
+        assertNotContains(response, "Feed Beat Title")
 
     def test_beat_redirect_by_id(self):
         """Beat should have a /beat/{id} redirect URL."""
         beat = BeatFactory(title="Redirect Beat", beat_type="release")
         response = self.client.get(f"/beat/{beat.pk}")
-        self.assertEqual(response.status_code, 301)
-        self.assertEqual(response.url, beat.get_absolute_url())
+        assert response.status_code == 301
+        assert response.url == beat.get_absolute_url()
 
     def test_beats_listing_page(self):
         """Beats should have an /elsewhere/ listing page."""
         beat = BeatFactory(title="Listed Beat", beat_type="release")
         response = self.client.get("/elsewhere/")
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Listed Beat")
+        assert response.status_code == 200
+        assertContains(response, "Listed Beat")
 
     def test_beat_css_loaded(self):
         """Beat CSS classes should be in the stylesheet."""
         beat = BeatFactory(title="CSS Beat", beat_type="release")
         response = self.client.get("/")
-        self.assertContains(response, "beat-label")
+        assertContains(response, "beat-label")
 
     def test_beat_all_types_render(self):
         """All beat types should render with their correct label."""
@@ -2348,10 +2383,10 @@ class BeatTests(TransactionTestCase):
         ]:
             beat = BeatFactory(title=f"Type {beat_type}", beat_type=beat_type)
         response = self.client.get("/")
-        self.assertContains(response, 'class="beat-label release"')
-        self.assertContains(response, 'class="beat-label til"')
-        self.assertContains(response, 'class="beat-label research"')
-        self.assertContains(response, 'class="beat-label tool"')
+        assertContains(response, 'class="beat-label release"')
+        assertContains(response, 'class="beat-label til"')
+        assertContains(response, 'class="beat-label research"')
+        assertContains(response, 'class="beat-label tool"')
 
     def test_beat_in_archive_month_type_counts(self):
         """Beat should appear in archive month type counts."""
@@ -2362,11 +2397,16 @@ class BeatTests(TransactionTestCase):
         BeatFactory(created=created, beat_type="release")
         EntryFactory(created=created)
         response = self.client.get("/2025/Jul/")
-        self.assertContains(response, "beat")
+        assertContains(response, "beat")
 
 
-class BeatTypeFacetTests(TransactionTestCase):
+@pytest.mark.django_db
+class TestBeatTypeFacet:
     """Tests for surfacing beat types (release, til, etc.) directly in the Type facet."""
+
+    @pytest.fixture(autouse=True)
+    def setup(self, client):
+        self.client = client
 
     def test_type_counts_include_beat_subtypes(self):
         """Type facet should include beat:release, beat:til etc. instead of just 'beat'."""
@@ -2378,9 +2418,9 @@ class BeatTypeFacetTests(TransactionTestCase):
         type_counts = response.context["type_counts"]
         type_names = [t["type"] for t in type_counts]
         # Should have beat:release and beat:til, not plain "beat"
-        self.assertIn("beat:release", type_names)
-        self.assertIn("beat:til", type_names)
-        self.assertNotIn("beat", type_names)
+        assert "beat:release" in type_names
+        assert "beat:til" in type_names
+        assert "beat" not in type_names
 
     def test_type_counts_beat_subtype_counts_correct(self):
         """Each beat subtype should have the correct count."""
@@ -2390,8 +2430,8 @@ class BeatTypeFacetTests(TransactionTestCase):
         response = self.client.get("/search/?q=")
         type_counts = response.context["type_counts"]
         counts_by_type = {t["type"]: t["n"] for t in type_counts}
-        self.assertEqual(counts_by_type["beat:release"], 2)
-        self.assertEqual(counts_by_type["beat:til"], 1)
+        assert counts_by_type["beat:release"] == 2
+        assert counts_by_type["beat:til"] == 1
 
     def test_filter_by_beat_subtype(self):
         """?type=beat:release should show only release beats."""
@@ -2399,19 +2439,19 @@ class BeatTypeFacetTests(TransactionTestCase):
         BeatFactory(title="TIL beat", beat_type="til")
         EntryFactory(title="An entry")
         response = self.client.get("/search/?type=beat:release")
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Release beat")
-        self.assertNotContains(response, "TIL beat")
-        self.assertNotContains(response, "An entry")
+        assert response.status_code == 200
+        assertContains(response, "Release beat")
+        assertNotContains(response, "TIL beat")
+        assertNotContains(response, "An entry")
 
     def test_filter_by_beat_subtype_til(self):
         """?type=beat:til should show only TIL beats."""
         BeatFactory(title="Release beat", beat_type="release")
         BeatFactory(title="TIL beat", beat_type="til")
         response = self.client.get("/search/?type=beat:til")
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "TIL beat")
-        self.assertNotContains(response, "Release beat")
+        assert response.status_code == 200
+        assertContains(response, "TIL beat")
+        assertNotContains(response, "Release beat")
 
     def test_type_facet_shows_beat_subtype_labels(self):
         """The type facet in the template should show human-readable labels for beat subtypes."""
@@ -2419,40 +2459,41 @@ class BeatTypeFacetTests(TransactionTestCase):
         BeatFactory(title="A TIL", beat_type="til")
         response = self.client.get("/search/?q=")
         # The template should display human-readable labels, not raw beat:* keys
-        self.assertContains(response, ">Release</a>")
-        self.assertContains(response, ">TIL</a>")
+        assertContains(response, ">Release</a>")
+        assertContains(response, ">TIL</a>")
 
     def test_selected_type_pill_shows_beat_subtype(self):
         """When filtering by beat:release, the selected filter pill should show the human-readable label."""
         BeatFactory(title="A release", beat_type="release")
         response = self.client.get("/search/?type=beat:release")
-        self.assertContains(response, "Type: Release")
+        assertContains(response, "Type: Release")
 
     def test_plain_type_beat_still_works(self):
         """?type=beat should still show all beats regardless of subtype."""
         BeatFactory(title="Release beat", beat_type="release")
         BeatFactory(title="TIL beat", beat_type="til")
         response = self.client.get("/search/?type=beat")
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Release beat")
-        self.assertContains(response, "TIL beat")
+        assert response.status_code == 200
+        assertContains(response, "Release beat")
+        assertContains(response, "TIL beat")
 
-    def test_beat_subtype_with_search_query(self):
+    def test_beat_subtype_with_search_query(self, commit_callbacks):
         """?type=beat:release&q=searchterm should filter by both."""
-        BeatFactory(title="Searchable release", beat_type="release")
-        BeatFactory(title="Other release", beat_type="release")
-        BeatFactory(title="Searchable til", beat_type="til")
+        with commit_callbacks():
+            BeatFactory(title="Searchable release", beat_type="release")
+            BeatFactory(title="Other release", beat_type="release")
+            BeatFactory(title="Searchable til", beat_type="til")
         response = self.client.get("/search/?type=beat:release&q=searchable")
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Searchable release")
-        self.assertNotContains(response, "Other release")
-        self.assertNotContains(response, "Searchable til")
+        assert response.status_code == 200
+        assertContains(response, "Searchable release")
+        assertNotContains(response, "Other release")
+        assertNotContains(response, "Searchable til")
 
     def test_title_uses_beat_subtype_label(self):
         """The page title should reflect the beat subtype when filtered."""
         BeatFactory(title="A release", beat_type="release")
         response = self.client.get("/search/?type=beat:release")
-        self.assertIn("Releases", response.context["title"])
+        assert "Releases" in response.context["title"]
 
     def test_all_beat_subtypes_in_type_counts(self):
         """All beat subtypes with results should appear in type_counts."""
@@ -2462,20 +2503,23 @@ class BeatTypeFacetTests(TransactionTestCase):
         type_counts = response.context["type_counts"]
         type_names = [t["type"] for t in type_counts]
         for beat_type in ["release", "til", "til_update", "research", "tool"]:
-            self.assertIn(f"beat:{beat_type}", type_names)
+            assert f"beat:{beat_type}" in type_names
 
     def test_beats_listing_page_still_works(self):
         """/elsewhere/ should still show all beats."""
         BeatFactory(title="Release beat", beat_type="release")
         BeatFactory(title="TIL beat", beat_type="til")
         response = self.client.get("/elsewhere/")
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Release beat")
-        self.assertContains(response, "TIL beat")
+        assert response.status_code == 200
+        assertContains(response, "Release beat")
+        assertContains(response, "TIL beat")
 
 
-class ImporterViewTests(TransactionTestCase):
-    def setUp(self):
+@pytest.mark.django_db
+class TestImporterView:
+    @pytest.fixture(autouse=True)
+    def setup(self, client, db):
+        self.client = client
         self.admin = User.objects.create_superuser("admin", "a@b.com", "password")
 
     def test_importers_page_requires_login(self):
@@ -2486,19 +2530,19 @@ class ImporterViewTests(TransactionTestCase):
         self.client.login(username="admin", password="password")
         response = self.client.get("/admin/importers/")
         assert response.status_code == 200
-        self.assertContains(response, "Beat Importers")
-        self.assertContains(response, "Releases")
-        self.assertContains(response, "Research")
-        self.assertContains(response, "TILs")
-        self.assertContains(response, "Tools")
-        self.assertContains(response, "Museums")
+        assertContains(response, "Beat Importers")
+        assertContains(response, "Releases")
+        assertContains(response, "Research")
+        assertContains(response, "TILs")
+        assertContains(response, "Tools")
+        assertContains(response, "Museums")
         # Source URLs should be shown as links
-        self.assertContains(response, "releases_cache.json")
-        self.assertContains(response, "tools.json")
-        self.assertContains(response, "museums.json")
+        assertContains(response, "releases_cache.json")
+        assertContains(response, "tools.json")
+        assertContains(response, "museums.json")
         # Each importer has a draft checkbox
-        self.assertContains(response, "Mark imported items as draft")
-        self.assertContains(response, 'type="checkbox" class="draft-checkbox"')
+        assertContains(response, "Mark imported items as draft")
+        assertContains(response, 'type="checkbox" class="draft-checkbox"')
 
     def test_api_run_importer_requires_login(self):
         response = self.client.post(
@@ -2534,7 +2578,7 @@ class ImporterViewTests(TransactionTestCase):
         assert response.status_code == 400
 
     def test_api_run_importer_releases(self):
-        from unittest.mock import patch, MagicMock
+        from unittest.mock import MagicMock, patch
 
         mock_response = MagicMock()
         mock_response.json.return_value = {
@@ -2597,6 +2641,7 @@ class ImporterViewTests(TransactionTestCase):
 
     def test_api_run_importer_defaults_to_not_draft(self):
         from unittest.mock import patch
+
         from blog.models import Beat
 
         self.client.login(username="admin", password="password")
@@ -2617,6 +2662,7 @@ class ImporterViewTests(TransactionTestCase):
 
     def test_api_run_importer_marks_items_as_draft(self):
         from unittest.mock import patch
+
         from blog.models import Beat
 
         self.client.login(username="admin", password="password")
@@ -2635,7 +2681,7 @@ class ImporterViewTests(TransactionTestCase):
         assert 'class="beat-label draft"' in data["items_html"]
 
     def test_api_run_importer_research(self):
-        from unittest.mock import patch, MagicMock
+        from unittest.mock import MagicMock, patch
 
         mock_response = MagicMock()
         mock_response.text = (
@@ -2669,7 +2715,7 @@ class ImporterViewTests(TransactionTestCase):
 
     def test_api_run_importer_research_draft_only_applies_to_new_items(self):
         from datetime import datetime, timezone
-        from unittest.mock import patch, MagicMock
+        from unittest.mock import MagicMock, patch
 
         from blog.factories import BeatFactory
         from blog.models import Beat
@@ -2719,7 +2765,7 @@ class ImporterViewTests(TransactionTestCase):
         assert "Existing Project" not in data["items_html"]
 
     def test_api_run_importer_tools(self):
-        from unittest.mock import patch, MagicMock
+        from unittest.mock import MagicMock, patch
 
         mock_response = MagicMock()
         mock_response.json.return_value = [
@@ -2746,7 +2792,7 @@ class ImporterViewTests(TransactionTestCase):
         assert "Test Tool" in data["items_html"]
 
     def test_api_run_importer_shows_max_10_items(self):
-        from unittest.mock import patch, MagicMock
+        from unittest.mock import MagicMock, patch
 
         releases = {}
         for i in range(15):
@@ -2786,7 +2832,7 @@ class ImporterViewTests(TransactionTestCase):
         assert data["items_html"].count('class="beat segment"') == 10
 
     def test_api_run_importer_skips_unchanged(self):
-        from unittest.mock import patch, MagicMock
+        from unittest.mock import MagicMock, patch
 
         tool_data = [
             {
@@ -2847,7 +2893,7 @@ class ImporterViewTests(TransactionTestCase):
         assert data["total"] == 1
 
     def test_api_run_importer_museums(self):
-        from unittest.mock import patch, MagicMock
+        from unittest.mock import MagicMock, patch
 
         json_text = json.dumps(
             [
@@ -2887,7 +2933,7 @@ class ImporterViewTests(TransactionTestCase):
         assert 'class="beat-label museum"' in data["items_html"]
 
     def test_api_run_importer_museums_skips_no_url(self):
-        from unittest.mock import patch, MagicMock
+        from unittest.mock import MagicMock, patch
 
         json_text = json.dumps(
             [
@@ -2923,7 +2969,7 @@ class ImporterViewTests(TransactionTestCase):
         assert data["created"] == 1
 
     def test_api_run_importer_museums_skips_unchanged(self):
-        from unittest.mock import patch, MagicMock
+        from unittest.mock import MagicMock, patch
 
         json_text = json.dumps(
             [
@@ -2968,15 +3014,15 @@ class ImporterViewTests(TransactionTestCase):
     def test_admin_index_has_importers_link(self):
         self.client.login(username="admin", password="password")
         response = self.client.get("/admin/")
-        self.assertContains(response, "/admin/importers/")
-        self.assertContains(response, "Beat Importers")
+        assertContains(response, "/admin/importers/")
+        assertContains(response, "Beat Importers")
 
     def test_importers_page_lists_sightings(self):
         self.client.login(username="admin", password="password")
         response = self.client.get("/admin/importers/")
         assert response.status_code == 200
-        self.assertContains(response, "Sightings")
-        self.assertContains(response, "clumps.json")
+        assertContains(response, "Sightings")
+        assertContains(response, "clumps.json")
 
     def _sighting_clumps_fixture(self):
         return {
@@ -3074,7 +3120,7 @@ class ImporterViewTests(TransactionTestCase):
         }
 
     def test_api_run_importer_sightings(self):
-        from unittest.mock import patch, MagicMock
+        from unittest.mock import MagicMock, patch
 
         mock_response = MagicMock()
         mock_response.json.return_value = self._sighting_clumps_fixture()
@@ -3131,7 +3177,7 @@ class ImporterViewTests(TransactionTestCase):
         assert "height" not in photo2
 
     def test_api_run_importer_sightings_skips_unchanged(self):
-        from unittest.mock import patch, MagicMock
+        from unittest.mock import MagicMock, patch
 
         mock_response = MagicMock()
         mock_response.json.return_value = self._sighting_clumps_fixture()
@@ -3157,6 +3203,7 @@ class ImporterViewTests(TransactionTestCase):
 
     def test_sighting_renders_captioned_image_gallery_in_mixed_list(self):
         from django.template.loader import render_to_string
+
         from blog.factories import BeatFactory
 
         beat = BeatFactory(
@@ -3227,6 +3274,7 @@ class ImporterViewTests(TransactionTestCase):
         <img src> so the enlarged single-image layout is not upscaled; the
         thumbnail stays large even when the lightbox uses an original."""
         from django.template.loader import render_to_string
+
         from blog.factories import BeatFactory
 
         beat = BeatFactory(
@@ -3353,7 +3401,12 @@ class ImporterViewTests(TransactionTestCase):
         assert "/static/captioned-image-gallery.js" in contents
 
 
-class SightingsListingAndFeedTests(TransactionTestCase):
+@pytest.mark.django_db
+class TestSightingsListingAndFeed:
+    @pytest.fixture(autouse=True)
+    def setup(self, client):
+        self.client = client
+
     def _make_sighting(self, **overrides):
         defaults = dict(
             beat_type="sighting",
@@ -3389,58 +3442,55 @@ class SightingsListingAndFeedTests(TransactionTestCase):
     def test_sightings_listing_page_title_is_sightings(self):
         self._make_sighting()
         response = self.client.get("/elsewhere/sighting/")
-        self.assertEqual(response.status_code, 200)
-        self.assertIn("Sightings", response.context["title"])
-        self.assertContains(response, "<title>Sightings</title>")
-        self.assertContains(response, "<h2>Sightings</h2>")
+        assert response.status_code == 200
+        assert "Sightings" in response.context["title"]
+        assertContains(response, "<title>Sightings</title>")
+        assertContains(response, "<h2>Sightings</h2>")
 
     def test_sightings_atom_feed_title_is_plural(self):
         self._make_sighting()
         response = self.client.get("/atom/beats/sighting/")
-        self.assertEqual(response.status_code, 200)
+        assert response.status_code == 200
         root = ET.fromstring(response.content)
         ns = {"atom": "http://www.w3.org/2005/Atom"}
         title = root.find("atom:title", ns).text
-        self.assertEqual(title, "Simon Willison's Weblog: Sightings")
+        assert title == "Simon Willison's Weblog: Sightings"
 
     def test_sightings_atom_feed_links_to_sighting_page(self):
         beat = self._make_sighting()
         response = self.client.get("/atom/beats/sighting/")
-        self.assertEqual(response.status_code, 200)
+        assert response.status_code == 200
         root = ET.fromstring(response.content)
         ns = {"atom": "http://www.w3.org/2005/Atom"}
         entry = root.find("atom:entry", ns)
         link = entry.find("atom:link", ns).get("href")
-        self.assertEqual(
-            link,
-            "https://simonwillison.net" + beat.get_absolute_url(),
-        )
+        assert link == "https://simonwillison.net" + beat.get_absolute_url()
         # And not the external iNaturalist URL
-        self.assertNotIn("inaturalist.org", link)
+        assert "inaturalist.org" not in link
 
     def test_sightings_atom_feed_embeds_images(self):
         self._make_sighting()
         response = self.client.get("/atom/beats/sighting/")
-        self.assertEqual(response.status_code, 200)
+        assert response.status_code == 200
         root = ET.fromstring(response.content)
         ns = {"atom": "http://www.w3.org/2005/Atom"}
         summary = root.find("atom:entry", ns).find("atom:summary", ns).text
-        self.assertIn("https://example.com/photos/1/large.jpg", summary)
-        self.assertIn("<img", summary)
+        assert "https://example.com/photos/1/large.jpg" in summary
+        assert "<img" in summary
         # Location display_name from metadata is rendered alongside commentary
-        self.assertIn("in Puntarenas, PU, CR", summary)
+        assert "in Puntarenas, PU, CR" in summary
 
     def test_combined_beats_feed_links_sighting_to_sighting_page(self):
         """The /atom/beats/ feed should also link sightings to their sighting page."""
         beat = self._make_sighting()
         response = self.client.get("/atom/beats/")
-        self.assertEqual(response.status_code, 200)
+        assert response.status_code == 200
         root = ET.fromstring(response.content)
         ns = {"atom": "http://www.w3.org/2005/Atom"}
         entry = root.find("atom:entry", ns)
         link = entry.find("atom:link", ns).get("href")
-        self.assertIn(beat.get_absolute_url(), link)
-        self.assertNotIn("inaturalist.org", link)
+        assert beat.get_absolute_url() in link
+        assert "inaturalist.org" not in link
 
     def test_combined_beats_feed_non_sighting_still_links_external(self):
         """Non-sighting beats in /atom/beats/ should still use the external URL."""
@@ -3450,15 +3500,12 @@ class SightingsListingAndFeedTests(TransactionTestCase):
             url="https://github.com/simonw/llm-anthropic/releases/tag/0.24",
         )
         response = self.client.get("/atom/beats/")
-        self.assertEqual(response.status_code, 200)
+        assert response.status_code == 200
         root = ET.fromstring(response.content)
         ns = {"atom": "http://www.w3.org/2005/Atom"}
         entry = root.find("atom:entry", ns)
         link = entry.find("atom:link", ns).get("href")
-        self.assertEqual(
-            link,
-            "https://github.com/simonw/llm-anthropic/releases/tag/0.24",
-        )
+        assert link == "https://github.com/simonw/llm-anthropic/releases/tag/0.24"
 
     def test_everything_feed_excludes_sightings_without_notes(self):
         """Sightings without a note must not appear in /atom/everything/."""
@@ -3466,8 +3513,8 @@ class SightingsListingAndFeedTests(TransactionTestCase):
         EntryFactory(title="An entry")
         self._make_sighting(note="")
         response = self.client.get("/atom/everything/")
-        self.assertEqual(response.status_code, 200)
-        self.assertNotContains(response, "Side-striped palm pit viper")
+        assert response.status_code == 200
+        assertNotContains(response, "Side-striped palm pit viper")
 
     def test_everything_feed_includes_sightings_with_notes(self):
         """Sightings with a note should appear in /atom/everything/ rendered
@@ -3475,7 +3522,7 @@ class SightingsListingAndFeedTests(TransactionTestCase):
         EntryFactory(title="An entry")
         beat = self._make_sighting(note="Found this beautiful snake on a hike.")
         response = self.client.get("/atom/everything/")
-        self.assertEqual(response.status_code, 200)
+        assert response.status_code == 200
         root = ET.fromstring(response.content)
         ns = {"atom": "http://www.w3.org/2005/Atom"}
         entries = root.findall("atom:entry", ns)
@@ -3486,22 +3533,25 @@ class SightingsListingAndFeedTests(TransactionTestCase):
         )
         link = sighting_entry.find("atom:link", ns).get("href")
         # Link to the sighting page, not the iNaturalist URL
-        self.assertIn(beat.get_absolute_url(), link)
-        self.assertNotIn("inaturalist.org", link)
+        assert beat.get_absolute_url() in link
+        assert "inaturalist.org" not in link
         # Embedded image
         summary = sighting_entry.find("atom:summary", ns).text
-        self.assertIn("https://example.com/photos/1/large.jpg", summary)
-        self.assertIn("<img", summary)
+        assert "https://example.com/photos/1/large.jpg" in summary
+        assert "<img" in summary
         # The note is also rendered
-        self.assertIn("Found this beautiful snake", summary)
+        assert "Found this beautiful snake" in summary
 
 
-class BeatAdminTests(TransactionTestCase):
-    def setUp(self):
+@pytest.mark.django_db
+class TestBeatAdmin:
+    @pytest.fixture(autouse=True)
+    def setup(self, client, db):
+        self.client = client
         admin = User.objects.create_superuser("admin", "a@example.com", "password")
         self.client.force_login(admin)
 
-    def test_add_prefills_created_from_query_string(self):
+    def test_add_prefills_created_from_query_string(self, subtests):
         expected = datetime.datetime(2026, 9, 21, 18, 40, tzinfo=datetime.timezone.utc)
         cases = [
             (str(int(expected.timestamp())), expected),
@@ -3514,19 +3564,19 @@ class BeatAdminTests(TransactionTestCase):
             ),
         ]
         for value, expected in cases:
-            with self.subTest(created=value):
+            with subtests.test(created=value):
                 response = self.client.get("/admin/blog/beat/add/", {"created": value})
-                self.assertEqual(response.status_code, 200)
+                assert response.status_code == 200
                 form = response.context["adminform"].form
-                self.assertEqual(form.initial["created"], expected)
-                self.assertContains(
+                assert form.initial["created"] == expected
+                assertContains(
                     response, 'value="{}"'.format(expected.strftime("%Y-%m-%d"))
                 )
-                self.assertContains(
+                assertContains(
                     response, 'value="{}"'.format(expected.strftime("%H:%M:%S"))
                 )
 
-    def test_add_ignores_invalid_created_query_string(self):
+    def test_add_ignores_invalid_created_query_string(self, subtests):
         for value in (
             "",
             "invalid",
@@ -3534,14 +3584,14 @@ class BeatAdminTests(TransactionTestCase):
             "999999999999999999999999",
             "1.5",
         ):
-            with self.subTest(created=value):
+            with subtests.test(created=value):
                 before = timezone.now()
                 response = self.client.get("/admin/blog/beat/add/", {"created": value})
-                self.assertEqual(response.status_code, 200)
+                assert response.status_code == 200
                 form = response.context["adminform"].form
-                self.assertNotIn("created", form.initial)
-                self.assertGreaterEqual(form.instance.created, before)
-                self.assertLessEqual(form.instance.created, timezone.now())
+                assert "created" not in form.initial
+                assert form.instance.created >= before
+                assert form.instance.created <= timezone.now()
 
     def test_add_prefills_metadata_from_query_string(self):
         metadata = {
@@ -3558,13 +3608,13 @@ class BeatAdminTests(TransactionTestCase):
             "metadata": json.dumps(metadata),
         }
         response = self.client.get("/admin/blog/beat/add/", initial)
-        self.assertEqual(response.status_code, 200)
+        assert response.status_code == 200
         form = response.context["adminform"].form
-        self.assertEqual(json.loads(form["metadata"].value()), metadata)
+        assert json.loads(form["metadata"].value()) == metadata
         for name in ("beat_type", "slug", "title", "url", "note"):
-            self.assertEqual(form[name].value(), initial[name])
-        self.assertEqual(form["comment_site"].value(), metadata["comment_site"])
-        self.assertEqual(form["comment_thread_url"].value(), metadata["thread_url"])
+            assert form[name].value() == initial[name]
+        assert form["comment_site"].value() == metadata["comment_site"]
+        assert form["comment_thread_url"].value() == metadata["thread_url"]
 
         # Submit the prefilled values, as the browser does, and check the saved JSON.
         data = {name: form[name].value() for name in initial if name != "created"}
@@ -3576,15 +3626,14 @@ class BeatAdminTests(TransactionTestCase):
             comment_thread_url=form["comment_thread_url"].value(),
         )
         response = self.client.post("/admin/blog/beat/add/", data)
-        self.assertEqual(response.status_code, 302)
+        assert response.status_code == 302
         from blog.models import Beat
 
         beat = Beat.objects.get(slug="hn-1234")
-        self.assertEqual(beat.metadata, metadata)
-        self.assertEqual(beat.beat_type, "comment")
-        self.assertEqual(
-            beat.created,
-            datetime.datetime(2026, 9, 21, 18, 40, tzinfo=datetime.timezone.utc),
+        assert beat.metadata == metadata
+        assert beat.beat_type == "comment"
+        assert beat.created == datetime.datetime(
+            2026, 9, 21, 18, 40, tzinfo=datetime.timezone.utc
         )
 
     def test_explicit_comment_initial_values_override_metadata(self):
@@ -3598,155 +3647,156 @@ class BeatAdminTests(TransactionTestCase):
                 "comment_thread_url": "https://example.com/another-thread",
             },
         )
-        self.assertEqual(response.status_code, 200)
+        assert response.status_code == 200
         form = response.context["adminform"].form
-        self.assertEqual(form["comment_site"].value(), "Another site")
-        self.assertEqual(
-            form["comment_thread_url"].value(), "https://example.com/another-thread"
+        assert form["comment_site"].value() == "Another site"
+        assert (
+            form["comment_thread_url"].value() == "https://example.com/another-thread"
         )
 
-    def test_add_with_non_object_metadata(self):
+    def test_add_with_non_object_metadata(self, subtests):
         for metadata in (None, [], "text", 1):
-            with self.subTest(metadata=metadata):
+            with subtests.test(metadata=metadata):
                 response = self.client.get(
                     "/admin/blog/beat/add/", {"metadata": json.dumps(metadata)}
                 )
-                self.assertEqual(response.status_code, 200)
+                assert response.status_code == 200
                 form = response.context["adminform"].form
-                self.assertEqual(form["comment_site"].value(), "")
-                self.assertEqual(form["comment_thread_url"].value(), "")
+                assert form["comment_site"].value() == ""
+                assert form["comment_thread_url"].value() == ""
 
     def test_add_with_invalid_metadata_query_string(self):
         response = self.client.get(
             "/admin/blog/beat/add/", {"metadata": "{invalid json"}
         )
-        self.assertEqual(response.status_code, 200)
+        assert response.status_code == 200
         form = response.context["adminform"].form
-        self.assertEqual(form.initial["metadata"], "{invalid json")
+        assert form.initial["metadata"] == "{invalid json"
 
     def test_add_without_metadata_query_string(self):
         response = self.client.get("/admin/blog/beat/add/")
-        self.assertEqual(response.status_code, 200)
+        assert response.status_code == 200
         form = response.context["adminform"].form
-        self.assertEqual(json.loads(form["metadata"].value()), {})
+        assert json.loads(form["metadata"].value()) == {}
 
 
-class CommentBeatTests(TransactionTestCase):
+@pytest.mark.django_db
+class TestCommentBeat:
+    @pytest.fixture(autouse=True)
+    def setup(self, client):
+        self.client = client
+
     FAVICON_URL = (
         "https://www.google.com/s2/favicons?domain=news.ycombinator.com&sz=128"
     )
 
     def test_helpers_use_metadata(self):
         beat = CommentBeatFactory()
-        self.assertEqual(beat.comment_site(), "Hacker News")
-        self.assertEqual(
-            beat.comment_thread_url(), "https://news.ycombinator.com/item?id=100"
-        )
-        self.assertEqual(beat.comment_favicon_url(), self.FAVICON_URL)
+        assert beat.comment_site() == "Hacker News"
+        assert beat.comment_thread_url() == "https://news.ycombinator.com/item?id=100"
+        assert beat.comment_favicon_url() == self.FAVICON_URL
 
     def test_helpers_fall_back_without_metadata(self):
         beat = CommentBeatFactory(
             url="https://www.example.com/thread/1#comment-2", metadata={}
         )
-        self.assertEqual(beat.comment_site(), "example.com")
-        self.assertEqual(
-            beat.comment_thread_url(), "https://www.example.com/thread/1#comment-2"
-        )
-        self.assertEqual(
-            beat.comment_favicon_url(),
-            "https://www.google.com/s2/favicons?domain=example.com&sz=128",
+        assert beat.comment_site() == "example.com"
+        assert beat.comment_thread_url() == "https://www.example.com/thread/1#comment-2"
+        assert (
+            beat.comment_favicon_url()
+            == "https://www.google.com/s2/favicons?domain=example.com&sz=128"
         )
 
     def test_favicon_url_empty_without_domain(self):
         beat = CommentBeatFactory(url="not-a-url", metadata={})
-        self.assertEqual(beat.comment_favicon_url(), "")
+        assert beat.comment_favicon_url() == ""
 
     def test_homepage_rendering(self):
         beat = CommentBeatFactory(commentary="In response to a question about prices")
         response = self.client.get("/")
         # Renders like a note: full comment text, with the badge in the bar
-        self.assertContains(response, "note segment beat-comment")
-        self.assertContains(response, "beat-label comment")
+        assertContains(response, "note segment beat-comment")
+        assertContains(response, "beat-label comment")
         # Commentary appears above as visually distinct context
-        self.assertContains(
+        assertContains(
             response,
             '<p class="comment-context">In response to a question about prices</p>',
             html=True,
         )
-        self.assertContains(
+        assertContains(
             response, "This is the <strong>full text</strong> of the comment"
         )
         # The source bar links the comment permalink, the thread and the site
-        self.assertContains(response, "comment-source-bar")
-        self.assertContains(
+        assertContains(response, "comment-source-bar")
+        assertContains(
             response, '<a href="{}">My comment</a>'.format(beat.url), html=True
         )
-        self.assertContains(
+        assertContains(
             response,
             '<a href="https://news.ycombinator.com/item?id=100">{}</a>'.format(
                 beat.title
             ),
             html=True,
         )
-        self.assertContains(response, "Hacker News")
-        self.assertContains(response, self.FAVICON_URL.replace("&", "&amp;"))
+        assertContains(response, "Hacker News")
+        assertContains(response, self.FAVICON_URL.replace("&", "&amp;"))
 
     def test_detail_page_rendering(self):
         beat = CommentBeatFactory()
         response = self.client.get(beat.get_absolute_url())
-        self.assertContains(
+        assertContains(
             response, "This is the <strong>full text</strong> of the comment"
         )
-        self.assertContains(response, "comment-source-bar")
-        self.assertContains(response, "beat-label comment")
-        self.assertContains(
+        assertContains(response, "comment-source-bar")
+        assertContains(response, "beat-label comment")
+        assertContains(
             response, '<a href="{}">My comment</a>'.format(beat.url), html=True
         )
-        self.assertContains(
+        assertContains(
             response,
             '<a href="https://news.ycombinator.com/item?id=100">{}</a>'.format(
                 beat.title
             ),
             html=True,
         )
-        self.assertContains(response, "Hacker News")
-        self.assertContains(response, self.FAVICON_URL.replace("&", "&amp;"))
+        assertContains(response, "Hacker News")
+        assertContains(response, self.FAVICON_URL.replace("&", "&amp;"))
 
     def test_commentary_is_optional_in_rendering(self):
         beat = CommentBeatFactory(commentary="")
         response = self.client.get(beat.get_absolute_url())
-        self.assertNotContains(response, "comment-context")
+        assertNotContains(response, "comment-context")
 
     def test_beats_feed_links_to_comment_permalink(self):
         beat = CommentBeatFactory(commentary="Some context")
         response = self.client.get("/atom/beats/")
-        self.assertEqual(response.status_code, 200)
+        assert response.status_code == 200
         root = ET.fromstring(response.content)
         ns = {"atom": "http://www.w3.org/2005/Atom"}
         entry = root.find("atom:entry", ns)
         link = entry.find("atom:link", ns).get("href")
-        self.assertEqual(link, beat.url)
+        assert link == beat.url
         summary = entry.find("atom:summary", ns).text
-        self.assertIn("<em>Some context</em>", summary)
-        self.assertIn("full text</strong> of the comment", summary)
-        self.assertIn("My comment", summary)
-        self.assertIn("https://news.ycombinator.com/item?id=100", summary)
-        self.assertIn("Hacker News", summary)
+        assert "<em>Some context</em>" in summary
+        assert "full text</strong> of the comment" in summary
+        assert "My comment" in summary
+        assert "https://news.ycombinator.com/item?id=100" in summary
+        assert "Hacker News" in summary
 
     def test_comment_beats_feed_title_is_plural(self):
         CommentBeatFactory()
         response = self.client.get("/atom/beats/comment/")
-        self.assertEqual(response.status_code, 200)
+        assert response.status_code == 200
         root = ET.fromstring(response.content)
         ns = {"atom": "http://www.w3.org/2005/Atom"}
         title = root.find("atom:title", ns).text
-        self.assertEqual(title, "Simon Willison's Weblog: Comments")
+        assert title == "Simon Willison's Weblog: Comments"
 
     def test_everything_feed_includes_comments_with_notes(self):
         EntryFactory(title="An entry")
         beat = CommentBeatFactory(note="Some extra context on my comment.")
         response = self.client.get("/atom/everything/")
-        self.assertEqual(response.status_code, 200)
+        assert response.status_code == 200
         root = ET.fromstring(response.content)
         ns = {"atom": "http://www.w3.org/2005/Atom"}
         entries = root.findall("atom:entry", ns)
@@ -3756,9 +3806,9 @@ class CommentBeatTests(TransactionTestCase):
             if beat.get_absolute_url() in (e.find("atom:link", ns).get("href") or "")
         )
         summary = comment_entry.find("atom:summary", ns).text
-        self.assertIn("My comment", summary)
-        self.assertIn("https://news.ycombinator.com/item?id=100", summary)
-        self.assertIn("Some extra context on my comment.", summary)
+        assert "My comment" in summary
+        assert "https://news.ycombinator.com/item?id=100" in summary
+        assert "Some extra context on my comment." in summary
 
     def _form_data(self, **overrides):
         data = dict(
@@ -3780,15 +3830,12 @@ class CommentBeatTests(TransactionTestCase):
         from blog.admin import BeatAdminForm
 
         form = BeatAdminForm(data=self._form_data())
-        self.assertTrue(form.is_valid(), form.errors)
+        assert form.is_valid(), form.errors
         beat = form.save()
-        self.assertEqual(
-            beat.metadata,
-            {
-                "comment_site": "Hacker News",
-                "thread_url": "https://news.ycombinator.com/item?id=100",
-            },
-        )
+        assert beat.metadata == {
+            "comment_site": "Hacker News",
+            "thread_url": "https://news.ycombinator.com/item?id=100",
+        }
 
     def test_admin_form_requires_comment_fields(self):
         from blog.admin import BeatAdminForm
@@ -3796,9 +3843,9 @@ class CommentBeatTests(TransactionTestCase):
         form = BeatAdminForm(
             data=self._form_data(comment_site="", comment_thread_url="")
         )
-        self.assertFalse(form.is_valid())
-        self.assertIn("comment_site", form.errors)
-        self.assertIn("comment_thread_url", form.errors)
+        assert not form.is_valid()
+        assert "comment_site" in form.errors
+        assert "comment_thread_url" in form.errors
 
     def test_admin_form_fields_optional_for_other_types(self):
         from blog.admin import BeatAdminForm
@@ -3808,25 +3855,30 @@ class CommentBeatTests(TransactionTestCase):
                 beat_type="release", comment_site="", comment_thread_url=""
             )
         )
-        self.assertTrue(form.is_valid(), form.errors)
+        assert form.is_valid(), form.errors
 
     def test_admin_form_initial_values_from_metadata(self):
         from blog.admin import BeatAdminForm
 
         beat = CommentBeatFactory()
         form = BeatAdminForm(instance=beat)
-        self.assertEqual(form.fields["comment_site"].initial, "Hacker News")
-        self.assertEqual(
-            form.fields["comment_thread_url"].initial,
-            "https://news.ycombinator.com/item?id=100",
+        assert form.fields["comment_site"].initial == "Hacker News"
+        assert (
+            form.fields["comment_thread_url"].initial
+            == "https://news.ycombinator.com/item?id=100"
         )
 
 
-class SponsorMessageTests(TransactionTestCase):
+@pytest.mark.django_db
+class TestSponsorMessage:
+    @pytest.fixture(autouse=True)
+    def setup(self, client):
+        self.client = client
+
     def test_no_sponsor_message_no_banner(self):
         EntryFactory()
         response = self.client.get("/")
-        self.assertNotContains(response, 'id="sponsored-banner"')
+        assertNotContains(response, 'id="sponsored-banner"')
 
     def test_active_sponsor_message_shows_banner(self):
         SponsorMessageFactory(
@@ -3837,10 +3889,10 @@ class SponsorMessageTests(TransactionTestCase):
         )
         EntryFactory()
         response = self.client.get("/")
-        self.assertContains(response, "Acme Corp")
-        self.assertContains(response, "Build faster with Acme.")
-        self.assertContains(response, "https://acme.example.com/")
-        self.assertContains(response, "sponsor-scheme-ocean")
+        assertContains(response, "Acme Corp")
+        assertContains(response, "Build faster with Acme.")
+        assertContains(response, "https://acme.example.com/")
+        assertContains(response, "sponsor-scheme-ocean")
 
     def test_sponsor_message_renders_markdown(self):
         SponsorMessageFactory(
@@ -3850,18 +3902,18 @@ class SponsorMessageTests(TransactionTestCase):
 
         response = self.client.get("/")
 
-        self.assertContains(response, "Build <strong>faster</strong> with")
-        self.assertContains(
+        assertContains(response, "Build <strong>faster</strong> with")
+        assertContains(
             response,
             '<a href="https://acme.example.com/docs/">Acme</a>.',
         )
-        self.assertNotContains(response, "<p>Build")
+        assertNotContains(response, "<p>Build")
 
     def test_inactive_sponsor_message_hidden(self):
         SponsorMessageFactory(is_active=False, name="Hidden Sponsor")
         EntryFactory()
         response = self.client.get("/")
-        self.assertNotContains(response, "Hidden Sponsor")
+        assertNotContains(response, "Hidden Sponsor")
 
     def test_expired_sponsor_message_hidden(self):
         SponsorMessageFactory(
@@ -3871,7 +3923,7 @@ class SponsorMessageTests(TransactionTestCase):
         )
         EntryFactory()
         response = self.client.get("/")
-        self.assertNotContains(response, "Expired Sponsor")
+        assertNotContains(response, "Expired Sponsor")
 
     def test_future_sponsor_message_hidden(self):
         SponsorMessageFactory(
@@ -3881,37 +3933,37 @@ class SponsorMessageTests(TransactionTestCase):
         )
         EntryFactory()
         response = self.client.get("/")
-        self.assertNotContains(response, "Future Sponsor")
+        assertNotContains(response, "Future Sponsor")
 
     def test_highest_pk_selected(self):
         SponsorMessageFactory(name="First Sponsor", color_scheme="warm")
         SponsorMessageFactory(name="Second Sponsor", color_scheme="sage")
         EntryFactory()
         response = self.client.get("/")
-        self.assertContains(response, "Second Sponsor")
-        self.assertNotContains(response, "First Sponsor")
+        assertContains(response, "Second Sponsor")
+        assertNotContains(response, "First Sponsor")
 
     def test_banner_on_smallhead_pages(self):
         SponsorMessageFactory(name="Detail Sponsor")
         entry = EntryFactory()
         response = self.client.get(entry.get_absolute_url())
-        self.assertContains(response, "Detail Sponsor")
+        assertContains(response, "Detail Sponsor")
 
     def test_banner_always_visible_no_display_none(self):
         SponsorMessageFactory(name="Visible Sponsor", color_scheme="sage")
         EntryFactory()
         response = self.client.get("/")
         content = response.content.decode()
-        self.assertIn('id="sponsored-banner"', content)
+        assert 'id="sponsored-banner"' in content
         # Banner should not be hidden with display:none
         idx = content.index('id="sponsored-banner"')
         banner_tag = content[content.rfind("<", 0, idx) : content.index(">", idx) + 1]
-        self.assertNotIn("display:none", banner_tag)
-        self.assertNotIn("display: none", banner_tag)
+        assert "display:none" not in banner_tag
+        assert "display: none" not in banner_tag
 
     def test_about_sponsor_preview_no_active_message(self):
         response = self.client.get("/about/?sponsor-preview=1")
-        self.assertEqual(response.status_code, 200)
+        assert response.status_code == 200
 
     def test_empty_learn_more_label_name_is_link(self):
         SponsorMessageFactory(
@@ -3922,12 +3974,12 @@ class SponsorMessageTests(TransactionTestCase):
         )
         EntryFactory()
         response = self.client.get("/")
-        self.assertContains(
+        assertContains(
             response,
             '<a href="https://workos.example.com/" rel="sponsored noopener" '
             'target="_blank">WorkOS</a>',
         )
-        self.assertNotContains(response, ">Learn more</a>")
+        assertNotContains(response, ">Learn more</a>")
 
     def test_learn_more_label_custom(self):
         SponsorMessageFactory(
@@ -3936,9 +3988,9 @@ class SponsorMessageTests(TransactionTestCase):
         )
         EntryFactory()
         response = self.client.get("/")
-        self.assertContains(response, 'class="sponsor-learn-more-label"')
-        self.assertContains(response, ">Try it free</a>")
-        self.assertNotContains(response, ">Learn more</a>")
+        assertContains(response, 'class="sponsor-learn-more-label"')
+        assertContains(response, ">Try it free</a>")
+        assertNotContains(response, ">Learn more</a>")
 
     def test_learn_more_label_trailing_period_outside_link(self):
         SponsorMessageFactory(
@@ -3947,8 +3999,8 @@ class SponsorMessageTests(TransactionTestCase):
         )
         EntryFactory()
         response = self.client.get("/")
-        self.assertContains(response, ">Try it free</a>.")
-        self.assertNotContains(response, ">Try it free.</a>")
+        assertContains(response, ">Try it free</a>.")
+        assertNotContains(response, ">Try it free.</a>")
 
     def test_learn_more_label_no_trailing_period(self):
         SponsorMessageFactory(
@@ -3957,26 +4009,31 @@ class SponsorMessageTests(TransactionTestCase):
         )
         EntryFactory()
         response = self.client.get("/")
-        self.assertContains(response, ">Try it free</a>")
-        self.assertNotContains(response, "</a>.")
+        assertContains(response, ">Try it free</a>")
+        assertNotContains(response, "</a>.")
 
 
-class GuideTests(TransactionTestCase):
+@pytest.mark.django_db
+class TestGuide:
+    @pytest.fixture(autouse=True)
+    def setup(self, client):
+        self.client = client
+
     def test_guide_index(self):
         guide = GuideFactory(title="Test Guide", description="A test guide")
         ChapterFactory(guide=guide, title="Chapter 1", order=1)
         ChapterFactory(guide=guide, title="Chapter 2", order=2)
         response = self.client.get("/guides/")
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Test Guide")
-        self.assertContains(response, "2 chapters")
+        assert response.status_code == 200
+        assertContains(response, "Test Guide")
+        assertContains(response, "2 chapters")
 
     def test_guide_index_hides_drafts(self):
         GuideFactory(title="Published Guide")
         GuideFactory(title="Draft Guide", is_draft=True)
         response = self.client.get("/guides/")
-        self.assertContains(response, "Published Guide")
-        self.assertNotContains(response, "Draft Guide")
+        assertContains(response, "Published Guide")
+        assertNotContains(response, "Draft Guide")
 
     def test_guide_detail(self):
         guide = GuideFactory(
@@ -3987,10 +4044,10 @@ class GuideTests(TransactionTestCase):
             guide=guide, title="Second Chapter", slug="second", order=2
         )
         response = self.client.get("/guides/my-guide/")
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "My Guide")
-        self.assertContains(response, "First Chapter")
-        self.assertContains(response, "Second Chapter")
+        assert response.status_code == 200
+        assertContains(response, "My Guide")
+        assertContains(response, "First Chapter")
+        assertContains(response, "Second Chapter")
 
     def test_guide_detail_hides_draft_chapters(self):
         guide = GuideFactory(slug="g1")
@@ -3999,21 +4056,21 @@ class GuideTests(TransactionTestCase):
             guide=guide, title="Draft Chapter", slug="draft", order=2, is_draft=True
         )
         response = self.client.get("/guides/g1/")
-        self.assertContains(response, "Visible Chapter")
-        self.assertNotContains(response, "Draft Chapter")
+        assertContains(response, "Visible Chapter")
+        assertNotContains(response, "Draft Chapter")
 
     def test_draft_guide_404_for_anonymous(self):
         GuideFactory(slug="draft-guide", is_draft=True)
         response = self.client.get("/guides/draft-guide/")
-        self.assertEqual(response.status_code, 404)
+        assert response.status_code == 404
 
     def test_draft_guide_visible_for_staff(self):
         User.objects.create_superuser("admin", "admin@example.com", "password")
         self.client.login(username="admin", password="password")
         GuideFactory(slug="draft-guide", title="Secret Guide", is_draft=True)
         response = self.client.get("/guides/draft-guide/")
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Secret Guide")
+        assert response.status_code == 200
+        assertContains(response, "Secret Guide")
 
     def test_chapter_detail(self):
         guide = GuideFactory(slug="g2")
@@ -4025,15 +4082,15 @@ class GuideTests(TransactionTestCase):
             order=1,
         )
         response = self.client.get("/guides/g2/my-chapter/")
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "My Chapter")
-        self.assertContains(response, "<strong>bold text</strong>")
+        assert response.status_code == 200
+        assertContains(response, "My Chapter")
+        assertContains(response, "<strong>bold text</strong>")
 
     def test_draft_chapter_404_for_anonymous(self):
         guide = GuideFactory(slug="g3")
         ChapterFactory(guide=guide, slug="draft-ch", is_draft=True)
         response = self.client.get("/guides/g3/draft-ch/")
-        self.assertEqual(response.status_code, 404)
+        assert response.status_code == 404
 
     def test_draft_chapter_visible_for_staff(self):
         User.objects.create_superuser("admin", "admin@example.com", "password")
@@ -4041,8 +4098,8 @@ class GuideTests(TransactionTestCase):
         guide = GuideFactory(slug="g4")
         ChapterFactory(guide=guide, slug="draft-ch", title="Draft Ch", is_draft=True)
         response = self.client.get("/guides/g4/draft-ch/")
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Draft Ch")
+        assert response.status_code == 200
+        assertContains(response, "Draft Ch")
 
     def test_chapter_ordering(self):
         guide = GuideFactory(slug="g5", description="")
@@ -4054,8 +4111,8 @@ class GuideTests(TransactionTestCase):
         first_pos = content.index("Xbravo")
         second_pos = content.index("Xalpha")
         third_pos = content.index("Xcharlie")
-        self.assertLess(first_pos, second_pos)
-        self.assertLess(second_pos, third_pos)
+        assert first_pos < second_pos
+        assert second_pos < third_pos
 
     def test_chapter_navigation(self):
         guide = GuideFactory(slug="g6")
@@ -4064,15 +4121,15 @@ class GuideTests(TransactionTestCase):
         ChapterFactory(guide=guide, title="Ch 3", slug="ch-3", order=3)
         # First chapter: no previous, has next
         response = self.client.get("/guides/g6/ch-1/")
-        self.assertNotContains(response, "Ch 0")
-        self.assertContains(response, "Ch 2")
+        assertNotContains(response, "Ch 0")
+        assertContains(response, "Ch 2")
         # Middle chapter: has both
         response = self.client.get("/guides/g6/ch-2/")
-        self.assertContains(response, "Ch 1")
-        self.assertContains(response, "Ch 3")
+        assertContains(response, "Ch 1")
+        assertContains(response, "Ch 3")
         # Last chapter: has previous, no next
         response = self.client.get("/guides/g6/ch-3/")
-        self.assertContains(response, "Ch 2")
+        assertContains(response, "Ch 2")
 
     def test_chapter_navigation_skips_draft_chapters(self):
         """Next/previous links on non-draft chapter pages should skip draft chapters."""
@@ -4084,12 +4141,12 @@ class GuideTests(TransactionTestCase):
         ChapterFactory(guide=guide, title="Ch 3", slug="ch-3", order=3)
         # Ch 1 should link to Ch 3 (skipping draft Ch 2)
         response = self.client.get("/guides/g-nav-draft/ch-1/")
-        self.assertContains(response, "Ch 3")
-        self.assertNotContains(response, "Ch 2 Draft")
+        assertContains(response, "Ch 3")
+        assertNotContains(response, "Ch 2 Draft")
         # Ch 3 should link back to Ch 1 (skipping draft Ch 2)
         response = self.client.get("/guides/g-nav-draft/ch-3/")
-        self.assertContains(response, "Ch 1")
-        self.assertNotContains(response, "Ch 2 Draft")
+        assertContains(response, "Ch 1")
+        assertNotContains(response, "Ch 2 Draft")
 
     def test_chapter_navigation_skips_drafts_for_staff(self):
         """Staff viewing a non-draft chapter should also skip drafts in navigation."""
@@ -4105,31 +4162,36 @@ class GuideTests(TransactionTestCase):
         ChapterFactory(guide=guide, title="Ch C", slug="ch-c", order=3)
         # Staff on non-draft Ch A: next should be Ch C, not draft Ch B
         response = self.client.get("/guides/g-nav-staff/ch-a/")
-        self.assertContains(response, "Ch C")
-        self.assertNotContains(response, "Ch B Draft")
+        assertContains(response, "Ch C")
+        assertNotContains(response, "Ch B Draft")
         # Staff on non-draft Ch C: previous should be Ch A
         response = self.client.get("/guides/g-nav-staff/ch-c/")
-        self.assertContains(response, "Ch A")
-        self.assertNotContains(response, "Ch B Draft")
+        assertContains(response, "Ch A")
+        assertNotContains(response, "Ch B Draft")
 
     def test_chapter_in_draft_guide_404(self):
         guide = GuideFactory(slug="draft-g", is_draft=True)
         ChapterFactory(guide=guide, slug="ch1")
         response = self.client.get("/guides/draft-g/ch1/")
-        self.assertEqual(response.status_code, 404)
+        assert response.status_code == 404
 
     def test_guide_get_absolute_url(self):
         guide = GuideFactory(slug="test-guide")
-        self.assertEqual(guide.get_absolute_url(), "/guides/test-guide/")
+        assert guide.get_absolute_url() == "/guides/test-guide/"
 
     def test_chapter_get_absolute_url(self):
         guide = GuideFactory(slug="test-guide")
         chapter = ChapterFactory(guide=guide, slug="test-chapter")
-        self.assertEqual(chapter.get_absolute_url(), "/guides/test-guide/test-chapter/")
+        assert chapter.get_absolute_url() == "/guides/test-guide/test-chapter/"
 
 
-class ChapterEverywhereTests(TransactionTestCase):
+@pytest.mark.django_db
+class TestChapterEverywhere:
     """Tests for chapters showing up in homepage, archives, search, feeds, calendar."""
+
+    @pytest.fixture(autouse=True)
+    def setup(self, client):
+        self.client = client
 
     def _make_chapter(self, **kwargs):
         defaults = {
@@ -4145,20 +4207,20 @@ class ChapterEverywhereTests(TransactionTestCase):
     def test_chapter_on_homepage(self):
         chapter = self._make_chapter()
         response = self.client.get("/")
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, chapter.title)
-        self.assertContains(response, chapter.guide.title)
+        assert response.status_code == 200
+        assertContains(response, chapter.title)
+        assertContains(response, chapter.guide.title)
 
     def test_draft_chapter_not_on_homepage(self):
         chapter = self._make_chapter(title="Draft Chapter", is_draft=True)
         response = self.client.get("/")
-        self.assertNotContains(response, "Draft Chapter")
+        assertNotContains(response, "Draft Chapter")
 
     def test_chapter_in_draft_guide_not_on_homepage(self):
         guide = GuideFactory(is_draft=True)
         chapter = self._make_chapter(guide=guide, title="Hidden Chapter")
         response = self.client.get("/")
-        self.assertNotContains(response, "Hidden Chapter")
+        assertNotContains(response, "Hidden Chapter")
 
     def test_chapter_on_day_archive(self):
         chapter = self._make_chapter()
@@ -4166,9 +4228,9 @@ class ChapterEverywhereTests(TransactionTestCase):
         EntryFactory(created=chapter.created)
         url = "/{}/".format(chapter.created.strftime("%Y/%b/%-d"))
         response = self.client.get(url)
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, chapter.title)
-        self.assertContains(response, chapter.guide.title)
+        assert response.status_code == 200
+        assertContains(response, chapter.title)
+        assertContains(response, chapter.guide.title)
 
     def test_draft_chapter_not_on_day_archive(self):
         chapter = self._make_chapter(title="Draft Day Chapter", is_draft=True)
@@ -4176,7 +4238,7 @@ class ChapterEverywhereTests(TransactionTestCase):
         EntryFactory(created=chapter.created)
         url = "/{}/".format(chapter.created.strftime("%Y/%b/%-d"))
         response = self.client.get(url)
-        self.assertNotContains(response, "Draft Day Chapter")
+        assertNotContains(response, "Draft Day Chapter")
 
     def test_chapter_on_month_archive(self):
         chapter = self._make_chapter()
@@ -4184,17 +4246,17 @@ class ChapterEverywhereTests(TransactionTestCase):
         EntryFactory(created=chapter.created)
         url = "/{}/".format(chapter.created.strftime("%Y/%b"))
         response = self.client.get(url)
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, chapter.title)
+        assert response.status_code == 200
+        assertContains(response, chapter.title)
 
     def test_chapter_on_tag_archive(self):
         tag = Tag.objects.create(tag="testchaptertag")
         chapter = self._make_chapter()
         chapter.tags.add(tag)
         response = self.client.get("/tags/testchaptertag/")
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, chapter.title)
-        self.assertContains(response, chapter.guide.title)
+        assert response.status_code == 200
+        assertContains(response, chapter.title)
+        assertContains(response, chapter.guide.title)
 
     def test_draft_chapter_not_on_tag_archive(self):
         tag = Tag.objects.create(tag="testdrafttag")
@@ -4204,7 +4266,7 @@ class ChapterEverywhereTests(TransactionTestCase):
         entry = EntryFactory()
         entry.tags.add(tag)
         response = self.client.get("/tags/testdrafttag/")
-        self.assertNotContains(response, "Draft Tagged")
+        assertNotContains(response, "Draft Tagged")
 
     def test_chapter_in_draft_guide_not_on_tag_archive(self):
         tag = Tag.objects.create(tag="guidedrafttag")
@@ -4214,124 +4276,107 @@ class ChapterEverywhereTests(TransactionTestCase):
         entry = EntryFactory()
         entry.tags.add(tag)
         response = self.client.get("/tags/guidedrafttag/")
-        self.assertNotContains(response, "Guide Draft Tagged")
+        assertNotContains(response, "Guide Draft Tagged")
 
-    def test_chapter_in_search(self):
-        chapter = self._make_chapter(
-            title="Searchable Chapter", body="unique searchterm here"
-        )
-        # Update search index
-        from django.contrib.postgres.search import SearchVector
-        from django.db.models import Value, TextField
-        from guides.models import Chapter
-        import operator
-        from functools import reduce
-
-        components = chapter.index_components()
-        search_vectors = []
-        for weight, text in components.items():
-            search_vectors.append(
-                SearchVector(Value(text, output_field=TextField()), weight=weight)
+    def test_chapter_in_search(self, commit_callbacks):
+        with commit_callbacks():
+            self._make_chapter(
+                title="Searchable Chapter", body="unique searchterm here"
             )
-        Chapter.objects.filter(pk=chapter.pk).update(
-            search_document=reduce(operator.add, search_vectors)
-        )
 
         response = self.client.get("/search/?q=searchterm")
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Searchable Chapter")
+        assert response.status_code == 200
+        assertContains(response, "Searchable Chapter")
 
     def test_chapter_in_everything_feed(self):
         chapter = self._make_chapter(title="Feed Chapter")
         response = self.client.get("/atom/everything/")
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Feed Chapter")
-        self.assertContains(response, chapter.guide.title)
+        assert response.status_code == 200
+        assertContains(response, "Feed Chapter")
+        assertContains(response, chapter.guide.title)
 
     def test_draft_chapter_not_in_everything_feed(self):
         self._make_chapter(title="Draft Feed Chapter", is_draft=True)
         response = self.client.get("/atom/everything/")
-        self.assertNotContains(response, "Draft Feed Chapter")
+        assertNotContains(response, "Draft Feed Chapter")
 
     def test_chapter_markdown_copy_fence_in_atom_feed_uses_pre(self):
         """In atom feeds, ```markdown-copy fences should render as <pre> not <markdown-copy><textarea>."""
         body = "```markdown-copy\n# Hello\n\nSome **bold** text\n```"
         self._make_chapter(title="Feed Copy Chapter", body=body)
         response = self.client.get("/atom/everything/")
-        self.assertEqual(response.status_code, 200)
+        assert response.status_code == 200
         content = response.content.decode()
         # HTML is XML-escaped inside <summary type="html"> in an atom feed
-        self.assertNotIn("markdown-copy", content)
-        self.assertNotIn("textarea", content)
-        self.assertIn("&lt;pre&gt;", content)
-        self.assertIn("&lt;/pre&gt;", content)
+        assert "markdown-copy" not in content
+        assert "textarea" not in content
+        assert "&lt;pre&gt;" in content
+        assert "&lt;/pre&gt;" in content
         # Content should still be present
-        self.assertIn("# Hello", content)
-        self.assertIn("Some **bold** text", content)
+        assert "# Hello" in content
+        assert "Some **bold** text" in content
 
     def test_chapter_guide_breadcrumb_style(self):
         """Chapter should show guide name with > and no underline."""
         chapter = self._make_chapter()
         response = self.client.get("/")
         content = response.content.decode()
-        self.assertIn(chapter.guide.title, content)
-        self.assertIn("&gt;", content)
-        self.assertIn("border-bottom: none", content)
-        self.assertIn("text-decoration: none", content)
+        assert chapter.guide.title in content
+        assert "&gt;" in content
+        assert "border-bottom: none" in content
+        assert "text-decoration: none" in content
 
     def test_chapter_body_rendered_as_markdown(self):
         chapter = self._make_chapter(body="- item one\n- item two\n- item three")
         response = self.client.get("/")
         content = response.content.decode()
-        self.assertIn("<li>", content)
-        self.assertIn("item one", content)
+        assert "<li>" in content
+        assert "item one" in content
 
     def test_chapter_fenced_code_block_python(self):
         """Fenced code blocks with a language should produce syntax-highlighted HTML."""
         body = '```python\ndef hi():\n    print("Hello")\n```'
         chapter = self._make_chapter(body=body)
         html = str(chapter.body_rendered())
-        self.assertIn('<div class="codehilite">', html)
-        self.assertIn("<span", html)
-        self.assertRegex(html, r'class="[a-z]+[0-9]*"')
+        assert '<div class="codehilite">' in html
+        assert "<span" in html
+        assert re.search('class="[a-z]+[0-9]*"', html)
 
     def test_chapter_fenced_code_block_html(self):
         """Fenced HTML code blocks should produce syntax-highlighted HTML with tag spans."""
         body = "```html\n<p>Hi</p>\n```"
         chapter = self._make_chapter(body=body)
         html = str(chapter.body_rendered())
-        self.assertIn('<div class="codehilite">', html)
-        self.assertIn('<span class="nt">', html)
+        assert '<div class="codehilite">' in html
+        assert '<span class="nt">' in html
 
     def test_chapter_fenced_code_block_in_blockquote(self):
         """Fenced code blocks inside blockquotes should be syntax-highlighted."""
         body = "> Example:\n> ```html\n> <p>Hi</p>\n> ```"
         chapter = self._make_chapter(body=body)
         html = str(chapter.body_rendered())
-        self.assertIn("<blockquote>", html)
-        self.assertIn('<div class="codehilite">', html)
-        self.assertIn('<span class="nt">', html)
+        assert "<blockquote>" in html
+        assert '<div class="codehilite">' in html
+        assert '<span class="nt">' in html
 
     def test_chapter_markdown_copy_fence(self):
         """```markdown-copy fence should produce <markdown-copy><textarea>...</textarea></markdown-copy>."""
         body = "```markdown-copy\n# Hello\n\nSome **bold** text\n```"
         chapter = self._make_chapter(body=body)
         html = str(chapter.body_rendered())
-        self.assertIn("<markdown-copy><textarea>", html)
-        self.assertIn("</textarea></markdown-copy>", html)
-        self.assertNotIn("<p><markdown-copy>", html)
+        assert "<markdown-copy><textarea>" in html
+        assert "</textarea></markdown-copy>" in html
+        assert "<p><markdown-copy>" not in html
         # Content should be HTML-escaped, not rendered as markdown
-        self.assertIn("# Hello", html)
-        self.assertIn("Some **bold** text", html)
+        assert "# Hello" in html
+        assert "Some **bold** text" in html
 
     def test_chapter_has_tags(self):
         """Chapter (extending BaseModel) should support tags."""
         tag = Tag.objects.create(tag="chaptertest")
         chapter = self._make_chapter()
         chapter.tags.add(tag)
-        self.assertEqual(
-            list(chapter.tags.values_list("tag", flat=True)), ["chaptertest"]
-        )
+        assert list(chapter.tags.values_list("tag", flat=True)) == ["chaptertest"]
 
     def test_chapter_index_components(self):
         """Chapter should return title, body, and tags for search indexing."""
@@ -4339,9 +4384,9 @@ class ChapterEverywhereTests(TransactionTestCase):
         chapter = self._make_chapter(title="Index Title", body="Index Body")
         chapter.tags.add(tag)
         components = chapter.index_components()
-        self.assertEqual(components["A"], "Index Title")
-        self.assertEqual(components["C"], "Index Body")
-        self.assertIn("indextest", components["B"])
+        assert components["A"] == "Index Title"
+        assert components["C"] == "Index Body"
+        assert "indextest" in components["B"]
 
     def test_chapter_word_count_inline_with_last_paragraph(self):
         """When chapter has >3 paragraphs, word count should be inline in the last shown paragraph, not a separate <p>."""
@@ -4350,12 +4395,12 @@ class ChapterEverywhereTests(TransactionTestCase):
         response = self.client.get("/")
         content = response.content.decode()
         # The word count link should NOT be in its own <p>
-        self.assertNotIn("<p><span", content)
+        assert "<p><span" not in content
         # It should appear inline before </p>
-        self.assertIn("words</a>]</span></p>", content)
+        assert "words</a>]</span></p>" in content
         # The third paragraph text and the word count should be in the same <p>
-        self.assertIn("Para three.", content)
-        self.assertIn("word", content)
+        assert "Para three." in content
+        assert "word" in content
 
     def test_chapter_short_body_no_word_count(self):
         """When chapter has <=3 paragraphs, no word count should be shown."""
@@ -4363,18 +4408,18 @@ class ChapterEverywhereTests(TransactionTestCase):
         chapter = self._make_chapter(body=body)
         response = self.client.get("/")
         content = response.content.decode()
-        self.assertIn("Para one.", content)
-        self.assertIn("Para three.", content)
-        self.assertNotIn("words</a>]", content)
+        assert "Para one." in content
+        assert "Para three." in content
+        assert "words</a>]" not in content
 
     def test_chapter_single_paragraph_no_word_count(self):
         """A chapter with a single paragraph should not show word count."""
         chapter = self._make_chapter(body="Just one paragraph.")
         response = self.client.get("/")
         content = response.content.decode()
-        self.assertIn("Just one paragraph.", content)
-        self.assertNotIn("words</a>]", content)
-        self.assertNotIn("word</a>]", content)
+        assert "Just one paragraph." in content
+        assert "words</a>]" not in content
+        assert "word</a>]" not in content
 
     def test_chapter_word_count_on_tag_page(self):
         """Word count should also be inline on tag archive pages."""
@@ -4384,20 +4429,21 @@ class ChapterEverywhereTests(TransactionTestCase):
         chapter.tags.add(tag)
         response = self.client.get("/tags/excerpttest/")
         content = response.content.decode()
-        self.assertNotIn("<p><span", content)
-        self.assertIn("words</a>]</span></p>", content)
+        assert "<p><span" not in content
+        assert "words</a>]</span></p>" in content
 
 
-class ChapterChangeTests(TransactionTestCase):
+@pytest.mark.django_db
+class TestChapterChange:
     def test_change_recorded_on_create(self):
         """Creating a new chapter should automatically create a ChapterChange."""
         guide = GuideFactory(slug="cg1")
         chapter = ChapterFactory(guide=guide, title="New", body="Body", slug="new")
         changes = list(ChapterChange.objects.filter(chapter=chapter))
-        self.assertEqual(len(changes), 1)
-        self.assertEqual(changes[0].title, "New")
-        self.assertEqual(changes[0].body, "Body")
-        self.assertEqual(changes[0].created, chapter.created)
+        assert len(changes) == 1
+        assert changes[0].title == "New"
+        assert changes[0].body == "Body"
+        assert changes[0].created == chapter.created
 
     def test_change_recorded_on_title_edit(self):
         guide = GuideFactory(slug="cg2")
@@ -4407,10 +4453,10 @@ class ChapterChangeTests(TransactionTestCase):
         changes = list(
             ChapterChange.objects.filter(chapter=chapter).order_by("created")
         )
-        self.assertEqual(len(changes), 2)
-        self.assertEqual(changes[0].title, "Original")
-        self.assertEqual(changes[1].title, "Updated")
-        self.assertEqual(changes[1].body, "Body")
+        assert len(changes) == 2
+        assert changes[0].title == "Original"
+        assert changes[1].title == "Updated"
+        assert changes[1].body == "Body"
 
     def test_change_recorded_on_body_edit(self):
         guide = GuideFactory(slug="cg3")
@@ -4420,10 +4466,10 @@ class ChapterChangeTests(TransactionTestCase):
         changes = list(
             ChapterChange.objects.filter(chapter=chapter).order_by("created")
         )
-        self.assertEqual(len(changes), 2)
-        self.assertEqual(changes[0].body, "Old body")
-        self.assertEqual(changes[1].body, "New body")
-        self.assertEqual(changes[1].title, "Title")
+        assert len(changes) == 2
+        assert changes[0].body == "Old body"
+        assert changes[1].body == "New body"
+        assert changes[1].title == "Title"
 
     def test_change_recorded_on_is_draft_edit(self):
         guide = GuideFactory(slug="cg4")
@@ -4435,9 +4481,9 @@ class ChapterChangeTests(TransactionTestCase):
         changes = list(
             ChapterChange.objects.filter(chapter=chapter).order_by("created")
         )
-        self.assertEqual(len(changes), 2)
-        self.assertTrue(changes[0].is_draft)
-        self.assertFalse(changes[1].is_draft)
+        assert len(changes) == 2
+        assert changes[0].is_draft
+        assert not changes[1].is_draft
 
     def test_no_change_on_untracked_field_edit(self):
         """Editing order should not create an additional ChapterChange."""
@@ -4446,7 +4492,7 @@ class ChapterChangeTests(TransactionTestCase):
         chapter.order = 99
         chapter.save()
         # Only the initial creation change should exist
-        self.assertEqual(ChapterChange.objects.filter(chapter=chapter).count(), 1)
+        assert ChapterChange.objects.filter(chapter=chapter).count() == 1
 
     def test_multiple_changes_recorded(self):
         guide = GuideFactory(slug="cg6")
@@ -4458,17 +4504,17 @@ class ChapterChangeTests(TransactionTestCase):
         changes = list(
             ChapterChange.objects.filter(chapter=chapter).order_by("created")
         )
-        self.assertEqual(len(changes), 3)
-        self.assertEqual(changes[0].title, "V1")
-        self.assertEqual(changes[1].title, "V2")
-        self.assertEqual(changes[2].title, "V3")
+        assert len(changes) == 3
+        assert changes[0].title == "V1"
+        assert changes[1].title == "V2"
+        assert changes[2].title == "V3"
 
     def test_change_defaults(self):
         guide = GuideFactory(slug="cg7")
         chapter = ChapterFactory(guide=guide, title="Title", body="Body", slug="ch")
         change = ChapterChange.objects.filter(chapter=chapter).first()
-        self.assertFalse(change.is_notable)
-        self.assertEqual(change.change_note, "")
+        assert not change.is_notable
+        assert change.change_note == ""
 
     def test_change_str(self):
         guide = GuideFactory(slug="cg8")
@@ -4480,17 +4526,22 @@ class ChapterChangeTests(TransactionTestCase):
         change = (
             ChapterChange.objects.filter(chapter=chapter).order_by("created").last()
         )
-        self.assertIn("Updated Chapter", str(change))
+        assert "Updated Chapter" in str(change)
 
 
-class ChapterChangesPageTests(TransactionTestCase):
+@pytest.mark.django_db
+class TestChapterChangesPage:
+    @pytest.fixture(autouse=True)
+    def setup(self, client):
+        self.client = client
+
     def test_changes_page_initial_version(self):
         """Creating a chapter auto-creates a ChapterChange shown as initial version."""
         guide = GuideFactory(slug="pg2")
         chapter = ChapterFactory(guide=guide, title="Ch", body="Body", slug="ch")
         response = self.client.get("/guides/pg2/ch/changes/")
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Initial version")
+        assert response.status_code == 200
+        assertContains(response, "Initial version")
 
     def test_changes_page_shows_diff(self):
         guide = GuideFactory(slug="pg3")
@@ -4498,10 +4549,10 @@ class ChapterChangesPageTests(TransactionTestCase):
         chapter.body = "Line two"
         chapter.save()
         response = self.client.get("/guides/pg3/ch/changes/")
-        self.assertEqual(response.status_code, 200)
+        assert response.status_code == 200
         content = response.content.decode()
-        self.assertIn("diff-add", content)
-        self.assertIn("diff-remove", content)
+        assert "diff-add" in content
+        assert "diff-remove" in content
 
     def test_changes_page_shows_title_diff(self):
         guide = GuideFactory(slug="pg4")
@@ -4509,8 +4560,8 @@ class ChapterChangesPageTests(TransactionTestCase):
         chapter.title = "New Title"
         chapter.save()
         response = self.client.get("/guides/pg4/ch/changes/")
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Title")
+        assert response.status_code == 200
+        assertContains(response, "Title")
 
     def test_changes_page_shows_draft_status_change(self):
         guide = GuideFactory(slug="pg5")
@@ -4523,8 +4574,8 @@ class ChapterChangesPageTests(TransactionTestCase):
         User.objects.create_superuser("admin", "a@b.com", "pw")
         self.client.login(username="admin", password="pw")
         response = self.client.get("/guides/pg5/ch/changes/")
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Draft status changed")
+        assert response.status_code == 200
+        assertContains(response, "Draft status changed")
 
     def test_changes_page_shows_change_note(self):
         guide = GuideFactory(slug="pg6")
@@ -4534,20 +4585,20 @@ class ChapterChangesPageTests(TransactionTestCase):
         change.change_note = "Initial import"
         change.save()
         response = self.client.get("/guides/pg6/ch/changes/")
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Initial import")
+        assert response.status_code == 200
+        assertContains(response, "Initial import")
 
     def test_changes_page_draft_chapter_404_for_anonymous(self):
         guide = GuideFactory(slug="pg7")
         ChapterFactory(guide=guide, slug="draft-ch", is_draft=True)
         response = self.client.get("/guides/pg7/draft-ch/changes/")
-        self.assertEqual(response.status_code, 404)
+        assert response.status_code == 404
 
     def test_changes_page_draft_guide_404_for_anonymous(self):
         guide = GuideFactory(slug="pg8", is_draft=True)
         ChapterFactory(guide=guide, slug="ch")
         response = self.client.get("/guides/pg8/ch/changes/")
-        self.assertEqual(response.status_code, 404)
+        assert response.status_code == 404
 
     def test_changes_page_draft_visible_for_staff(self):
         User.objects.create_superuser("admin", "a@b.com", "pw")
@@ -4555,8 +4606,8 @@ class ChapterChangesPageTests(TransactionTestCase):
         guide = GuideFactory(slug="pg9", is_draft=True)
         chapter = ChapterFactory(guide=guide, title="Secret Ch", slug="ch")
         response = self.client.get("/guides/pg9/ch/changes/")
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Secret Ch")
+        assert response.status_code == 200
+        assertContains(response, "Secret Ch")
 
     def test_changes_page_breadcrumb(self):
         guide = GuideFactory(slug="pg10", title="My Guide")
@@ -4564,30 +4615,35 @@ class ChapterChangesPageTests(TransactionTestCase):
             guide=guide, title="My Chapter", body="Body", slug="ch"
         )
         response = self.client.get("/guides/pg10/ch/changes/")
-        self.assertContains(response, "My Guide")
-        self.assertContains(response, "My Chapter")
-        self.assertContains(response, "/guides/pg10/")
-        self.assertContains(response, "/guides/pg10/ch/")
+        assertContains(response, "My Guide")
+        assertContains(response, "My Chapter")
+        assertContains(response, "/guides/pg10/")
+        assertContains(response, "/guides/pg10/ch/")
 
 
-class GuideSectionTests(TransactionTestCase):
+@pytest.mark.django_db
+class TestGuideSection:
+    @pytest.fixture(autouse=True)
+    def setup(self, client):
+        self.client = client
+
     def test_create_section(self):
         guide = GuideFactory(slug="sec-guide")
         section = GuideSectionFactory(
             guide=guide, title="Basics", slug="basics", order=1
         )
-        self.assertEqual(section.guide, guide)
-        self.assertEqual(section.title, "Basics")
-        self.assertEqual(section.slug, "basics")
-        self.assertEqual(section.order, 1)
-        self.assertEqual(str(section), "Basics")
+        assert section.guide == guide
+        assert section.title == "Basics"
+        assert section.slug == "basics"
+        assert section.order == 1
+        assert str(section) == "Basics"
 
     def test_section_unique_together(self):
         guide = GuideFactory(slug="sec-guide2")
         GuideSectionFactory(guide=guide, slug="basics", order=1)
         from django.db import IntegrityError
 
-        with self.assertRaises(IntegrityError):
+        with pytest.raises(IntegrityError):
             GuideSectionFactory(guide=guide, slug="basics", order=2)
 
     def test_section_ordering(self):
@@ -4595,8 +4651,8 @@ class GuideSectionTests(TransactionTestCase):
         GuideSectionFactory(guide=guide, title="Second", slug="second", order=2)
         GuideSectionFactory(guide=guide, title="First", slug="first", order=1)
         sections = list(guide.sections.all())
-        self.assertEqual(sections[0].title, "First")
-        self.assertEqual(sections[1].title, "Second")
+        assert sections[0].title == "First"
+        assert sections[1].title == "Second"
 
     def test_chapter_section_fk(self):
         guide = GuideFactory(slug="sec-fk")
@@ -4608,13 +4664,13 @@ class GuideSectionTests(TransactionTestCase):
             order=0,
             section=section,
         )
-        self.assertEqual(chapter.section, section)
-        self.assertIn(chapter, list(section.chapters.all()))
+        assert chapter.section == section
+        assert chapter in list(section.chapters.all())
 
     def test_chapter_section_nullable(self):
         guide = GuideFactory(slug="sec-null")
         chapter = ChapterFactory(guide=guide, slug="standalone", order=0)
-        self.assertIsNone(chapter.section)
+        assert chapter.section is None
 
     def test_chapter_section_set_null_on_delete(self):
         guide = GuideFactory(slug="sec-del")
@@ -4622,7 +4678,7 @@ class GuideSectionTests(TransactionTestCase):
         chapter = ChapterFactory(guide=guide, slug="orphan", order=0, section=section)
         section.delete()
         chapter.refresh_from_db()
-        self.assertIsNone(chapter.section)
+        assert chapter.section is None
 
     def test_build_guide_toc_mixed(self):
         from guides.views import build_guide_toc
@@ -4640,12 +4696,12 @@ class GuideSectionTests(TransactionTestCase):
         )
 
         toc = build_guide_toc(guide)
-        self.assertEqual(len(toc), 2)
-        self.assertEqual(toc[0]["type"], "chapter")
-        self.assertEqual(toc[0]["chapter"], standalone)
-        self.assertEqual(toc[1]["type"], "section")
-        self.assertEqual(toc[1]["section"], section)
-        self.assertEqual(toc[1]["chapters"], [ch_in_sec1, ch_in_sec2])
+        assert len(toc) == 2
+        assert toc[0]["type"] == "chapter"
+        assert toc[0]["chapter"] == standalone
+        assert toc[1]["type"] == "section"
+        assert toc[1]["section"] == section
+        assert toc[1]["chapters"] == [ch_in_sec1, ch_in_sec2]
 
     def test_build_guide_toc_hides_empty_sections(self):
         from guides.views import build_guide_toc
@@ -4655,8 +4711,8 @@ class GuideSectionTests(TransactionTestCase):
         ChapterFactory(guide=guide, title="Solo", slug="solo", order=0)
 
         toc = build_guide_toc(guide)
-        self.assertEqual(len(toc), 1)
-        self.assertEqual(toc[0]["type"], "chapter")
+        assert len(toc) == 1
+        assert toc[0]["type"] == "chapter"
 
     def test_build_guide_toc_hides_draft_chapters(self):
         from guides.views import build_guide_toc
@@ -4668,7 +4724,7 @@ class GuideSectionTests(TransactionTestCase):
         )
         # Section has only draft chapters, so should be hidden
         toc = build_guide_toc(guide)
-        self.assertEqual(len(toc), 0)
+        assert len(toc) == 0
 
     def test_flatten_toc(self):
         from guides.views import build_guide_toc, flatten_toc
@@ -4681,7 +4737,7 @@ class GuideSectionTests(TransactionTestCase):
 
         toc = build_guide_toc(guide)
         flat = flatten_toc(toc)
-        self.assertEqual(flat, [ch1, ch2, ch3])
+        assert flat == [ch1, ch2, ch3]
 
     def test_guide_detail_shows_section_headings(self):
         guide = GuideFactory(slug="view-sec")
@@ -4697,20 +4753,20 @@ class GuideSectionTests(TransactionTestCase):
             section=section,
         )
         response = self.client.get("/guides/view-sec/")
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Intro Ch")
-        self.assertContains(response, "Basics Section")
-        self.assertContains(response, "Ch In Basics")
+        assert response.status_code == 200
+        assertContains(response, "Intro Ch")
+        assertContains(response, "Basics Section")
+        assertContains(response, "Ch In Basics")
         # Section title should be bold/strong, not a link
-        self.assertContains(response, "<strong>Basics Section</strong>")
+        assertContains(response, "<strong>Basics Section</strong>")
 
     def test_guide_detail_hides_empty_section(self):
         guide = GuideFactory(slug="view-empty-sec")
         ChapterFactory(guide=guide, title="Solo Ch", slug="solo", order=0)
         GuideSectionFactory(guide=guide, title="Ghost Section", slug="ghost", order=1)
         response = self.client.get("/guides/view-empty-sec/")
-        self.assertContains(response, "Solo Ch")
-        self.assertNotContains(response, "Ghost Section")
+        assertContains(response, "Solo Ch")
+        assertNotContains(response, "Ghost Section")
 
     def test_chapter_sidebar_shows_section_headings(self):
         guide = GuideFactory(slug="sidebar-sec")
@@ -4724,11 +4780,11 @@ class GuideSectionTests(TransactionTestCase):
             guide=guide, title="Sec Ch", slug="sec-ch", order=0, section=section
         )
         response = self.client.get("/guides/sidebar-sec/standalone/")
-        self.assertEqual(response.status_code, 200)
+        assert response.status_code == 200
         # Sidebar should show the section heading
-        self.assertContains(response, "<strong>My Section</strong>")
-        self.assertContains(response, "Standalone Ch")
-        self.assertContains(response, "Sec Ch")
+        assertContains(response, "<strong>My Section</strong>")
+        assertContains(response, "Standalone Ch")
+        assertContains(response, "Sec Ch")
 
     def test_chapter_prev_next_ignores_sections(self):
         guide = GuideFactory(slug="nav-sec")
@@ -4742,22 +4798,27 @@ class GuideSectionTests(TransactionTestCase):
         )
         # First chapter: next should be Second (in section), flat walk
         response = self.client.get("/guides/nav-sec/first/")
-        self.assertContains(response, "Second")
+        assertContains(response, "Second")
         # Second chapter: prev=First, next=Third
         response = self.client.get("/guides/nav-sec/second/")
-        self.assertContains(response, "First")
-        self.assertContains(response, "Third")
+        assertContains(response, "First")
+        assertContains(response, "Third")
         # Third chapter: prev=Second, no next
         response = self.client.get("/guides/nav-sec/third/")
-        self.assertContains(response, "Second")
+        assertContains(response, "Second")
 
 
-class UnlistedChapterTests(TransactionTestCase):
+@pytest.mark.django_db
+class TestUnlistedChapter:
     """Tests for is_unlisted chapter behavior.
 
     Unlisted chapters should be omitted from homepage, feeds, and archive pages
     but should still appear in /search/ results and on guide pages themselves.
     """
+
+    @pytest.fixture(autouse=True)
+    def setup(self, client):
+        self.client = client
 
     def _make_chapter(self, **kwargs):
         defaults = {
@@ -4779,18 +4840,18 @@ class UnlistedChapterTests(TransactionTestCase):
     def test_unlisted_chapter_not_on_homepage(self):
         self._make_unlisted_chapter(title="Unlisted Appendix")
         response = self.client.get("/")
-        self.assertNotContains(response, "Unlisted Appendix")
+        assertNotContains(response, "Unlisted Appendix")
 
     def test_listed_chapter_still_on_homepage(self):
         """Sanity check: a normal (listed) chapter still appears on homepage."""
         self._make_chapter(title="Listed Chapter")
         response = self.client.get("/")
-        self.assertContains(response, "Listed Chapter")
+        assertContains(response, "Listed Chapter")
 
     def test_unlisted_chapter_not_in_everything_feed(self):
         self._make_unlisted_chapter(title="Unlisted Feed Chapter")
         response = self.client.get("/atom/everything/")
-        self.assertNotContains(response, "Unlisted Feed Chapter")
+        assertNotContains(response, "Unlisted Feed Chapter")
 
     def test_unlisted_chapter_not_on_day_archive(self):
         chapter = self._make_unlisted_chapter(title="Unlisted Day Chapter")
@@ -4798,20 +4859,20 @@ class UnlistedChapterTests(TransactionTestCase):
         EntryFactory(created=chapter.created)
         url = "/{}/".format(chapter.created.strftime("%Y/%b/%-d"))
         response = self.client.get(url)
-        self.assertNotContains(response, "Unlisted Day Chapter")
+        assertNotContains(response, "Unlisted Day Chapter")
 
     def test_unlisted_chapter_not_on_month_archive(self):
         chapter = self._make_unlisted_chapter(title="Unlisted Month Chapter")
         EntryFactory(created=chapter.created)
         url = "/{}/".format(chapter.created.strftime("%Y/%b"))
         response = self.client.get(url)
-        self.assertNotContains(response, "Unlisted Month Chapter")
+        assertNotContains(response, "Unlisted Month Chapter")
 
     def test_unlisted_chapter_not_on_year_archive_count(self):
         chapter = self._make_unlisted_chapter(title="Unlisted Year Chapter")
         response = self.client.get("/{}/".format(chapter.created.year))
         # The year archive shows counts; unlisted chapter should not be counted
-        self.assertNotContains(response, "chapter")
+        assertNotContains(response, "chapter")
 
     def test_unlisted_chapter_not_on_tag_archive(self):
         tag = Tag.objects.create(tag="unlistedtagtest")
@@ -4821,44 +4882,29 @@ class UnlistedChapterTests(TransactionTestCase):
         entry = EntryFactory()
         entry.tags.add(tag)
         response = self.client.get("/tags/unlistedtagtest/")
-        self.assertNotContains(response, "Unlisted Tagged")
+        assertNotContains(response, "Unlisted Tagged")
 
     # --- Should STILL appear on these pages ---
 
-    def test_unlisted_chapter_in_search(self):
-        chapter = self._make_unlisted_chapter(
-            title="Unlisted Searchable", body="unique_unlisted_term here"
-        )
-        # Update search index
-        from django.contrib.postgres.search import SearchVector
-        from django.db.models import Value, TextField
-        from guides.models import Chapter
-        import operator
-        from functools import reduce
-
-        components = chapter.index_components()
-        search_vectors = []
-        for weight, text in components.items():
-            search_vectors.append(
-                SearchVector(Value(text, output_field=TextField()), weight=weight)
+    def test_unlisted_chapter_in_search(self, commit_callbacks):
+        with commit_callbacks():
+            self._make_unlisted_chapter(
+                title="Unlisted Searchable", body="unique_unlisted_term here"
             )
-        Chapter.objects.filter(pk=chapter.pk).update(
-            search_document=reduce(operator.add, search_vectors)
-        )
 
         response = self.client.get("/search/?q=unique_unlisted_term")
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Unlisted Searchable")
+        assert response.status_code == 200
+        assertContains(response, "Unlisted Searchable")
 
     def test_unlisted_chapter_on_guide_index(self):
         guide = GuideFactory(is_draft=False, title="Guide With Unlisted")
         self._make_chapter(guide=guide, title="Normal Ch", order=1)
         self._make_unlisted_chapter(guide=guide, title="Unlisted Ch", order=2)
         response = self.client.get("/guides/")
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Guide With Unlisted")
+        assert response.status_code == 200
+        assertContains(response, "Guide With Unlisted")
         # Both chapters should be counted/visible on the guide index
-        self.assertContains(response, "2 chapters")
+        assertContains(response, "2 chapters")
 
     def test_unlisted_chapter_on_guide_detail(self):
         guide = GuideFactory(slug="unlisted-guide", is_draft=False)
@@ -4869,9 +4915,9 @@ class UnlistedChapterTests(TransactionTestCase):
             guide=guide, title="Unlisted Detail Ch", slug="unlisted", order=2
         )
         response = self.client.get("/guides/unlisted-guide/")
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Normal Detail Ch")
-        self.assertContains(response, "Unlisted Detail Ch")
+        assert response.status_code == 200
+        assertContains(response, "Normal Detail Ch")
+        assertContains(response, "Unlisted Detail Ch")
 
     def test_unlisted_chapter_accessible_directly(self):
         guide = GuideFactory(slug="direct-guide", is_draft=False)
@@ -4882,86 +4928,89 @@ class UnlistedChapterTests(TransactionTestCase):
             body="Direct body",
         )
         response = self.client.get("/guides/direct-guide/unlisted-ch/")
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Unlisted Direct Ch")
+        assert response.status_code == 200
+        assertContains(response, "Unlisted Direct Ch")
 
     def test_unlisted_chapter_defaults_to_false(self):
         chapter = self._make_chapter()
-        self.assertFalse(chapter.is_unlisted)
+        assert not chapter.is_unlisted
 
 
-class FirstThreeParagraphsTests(TransactionTestCase):
+class TestFirstThreeParagraphs:
     def test_three_or_fewer_paragraphs_returned_unchanged(self):
         html = "<p>One</p><p>Two</p><p>Three</p>"
         result = str(first_three_paragraphs(html))
-        self.assertEqual(result, html)
+        assert result == html
 
     def test_more_than_three_paragraphs_truncated(self):
         html = "<p>One</p><p>Two</p><p>Three</p><p>Four</p>"
         result = str(first_three_paragraphs(html))
-        self.assertIn("<p>One</p>", result)
-        self.assertIn("<p>Two</p>", result)
-        self.assertIn("<p>Three</p>", result)
-        self.assertNotIn("<p>Four</p>", result)
+        assert "<p>One</p>" in result
+        assert "<p>Two</p>" in result
+        assert "<p>Three</p>" in result
+        assert "<p>Four</p>" not in result
 
     def test_headings_included_in_summary(self):
         html = "<p>One</p><h2>A heading</h2><p>Two</p><p>Three</p><p>Four</p>"
         result = str(first_three_paragraphs(html))
-        self.assertIn("A heading", result)
-        self.assertIn("<p>One</p>", result)
-        self.assertIn("<p>Two</p>", result)
-        self.assertIn("<p>Three</p>", result)
-        self.assertNotIn("<p>Four</p>", result)
+        assert "A heading" in result
+        assert "<p>One</p>" in result
+        assert "<p>Two</p>" in result
+        assert "<p>Three</p>" in result
+        assert "<p>Four</p>" not in result
 
     def test_heading_level_adjusted_by_two(self):
         html = "<p>One</p><h2>Heading</h2><p>Two</p><p>Three</p><p>Four</p>"
         result = str(first_three_paragraphs(html))
-        self.assertIn("<h4>Heading</h4>", result)
-        self.assertNotIn("<h2>", result)
+        assert "<h4>Heading</h4>" in result
+        assert "<h2>" not in result
 
     def test_h3_becomes_h5(self):
         html = "<p>One</p><h3>Sub heading</h3><p>Two</p><p>Three</p><p>Four</p>"
         result = str(first_three_paragraphs(html))
-        self.assertIn("<h5>Sub heading</h5>", result)
-        self.assertNotIn("<h3>", result)
+        assert "<h5>Sub heading</h5>" in result
+        assert "<h3>" not in result
 
     def test_h5_and_h6_cap_at_h6(self):
         html = "<p>One</p><h5>Deep</h5><p>Two</p><p>Three</p><p>Four</p>"
         result = str(first_three_paragraphs(html))
-        self.assertIn("<h6>Deep</h6>", result)
+        assert "<h6>Deep</h6>" in result
 
     def test_heading_id_stripped(self):
         html = '<p>One</p><h2 id="my-heading">Heading</h2><p>Two</p><p>Three</p><p>Four</p>'
         result = str(first_three_paragraphs(html))
-        self.assertNotIn("id=", result)
-        self.assertIn("<h4>Heading</h4>", result)
+        assert "id=" not in result
+        assert "<h4>Heading</h4>" in result
 
     def test_heading_after_third_paragraph_excluded(self):
         html = "<p>One</p><p>Two</p><p>Three</p><h2>Late heading</h2><p>Four</p>"
         result = str(first_three_paragraphs(html))
-        self.assertNotIn("Late heading", result)
+        assert "Late heading" not in result
 
     def test_heading_before_any_paragraph(self):
         html = "<h2>First heading</h2><p>One</p><p>Two</p><p>Three</p><p>Four</p>"
         result = str(first_three_paragraphs(html))
-        self.assertIn("<h4>First heading</h4>", result)
-        self.assertIn("<p>One</p>", result)
+        assert "<h4>First heading</h4>" in result
+        assert "<p>One</p>" in result
 
     def test_multiple_headings_between_paragraphs(self):
         html = "<p>One</p><h2>H2</h2><h3>H3</h3><p>Two</p><p>Three</p><p>Four</p>"
         result = str(first_three_paragraphs(html))
-        self.assertIn("<h4>H2</h4>", result)
-        self.assertIn("<h5>H3</h5>", result)
+        assert "<h4>H2</h4>" in result
+        assert "<h5>H3</h5>" in result
 
     def test_no_headings_still_works(self):
         html = "<p>One</p><p>Two</p><p>Three</p><p>Four</p>"
         result = str(first_three_paragraphs(html))
-        self.assertNotIn("<p>Four</p>", result)
-        self.assertEqual(result.count("<p>"), 3)
+        assert "<p>Four</p>" not in result
+        assert result.count("<p>") == 3
 
 
-class CloudflarePurgeTests(TransactionTestCase):
-    def setUp(self):
+@pytest.mark.django_db
+class TestCloudflarePurge:
+    @pytest.fixture(autouse=True)
+    def setup(self, client, db):
+        self.client = client
         self.admin = User.objects.create_superuser("admin", "a@b.com", "password")
 
     def test_admin_purge_requires_login(self):
@@ -4976,20 +5025,23 @@ class CloudflarePurgeTests(TransactionTestCase):
 
     def test_admin_purge_calls_sdk_and_flashes_success(self):
         from unittest.mock import patch
+
         from cloudflare import Omit
 
         self.client.login(username="admin", password="password")
         with (
             patch("blog.views.Cloudflare") as mock_cf,
             patch.dict("blog.views.os.environ", {"CLOUDFLARE_EMAIL": "a@b.com"}),
-            self.settings(CLOUDFLARE_API_TOKEN="t0ken", CLOUDFLARE_ZONE_ID="zone123"),
+            override_settings(
+                CLOUDFLARE_API_TOKEN="t0ken", CLOUDFLARE_ZONE_ID="zone123"
+            ),
         ):
             response = self.client.post("/admin/purge-cache/", follow=False)
             mock_cf.assert_called_once()
             _, kwargs = mock_cf.call_args
-            self.assertEqual(kwargs["api_token"], "t0ken")
-            self.assertEqual(kwargs["default_headers"]["Authorization"], "Bearer t0ken")
-            self.assertIsInstance(kwargs["default_headers"]["X-Auth-Email"], Omit)
+            assert kwargs["api_token"] == "t0ken"
+            assert kwargs["default_headers"]["Authorization"] == "Bearer t0ken"
+            assert isinstance(kwargs["default_headers"]["X-Auth-Email"], Omit)
             mock_cf.return_value.cache.purge.assert_called_once_with(
                 zone_id="zone123", purge_everything=True
             )
@@ -4997,10 +5049,11 @@ class CloudflarePurgeTests(TransactionTestCase):
         assert response["Location"] == "/admin/"
         # Follow the redirect and check the flash message rendered
         response = self.client.get("/admin/")
-        self.assertContains(response, "Cloudflare cache purged")
+        assertContains(response, "Cloudflare cache purged")
 
     def test_admin_purge_flashes_error_on_sdk_failure(self):
         from unittest.mock import patch
+
         from cloudflare import CloudflareError
 
         self.client.login(username="admin", password="password")
@@ -5008,62 +5061,68 @@ class CloudflarePurgeTests(TransactionTestCase):
             mock_cf.return_value.cache.purge.side_effect = CloudflareError("boom")
             self.client.post("/admin/purge-cache/")
             response = self.client.get("/admin/")
-        self.assertContains(response, "Cloudflare cache purge failed: boom")
+        assertContains(response, "Cloudflare cache purge failed: boom")
 
     def test_admin_index_renders_purge_button(self):
         self.client.login(username="admin", password="password")
         response = self.client.get("/admin/")
-        self.assertContains(response, "Purge Cloudflare cache")
-        self.assertContains(response, "/admin/purge-cache/")
+        assertContains(response, "Purge Cloudflare cache")
+        assertContains(response, "/admin/purge-cache/")
 
 
-class LiveUpdateTests(TransactionTestCase):
+@pytest.mark.django_db
+class TestLiveUpdate:
+    @pytest.fixture(autouse=True)
+    def setup(self, client):
+        self.client = client
+
     def test_entry_without_live_updates(self):
         entry = EntryFactory()
         response = self.client.get(entry.get_absolute_url())
-        self.assertNotContains(response, 'id="live-updates"')
-        self.assertNotContains(response, "/static/live-updates.")
+        assertNotContains(response, 'id="live-updates"')
+        assertNotContains(response, "/static/live-updates.")
 
     def test_entry_with_live_updates_not_polling(self):
         entry = EntryFactory()
         update = LiveUpdate.objects.create(entry=entry, content="<em>Hello</em>")
         response = self.client.get(entry.get_absolute_url())
-        self.assertContains(
+        assertContains(
             response, '<div id="live-updates" data-entry-id="{}">'.format(entry.pk)
         )
-        self.assertContains(response, 'data-update-id="{}"'.format(update.pk))
-        self.assertContains(response, "<em>Hello</em>")
-        self.assertContains(response, "/static/live-updates.")
-        self.assertNotContains(response, "data-poll")
+        assertContains(response, 'data-update-id="{}"'.format(update.pk))
+        assertContains(response, "<em>Hello</em>")
+        assertContains(response, "/static/live-updates.")
+        assertNotContains(response, "data-poll")
 
     def test_entry_polling_without_updates_yet(self):
         entry = EntryFactory(poll_live_updates=True)
         response = self.client.get(entry.get_absolute_url())
-        self.assertContains(
+        assertContains(
             response,
             '<div id="live-updates" data-entry-id="{}" data-poll="1">'.format(entry.pk),
         )
-        self.assertContains(response, "/static/live-updates.")
+        assertContains(response, "/static/live-updates.")
 
     def test_updates_json(self):
         entry = EntryFactory()
         update1 = LiveUpdate.objects.create(entry=entry, content="One")
         update2 = LiveUpdate.objects.create(entry=entry, content="Two")
         data = self.client.get("/updates/{}.json".format(entry.pk)).json()
-        self.assertIs(data["poll"], False)
-        self.assertEqual([u["id"] for u in data["updates"]], [update1.pk, update2.pk])
+        assert data["poll"] is False
+        assert [u["id"] for u in data["updates"]] == [update1.pk, update2.pk]
         data = self.client.get(
             "/updates/{}.json?since={}".format(entry.pk, update1.pk)
         ).json()
-        self.assertEqual([u["content"] for u in data["updates"]], ["Two"])
+        assert [u["content"] for u in data["updates"]] == ["Two"]
         entry.poll_live_updates = True
         entry.save()
         data = self.client.get("/updates/{}.json".format(entry.pk)).json()
-        self.assertIs(data["poll"], True)
+        assert data["poll"] is True
 
     def test_migration_removes_pasted_live_updates_js(self):
-        from django.apps import apps
         import importlib
+
+        from django.apps import apps
 
         migration = importlib.import_module(
             "blog.migrations.0053_remove_pasted_live_updates_js"
@@ -5089,16 +5148,19 @@ class LiveUpdateTests(TransactionTestCase):
         ]
         migration.remove_pasted_live_updates_js(apps, None)
         live.refresh_from_db()
-        self.assertEqual(live.extra_head_html, "")
+        assert live.extra_head_html == ""
         for entry, expected in zip(untouched, [other_script, pasted_plus_more, None]):
             entry.refresh_from_db()
-            self.assertEqual(entry.extra_head_html, expected)
+            assert entry.extra_head_html == expected
 
 
-class LivePhotoTests(TransactionTestCase):
+@pytest.mark.django_db
+class TestLivePhoto:
     IMAGE_URL = "https://static.simonwillison.net/static/2026/live-20260929-143212.avif"
 
-    def setUp(self):
+    @pytest.fixture(autouse=True)
+    def setup(self, client, db):
+        self.client = client
         from blog.models import LiveUpdate
 
         self.superuser = User.objects.create_superuser(
@@ -5138,24 +5200,25 @@ class LivePhotoTests(TransactionTestCase):
 
     def test_page_requires_login(self):
         response = self.client.get("/admin/live-photo/")
-        self.assertEqual(response.status_code, 302)
-        self.assertIn("/admin/login/", response["Location"])
+        assert response.status_code == 302
+        assert "/admin/login/" in response["Location"]
 
     def test_page_requires_superuser(self):
         User.objects.create_user(username="staff", password="password", is_staff=True)
         self.client.login(username="staff", password="password")
-        self.assertEqual(self.client.get("/admin/live-photo/").status_code, 403)
+        assert self.client.get("/admin/live-photo/").status_code == 403
 
     def test_page_defaults_to_most_recently_updated_entry(self):
         self.client.login(username="admin", password="password")
         response = self.client.get("/admin/live-photo/")
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.context["selected_entry"], self.current_live)
-        self.assertEqual(
-            [e.pk for e in response.context["entries"]],
-            [self.current_live.pk, self.old_live.pk, self.newest.pk],
-        )
-        self.assertContains(
+        assert response.status_code == 200
+        assert response.context["selected_entry"] == self.current_live
+        assert [e.pk for e in response.context["entries"]] == [
+            self.current_live.pk,
+            self.old_live.pk,
+            self.newest.pk,
+        ]
+        assertContains(
             response,
             '<option value="{}" data-url="{}" selected>'.format(
                 self.current_live.pk, self.current_live.get_absolute_url()
@@ -5168,28 +5231,29 @@ class LivePhotoTests(TransactionTestCase):
         self.newest.save()
         self.client.login(username="admin", password="password")
         response = self.client.get("/admin/live-photo/")
-        self.assertEqual(response.context["selected_entry"], self.newest)
-        self.assertEqual(
-            [e.pk for e in response.context["entries"]],
-            [self.newest.pk, self.current_live.pk, self.old_live.pk],
-        )
-        self.assertContains(response, "{} (live)".format(self.newest.title))
-        self.assertNotContains(response, "{} (live)".format(self.current_live.title))
+        assert response.context["selected_entry"] == self.newest
+        assert [e.pk for e in response.context["entries"]] == [
+            self.newest.pk,
+            self.current_live.pk,
+            self.old_live.pk,
+        ]
+        assertContains(response, "{} (live)".format(self.newest.title))
+        assertNotContains(response, "{} (live)".format(self.current_live.title))
 
     def test_page_entry_query_string(self):
         self.client.login(username="admin", password="password")
         response = self.client.get("/admin/live-photo/?entry={}".format(self.newest.pk))
-        self.assertEqual(response.context["selected_entry"], self.newest)
+        assert response.context["selected_entry"] == self.newest
         # Entries outside the recent list are added to the top
         older = EntryFactory(created=timezone.now() - timedelta(days=400))
         for _ in range(10):
             EntryFactory()
         response = self.client.get("/admin/live-photo/?entry={}".format(older.pk))
-        self.assertEqual(response.context["selected_entry"], older)
-        self.assertEqual(response.context["entries"][0], older)
+        assert response.context["selected_entry"] == older
+        assert response.context["entries"][0] == older
         # Unknown IDs fall back to the default
         response = self.client.get("/admin/live-photo/?entry=999999")
-        self.assertEqual(response.context["selected_entry"], self.current_live)
+        assert response.context["selected_entry"] == self.current_live
 
     def test_page_with_no_entries(self):
         from blog.models import Entry
@@ -5197,50 +5261,45 @@ class LivePhotoTests(TransactionTestCase):
         Entry.objects.all().delete()
         self.client.login(username="admin", password="password")
         response = self.client.get("/admin/live-photo/")
-        self.assertContains(response, "There are no entries to post to yet.")
+        assertContains(response, "There are no entries to post to yet.")
 
     def test_create_live_update(self):
         self.client.login(username="admin", password="password")
         response = self.create()
-        self.assertEqual(response.status_code, 200)
+        assert response.status_code == 200
         update = self.current_live.updates.order_by("-id").first()
-        self.assertEqual(
-            update.content,
-            'The <em>keynote</em> by <a href="https://simonwillison.net/">Simon</a><br>'
-            '<img src="{}" alt="A &quot;slide&quot; &lt;with&gt; text" '
-            'width="1280" height="960" style="max-width: 100%; height: auto;">'.format(
+        assert (
+            update.content
+            == 'The <em>keynote</em> by <a href="https://simonwillison.net/">Simon</a><br><img src="{}" alt="A &quot;slide&quot; &lt;with&gt; text" width="1280" height="960" style="max-width: 100%; height: auto;">'.format(
                 self.IMAGE_URL
-            ),
+            )
         )
         data = response.json()
-        self.assertEqual(data["id"], update.pk)
-        self.assertEqual(
-            data["url"],
-            "{}#live-update-{}".format(self.current_live.get_absolute_url(), update.pk),
+        assert data["id"] == update.pk
+        assert data["url"] == "{}#live-update-{}".format(
+            self.current_live.get_absolute_url(), update.pk
         )
 
     def test_create_with_multi_paragraph_caption(self):
         self.client.login(username="admin", password="password")
         response = self.create(caption="First\n\nSecond")
         # The outer <p> tags are stripped, entry_updates.html provides them
-        self.assertTrue(
-            response.json()["content"].startswith("First</p>\n<p>Second<br><img ")
-        )
+        assert response.json()["content"].startswith("First</p>\n<p>Second<br><img ")
 
     def test_create_without_caption(self):
         self.client.login(username="admin", password="password")
         response = self.create(caption="  ")
-        self.assertEqual(response.status_code, 200)
-        self.assertTrue(response.json()["content"].startswith('<br><img src="'))
+        assert response.status_code == 200
+        assert response.json()["content"].startswith('<br><img src="')
 
     def test_create_is_idempotent_for_same_image(self):
         self.client.login(username="admin", password="password")
         first = self.create().json()
         second = self.create().json()
-        self.assertEqual(first["id"], second["id"])
-        self.assertEqual(self.current_live.updates.count(), 2)
+        assert first["id"] == second["id"]
+        assert self.current_live.updates.count() == 2
 
-    def test_create_validation(self):
+    def test_create_validation(self, subtests):
         self.client.login(username="admin", password="password")
         for overrides, status, error in (
             ({"entry_id": 999999}, 404, "Entry not found"),
@@ -5254,23 +5313,23 @@ class LivePhotoTests(TransactionTestCase):
             ({"width": "wide"}, 400, "width and height must be integers"),
             ({"height": 0}, 400, "width and height are out of range"),
         ):
-            with self.subTest(overrides=overrides):
+            with subtests.test(overrides=overrides):
                 response = self.create(**overrides)
-                self.assertEqual(response.status_code, status)
-                self.assertEqual(response.json(), {"error": error})
+                assert response.status_code == status
+                assert response.json() == {"error": error}
         response = self.client.post(
             "/admin/live-photo/create/", "not json", content_type="application/json"
         )
-        self.assertEqual(response.json(), {"error": "Request body must be JSON"})
-        self.assertEqual(self.current_live.updates.count(), 1)
+        assert response.json() == {"error": "Request body must be JSON"}
+        assert self.current_live.updates.count() == 1
 
     def test_create_requires_superuser(self):
         User.objects.create_user(username="staff", password="password", is_staff=True)
         self.client.login(username="staff", password="password")
-        self.assertEqual(self.create().status_code, 403)
+        assert self.create().status_code == 403
         self.client.logout()
-        self.assertEqual(self.create().status_code, 302)
-        self.assertEqual(self.current_live.updates.count(), 1)
+        assert self.create().status_code == 302
+        assert self.current_live.updates.count() == 1
 
     def test_create_requires_csrf_token(self):
         from django.test import Client
@@ -5280,8 +5339,8 @@ class LivePhotoTests(TransactionTestCase):
         response = client.post(
             "/admin/live-photo/create/", "{}", content_type="application/json"
         )
-        self.assertEqual(response.status_code, 403)
+        assert response.status_code == 403
 
     def test_admin_index_links_to_live_photo(self):
         self.client.login(username="admin", password="password")
-        self.assertContains(self.client.get("/admin/"), 'href="/admin/live-photo/"')
+        assertContains(self.client.get("/admin/"), 'href="/admin/live-photo/"')
