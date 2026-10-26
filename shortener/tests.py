@@ -1,68 +1,77 @@
+import pytest
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
-from django.test import TestCase
 from django.urls import reverse
+from pytest_django.asserts import assertContains, assertRedirects
 
 from .models import ShortURL
 
 
-class ShortURLTests(TestCase):
-    def test_base32_ids(self):
+@pytest.mark.django_db
+class TestShortURL:
+    @pytest.fixture(autouse=True)
+    def setup(self, client):
+        self.client = client
+
+    def test_base32_ids(self, subtests):
         for pk, code in (
             (1, "vj"),
             (13, "vv"),
             (14, "100"),
             (2**63 - 1, "80000000000vh"),
         ):
-            with self.subTest(pk=pk):
+            with subtests.test(pk=pk):
                 obj = ShortURL(pk=pk, url="https://example.com/")
-                self.assertEqual(obj.short_id, code)
-                self.assertEqual(obj.get_absolute_url(), "/u/" + code)
+                assert obj.short_id == code
+                assert obj.get_absolute_url() == "/u/" + code
 
     def test_redirect_and_edit_destination(self):
         obj = ShortURL.objects.create(url="https://example.com/?a=1&b=2#fragment")
-        self.assertRedirects(
+        assertRedirects(
             self.client.get(obj.get_absolute_url()),
             obj.url,
             fetch_redirect_response=False,
         )
         obj.url = "https://example.org/updated"
         obj.save()
-        self.assertRedirects(
+        assertRedirects(
             self.client.get("/u/" + obj.short_id.upper()),
             obj.url,
             fetch_redirect_response=False,
         )
 
-    def test_invalid_and_missing_ids(self):
+    def test_invalid_and_missing_ids(self, subtests):
         for code in ("0", "vi", "vj", "xyz", "-1", "vvvvvvvvvvvvv", "1" * 100):
-            with self.subTest(code=code):
-                self.assertEqual(self.client.get("/u/" + code).status_code, 404)
+            with subtests.test(code=code):
+                assert self.client.get("/u/" + code).status_code == 404
 
     def test_long_url(self):
         obj = ShortURL(url="https://example.com/?q=" + "a" * 10_000)
         obj.full_clean()
         obj.save()
         obj.refresh_from_db()
-        self.assertRedirects(
+        assertRedirects(
             self.client.get(obj.get_absolute_url()),
             obj.url,
             fetch_redirect_response=False,
         )
 
-    def test_url_validation(self):
+    def test_url_validation(self, subtests):
         for url in (
             "not a URL",
             "javascript:alert(1)",
             "https://example.com/" + "a" * 100_000,
         ):
-            with self.subTest(url=url[:40]):
-                with self.assertRaises(ValidationError):
+            with subtests.test(url=url[:40]):
+                with pytest.raises(ValidationError):
                     ShortURL(url=url).full_clean()
 
 
-class ShortURLAdminTests(TestCase):
-    def setUp(self):
+@pytest.mark.django_db
+class TestShortURLAdmin:
+    @pytest.fixture(autouse=True)
+    def setup(self, client, db):
+        self.client = client
         self.client.force_login(
             get_user_model().objects.create_superuser(
                 "admin", "admin@example.com", "password"
@@ -75,14 +84,14 @@ class ShortURLAdminTests(TestCase):
             reverse("admin:shortener_shorturl_add"),
             {"url": url, "description": "", "_save": "Save"},
         )
-        self.assertEqual(response.status_code, 302)
+        assert response.status_code == 302
         obj = ShortURL.objects.get()
-        self.assertEqual(obj.url, url)
-        self.assertEqual(obj.description, "")
+        assert obj.url == url
+        assert obj.description == ""
         response = self.client.get(
             reverse("admin:shortener_shorturl_change", args=[obj.pk])
         )
-        self.assertContains(response, obj.get_absolute_url())
+        assertContains(response, obj.get_absolute_url())
 
     def test_list_and_search(self):
         obj = ShortURL.objects.create(
@@ -91,5 +100,5 @@ class ShortURLAdminTests(TestCase):
         response = self.client.get(
             reverse("admin:shortener_shorturl_changelist"), {"q": "Reference"}
         )
-        self.assertContains(response, obj.get_absolute_url())
-        self.assertContains(response, "Reference link")
+        assertContains(response, obj.get_absolute_url())
+        assertContains(response, "Reference link")
