@@ -591,7 +591,8 @@ div.entry a {
   word-break: break-word;
 }
 div.entry table,
-div.blogmark table {
+div.blogmark table,
+.beat-note table {
   margin: 1em 0;
 }
 div.entry table th,
@@ -599,20 +600,24 @@ div.entry table td,
 div.blogmark table th,
 div.blogmark table td,
 div.note table th,
-div.note table td {
+div.note table td,
+.beat-note table th,
+.beat-note table td {
   font-size: 0.9em;
   padding-right: 0.5em;
 }
 div.entry table td,
 div.blogmark table td,
-div.note table td {
+div.note table td,
+.beat-note table td {
   vertical-align: top;
   padding-bottom: 0.3em;
   padding-top: 0.3em;
 }
 div.entry table th,
 div.blogmark table th,
-div.note table th {
+div.note table th,
+.beat-note table th {
   font-weight: bold;
   border-bottom: 1px solid var(--color-border-dark);
 }
