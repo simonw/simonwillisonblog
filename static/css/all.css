@@ -582,6 +582,13 @@ div.entryPage {
 .quote video {
   max-width: 100%;
 }
+/* Keep the aspect ratio when max-width shrinks a video with a height attribute */
+.entry video,
+.blogmark video,
+.note video,
+.quote video {
+  height: auto;
+}
 /* Center embedded tweets in articles */
 div.entry div.twitter-tweet {
   margin-left: auto;
