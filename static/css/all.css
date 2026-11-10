@@ -2002,7 +2002,8 @@ a.beat-label:active {
   white-space: normal;
 }
 
-.beat-note img {
+.beat-note img,
+.beat-note video {
   max-width: 100%;
   height: auto;
 }
