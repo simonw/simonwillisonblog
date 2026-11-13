@@ -1,5 +1,6 @@
 import re
 
+from django.core.exceptions import ValidationError
 from django.test import TransactionTestCase
 from django.contrib.admin.models import LogEntry
 from django.contrib.auth.models import User
@@ -3856,6 +3857,34 @@ class SponsorMessageTests(TransactionTestCase):
             '<a href="https://acme.example.com/docs/">Acme</a>.',
         )
         self.assertNotContains(response, "<p>Build")
+
+    def test_custom_markdown_message_without_learn_more(self):
+        SponsorMessageFactory(
+            name="Product X",
+            message="Agents can't see production. "
+            "[Read the blog](https://example.com/) to see how.",
+            learn_more_url="",
+            learn_more_label="",
+        )
+        EntryFactory()
+        response = self.client.get("/")
+        self.assertContains(
+            response,
+            "</strong> Product X &mdash; Agents can't see production. "
+            '<a href="https://example.com/">Read the blog</a> to see how.',
+            html=False,
+        )
+        self.assertNotContains(response, 'rel="sponsored noopener"')
+        self.assertNotContains(response, "sponsor-learn-more-label")
+
+    def test_learn_more_label_requires_url(self):
+        message = SponsorMessageFactory.build(
+            learn_more_url="", learn_more_label="Try it free"
+        )
+        with self.assertRaises(ValidationError) as cm:
+            message.full_clean()
+        self.assertIn("learn_more_url", cm.exception.message_dict)
+        SponsorMessageFactory.build(learn_more_url="", learn_more_label="").full_clean()
 
     def test_inactive_sponsor_message_hidden(self):
         SponsorMessageFactory(is_active=False, name="Hidden Sponsor")

@@ -1,0 +1,7 @@
+{% load blog_tags entry_tags %}{% if sponsor_message %}
+<div id="sponsored-banner" class="sponsor-scheme-{{ sponsor_message.color_scheme }}">
+  <div id="sponsored-banner-inner">
+    <strong class="sponsored-label">Sponsored by:</strong> {% if sponsor_message.learn_more_url and not sponsor_message.learn_more_label %}<a href="{{ sponsor_message.learn_more_url }}" rel="sponsored noopener" target="_blank">{{ sponsor_message.name }}</a>{% else %}{{ sponsor_message.name }}{% endif %} &mdash; {{ sponsor_message.message|markdownify|strip_wrapping_p }}{% if sponsor_message.learn_more_url and sponsor_message.learn_more_label %} {% with label=sponsor_message.learn_more_label %}<a class="sponsor-learn-more-label" href="{{ sponsor_message.learn_more_url }}" rel="sponsored noopener" target="_blank">{{ label|strip_trailing_period }}</a>{{ label|trailing_period }}{% endwith %}{% endif %}
+  </div>
+</div>
+{% endif %}
