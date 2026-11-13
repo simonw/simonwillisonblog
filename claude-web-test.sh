@@ -9,38 +9,26 @@ if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
     cat <<'USAGE'
 Usage: ./claude-web-test.sh [OPTIONS] [TEST_LABELS...]
 
-Run Django tests for simonwillisonblog. Setup (PostgreSQL, virtualenv,
-migrations) is detected and performed automatically on first run.
+Run pytest-django tests for simonwillisonblog. PostgreSQL setup is detected
+and performed automatically; uv supplies the pinned Python dependencies.
 
-Arguments are passed directly to Django's test runner.
+Arguments are passed directly to pytest.
 
 Examples:
   ./claude-web-test.sh                     # Run all tests
   ./claude-web-test.sh blog                # Run tests for the blog app
-  ./claude-web-test.sh blog.tests.BlogTests.test_homepage
+  ./claude-web-test.sh blog/tests.py::TestBlog::test_homepage
                                            # Run a single test
-  ./claude-web-test.sh -v3                 # Verbose output
-  ./claude-web-test.sh --parallel          # Run tests in parallel
+  ./claude-web-test.sh -vv                 # Verbose output
+  ./claude-web-test.sh --create-db         # Rebuild after schema changes
 
 Options:
   -h, --help    Show this help message and exit
 
-Any other options (e.g. -v2, --failfast, --parallel) are forwarded to
-"python manage.py test".
+Any other options (e.g. -k, -x, --durations=10) are forwarded to pytest.
 USAGE
     exit 0
 fi
-
-# ---- Virtualenv setup ----
-if [ ! -d ".venv312" ]; then
-    echo "Creating virtual environment (.venv312) with Python 3.12..."
-    uv venv --python 3.12 .venv312
-fi
-
-source .venv312/bin/activate
-
-# Install / update dependencies (fast no-op when already satisfied)
-uv pip install -r requirements.txt --quiet
 
 # ---- PostgreSQL setup ----
 if ! pg_isready -q 2>/dev/null; then
@@ -61,13 +49,7 @@ sudo -u postgres createdb test_db 2>/dev/null || true
 
 export DATABASE_URL=postgres://postgres:postgres@localhost/test_db
 
-# ---- Migrations ----
-# Only run migrations when the database schema is out of date.
-if ! python manage.py migrate --check --noinput >/dev/null 2>&1; then
-    echo "Running migrations..."
-    python manage.py migrate --noinput --verbosity 0
-fi
-
-# ---- Run tests ----
-echo "Running tests..."
-exec python manage.py test "$@"
+# ---- Run checks and tests ----
+# pytest-django creates and migrates its own test database.
+uv run --with-requirements requirements.txt ./manage.py check
+exec uv run --with-requirements requirements.txt pytest "$@"

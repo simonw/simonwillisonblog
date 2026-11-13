@@ -58,7 +58,8 @@ def projects_redirect(request):
     )
 
 
-FAVICON = open(os.path.join(settings.BASE_DIR, "static/favicon.ico"), "rb").read()
+with open(os.path.join(settings.BASE_DIR, "static/favicon.ico"), "rb") as favicon_file:
+    FAVICON = favicon_file.read()
 
 
 def static_redirect(request):

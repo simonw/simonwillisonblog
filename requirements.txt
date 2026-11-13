@@ -16,6 +16,7 @@ gunicorn==26.2.0
 html5lib==1.1
 psycopg2-binary==2.9.13
 pytest==9.1.1
+pytest-django==4.14.0
 raven>=6.10.0
 requests==2.34.2
 SQLAlchemy>=2.1.2

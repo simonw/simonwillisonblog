@@ -1,3 +1,4 @@
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Sum, Subquery, OuterRef, IntegerField
 from django.utils.dates import MONTHS_3
@@ -301,9 +302,20 @@ class SponsorMessage(models.Model):
     ]
 
     name = models.CharField(max_length=255)
-    message = models.TextField()
-    learn_more_url = models.URLField()
-    learn_more_label = models.CharField(max_length=255, blank=True, default="")
+    message = models.TextField(
+        help_text="Rendered as Markdown, so it can include inline links."
+    )
+    learn_more_url = models.URLField(
+        blank=True,
+        default="",
+        help_text="Optional. Links the sponsor name, or the label if one is set.",
+    )
+    learn_more_label = models.CharField(
+        max_length=255,
+        blank=True,
+        default="",
+        help_text="Optional. Shown as a link after the message. Requires a URL.",
+    )
     display_from = models.DateTimeField()
     display_until = models.DateTimeField()
     is_active = models.BooleanField(default=False)
@@ -312,6 +324,12 @@ class SponsorMessage(models.Model):
 
     def __str__(self):
         return self.name
+
+    def clean(self):
+        if self.learn_more_label and not self.learn_more_url:
+            raise ValidationError(
+                {"learn_more_url": "A learn more label needs a learn more URL."}
+            )
 
     class Meta:
         ordering = ["-pk"]
@@ -360,8 +378,6 @@ class Newsletter(models.Model):
         return self.title
 
     def clean(self):
-        from django.core.exceptions import ValidationError
-
         super().clean()
         if re.fullmatch(r"\d{4}", self.slug):
             raise ValidationError(

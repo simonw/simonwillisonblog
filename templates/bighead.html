@@ -23,13 +23,7 @@
   </div><!-- #bigheadcontainer -->
 </div><!-- #bighead -->
 
-{% if sponsor_message %}
-<div id="sponsored-banner" class="sponsor-scheme-{{ sponsor_message.color_scheme }}">
-  <div id="sponsored-banner-inner">
-    <strong class="sponsored-label">Sponsored by:</strong> {% if sponsor_message.learn_more_label %}{{ sponsor_message.name }} &mdash; {{ sponsor_message.message|markdownify|strip_wrapping_p }} {% with label=sponsor_message.learn_more_label %}<a class="sponsor-learn-more-label" href="{{ sponsor_message.learn_more_url }}" rel="sponsored noopener" target="_blank">{{ label|strip_trailing_period }}</a>{{ label|trailing_period }}{% endwith %}{% else %}<a href="{{ sponsor_message.learn_more_url }}" rel="sponsored noopener" target="_blank">{{ sponsor_message.name }}</a> &mdash; {{ sponsor_message.message|markdownify|strip_wrapping_p }}{% endif %}
-  </div>
-</div>
-{% endif %}
+{% include "includes/sponsor_banner.html" %}
 
 <div id="band">&nbsp;</div>
 
