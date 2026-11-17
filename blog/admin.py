@@ -332,7 +332,12 @@ class BeatAdmin(AutosaveAdminMixin, BaseAdmin):
     search_fields = ("tags__tag", "title", "commentary")
     prepopulated_fields = {"slug": ("title",)}
     list_display = ("__str__", "beat_type", "created", "tag_summary", "is_draft")
-    list_filter = ("created", "is_draft", "beat_type")
+    list_filter = (
+        "created",
+        "is_draft",
+        "beat_type",
+        ("note", admin.EmptyFieldListFilter),
+    )
 
     def get_changeform_initial_data(self, request):
         initial = super().get_changeform_initial_data(request)

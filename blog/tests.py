@@ -3527,6 +3527,17 @@ class BeatAdminTests(TransactionTestCase):
                     response, 'value="{}"'.format(expected.strftime("%H:%M:%S"))
                 )
 
+    def test_changelist_filters_by_note_empty(self):
+        with_note = BeatFactory(note="Has a note")
+        without_note = BeatFactory(note="")
+        for value, expected in (("1", [without_note]), ("0", [with_note])):
+            with self.subTest(note__isempty=value):
+                response = self.client.get(
+                    "/admin/blog/beat/", {"note__isempty": value}
+                )
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(list(response.context["cl"].result_list), expected)
+
     def test_add_ignores_invalid_created_query_string(self):
         for value in (
             "",
